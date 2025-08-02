@@ -5,6 +5,10 @@ import { useRouter } from "next/navigation";
 export default function Home() {
   const router = useRouter();
 
+  const handleRoute = (path: string) => {
+    router.push(path);
+  };
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     router.push("/dashboard");
