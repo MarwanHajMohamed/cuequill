@@ -6,7 +6,7 @@ const TradeSchema = new mongoose.Schema({
     symbol: {type: String, required: true},
     option: {type: String, enum: ['CALL', 'PUT'], required: true},
 
-    status: {type: String, enum: ['OPEN', 'CLOSED'], default: 'OPEN'},
+    status: {type: String, enum: ['OPEN', 'WIN', 'LOSS'], default: 'OPEN'},
     profitLoss: {type: Number },
     
     spotPrice: {type: Number, required: true},

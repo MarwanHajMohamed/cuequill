@@ -3,6 +3,8 @@ import connectDB from "@/lib/db";
 import Trade from "@/lib/models/Trade";
 
 // Get trades for each user
+import mongoose from "mongoose";
+
 export async function GET(req: NextRequest) {
   await connectDB();
 
@@ -10,11 +12,12 @@ export async function GET(req: NextRequest) {
 
   try {
     const trades = userId
-      ? await Trade.find({ userId }).sort({ dateBought: -1 })
-      : await Trade.find().sort({ dateBought: -1 });
+      ? await Trade.find({ userID: new mongoose.Types.ObjectId(userId) }).sort({ dateBought: -1 })
+      : await Trade.find().sort({ dateBought: -1 });  
 
     return NextResponse.json(trades);
   } catch (err) {
+    console.error("Error fetching trades:", err);
     return NextResponse.json({ error: "Failed to fetch trades" }, { status: 500 });
   }
 }
