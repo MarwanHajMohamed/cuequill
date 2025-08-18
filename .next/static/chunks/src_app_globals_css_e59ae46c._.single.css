@@ -5,6 +5,11 @@
       --tw-space-y-reverse: 0;
       --tw-border-style: solid;
       --tw-font-weight: initial;
+      --tw-ordinal: initial;
+      --tw-slashed-zero: initial;
+      --tw-numeric-figure: initial;
+      --tw-numeric-spacing: initial;
+      --tw-numeric-fraction: initial;
       --tw-duration: initial;
       --tw-ease: initial;
     }
@@ -13,6 +18,11 @@
       --tw-space-y-reverse: 0;
       --tw-border-style: solid;
       --tw-font-weight: initial;
+      --tw-ordinal: initial;
+      --tw-slashed-zero: initial;
+      --tw-numeric-figure: initial;
+      --tw-numeric-spacing: initial;
+      --tw-numeric-fraction: initial;
       --tw-duration: initial;
       --tw-ease: initial;
     }
@@ -37,6 +47,7 @@
     --color-blue-700: #1447e6;
     --color-blue-800: #193cb8;
     --color-gray-400: #99a1af;
+    --color-gray-500: #6a7282;
     --color-gray-700: #364153;
     --color-black: #000;
     --color-white: #fff;
@@ -46,6 +57,8 @@
     --text-xs--line-height: calc(1 / .75);
     --text-sm: .875rem;
     --text-sm--line-height: calc(1.25 / .875);
+    --text-xl: 1.25rem;
+    --text-xl--line-height: calc(1.75 / 1.25);
     --text-2xl: 1.5rem;
     --text-2xl--line-height: calc(2 / 1.5);
     --text-4xl: 2.25rem;
@@ -53,6 +66,7 @@
     --text-5xl: 3rem;
     --text-5xl--line-height: 1;
     --font-weight-semibold: 600;
+    --font-weight-bold: 700;
     --radius-md: .375rem;
     --radius-lg: .5rem;
     --radius-xl: .75rem;
@@ -79,6 +93,7 @@
       --color-blue-700: color(display-p3 .1379 .274983 .867624);
       --color-blue-800: color(display-p3 .134023 .230647 .695537);
       --color-gray-400: color(display-p3 .605734 .630385 .680158);
+      --color-gray-500: color(display-p3 .421287 .446085 .504784);
       --color-gray-700: color(display-p3 .219968 .253721 .318679);
     }
   }
@@ -99,6 +114,7 @@
       --color-blue-700: lab(36.9089% 35.0961 -85.6872);
       --color-blue-800: lab(30.2514% 27.7853 -70.2699);
       --color-gray-400: lab(65.9269% -.832707 -8.17473);
+      --color-gray-500: lab(47.7841% -.393182 -10.0268);
       --color-gray-700: lab(27.1134% -.956401 -12.3224);
     }
   }
@@ -458,8 +474,16 @@
 @layer components;
 
 @layer utilities {
+  .absolute {
+    position: absolute;
+  }
+
   .fixed {
     position: fixed;
+  }
+
+  .relative {
+    position: relative;
   }
 
   .inset-0 {
@@ -468,6 +492,26 @@
 
   .z-50 {
     z-index: 50;
+  }
+
+  .m-4 {
+    margin: calc(var(--spacing) * 4);
+  }
+
+  .m-10 {
+    margin: calc(var(--spacing) * 10);
+  }
+
+  .m-30 {
+    margin: calc(var(--spacing) * 30);
+  }
+
+  .m-50 {
+    margin: calc(var(--spacing) * 50);
+  }
+
+  .my-50 {
+    margin-block: calc(var(--spacing) * 50);
   }
 
   .mt-1 {
@@ -506,6 +550,10 @@
     height: calc(var(--spacing) * 70);
   }
 
+  .h-\[200px\] {
+    height: 200px;
+  }
+
   .h-screen {
     height: 100vh;
   }
@@ -530,12 +578,24 @@
     width: 90%;
   }
 
-  .w-\[100\%\], .w-full {
+  .w-\[100\%\] {
+    width: 100%;
+  }
+
+  .w-\[200px\] {
+    width: 200px;
+  }
+
+  .w-full {
     width: 100%;
   }
 
   .max-w-150 {
     max-width: calc(var(--spacing) * 150);
+  }
+
+  .max-w-250 {
+    max-width: calc(var(--spacing) * 250);
   }
 
   .max-w-350 {
@@ -838,9 +898,19 @@
     line-height: var(--tw-leading, var(--text-sm--line-height));
   }
 
+  .text-xl {
+    font-size: var(--text-xl);
+    line-height: var(--tw-leading, var(--text-xl--line-height));
+  }
+
   .text-xs {
     font-size: var(--text-xs);
     line-height: var(--tw-leading, var(--text-xs--line-height));
+  }
+
+  .font-bold {
+    --tw-font-weight: var(--font-weight-bold);
+    font-weight: var(--font-weight-bold);
   }
 
   .font-semibold {
@@ -862,6 +932,10 @@
 
   .text-gray-400 {
     color: var(--color-gray-400);
+  }
+
+  .text-gray-500 {
+    color: var(--color-gray-500);
   }
 
   .text-green-500 {
@@ -898,6 +972,11 @@
 
   .italic {
     font-style: italic;
+  }
+
+  .ordinal {
+    --tw-ordinal: ordinal;
+    font-variant-numeric: var(--tw-ordinal, ) var(--tw-slashed-zero, ) var(--tw-numeric-figure, ) var(--tw-numeric-spacing, ) var(--tw-numeric-fraction, );
   }
 
   .underline {
@@ -1015,6 +1094,31 @@ body {
 }
 
 @property --tw-font-weight {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-ordinal {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-slashed-zero {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-numeric-figure {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-numeric-spacing {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-numeric-fraction {
   syntax: "*";
   inherits: false
 }
