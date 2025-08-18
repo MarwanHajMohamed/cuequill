@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 7, "column": 0}, "map": {"version":3,"sources":["file:///Users/marwan/Documents/GitHub/mindovermarket/src/app/providers.tsx"],"sourcesContent":["\"use client\";\n\nimport { QueryClient, QueryClientProvider } from \"@tanstack/react-query\";\nimport { ReactNode, useState } from \"react\";\n\nexport default function Providers({ children }: { children: ReactNode }) {\n  const [queryClient] = useState(() => new QueryClient());\n\n  return (\n    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>\n  );\n}\n"],"names":[],"mappings":";;;;AAEA;AAAA;AACA;;;AAHA;;;AAKe,SAAS,UAAU,KAAqC;QAArC,EAAE,QAAQ,EAA2B,GAArC;;IAChC,MAAM,CAAC,YAAY,GAAG,CAAA,GAAA,6JAAA,CAAA,WAAQ,AAAD;8BAAE,IAAM,IAAI,gLAAA,CAAA,cAAW;;IAEpD,qBACE,6LAAC,yLAAA,CAAA,sBAAmB;QAAC,QAAQ;kBAAc;;;;;;AAE/C;GANwB;KAAA","debugId":null}}]
+}

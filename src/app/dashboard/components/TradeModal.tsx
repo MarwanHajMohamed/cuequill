@@ -43,7 +43,7 @@ export default function TradeModal({ date, onClose, onSave }: TradeModalProps) {
     null
   );
 
-  const handleSave = async () => {
+  const handleSave = () => {
     const formattedDate = format(date, "yyyy-MM-dd");
 
     const tradeData = {
@@ -59,33 +59,14 @@ export default function TradeModal({ date, onClose, onSave }: TradeModalProps) {
       option: selectedOption,
       userID: "68935cd4dd45fa2028f00caa",
       strategy,
-      ...(type === "win" || type === "loss"
-        ? {
-            closingSpotPrice,
-            closingContractPrice,
-          }
-        : {}),
+      closingSpotPrice:
+        type === "win" || type === "loss" ? closingSpotPrice : 0,
+      closingContractPrice:
+        type === "win" || type === "loss" ? closingContractPrice : 0,
+      status: type,
     };
 
-    try {
-      const response = await fetch("/api/trades", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(tradeData),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to save trade");
-      }
-
-      console.log("Trade saved successfully");
-      onSave(tradeData);
-      onClose();
-    } catch (error) {
-      console.error("Error saving trade:", error);
-    }
+    onSave(tradeData);
   };
 
   return (
@@ -188,7 +169,6 @@ export default function TradeModal({ date, onClose, onSave }: TradeModalProps) {
               name="dateBought"
               type="date"
               value={dateBought}
-              disabled={date && true}
               onChange={(e) => setDateBought(e.target.value)}
               className="w-full p-2 text-white bg-[#1A1A1D] rounded disabled:opacity-25"
             />

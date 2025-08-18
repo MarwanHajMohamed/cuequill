@@ -43,7 +43,7 @@ export default function Time() {
   const marketOpen = isWeekday && isAfterOpen && isBeforeClose;
 
   return (
-    <div className="flex flex-row justify-between h-70 pl-10 pr-10 mt-30 mb-5">
+    <div className="flex flex-row justify-between h-70 pl-10 pr-10 mt-30 mb-5 w-[100%] max-w-400">
       <div className="flex flex-col justify-between">
         <div className="flex flex-col text-5xl">
           {currentTime.getHours() < 13
