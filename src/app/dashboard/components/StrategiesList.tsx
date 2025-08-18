@@ -6,11 +6,35 @@ import React from "react";
 export default function StrategiesList({ userId }: { userId: string }) {
   const { data: trades, isLoading, isError } = useTrades(userId);
 
-  if (isLoading) return <div className="text-white">Loading trades...</div>;
-  if (isError) return <div className="text-red-500">Error loading trades</div>;
+  if (isLoading)
+    return (
+      <div className="text-[#5B5B5B] p-6 space-y-4 w-[100%] max-w-150">
+        <h2 className="font-semibold text-white">Most used strategies:</h2>
+        <ul className="bg-[#16151C] border border-white/10 rounded-lg p-4 min-h-44">
+          <li>Loading strategies...</li>
+        </ul>
+      </div>
+    );
+
+  if (isError)
+    return (
+      <div className="text-red-500 p-6 space-y-4 w-[100%] max-w-150">
+        <h2 className="font-semibold text-white">Most used strategies:</h2>
+        <ul className="bg-[#16151C] border border-white/10 rounded-lg p-4 min-h-44">
+          <li>Error loading strategies</li>
+        </ul>
+      </div>
+    );
 
   if (!trades || trades.length === 0)
-    return <div className="text-gray-400">No trades found.</div>;
+    return (
+      <div className="text-[#5B5B5B] p-6 space-y-4 w-[100%] max-w-150">
+        <h2 className="font-semibold text-white">Most used strategies:</h2>
+        <ul className="bg-[#16151C] border border-white/10 rounded-lg p-4 min-h-44">
+          <li>No strategies found</li>
+        </ul>
+      </div>
+    );
 
   const strategyCounts: Record<string, number> = {};
   trades.forEach((trade) => {

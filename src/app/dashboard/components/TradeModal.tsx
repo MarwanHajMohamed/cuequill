@@ -3,14 +3,14 @@
 import React, { useState } from "react";
 import { format } from "date-fns";
 
-type TradeEventType = "win" | "loss" | "pending";
+type TradeEventType = "WIN" | "LOSS" | "OPEN";
 
 type TradeModalProps = {
   date: Date;
   onClose: () => void;
   onSave: (trade: {
     date: string;
-    type: TradeEventType;
+    status: TradeEventType;
     symbol?: string;
     spotPrice?: number;
     contractPrice?: number;
@@ -35,7 +35,7 @@ export default function TradeModal({ date, onClose, onSave }: TradeModalProps) {
   const [dateExpiry, setDateExpiry] = useState(
     date ? format(date, "yyyy-MM-dd") : ""
   );
-  const [type, setType] = useState<TradeEventType>("pending");
+  const [status, setStatus] = useState<TradeEventType>("OPEN");
   const [strategy, setStrategy] = useState("");
   const [closingSpotPrice, setClosingSpotPrice] = useState<number>();
   const [closingContractPrice, setClosingContractPrice] = useState<number>();
@@ -48,7 +48,7 @@ export default function TradeModal({ date, onClose, onSave }: TradeModalProps) {
 
     const tradeData = {
       date: formattedDate,
-      type,
+      status,
       symbol,
       spotPrice,
       contractPrice,
@@ -60,10 +60,9 @@ export default function TradeModal({ date, onClose, onSave }: TradeModalProps) {
       userID: "68935cd4dd45fa2028f00caa",
       strategy,
       closingSpotPrice:
-        type === "win" || type === "loss" ? closingSpotPrice : 0,
+        status === "WIN" || status === "LOSS" ? closingSpotPrice : 0,
       closingContractPrice:
-        type === "win" || type === "loss" ? closingContractPrice : 0,
-      status: type,
+        status === "WIN" || status === "LOSS" ? closingContractPrice : 0,
     };
 
     onSave(tradeData);
@@ -197,16 +196,16 @@ export default function TradeModal({ date, onClose, onSave }: TradeModalProps) {
         />
 
         <select
-          value={type}
-          onChange={(e) => setType(e.target.value as TradeEventType)}
+          value={status}
+          onChange={(e) => setStatus(e.target.value as TradeEventType)}
           className="w-full p-2 bg-[#2b2b2f] text-white rounded"
         >
-          <option value="pending">Pending</option>
-          <option value="win">Win</option>
-          <option value="loss">Loss</option>
+          <option value="OPEN">Open</option>
+          <option value="WIN">Win</option>
+          <option value="LOSS">Loss</option>
         </select>
 
-        {(type === "win" || type === "loss") && (
+        {(status === "WIN" || status === "LOSS") && (
           <div className="flex gap-2 mb-4">
             <div>
               <label htmlFor="closingSpotPrice">Closing Spot Price</label>

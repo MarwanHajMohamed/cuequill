@@ -12,8 +12,24 @@ export default function TradeList({ userId }: { userId: string }) {
 
   const today = new Date();
 
-  if (isLoading) return <div className="text-white">Loading trades...</div>;
-  if (isError) return <div className="text-red-500">Error loading trades</div>;
+  if (isLoading)
+    return (
+      <div className="text-[#5B5B5B] p-6 space-y-4 w-[100%] max-w-150">
+        <h2 className="font-semibold text-white">Trades:</h2>
+        <ul className="bg-[#16151C] border border-white/10 rounded-lg p-4 min-h-44">
+          <li>Loading trades...</li>
+        </ul>
+      </div>
+    );
+  if (isError)
+    return (
+      <div className="text-red-500 p-6 space-y-4 w-[100%] max-w-150">
+        <h2 className="font-semibold text-white">Trades:</h2>
+        <ul className="bg-[#16151C] border border-white/10 rounded-lg p-4 min-h-44">
+          <li>Error loading trades</li>
+        </ul>
+      </div>
+    );
 
   const router = useRouter();
 
@@ -25,10 +41,7 @@ export default function TradeList({ userId }: { userId: string }) {
         <h2 className="font-semibold">Trades:</h2>
         <ul className="bg-[#16151C] border border-white/10 rounded-lg pl-4 min-h-44">
           {!trades || trades.length === 0 ? (
-            <li>
-              You have not made any trades yet. Press the plus button to make a
-              trade.
-            </li>
+            <li className="text-[#5B5B5B] py-4">No trades found</li>
           ) : (
             [...trades]
               .sort(

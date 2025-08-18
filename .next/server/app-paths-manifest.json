@@ -1,10 +1,6 @@
 {
-  "/Trades/page": "app/Trades/page.js",
-  "/_not-found/page": "app/_not-found/page.js",
   "/api/trades/route": "app/api/trades/route.js",
   "/dashboard/page": "app/dashboard/page.js",
   "/favicon.ico/route": "app/favicon.ico/route.js",
-  "/page": "app/page.js",
-  "/trades/[userId]/page": "app/trades/[userId]/page.js",
-  "/trades/page": "app/trades/page.js"
+  "/trades/[userId]/page": "app/trades/[userId]/page.js"
 }

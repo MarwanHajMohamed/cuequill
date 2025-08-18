@@ -9,26 +9,26 @@ import TradeModal from "./TradeModal";
 import { useTrades } from "@/hooks/useTrades";
 import { useQueryClient } from "@tanstack/react-query";
 
-type TradeEventType = "win" | "loss" | "pending" | "today";
+type TradeEventType = "WIN" | "LOSS" | "OPEN" | "TODAY";
 
 type TradeEvent = {
   date: string;
   label?: string;
-  type: TradeEventType;
+  status: TradeEventType;
 };
 
 const now = new Date();
 const today = now.toISOString().split("T")[0];
 
-const getColor = (type: TradeEventType) => {
-  switch (type) {
-    case "today":
+const getColor = (status: TradeEventType) => {
+  switch (status) {
+    case "TODAY":
       return "bg-blue-500";
-    case "win":
+    case "WIN":
       return "bg-green-500";
-    case "loss":
+    case "LOSS":
       return "bg-red-600";
-    case "pending":
+    case "OPEN":
       return "bg-orange-400";
     default:
       return "";
@@ -48,16 +48,11 @@ export default function TradeCalendar({ userId }: { userId: string }) {
     const baseEvents: TradeEvent[] = trades
       ? trades.map((trade) => ({
           date: trade.dateBought.split("T")[0],
-          type:
-            trade.status === "OPEN"
-              ? "pending"
-              : trade.status === "WIN"
-              ? "win"
-              : "loss",
+          status: trade.status,
         }))
       : [];
 
-    return [{ date: today, type: "today" }, ...baseEvents, ...manualTrades];
+    return [{ date: today, status: "TODAY" }, ...baseEvents, ...manualTrades];
   }, [trades, manualTrades]);
 
   const handleDateClick = (date: Date) => {
@@ -66,10 +61,14 @@ export default function TradeCalendar({ userId }: { userId: string }) {
   };
 
   const handleSaveTrade = async (newTrade: TradeEvent) => {
+    const { status, ...rest } = newTrade;
+
+    if (status === "TODAY") return;
+
     const response = await fetch("/api/trades", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...newTrade, userId }),
+      body: JSON.stringify({ ...rest, status, userId }),
     });
 
     if (!response.ok) {
@@ -92,7 +91,7 @@ export default function TradeCalendar({ userId }: { userId: string }) {
           {eventsForDay.map((event, idx) => (
             <div
               key={idx}
-              className={`w-2 h-2 rounded-full ${getColor(event.type)}`}
+              className={`w-2 h-2 rounded-full ${getColor(event.status)}`}
               title={event.label}
             />
           ))}
