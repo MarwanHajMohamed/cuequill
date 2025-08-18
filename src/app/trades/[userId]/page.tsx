@@ -67,7 +67,11 @@ export default function page({
               </td>
               <td
                 className={`px-4 py-1 whitespace-nowrap w-full ${
-                  trade.status === "OPEN" ? "text-green-500" : "text-red-500"
+                  trade.status === "OPEN"
+                    ? "text-blue-500"
+                    : trade.status === "WIN"
+                    ? "text-green-500"
+                    : "text-red-500"
                 }`}
               >
                 {trade.status.slice(0, 1) +

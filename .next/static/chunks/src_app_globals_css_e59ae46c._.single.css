@@ -856,6 +856,10 @@
     color: #5b5b5b;
   }
 
+  .text-blue-500 {
+    color: var(--color-blue-500);
+  }
+
   .text-gray-400 {
     color: var(--color-gray-400);
   }
