@@ -11,10 +11,10 @@ export default function TradeCharts({ userId }: { userId: string }) {
   if (isLoading) return <div>Loading trades...</div>;
   if (isError) return <div>Error loading trades</div>;
   if (!trades || trades.length === 0)
-    return <div>You have made 0 trades so far.</div>;
+    return <div className="my-50 mx-10">You have made 0 trades so far.</div>;
 
   return (
-    <div className="flex justify-between w-[100%] max-w-250 items-center my-50">
+    <div className="flex justify-between w-[100%] max-w-250 items-center my-50 mx-10">
       <div className="w-[100%]">
         <Pie data={trades} />
       </div>

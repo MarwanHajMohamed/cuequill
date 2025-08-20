@@ -17,7 +17,7 @@ export default function Page() {
       </div>
       <div className="w-[100%] flex flex-col items-center">
         <TradeCharts userId={userId} />
-        <Portfolio />
+        {/* <Portfolio /> */}
       </div>
     </div>
   );

@@ -20,6 +20,7 @@ type TradeModalProps = {
     dateExpiry?: string;
     closingSpotPrice?: number;
     closingContractPrice?: number;
+    profitLoss?: number;
   }) => void;
 };
 
@@ -42,6 +43,7 @@ export default function TradeModal({ date, onClose, onSave }: TradeModalProps) {
   const [selectedOption, setSelectedOption] = useState<"CALL" | "PUT" | null>(
     null
   );
+  const [profitLoss, setProfitLoss] = useState<number>();
 
   const handleSave = () => {
     const formattedDate = format(date, "yyyy-MM-dd");
@@ -63,6 +65,7 @@ export default function TradeModal({ date, onClose, onSave }: TradeModalProps) {
         status === "WIN" || status === "LOSS" ? closingSpotPrice : 0,
       closingContractPrice:
         status === "WIN" || status === "LOSS" ? closingContractPrice : 0,
+      profitLoss: status === "WIN" || status === "LOSS" ? profitLoss : 0,
     };
 
     onSave(tradeData);
@@ -206,9 +209,11 @@ export default function TradeModal({ date, onClose, onSave }: TradeModalProps) {
         </select>
 
         {(status === "WIN" || status === "LOSS") && (
-          <div className="flex gap-2 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label htmlFor="closingSpotPrice">Closing Spot Price</label>
+              <label htmlFor="closingSpotPrice" className="text-sm">
+                Closing Spot
+              </label>
               <input
                 name="closingSpotPrice"
                 type="number"
@@ -221,8 +226,8 @@ export default function TradeModal({ date, onClose, onSave }: TradeModalProps) {
               />
             </div>
             <div>
-              <label htmlFor="closingContractPrice">
-                Closing Contract Price
+              <label htmlFor="closingContractPrice" className="text-sm">
+                Closing Contract
               </label>
               <input
                 name="closingContractPrice"
@@ -232,6 +237,19 @@ export default function TradeModal({ date, onClose, onSave }: TradeModalProps) {
                   setClosingContractPrice(parseFloat(e.target.value))
                 }
                 placeholder="Closing Contract"
+                className="w-full p-2 text-white bg-[#1A1A1D] rounded"
+              />
+            </div>
+            <div>
+              <label htmlFor="profitLoss" className="text-sm">
+                P/L
+              </label>
+              <input
+                name="profitLoss"
+                type="number"
+                value={profitLoss}
+                onChange={(e) => setProfitLoss(parseFloat(e.target.value))}
+                placeholder="P/L"
                 className="w-full p-2 text-white bg-[#1A1A1D] rounded"
               />
             </div>

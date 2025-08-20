@@ -14,6 +14,7 @@ export type Trade = {
   strike: string;
   closingSpotPrice: string;
   closingContractPrice: string;
+  profitLoss: string;
   notes: string;
 };
 

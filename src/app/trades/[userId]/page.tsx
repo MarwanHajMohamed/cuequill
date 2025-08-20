@@ -36,6 +36,10 @@ export default function page({
     "Notes",
   ];
 
+  const calcChange = (newPrice: number, oldPrice: number) => {
+    return (((newPrice - oldPrice) / oldPrice) * 100).toFixed(0);
+  };
+
   return (
     <div className="overflow-x-auto p-10">
       <table className="border-collapse table-auto min-w-full">
@@ -78,10 +82,43 @@ export default function page({
                   trade.status.slice(1, trade.status.length).toLowerCase()}
               </td>
               <td className={`px-4 py-1 whitespace-nowrap w-full`}>
-                {trade.status === "OPEN" ? "-" : trade.status}
+                {trade.status === "OPEN" ? (
+                  "-"
+                ) : (
+                  <span
+                    className={
+                      Number(trade.profitLoss) > 0
+                        ? "text-green-500"
+                        : "text-red-500"
+                    }
+                  >
+                    ${trade.profitLoss}
+                  </span>
+                )}
               </td>
               <td className={`px-4 py-1 whitespace-nowrap w-full`}>
-                {trade.status === "OPEN" ? "-" : trade.status}
+                {trade.status === "OPEN" ? (
+                  "-"
+                ) : (
+                  <span
+                    className={
+                      Number(
+                        calcChange(
+                          Number(trade.closingContractPrice),
+                          Number(trade.contractPrice)
+                        )
+                      ) > 0
+                        ? "text-green-500"
+                        : "text-red-500"
+                    }
+                  >
+                    {calcChange(
+                      Number(trade.closingContractPrice),
+                      Number(trade.contractPrice)
+                    )}
+                    %
+                  </span>
+                )}
               </td>
               <td className={`px-4 py-1 whitespace-nowrap w-full`}>
                 {trade.spotPrice}

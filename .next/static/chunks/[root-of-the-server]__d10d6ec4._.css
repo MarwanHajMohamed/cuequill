@@ -632,6 +632,10 @@
     margin: calc(var(--spacing) * 50);
   }
 
+  .mx-10 {
+    margin-inline: calc(var(--spacing) * 10);
+  }
+
   .my-50 {
     margin-block: calc(var(--spacing) * 50);
   }
@@ -696,6 +700,10 @@
     width: calc(var(--spacing) * 6);
   }
 
+  .w-200 {
+    width: calc(var(--spacing) * 200);
+  }
+
   .w-\[90\%\] {
     width: 90%;
   }
@@ -746,6 +754,10 @@
 
   .cursor-pointer {
     cursor: pointer;
+  }
+
+  .grid-cols-1 {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
   }
 
   .grid-cols-2 {
@@ -830,7 +842,7 @@
     border-radius: var(--radius-xl);
   }
 
-  .border {
+  .border, .border-1 {
     border-style: var(--tw-border-style);
     border-width: 1px;
   }
