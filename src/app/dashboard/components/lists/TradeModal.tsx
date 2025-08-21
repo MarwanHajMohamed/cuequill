@@ -12,40 +12,121 @@ type TradeModalProps = {
     date: string;
     status: TradeEventType;
     symbol?: string;
-    spotPrice?: number;
-    contractPrice?: number;
-    qty?: number;
-    strike?: number;
+    spotPrice?: number | null;
+    contractPrice?: number | null;
+    qty?: number | null;
+    strike?: number | null;
     dateBought?: string;
     dateExpiry?: string;
-    closingSpotPrice?: number;
-    closingContractPrice?: number;
-    profitLoss?: number;
+    closingSpotPrice?: number | null;
+    closingContractPrice?: number | null;
+    profitLoss?: number | null;
+    notes?: string;
   }) => void;
 };
 
+type InputProps = React.InputHTMLAttributes<HTMLInputElement> & {
+  label?: string;
+};
+
+function FormInput({ label, name, placeholder, ...props }: InputProps) {
+  return (
+    <div>
+      {label && (
+        <label htmlFor={name} className="block text-sm mb-1">
+          {label}
+        </label>
+      )}
+      <input
+        id={name}
+        name={name}
+        placeholder={placeholder}
+        {...props}
+        className={`w-full p-2 text-white bg-[#1A1A1D] rounded ${
+          props.className || ""
+        }`}
+      />
+    </div>
+  );
+}
+
 export default function TradeModal({ date, onClose, onSave }: TradeModalProps) {
-  const [symbol, setSymbol] = useState("");
-  const [spotPrice, setSpotPrice] = useState<number>();
-  const [contractPrice, setContractPrice] = useState<number>();
-  const [qty, setQty] = useState<number>();
-  const [strike, setStrike] = useState<number>();
-  const [dateBought, setDateBought] = useState(
+  const [symbol, setSymbol] = useState<string>("");
+  const [spotPrice, setSpotPrice] = useState<number | null>(null);
+  const [contractPrice, setContractPrice] = useState<number | null>(null);
+  const [qty, setQty] = useState<number | null>(null);
+  const [strike, setStrike] = useState<number | null>(null);
+  const [dateBought, setDateBought] = useState<string>(
     date ? format(date, "yyyy-MM-dd") : ""
   );
-  const [dateExpiry, setDateExpiry] = useState(
+  const [dateExpiry, setDateExpiry] = useState<string>(
     date ? format(date, "yyyy-MM-dd") : ""
   );
   const [status, setStatus] = useState<TradeEventType>("OPEN");
-  const [strategy, setStrategy] = useState("");
-  const [closingSpotPrice, setClosingSpotPrice] = useState<number>();
-  const [closingContractPrice, setClosingContractPrice] = useState<number>();
+  const [strategy, setStrategy] = useState<string>("");
+  const [closingSpotPrice, setClosingSpotPrice] = useState<number | null>(null);
+  const [closingContractPrice, setClosingContractPrice] = useState<
+    number | null
+  >(null);
   const [selectedOption, setSelectedOption] = useState<"CALL" | "PUT" | null>(
     null
   );
-  const [profitLoss, setProfitLoss] = useState<number>();
+  const [profitLoss, setProfitLoss] = useState<number | null>(null);
+  const [notes, setNotes] = useState<string>("");
+  const [errorMessage, setErrorMessage] = useState<string>("");
+
+  const validate = (): string => {
+    if (selectedOption === null) {
+      return "Select an option";
+    } else if (symbol === "") {
+      return "Enter a symbol";
+    } else if (spotPrice === null || Number.isNaN(spotPrice)) {
+      return "Fill out the spot price";
+    } else if (contractPrice === null || Number.isNaN(contractPrice)) {
+      return "Fill out the contract price";
+    } else if (qty === null || Number.isNaN(qty)) {
+      return "Fill out the quantity";
+    } else if (strike === null || Number.isNaN(strike)) {
+      return "Fill out the strike";
+    } else if (dateBought === "") {
+      return "Fill out the buy date";
+    } else if (dateExpiry === "") {
+      return "Fill out the expiry date";
+    } else if (strategy === "") {
+      return "Fill out the strategy";
+    } else if (
+      (status === "WIN" && closingSpotPrice === null) ||
+      (status === "LOSS" && closingSpotPrice === null) ||
+      (status === "WIN" && Number.isNaN(closingSpotPrice)) ||
+      (status === "LOSS" && Number.isNaN(closingSpotPrice))
+    ) {
+      return "Fill out the closing spot price";
+    } else if (
+      (status === "WIN" && closingContractPrice === null) ||
+      (status === "LOSS" && closingContractPrice === null) ||
+      (status === "WIN" && Number.isNaN(closingContractPrice)) ||
+      (status === "LOSS" && Number.isNaN(closingContractPrice))
+    ) {
+      return "Fill out the closing contract price";
+    } else if (
+      (status === "WIN" && profitLoss === null) ||
+      (status === "LOSS" && profitLoss === null) ||
+      (status === "WIN" && Number.isNaN(profitLoss)) ||
+      (status === "LOSS" && Number.isNaN(profitLoss))
+    ) {
+      return "Fill out the P/L";
+    } else {
+      return "";
+    }
+  };
 
   const handleSave = () => {
+    const error: string = validate();
+    if (error) {
+      setErrorMessage(error);
+      return;
+    }
+
     const formattedDate = format(date, "yyyy-MM-dd");
 
     const tradeData = {
@@ -66,6 +147,7 @@ export default function TradeModal({ date, onClose, onSave }: TradeModalProps) {
       closingContractPrice:
         status === "WIN" || status === "LOSS" ? closingContractPrice : 0,
       profitLoss: status === "WIN" || status === "LOSS" ? profitLoss : 0,
+      notes,
     };
 
     onSave(tradeData);
@@ -73,10 +155,20 @@ export default function TradeModal({ date, onClose, onSave }: TradeModalProps) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="flex flex-col gap-4 bg-[#0F0F17] p-6 rounded-xl w-[90%] max-w-lg text-white">
+      <div className="relative flex flex-col gap-4 bg-[#0F0F17] p-6 rounded-xl w-[90%] max-w-lg text-white">
+        <div
+          className={`absolute top-[-40px] left-0 w-[100%] border-1 border-red-500/50 text-red-500 text-center p-1 rounded bg-red-700/10 ${
+            errorMessage === "" ? "hidden" : "shake"
+          }`}
+        >
+          {errorMessage}
+        </div>
         <div className="flex gap-4">
           <button
-            onClick={() => setSelectedOption("CALL")}
+            onClick={() => {
+              setSelectedOption("CALL");
+              setErrorMessage("");
+            }}
             className={`w-1/2 cursor-pointer border rounded py-1 transition duration-100 ease-in-out
           ${
             selectedOption === "CALL"
@@ -89,7 +181,10 @@ export default function TradeModal({ date, onClose, onSave }: TradeModalProps) {
           </button>
 
           <button
-            onClick={() => setSelectedOption("PUT")}
+            onClick={() => {
+              setSelectedOption("PUT");
+              setErrorMessage("");
+            }}
             className={`w-1/2 cursor-pointer border rounded py-1 transition duration-100 ease-in-out
           ${
             selectedOption === "PUT"
@@ -105,87 +200,90 @@ export default function TradeModal({ date, onClose, onSave }: TradeModalProps) {
         <input
           type="text"
           value={symbol}
-          onChange={(e) => setSymbol(e.target.value)}
+          onChange={(e) => {
+            setSymbol(e.target.value);
+            setErrorMessage("");
+          }}
           placeholder="Symbol"
           className="w-full p-2 text-white bg-[#1A1A1D] rounded"
         />
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <div>
-            <label htmlFor="spotPrice" className="block text-sm">
-              Spot Price
-            </label>
-            <input
+            <FormInput
+              label="Spot Price"
               name="spotPrice"
-              type="number"
-              value={spotPrice}
-              onChange={(e) => setSpotPrice(parseFloat(e.target.value))}
               placeholder="Spot"
-              className="w-full p-2 text-white bg-[#1A1A1D] rounded"
+              type="number"
+              value={spotPrice ?? ""}
+              onChange={(e) => {
+                setSpotPrice(parseFloat(e.target.value));
+                setErrorMessage("");
+              }}
             />
           </div>
           <div>
-            <label htmlFor="contractPrice" className="block text-sm">
-              Contract Price
-            </label>
-            <input
+            <FormInput
+              label="Contract Price"
               name="contractPrice"
-              type="number"
-              value={contractPrice}
-              onChange={(e) => setContractPrice(parseFloat(e.target.value))}
               placeholder="Contract"
-              className="w-full p-2 text-white bg-[#1A1A1D] rounded"
+              type="number"
+              value={contractPrice ?? ""}
+              onChange={(e) => {
+                setContractPrice(parseFloat(e.target.value));
+                setErrorMessage("");
+              }}
             />
           </div>
           <div>
-            <label htmlFor="qty" className="block text-sm">
-              Qty
-            </label>
-            <input
+            <FormInput
+              label="Qty"
               name="qty"
-              type="number"
-              value={qty}
-              onChange={(e) => setQty(parseFloat(e.target.value))}
               placeholder="Qty"
-              className="w-full p-2 text-white bg-[#1A1A1D] rounded"
-            />
-          </div>
-          <div>
-            <label htmlFor="strike" className="block text-sm">
-              Strike
-            </label>
-            <input
-              name="strike"
               type="number"
-              value={strike}
-              onChange={(e) => setStrike(parseFloat(e.target.value))}
-              placeholder="Strike"
-              className="w-full p-2 text-white bg-[#1A1A1D] rounded"
+              value={qty ?? ""}
+              onChange={(e) => {
+                setQty(parseFloat(e.target.value));
+                setErrorMessage("");
+              }}
             />
           </div>
           <div>
-            <label htmlFor="dateBought" className="block text-sm">
-              Date Bought
-            </label>
-            <input
+            <FormInput
+              label="Strike"
+              name="strike"
+              placeholder="Strike"
+              type="number"
+              value={strike ?? ""}
+              onChange={(e) => {
+                setStrike(parseFloat(e.target.value));
+                setErrorMessage("");
+              }}
+            />
+          </div>
+          <div>
+            <FormInput
+              label="Date Bought"
               name="dateBought"
               type="date"
-              value={dateBought}
-              onChange={(e) => setDateBought(e.target.value)}
-              className="w-full p-2 text-white bg-[#1A1A1D] rounded disabled:opacity-25"
+              value={dateBought ?? ""}
+              onChange={(e) => {
+                setDateBought(e.target.value);
+                setErrorMessage("");
+              }}
             />
           </div>
           <div>
-            <label htmlFor="dateExpiry" className="block text-sm">
-              Expiry Date
-            </label>
-            <input
-              name="dateExpiry"
+            <FormInput
+              label="Expiry Date"
+              name="expiryDate"
               type="date"
+              value={dateExpiry ?? ""}
+              onChange={(e) => {
+                setDateExpiry(e.target.value);
+                setErrorMessage("");
+              }}
               min={dateBought}
-              value={dateExpiry}
-              onChange={(e) => setDateExpiry(e.target.value)}
-              className="w-full p-2 text-white bg-[#1A1A1D] rounded"
             />
           </div>
         </div>
@@ -193,14 +291,20 @@ export default function TradeModal({ date, onClose, onSave }: TradeModalProps) {
         <input
           type="text"
           value={strategy}
-          onChange={(e) => setStrategy(e.target.value)}
+          onChange={(e) => {
+            setStrategy(e.target.value);
+            setErrorMessage("");
+          }}
           placeholder="Strategy"
           className="w-full p-2 text-white bg-[#1A1A1D] rounded"
         />
 
         <select
           value={status}
-          onChange={(e) => setStatus(e.target.value as TradeEventType)}
+          onChange={(e) => {
+            setStatus(e.target.value as TradeEventType);
+            setErrorMessage("");
+          }}
           className="w-full p-2 bg-[#2b2b2f] text-white rounded"
         >
           <option value="OPEN">Open</option>
@@ -217,10 +321,11 @@ export default function TradeModal({ date, onClose, onSave }: TradeModalProps) {
               <input
                 name="closingSpotPrice"
                 type="number"
-                value={closingSpotPrice}
-                onChange={(e) =>
-                  setClosingSpotPrice(parseFloat(e.target.value))
-                }
+                value={closingSpotPrice!}
+                onChange={(e) => {
+                  setClosingSpotPrice(parseFloat(e.target.value));
+                  setErrorMessage("");
+                }}
                 placeholder="Closing Spot"
                 className="w-full p-2 text-white bg-[#1A1A1D] rounded"
               />
@@ -232,10 +337,11 @@ export default function TradeModal({ date, onClose, onSave }: TradeModalProps) {
               <input
                 name="closingContractPrice"
                 type="number"
-                value={closingContractPrice}
-                onChange={(e) =>
-                  setClosingContractPrice(parseFloat(e.target.value))
-                }
+                value={closingContractPrice!}
+                onChange={(e) => {
+                  setClosingContractPrice(parseFloat(e.target.value));
+                  setErrorMessage("");
+                }}
                 placeholder="Closing Contract"
                 className="w-full p-2 text-white bg-[#1A1A1D] rounded"
               />
@@ -247,14 +353,25 @@ export default function TradeModal({ date, onClose, onSave }: TradeModalProps) {
               <input
                 name="profitLoss"
                 type="number"
-                value={profitLoss}
-                onChange={(e) => setProfitLoss(parseFloat(e.target.value))}
+                value={profitLoss!}
+                onChange={(e) => {
+                  setProfitLoss(parseFloat(e.target.value));
+                  setErrorMessage("");
+                }}
                 placeholder="P/L"
                 className="w-full p-2 text-white bg-[#1A1A1D] rounded"
               />
             </div>
           </div>
         )}
+
+        <input
+          type="text"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Notes"
+          className="w-full p-2 text-white bg-[#1A1A1D] rounded"
+        />
 
         <div className="flex justify-end gap-2">
           <button

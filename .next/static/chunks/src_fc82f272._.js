@@ -214,23 +214,91 @@ var _s = __turbopack_context__.k.signature();
 "use client";
 ;
 ;
+function FormInput(param) {
+    let { label, name, placeholder, ...props } = param;
+    return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+        children: [
+            label && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
+                htmlFor: name,
+                className: "block text-sm mb-1",
+                children: label
+            }, void 0, false, {
+                fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
+                lineNumber: 36,
+                columnNumber: 9
+            }, this),
+            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
+                id: name,
+                name: name,
+                placeholder: placeholder,
+                ...props,
+                className: "w-full p-2 text-white bg-[#1A1A1D] rounded ".concat(props.className || "")
+            }, void 0, false, {
+                fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
+                lineNumber: 40,
+                columnNumber: 7
+            }, this)
+        ]
+    }, void 0, true, {
+        fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
+        lineNumber: 34,
+        columnNumber: 5
+    }, this);
+}
+_c = FormInput;
 function TradeModal(param) {
     let { date, onClose, onSave } = param;
     _s();
     const [symbol, setSymbol] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])("");
-    const [spotPrice, setSpotPrice] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])();
-    const [contractPrice, setContractPrice] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])();
-    const [qty, setQty] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])();
-    const [strike, setStrike] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])();
+    const [spotPrice, setSpotPrice] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
+    const [contractPrice, setContractPrice] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
+    const [qty, setQty] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
+    const [strike, setStrike] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
     const [dateBought, setDateBought] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(date ? (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$date$2d$fns$2f$format$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$locals$3e$__["format"])(date, "yyyy-MM-dd") : "");
     const [dateExpiry, setDateExpiry] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(date ? (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$date$2d$fns$2f$format$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$locals$3e$__["format"])(date, "yyyy-MM-dd") : "");
     const [status, setStatus] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])("OPEN");
     const [strategy, setStrategy] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])("");
-    const [closingSpotPrice, setClosingSpotPrice] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])();
-    const [closingContractPrice, setClosingContractPrice] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])();
+    const [closingSpotPrice, setClosingSpotPrice] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
+    const [closingContractPrice, setClosingContractPrice] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
     const [selectedOption, setSelectedOption] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
-    const [profitLoss, setProfitLoss] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])();
+    const [profitLoss, setProfitLoss] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
+    const [notes, setNotes] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])("");
+    const [errorMessage, setErrorMessage] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])("");
+    const validate = ()=>{
+        if (selectedOption === null) {
+            return "Select an option";
+        } else if (symbol === "") {
+            return "Enter a symbol";
+        } else if (spotPrice === null || Number.isNaN(spotPrice)) {
+            return "Fill out the spot price";
+        } else if (contractPrice === null || Number.isNaN(contractPrice)) {
+            return "Fill out the contract price";
+        } else if (qty === null || Number.isNaN(qty)) {
+            return "Fill out the quantity";
+        } else if (strike === null || Number.isNaN(strike)) {
+            return "Fill out the strike";
+        } else if (dateBought === "") {
+            return "Fill out the buy date";
+        } else if (dateExpiry === "") {
+            return "Fill out the expiry date";
+        } else if (strategy === "") {
+            return "Fill out the strategy";
+        } else if (status === "WIN" && closingSpotPrice === null || status === "LOSS" && closingSpotPrice === null || status === "WIN" && Number.isNaN(closingSpotPrice) || status === "LOSS" && Number.isNaN(closingSpotPrice)) {
+            return "Fill out the closing spot price";
+        } else if (status === "WIN" && closingContractPrice === null || status === "LOSS" && closingContractPrice === null || status === "WIN" && Number.isNaN(closingContractPrice) || status === "LOSS" && Number.isNaN(closingContractPrice)) {
+            return "Fill out the closing contract price";
+        } else if (status === "WIN" && profitLoss === null || status === "LOSS" && profitLoss === null || status === "WIN" && Number.isNaN(profitLoss) || status === "LOSS" && Number.isNaN(profitLoss)) {
+            return "Fill out the P/L";
+        } else {
+            return "";
+        }
+    };
     const handleSave = ()=>{
+        const error = validate();
+        if (error) {
+            setErrorMessage(error);
+            return;
+        }
         const formattedDate = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$date$2d$fns$2f$format$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$locals$3e$__["format"])(date, "yyyy-MM-dd");
         const tradeData = {
             date: formattedDate,
@@ -247,249 +315,225 @@ function TradeModal(param) {
             strategy,
             closingSpotPrice: status === "WIN" || status === "LOSS" ? closingSpotPrice : 0,
             closingContractPrice: status === "WIN" || status === "LOSS" ? closingContractPrice : 0,
-            profitLoss: status === "WIN" || status === "LOSS" ? profitLoss : 0
+            profitLoss: status === "WIN" || status === "LOSS" ? profitLoss : 0,
+            notes
         };
         onSave(tradeData);
     };
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
         className: "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50",
         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-            className: "flex flex-col gap-4 bg-[#0F0F17] p-6 rounded-xl w-[90%] max-w-lg text-white",
+            className: "relative flex flex-col gap-4 bg-[#0F0F17] p-6 rounded-xl w-[90%] max-w-lg text-white",
             children: [
+                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                    className: "absolute top-[-40px] left-0 w-[100%] border-1 border-red-500/50 text-red-500 text-center p-1 rounded bg-red-700/10 ".concat(errorMessage === "" ? "hidden" : "shake"),
+                    children: errorMessage
+                }, void 0, false, {
+                    fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
+                    lineNumber: 159,
+                    columnNumber: 9
+                }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                     className: "flex gap-4",
                     children: [
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
-                            onClick: ()=>setSelectedOption("CALL"),
+                            onClick: ()=>{
+                                setSelectedOption("CALL");
+                                setErrorMessage("");
+                            },
                             className: "w-1/2 cursor-pointer border rounded py-1 transition duration-100 ease-in-out\n          ".concat(selectedOption === "CALL" ? "bg-green-700 text-white border-green-700" : "text-green-500 border-green-500 hover:bg-green-700/30", "\n        "),
                             children: "CALL"
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                            lineNumber: 78,
+                            lineNumber: 167,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
-                            onClick: ()=>setSelectedOption("PUT"),
+                            onClick: ()=>{
+                                setSelectedOption("PUT");
+                                setErrorMessage("");
+                            },
                             className: "w-1/2 cursor-pointer border rounded py-1 transition duration-100 ease-in-out\n          ".concat(selectedOption === "PUT" ? "bg-red-700 text-white border-red-700" : "text-red-500 border-red-500 hover:bg-red-700/30", "\n        "),
                             children: "PUT"
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                            lineNumber: 91,
+                            lineNumber: 183,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                    lineNumber: 77,
+                    lineNumber: 166,
                     columnNumber: 9
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
                     type: "text",
                     value: symbol,
-                    onChange: (e)=>setSymbol(e.target.value),
+                    onChange: (e)=>{
+                        setSymbol(e.target.value);
+                        setErrorMessage("");
+                    },
                     placeholder: "Symbol",
                     className: "w-full p-2 text-white bg-[#1A1A1D] rounded"
                 }, void 0, false, {
                     fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                    lineNumber: 105,
+                    lineNumber: 200,
                     columnNumber: 9
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                     className: "grid grid-cols-2 md:grid-cols-3 gap-4",
                     children: [
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                            children: [
-                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
-                                    htmlFor: "spotPrice",
-                                    className: "block text-sm",
-                                    children: "Spot Price"
-                                }, void 0, false, {
-                                    fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                                    lineNumber: 115,
-                                    columnNumber: 13
-                                }, this),
-                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
-                                    name: "spotPrice",
-                                    type: "number",
-                                    value: spotPrice,
-                                    onChange: (e)=>setSpotPrice(parseFloat(e.target.value)),
-                                    placeholder: "Spot",
-                                    className: "w-full p-2 text-white bg-[#1A1A1D] rounded"
-                                }, void 0, false, {
-                                    fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                                    lineNumber: 118,
-                                    columnNumber: 13
-                                }, this)
-                            ]
-                        }, void 0, true, {
+                            children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(FormInput, {
+                                label: "Spot Price",
+                                name: "spotPrice",
+                                placeholder: "Spot",
+                                type: "number",
+                                value: spotPrice !== null && spotPrice !== void 0 ? spotPrice : "",
+                                onChange: (e)=>{
+                                    setSpotPrice(parseFloat(e.target.value));
+                                    setErrorMessage("");
+                                }
+                            }, void 0, false, {
+                                fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
+                                lineNumber: 213,
+                                columnNumber: 13
+                            }, this)
+                        }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                            lineNumber: 114,
+                            lineNumber: 212,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                            children: [
-                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
-                                    htmlFor: "contractPrice",
-                                    className: "block text-sm",
-                                    children: "Contract Price"
-                                }, void 0, false, {
-                                    fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                                    lineNumber: 128,
-                                    columnNumber: 13
-                                }, this),
-                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
-                                    name: "contractPrice",
-                                    type: "number",
-                                    value: contractPrice,
-                                    onChange: (e)=>setContractPrice(parseFloat(e.target.value)),
-                                    placeholder: "Contract",
-                                    className: "w-full p-2 text-white bg-[#1A1A1D] rounded"
-                                }, void 0, false, {
-                                    fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                                    lineNumber: 131,
-                                    columnNumber: 13
-                                }, this)
-                            ]
-                        }, void 0, true, {
+                            children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(FormInput, {
+                                label: "Contract Price",
+                                name: "contractPrice",
+                                placeholder: "Contract",
+                                type: "number",
+                                value: contractPrice !== null && contractPrice !== void 0 ? contractPrice : "",
+                                onChange: (e)=>{
+                                    setContractPrice(parseFloat(e.target.value));
+                                    setErrorMessage("");
+                                }
+                            }, void 0, false, {
+                                fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
+                                lineNumber: 226,
+                                columnNumber: 13
+                            }, this)
+                        }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                            lineNumber: 127,
+                            lineNumber: 225,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                            children: [
-                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
-                                    htmlFor: "qty",
-                                    className: "block text-sm",
-                                    children: "Qty"
-                                }, void 0, false, {
-                                    fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                                    lineNumber: 141,
-                                    columnNumber: 13
-                                }, this),
-                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
-                                    name: "qty",
-                                    type: "number",
-                                    value: qty,
-                                    onChange: (e)=>setQty(parseFloat(e.target.value)),
-                                    placeholder: "Qty",
-                                    className: "w-full p-2 text-white bg-[#1A1A1D] rounded"
-                                }, void 0, false, {
-                                    fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                                    lineNumber: 144,
-                                    columnNumber: 13
-                                }, this)
-                            ]
-                        }, void 0, true, {
+                            children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(FormInput, {
+                                label: "Qty",
+                                name: "qty",
+                                placeholder: "Qty",
+                                type: "number",
+                                value: qty !== null && qty !== void 0 ? qty : "",
+                                onChange: (e)=>{
+                                    setQty(parseFloat(e.target.value));
+                                    setErrorMessage("");
+                                }
+                            }, void 0, false, {
+                                fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
+                                lineNumber: 239,
+                                columnNumber: 13
+                            }, this)
+                        }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                            lineNumber: 140,
+                            lineNumber: 238,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                            children: [
-                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
-                                    htmlFor: "strike",
-                                    className: "block text-sm",
-                                    children: "Strike"
-                                }, void 0, false, {
-                                    fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                                    lineNumber: 154,
-                                    columnNumber: 13
-                                }, this),
-                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
-                                    name: "strike",
-                                    type: "number",
-                                    value: strike,
-                                    onChange: (e)=>setStrike(parseFloat(e.target.value)),
-                                    placeholder: "Strike",
-                                    className: "w-full p-2 text-white bg-[#1A1A1D] rounded"
-                                }, void 0, false, {
-                                    fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                                    lineNumber: 157,
-                                    columnNumber: 13
-                                }, this)
-                            ]
-                        }, void 0, true, {
+                            children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(FormInput, {
+                                label: "Strike",
+                                name: "strike",
+                                placeholder: "Strike",
+                                type: "number",
+                                value: strike !== null && strike !== void 0 ? strike : "",
+                                onChange: (e)=>{
+                                    setStrike(parseFloat(e.target.value));
+                                    setErrorMessage("");
+                                }
+                            }, void 0, false, {
+                                fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
+                                lineNumber: 252,
+                                columnNumber: 13
+                            }, this)
+                        }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                            lineNumber: 153,
+                            lineNumber: 251,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                            children: [
-                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
-                                    htmlFor: "dateBought",
-                                    className: "block text-sm",
-                                    children: "Date Bought"
-                                }, void 0, false, {
-                                    fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                                    lineNumber: 167,
-                                    columnNumber: 13
-                                }, this),
-                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
-                                    name: "dateBought",
-                                    type: "date",
-                                    value: dateBought,
-                                    onChange: (e)=>setDateBought(e.target.value),
-                                    className: "w-full p-2 text-white bg-[#1A1A1D] rounded disabled:opacity-25"
-                                }, void 0, false, {
-                                    fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                                    lineNumber: 170,
-                                    columnNumber: 13
-                                }, this)
-                            ]
-                        }, void 0, true, {
+                            children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(FormInput, {
+                                label: "Date Bought",
+                                name: "dateBought",
+                                type: "date",
+                                value: dateBought !== null && dateBought !== void 0 ? dateBought : "",
+                                onChange: (e)=>{
+                                    setDateBought(e.target.value);
+                                    setErrorMessage("");
+                                }
+                            }, void 0, false, {
+                                fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
+                                lineNumber: 265,
+                                columnNumber: 13
+                            }, this)
+                        }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                            lineNumber: 166,
+                            lineNumber: 264,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                            children: [
-                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
-                                    htmlFor: "dateExpiry",
-                                    className: "block text-sm",
-                                    children: "Expiry Date"
-                                }, void 0, false, {
-                                    fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                                    lineNumber: 179,
-                                    columnNumber: 13
-                                }, this),
-                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
-                                    name: "dateExpiry",
-                                    type: "date",
-                                    min: dateBought,
-                                    value: dateExpiry,
-                                    onChange: (e)=>setDateExpiry(e.target.value),
-                                    className: "w-full p-2 text-white bg-[#1A1A1D] rounded"
-                                }, void 0, false, {
-                                    fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                                    lineNumber: 182,
-                                    columnNumber: 13
-                                }, this)
-                            ]
-                        }, void 0, true, {
+                            children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(FormInput, {
+                                label: "Expiry Date",
+                                name: "expiryDate",
+                                type: "date",
+                                value: dateExpiry !== null && dateExpiry !== void 0 ? dateExpiry : "",
+                                onChange: (e)=>{
+                                    setDateExpiry(e.target.value);
+                                    setErrorMessage("");
+                                },
+                                min: dateBought
+                            }, void 0, false, {
+                                fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
+                                lineNumber: 277,
+                                columnNumber: 13
+                            }, this)
+                        }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                            lineNumber: 178,
+                            lineNumber: 276,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                    lineNumber: 113,
+                    lineNumber: 211,
                     columnNumber: 9
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
                     type: "text",
                     value: strategy,
-                    onChange: (e)=>setStrategy(e.target.value),
+                    onChange: (e)=>{
+                        setStrategy(e.target.value);
+                        setErrorMessage("");
+                    },
                     placeholder: "Strategy",
                     className: "w-full p-2 text-white bg-[#1A1A1D] rounded"
                 }, void 0, false, {
                     fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                    lineNumber: 193,
+                    lineNumber: 291,
                     columnNumber: 9
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("select", {
                     value: status,
-                    onChange: (e)=>setStatus(e.target.value),
+                    onChange: (e)=>{
+                        setStatus(e.target.value);
+                        setErrorMessage("");
+                    },
                     className: "w-full p-2 bg-[#2b2b2f] text-white rounded",
                     children: [
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
@@ -497,7 +541,7 @@ function TradeModal(param) {
                             children: "Open"
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                            lineNumber: 206,
+                            lineNumber: 310,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
@@ -505,7 +549,7 @@ function TradeModal(param) {
                             children: "Win"
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                            lineNumber: 207,
+                            lineNumber: 311,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
@@ -513,13 +557,13 @@ function TradeModal(param) {
                             children: "Loss"
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                            lineNumber: 208,
+                            lineNumber: 312,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                    lineNumber: 201,
+                    lineNumber: 302,
                     columnNumber: 9
                 }, this),
                 (status === "WIN" || status === "LOSS") && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -533,25 +577,28 @@ function TradeModal(param) {
                                     children: "Closing Spot"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                                    lineNumber: 214,
+                                    lineNumber: 318,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
                                     name: "closingSpotPrice",
                                     type: "number",
                                     value: closingSpotPrice,
-                                    onChange: (e)=>setClosingSpotPrice(parseFloat(e.target.value)),
+                                    onChange: (e)=>{
+                                        setClosingSpotPrice(parseFloat(e.target.value));
+                                        setErrorMessage("");
+                                    },
                                     placeholder: "Closing Spot",
                                     className: "w-full p-2 text-white bg-[#1A1A1D] rounded"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                                    lineNumber: 217,
+                                    lineNumber: 321,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                            lineNumber: 213,
+                            lineNumber: 317,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -562,25 +609,28 @@ function TradeModal(param) {
                                     children: "Closing Contract"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                                    lineNumber: 229,
+                                    lineNumber: 334,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
                                     name: "closingContractPrice",
                                     type: "number",
                                     value: closingContractPrice,
-                                    onChange: (e)=>setClosingContractPrice(parseFloat(e.target.value)),
+                                    onChange: (e)=>{
+                                        setClosingContractPrice(parseFloat(e.target.value));
+                                        setErrorMessage("");
+                                    },
                                     placeholder: "Closing Contract",
                                     className: "w-full p-2 text-white bg-[#1A1A1D] rounded"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                                    lineNumber: 232,
+                                    lineNumber: 337,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                            lineNumber: 228,
+                            lineNumber: 333,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -591,32 +641,46 @@ function TradeModal(param) {
                                     children: "P/L"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                                    lineNumber: 244,
+                                    lineNumber: 350,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
                                     name: "profitLoss",
                                     type: "number",
                                     value: profitLoss,
-                                    onChange: (e)=>setProfitLoss(parseFloat(e.target.value)),
+                                    onChange: (e)=>{
+                                        setProfitLoss(parseFloat(e.target.value));
+                                        setErrorMessage("");
+                                    },
                                     placeholder: "P/L",
                                     className: "w-full p-2 text-white bg-[#1A1A1D] rounded"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                                    lineNumber: 247,
+                                    lineNumber: 353,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                            lineNumber: 243,
+                            lineNumber: 349,
                             columnNumber: 13
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                    lineNumber: 212,
+                    lineNumber: 316,
                     columnNumber: 11
+                }, this),
+                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
+                    type: "text",
+                    value: notes,
+                    onChange: (e)=>setNotes(e.target.value),
+                    placeholder: "Notes",
+                    className: "w-full p-2 text-white bg-[#1A1A1D] rounded"
+                }, void 0, false, {
+                    fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
+                    lineNumber: 368,
+                    columnNumber: 9
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                     className: "flex justify-end gap-2",
@@ -627,7 +691,7 @@ function TradeModal(param) {
                             children: "Cancel"
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                            lineNumber: 260,
+                            lineNumber: 377,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -636,31 +700,32 @@ function TradeModal(param) {
                             children: "Save"
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                            lineNumber: 266,
+                            lineNumber: 383,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                    lineNumber: 259,
+                    lineNumber: 376,
                     columnNumber: 9
                 }, this)
             ]
         }, void 0, true, {
             fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-            lineNumber: 76,
+            lineNumber: 158,
             columnNumber: 7
         }, this)
     }, void 0, false, {
         fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-        lineNumber: 75,
+        lineNumber: 157,
         columnNumber: 5
     }, this);
 }
-_s(TradeModal, "dxbpMovv9I0KLtXxTqFq54iWTEI=");
-_c = TradeModal;
-var _c;
-__turbopack_context__.k.register(_c, "TradeModal");
+_s(TradeModal, "mCM9vGbSPGYRq1e9gmDpnS+BVmY=");
+_c1 = TradeModal;
+var _c, _c1;
+__turbopack_context__.k.register(_c, "FormInput");
+__turbopack_context__.k.register(_c1, "TradeModal");
 if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelpers !== null) {
     __turbopack_context__.k.registerExports(module, globalThis.$RefreshHelpers$);
 }
