@@ -162,8 +162,9 @@ function page(param) {
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
                                     className: "px-4 py-1 whitespace-nowrap w-full",
                                     children: trade.status === "OPEN" ? "-" : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                        className: Number(trade.profitLoss) > 0 ? "text-green-500" : "text-red-500",
+                                        className: trade.status === "WIN" ? "text-green-500" : "text-red-500",
                                         children: [
+                                            trade.status === "LOSS" ? "-" : "",
                                             "$",
                                             trade.profitLoss
                                         ]
@@ -187,12 +188,12 @@ function page(param) {
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/trades/[userId]/page.tsx",
-                                        lineNumber: 103,
+                                        lineNumber: 101,
                                         columnNumber: 19
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/trades/[userId]/page.tsx",
-                                    lineNumber: 99,
+                                    lineNumber: 97,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
@@ -200,7 +201,7 @@ function page(param) {
                                     children: trade.spotPrice
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/trades/[userId]/page.tsx",
-                                    lineNumber: 123,
+                                    lineNumber: 121,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
@@ -208,7 +209,7 @@ function page(param) {
                                     children: trade.contractPrice
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/trades/[userId]/page.tsx",
-                                    lineNumber: 126,
+                                    lineNumber: 124,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
@@ -216,7 +217,7 @@ function page(param) {
                                     children: trade.qty
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/trades/[userId]/page.tsx",
-                                    lineNumber: 129,
+                                    lineNumber: 127,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
@@ -224,7 +225,7 @@ function page(param) {
                                     children: trade.strike
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/trades/[userId]/page.tsx",
-                                    lineNumber: 132,
+                                    lineNumber: 130,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
@@ -232,7 +233,7 @@ function page(param) {
                                     children: new Date(trade.dateBought).toLocaleDateString("en-GB")
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/trades/[userId]/page.tsx",
-                                    lineNumber: 135,
+                                    lineNumber: 133,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
@@ -240,7 +241,7 @@ function page(param) {
                                     children: new Date(trade.expiryDate).toLocaleDateString("en-GB")
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/trades/[userId]/page.tsx",
-                                    lineNumber: 138,
+                                    lineNumber: 136,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
@@ -248,7 +249,7 @@ function page(param) {
                                     children: Number(trade.closingSpotPrice) === 0 ? "-" : trade.closingSpotPrice
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/trades/[userId]/page.tsx",
-                                    lineNumber: 141,
+                                    lineNumber: 139,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
@@ -256,7 +257,7 @@ function page(param) {
                                     children: Number(trade.closingContractPrice) === 0 ? "-" : trade.closingContractPrice
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/trades/[userId]/page.tsx",
-                                    lineNumber: 146,
+                                    lineNumber: 144,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
@@ -264,7 +265,7 @@ function page(param) {
                                     children: trade.strategy
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/trades/[userId]/page.tsx",
-                                    lineNumber: 151,
+                                    lineNumber: 149,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
@@ -272,7 +273,7 @@ function page(param) {
                                     children: trade.notes
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/trades/[userId]/page.tsx",
-                                    lineNumber: 154,
+                                    lineNumber: 152,
                                     columnNumber: 15
                                 }, this)
                             ]

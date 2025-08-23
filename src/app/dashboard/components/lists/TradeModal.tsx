@@ -23,6 +23,23 @@ type TradeModalProps = {
     profitLoss?: number | null;
     notes?: string;
   }) => void;
+  initialTrade?: {
+    _id?: string;
+    symbol?: string;
+    spotPrice?: number | null;
+    contractPrice?: number | null;
+    qty?: number | null;
+    strike?: number | null;
+    dateBought?: string;
+    expiryDate?: string;
+    status?: TradeEventType;
+    strategy?: string;
+    closingSpotPrice?: number | null;
+    closingContractPrice?: number | null;
+    profitLoss?: number | null;
+    notes?: string;
+    option?: "CALL" | "PUT" | null;
+  };
 };
 
 type InputProps = React.InputHTMLAttributes<HTMLInputElement> & {
@@ -50,29 +67,63 @@ function FormInput({ label, name, placeholder, ...props }: InputProps) {
   );
 }
 
-export default function TradeModal({ date, onClose, onSave }: TradeModalProps) {
-  const [symbol, setSymbol] = useState<string>("");
-  const [spotPrice, setSpotPrice] = useState<number | null>(null);
-  const [contractPrice, setContractPrice] = useState<number | null>(null);
-  const [qty, setQty] = useState<number | null>(null);
-  const [strike, setStrike] = useState<number | null>(null);
+export default function TradeModal({
+  date,
+  onClose,
+  onSave,
+  initialTrade,
+}: TradeModalProps) {
+  const [symbol, setSymbol] = useState<string>(initialTrade?.symbol ?? "");
+  const [spotPrice, setSpotPrice] = useState<number | null>(
+    initialTrade?.spotPrice ?? null
+  );
+
+  const [contractPrice, setContractPrice] = useState<number | null>(
+    initialTrade?.contractPrice ?? null
+  );
+
+  const [qty, setQty] = useState<number | null>(initialTrade?.qty ?? null);
+  const [strike, setStrike] = useState<number | null>(
+    initialTrade?.strike ?? null
+  );
+
   const [dateBought, setDateBought] = useState<string>(
-    date ? format(date, "yyyy-MM-dd") : ""
+    initialTrade?.dateBought
+      ? format(new Date(initialTrade.dateBought), "yyyy-MM-dd")
+      : format(date, "yyyy-MM-dd")
   );
-  const [dateExpiry, setDateExpiry] = useState<string>(
-    date ? format(date, "yyyy-MM-dd") : ""
+
+  const [expiryDate, setExpiryDate] = useState<string>(
+    initialTrade?.expiryDate
+      ? format(new Date(initialTrade.expiryDate), "yyyy-MM-dd")
+      : format(date, "yyyy-MM-dd")
   );
-  const [status, setStatus] = useState<TradeEventType>("OPEN");
-  const [strategy, setStrategy] = useState<string>("");
-  const [closingSpotPrice, setClosingSpotPrice] = useState<number | null>(null);
+
+  const [status, setStatus] = useState<TradeEventType>(
+    initialTrade?.status ?? "OPEN"
+  );
+
+  const [strategy, setStrategy] = useState<string>(
+    initialTrade?.strategy ?? ""
+  );
+
+  const [closingSpotPrice, setClosingSpotPrice] = useState<number | null>(
+    initialTrade?.closingSpotPrice ?? null
+  );
+
   const [closingContractPrice, setClosingContractPrice] = useState<
     number | null
-  >(null);
+  >(initialTrade?.closingContractPrice ?? null);
+
   const [selectedOption, setSelectedOption] = useState<"CALL" | "PUT" | null>(
-    null
+    initialTrade?.option ?? null
   );
-  const [profitLoss, setProfitLoss] = useState<number | null>(null);
-  const [notes, setNotes] = useState<string>("");
+
+  const [profitLoss, setProfitLoss] = useState<number | null>(
+    initialTrade?.profitLoss ?? null
+  );
+
+  const [notes, setNotes] = useState<string>(initialTrade?.notes ?? "");
   const [errorMessage, setErrorMessage] = useState<string>("");
 
   const validate = (): string => {
@@ -90,7 +141,7 @@ export default function TradeModal({ date, onClose, onSave }: TradeModalProps) {
       return "Fill out the strike";
     } else if (dateBought === "") {
       return "Fill out the buy date";
-    } else if (dateExpiry === "") {
+    } else if (expiryDate === "") {
       return "Fill out the expiry date";
     } else if (strategy === "") {
       return "Fill out the strategy";
@@ -130,6 +181,7 @@ export default function TradeModal({ date, onClose, onSave }: TradeModalProps) {
     const formattedDate = format(date, "yyyy-MM-dd");
 
     const tradeData = {
+      _id: initialTrade?._id,
       date: formattedDate,
       status,
       symbol,
@@ -138,7 +190,7 @@ export default function TradeModal({ date, onClose, onSave }: TradeModalProps) {
       qty,
       strike,
       dateBought,
-      expiryDate: dateExpiry,
+      expiryDate: expiryDate,
       option: selectedOption,
       userID: "68935cd4dd45fa2028f00caa",
       strategy,
@@ -278,9 +330,9 @@ export default function TradeModal({ date, onClose, onSave }: TradeModalProps) {
               label="Expiry Date"
               name="expiryDate"
               type="date"
-              value={dateExpiry ?? ""}
+              value={expiryDate ?? ""}
               onChange={(e) => {
-                setDateExpiry(e.target.value);
+                setExpiryDate(e.target.value);
                 setErrorMessage("");
               }}
               min={dateBought}

@@ -1,6 +1,6 @@
 module.exports = {
 
-"[project]/.next-internal/server/app/api/trades/route/actions.js [app-rsc] (server actions loader, ecmascript)": ((__turbopack_context__) => {
+"[project]/.next-internal/server/app/api/trades/[id]/route/actions.js [app-rsc] (server actions loader, ecmascript)": ((__turbopack_context__) => {
 
 var { m: module, e: exports } = __turbopack_context__;
 {
@@ -185,54 +185,72 @@ const TradeSchema = new __TURBOPACK__imported__module__$5b$externals$5d2f$mongoo
 });
 const __TURBOPACK__default__export__ = __TURBOPACK__imported__module__$5b$externals$5d2f$mongoose__$5b$external$5d$__$28$mongoose$2c$__cjs$29$__["default"].models.Trade || __TURBOPACK__imported__module__$5b$externals$5d2f$mongoose__$5b$external$5d$__$28$mongoose$2c$__cjs$29$__["default"].model('Trade', TradeSchema);
 }),
-"[project]/src/app/api/trades/route.ts [app-route] (ecmascript)": ((__turbopack_context__) => {
+"[project]/src/app/api/trades/[id]/route.ts [app-route] (ecmascript)": ((__turbopack_context__) => {
 "use strict";
 
 __turbopack_context__.s({
+    "DELETE": ()=>DELETE,
     "GET": ()=>GET,
-    "POST": ()=>POST
+    "PATCH": ()=>PATCH
 });
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/server.js [app-route] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/lib/db.ts [app-route] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$models$2f$Trade$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/lib/models/Trade.ts [app-route] (ecmascript)");
-// Get trades for each user
-var __TURBOPACK__imported__module__$5b$externals$5d2f$mongoose__$5b$external$5d$__$28$mongoose$2c$__cjs$29$__ = __turbopack_context__.i("[externals]/mongoose [external] (mongoose, cjs)");
 ;
 ;
 ;
-;
-async function GET(req) {
+async function GET(req, { params }) {
     await (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"])();
-    const userId = req.nextUrl.searchParams.get("userId");
-    try {
-        const trades = userId ? await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$models$2f$Trade$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].find({
-            userID: new __TURBOPACK__imported__module__$5b$externals$5d2f$mongoose__$5b$external$5d$__$28$mongoose$2c$__cjs$29$__["default"].Types.ObjectId(userId)
-        }).sort({
-            dateBought: -1
-        }) : await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$models$2f$Trade$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].find().sort({
-            dateBought: -1
-        });
-        return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json(trades);
-    } catch (err) {
-        console.error("Error fetching trades:", err);
+    const trade = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$models$2f$Trade$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].findById(params.id);
+    if (!trade) {
         return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
-            error: "Failed to fetch trades"
+            error: "Trade not found"
         }, {
-            status: 500
+            status: 404
+        });
+    }
+    return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json(trade);
+}
+async function PATCH(req, { params }) {
+    await (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"])();
+    try {
+        const data = await req.json();
+        const updated = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$models$2f$Trade$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].findByIdAndUpdate(params.id, data, {
+            new: true
+        });
+        if (!updated) {
+            return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
+                error: "Trade not found"
+            }, {
+                status: 404
+            });
+        }
+        return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json(updated);
+    } catch (err) {
+        return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
+            error: "Failed to update trade"
+        }, {
+            status: 400
         });
     }
 }
-async function POST(req) {
+async function DELETE(req, { params }) {
     await (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"])();
     try {
-        const body = await req.json();
-        const trade = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$models$2f$Trade$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].create(body);
-        return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json(trade, {
-            status: 201
+        const deleted = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$models$2f$Trade$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].findByIdAndDelete(params.id);
+        if (!deleted) {
+            return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
+                error: "Trade not found"
+            }, {
+                status: 404
+            });
+        }
+        return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
+            message: "Trade deleted"
         });
     } catch (err) {
         return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
-            error: err.message || "Failed to create trade"
+            error: "Failed to delete trade"
         }, {
             status: 400
         });
@@ -242,4 +260,4 @@ async function POST(req) {
 
 };
 
-//# sourceMappingURL=%5Broot-of-the-server%5D__17729d2a._.js.map
+//# sourceMappingURL=%5Broot-of-the-server%5D__63445ba4._.js.map

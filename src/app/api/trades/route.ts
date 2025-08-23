@@ -34,28 +34,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: err.message || "Failed to create trade" }, { status: 400 });
   }
 }
-
-// Update trade
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-    await connectDB();
-  
-    try {
-      const data = await req.json();
-      const updated = await Trade.findByIdAndUpdate(params.id, data, { new: true });
-      return NextResponse.json(updated);
-    } catch (err) {
-      return NextResponse.json({ error: "Failed to update trade" }, { status: 400 });
-    }
-  }
-
-// Delete trade
-export async function DELETE(_: NextRequest, { params }: { params: { id: string } }) {
-    await connectDB();
-  
-    try {
-      await Trade.findByIdAndDelete(params.id);
-      return NextResponse.json({ message: "Trade deleted" });
-    } catch (err) {
-      return NextResponse.json({ error: "Failed to delete trade" }, { status: 400 });
-    }
-  }

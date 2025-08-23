@@ -9,6 +9,7 @@ import { useQueryClient } from "@tanstack/react-query";
 export default function TradeList({ userId }: { userId: string }) {
   const { data: trades, isLoading, isError } = useTrades(userId);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingTrade, setEditingTrade] = useState<any | null>(null);
 
   const today = new Date();
 
@@ -35,6 +36,28 @@ export default function TradeList({ userId }: { userId: string }) {
 
   const queryClient = useQueryClient();
 
+  const handleSaveTrade = async (trade: any) => {
+    if (trade._id) {
+      // UPDATE EXISTING TRADE
+      await fetch(`/api/trades/${trade._id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(trade),
+      });
+    } else {
+      // CREATE NEW TRADE
+      await fetch("/api/trades", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...trade, userId }),
+      });
+    }
+
+    await queryClient.invalidateQueries({ queryKey: ["trades", userId] });
+    setIsModalOpen(false);
+    setEditingTrade(null);
+  };
+
   return (
     <>
       <div className="text-white p-6 space-y-4 w-[100%] max-w-150">
@@ -53,7 +76,12 @@ export default function TradeList({ userId }: { userId: string }) {
               .map((trade) => (
                 <li
                   key={trade._id}
-                  className="p-3 pl-0 border-b border-white/10 last:border-0"
+                  className="p-3 pl-0 border-b border-white/10 last:border-0 cursor-pointer"
+                  onClick={() => {
+                    setEditingTrade(trade);
+                    setIsModalOpen(true);
+                    console.log(trade.expiryDate);
+                  }}
                 >
                   <div className="flex justify-between items-center">
                     <div className="uppercase text-sm">
@@ -76,7 +104,10 @@ export default function TradeList({ userId }: { userId: string }) {
           <li className="p-2 pr-3 flex justify-end">
             <div
               className="bg-white/10 w-6 text-center rounded-full cursor-pointer"
-              onClick={() => setIsModalOpen(true)}
+              onClick={() => {
+                setEditingTrade(null);
+                setIsModalOpen(true);
+              }}
             >
               +
             </div>
@@ -93,18 +124,15 @@ export default function TradeList({ userId }: { userId: string }) {
       </div>
       {isModalOpen && (
         <TradeModal
-          date={today}
-          onClose={() => setIsModalOpen(false)}
-          onSave={async (tradeData) => {
-            await fetch("/api/trades", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ ...tradeData, userId }),
-            });
-
-            queryClient.invalidateQueries({ queryKey: ["trades", userId] });
+          date={
+            editingTrade?.dateBought ? new Date(editingTrade.dateBought) : today
+          }
+          onClose={() => {
             setIsModalOpen(false);
+            setEditingTrade(null);
           }}
+          onSave={handleSaveTrade}
+          initialTrade={editingTrade ?? undefined}
         />
       )}
     </>

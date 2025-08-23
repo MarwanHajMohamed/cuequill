@@ -734,16 +734,6 @@
     border-color: var(--color-red-500);
   }
 
-  .border-red-500\/20 {
-    border-color: rgba(251, 44, 54, .2);
-  }
-
-  @supports (color: color-mix(in lab, red, red)) {
-    .border-red-500\/20 {
-      border-color: color-mix(in oklab, var(--color-red-500) 20%, transparent);
-    }
-  }
-
   .border-red-500\/50 {
     border-color: rgba(251, 44, 54, .5);
   }
@@ -820,16 +810,6 @@
     background-color: var(--color-red-700);
   }
 
-  .bg-red-700\/2 {
-    background-color: rgba(191, 0, 15, .02);
-  }
-
-  @supports (color: color-mix(in lab, red, red)) {
-    .bg-red-700\/2 {
-      background-color: color-mix(in oklab, var(--color-red-700) 2%, transparent);
-    }
-  }
-
   .bg-red-700\/10 {
     background-color: rgba(191, 0, 15, .1);
   }
@@ -837,36 +817,6 @@
   @supports (color: color-mix(in lab, red, red)) {
     .bg-red-700\/10 {
       background-color: color-mix(in oklab, var(--color-red-700) 10%, transparent);
-    }
-  }
-
-  .bg-red-700\/20 {
-    background-color: rgba(191, 0, 15, .2);
-  }
-
-  @supports (color: color-mix(in lab, red, red)) {
-    .bg-red-700\/20 {
-      background-color: color-mix(in oklab, var(--color-red-700) 20%, transparent);
-    }
-  }
-
-  .bg-red-700\/30 {
-    background-color: rgba(191, 0, 15, .3);
-  }
-
-  @supports (color: color-mix(in lab, red, red)) {
-    .bg-red-700\/30 {
-      background-color: color-mix(in oklab, var(--color-red-700) 30%, transparent);
-    }
-  }
-
-  .bg-red-700\/200 {
-    background-color: #bf000f;
-  }
-
-  @supports (color: color-mix(in lab, red, red)) {
-    .bg-red-700\/200 {
-      background-color: color-mix(in oklab, var(--color-red-700) 200%, transparent);
     }
   }
 
@@ -1128,10 +1078,6 @@
     .hover\:bg-teal-600:hover {
       background-color: var(--color-teal-600);
     }
-  }
-
-  .disabled\:opacity-25:disabled {
-    opacity: .25;
   }
 
   @media (min-width: 48rem) {

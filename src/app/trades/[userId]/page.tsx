@@ -87,12 +87,10 @@ export default function page({
                 ) : (
                   <span
                     className={
-                      Number(trade.profitLoss) > 0
-                        ? "text-green-500"
-                        : "text-red-500"
+                      trade.status === "WIN" ? "text-green-500" : "text-red-500"
                     }
                   >
-                    ${trade.profitLoss}
+                    {trade.status === "LOSS" ? "-" : ""}${trade.profitLoss}
                   </span>
                 )}
               </td>
