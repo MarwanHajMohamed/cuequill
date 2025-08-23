@@ -40,6 +40,7 @@ type TradeModalProps = {
     notes?: string;
     option?: "CALL" | "PUT" | null;
   };
+  onDelete: (_id: string) => void;
 };
 
 type InputProps = React.InputHTMLAttributes<HTMLInputElement> & {
@@ -72,6 +73,7 @@ export default function TradeModal({
   onClose,
   onSave,
   initialTrade,
+  onDelete,
 }: TradeModalProps) {
   const [symbol, setSymbol] = useState<string>(initialTrade?.symbol ?? "");
   const [spotPrice, setSpotPrice] = useState<number | null>(
@@ -425,19 +427,31 @@ export default function TradeModal({
           className="w-full p-2 text-white bg-[#1A1A1D] rounded"
         />
 
-        <div className="flex justify-end gap-2">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-[#16151C] transition duration-200 ease-in-out rounded hover:bg-gray-700 cursor-pointer"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700 cursor-pointer"
-          >
-            Save
-          </button>
+        <div
+          className={`flex justify-between ${!initialTrade && "justify-end"}`}
+        >
+          {initialTrade && (
+            <button
+              className="px-4 py-2 bg-red-700 transition duration-200 ease-in-out rounded hover:bg-red-500 cursor-pointer"
+              onClick={() => onDelete(initialTrade._id!)}
+            >
+              Delete
+            </button>
+          )}
+          <div className="flex gap-2">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 bg-[#16151C] transition duration-200 ease-in-out rounded hover:bg-gray-700 cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700 cursor-pointer"
+            >
+              Save
+            </button>
+          </div>
         </div>
       </div>
     </div>

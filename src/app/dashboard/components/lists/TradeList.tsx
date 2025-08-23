@@ -58,6 +58,20 @@ export default function TradeList({ userId }: { userId: string }) {
     setEditingTrade(null);
   };
 
+  const handleDeleteTrade = async (tradeId: string) => {
+    try {
+      await fetch(`/api/trades/${tradeId}`, {
+        method: "DELETE",
+      });
+
+      await queryClient.invalidateQueries({ queryKey: ["trades", userId] });
+      setIsModalOpen(false);
+      setEditingTrade(null);
+    } catch (err) {
+      console.error("Failed to delete trade", err);
+    }
+  };
+
   return (
     <>
       <div className="text-white p-6 space-y-4 w-[100%] max-w-150">
@@ -133,6 +147,7 @@ export default function TradeList({ userId }: { userId: string }) {
           }}
           onSave={handleSaveTrade}
           initialTrade={editingTrade ?? undefined}
+          onDelete={handleDeleteTrade}
         />
       )}
     </>
