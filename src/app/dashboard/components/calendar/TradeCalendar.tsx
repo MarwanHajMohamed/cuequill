@@ -108,7 +108,7 @@ export default function TradeCalendar({ userId }: { userId: string }) {
     return <div className="text-red-500 p-10">Error loading trades</div>;
 
   return (
-    <div className="flex items-center justify-center p-20 w-[100%] max-w-400">
+    <div className="flex justify-center p-20 w-[100%] max-w-400 gap-3">
       <Calendar
         onChange={(val) => handleDateClick(val as Date)}
         value={value}
@@ -119,6 +119,25 @@ export default function TradeCalendar({ userId }: { userId: string }) {
         prev2Label={null}
         className="custom-calendar"
       />
+      <div className="flex flex-col gap-2">
+        <div>Key</div>
+        <div className="flex gap-2 items-center">
+          <div className="w-[15px] h-[15px] bg-blue-600 rounded-full"></div>
+          <div>Today</div>
+        </div>
+        <div className="flex gap-2 items-center">
+          <div className="w-[15px] h-[15px] bg-green-500 rounded-full"></div>
+          <div>Won Position</div>
+        </div>
+        <div className="flex gap-2 items-center">
+          <div className="w-[15px] h-[15px] bg-red-700 rounded-full"></div>
+          <div>Lost Position</div>
+        </div>
+        <div className="flex gap-2 items-center">
+          <div className="w-[15px] h-[15px] bg-orange-500 rounded-full"></div>
+          <div>Open Position</div>
+        </div>
+      </div>
       {isModalOpen && selectedDate && (
         <TradeModal
           date={selectedDate}

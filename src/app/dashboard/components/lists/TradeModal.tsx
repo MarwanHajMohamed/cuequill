@@ -40,7 +40,7 @@ type TradeModalProps = {
     notes?: string;
     option?: "CALL" | "PUT" | null;
   };
-  onDelete: (_id: string) => void;
+  onDelete?: (_id: string) => void;
 };
 
 type InputProps = React.InputHTMLAttributes<HTMLInputElement> & {
@@ -430,7 +430,7 @@ export default function TradeModal({
         <div
           className={`flex justify-between ${!initialTrade && "justify-end"}`}
         >
-          {initialTrade && (
+          {onDelete && initialTrade?._id && (
             <button
               className="px-4 py-2 bg-red-700 transition duration-200 ease-in-out rounded hover:bg-red-500 cursor-pointer"
               onClick={() => onDelete(initialTrade._id!)}
@@ -438,6 +438,7 @@ export default function TradeModal({
               Delete
             </button>
           )}
+
           <div className="flex gap-2">
             <button
               onClick={onClose}

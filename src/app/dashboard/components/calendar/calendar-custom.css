@@ -1,7 +1,7 @@
 .react-calendar {
   background-color: transparent;
   border: 1px solid #323232;
-  border-radius: 15px;
+  border-radius: 6px;
 }
 
 .react-calendar__tile {
