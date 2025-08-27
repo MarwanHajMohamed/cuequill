@@ -5,5 +5,6 @@
   "/dashboard/page": "app/dashboard/page.js",
   "/favicon.ico/route": "app/favicon.ico/route.js",
   "/page": "app/page.js",
+  "/strategies/[userId]/page": "app/strategies/[userId]/page.js",
   "/trades/[userId]/page": "app/trades/[userId]/page.js"
 }

@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 6, "column": 0}, "map": {"version":3,"sources":[],"names":[],"mappings":"","debugId":null}},
+    {"offset": {"line": 18, "column": 0}, "map": {"version":3,"sources":["file:///Users/marwan/Documents/GitHub/mindovermarket/src/app/strategies/%5BuserId%5D/page.tsx"],"sourcesContent":["import React from \"react\";\n\nexport default function page({\n  params,\n}: {\n  params: Promise<{ userId: string }>;\n}) {\n  const { userId } = React.use(params);\n\n  return <div>page</div>;\n}\n"],"names":[],"mappings":";;;;AAAA;;;AAEe,SAAS,KAAK,EAC3B,MAAM,EAGP;IACC,MAAM,EAAE,MAAM,EAAE,GAAG,qMAAA,CAAA,UAAK,CAAC,GAAG,CAAC;IAE7B,qBAAO,8OAAC;kBAAI;;;;;;AACd","debugId":null}}]
+}

@@ -5,6 +5,19 @@ import { format } from "date-fns";
 
 type TradeEventType = "WIN" | "LOSS" | "OPEN";
 
+type StrategyList =
+  | "Moving Average 40"
+  | "Normal Fall & Hard Fall"
+  | "Bearish Channel Break"
+  | "Normal Bullish Gap"
+  | "Bearish Gap Uptrend"
+  | "Hard Floor"
+  | "The First Uptrend Gap"
+  | "First Red Opening Candle"
+  | "Gap Floor Break"
+  | "Model of 4 Steps"
+  | "Hanger in Daily";
+
 type TradeModalProps = {
   date: Date;
   onClose: () => void;
@@ -33,7 +46,7 @@ type TradeModalProps = {
     dateBought?: string;
     expiryDate?: string;
     status?: TradeEventType;
-    strategy?: string;
+    strategy?: StrategyList;
     closingSpotPrice?: number | null;
     closingContractPrice?: number | null;
     profitLoss?: number | null;
@@ -105,8 +118,8 @@ export default function TradeModal({
     initialTrade?.status ?? "OPEN"
   );
 
-  const [strategy, setStrategy] = useState<string>(
-    initialTrade?.strategy ?? ""
+  const [strategy, setStrategy] = useState<StrategyList>(
+    initialTrade?.strategy ?? "Moving Average 40"
   );
 
   const [closingSpotPrice, setClosingSpotPrice] = useState<number | null>(
@@ -128,6 +141,20 @@ export default function TradeModal({
   const [notes, setNotes] = useState<string>(initialTrade?.notes ?? "");
   const [errorMessage, setErrorMessage] = useState<string>("");
 
+  const strategies: StrategyList[] = [
+    "Moving Average 40",
+    "Normal Fall & Hard Fall",
+    "Bearish Channel Break",
+    "Normal Bullish Gap",
+    "Bearish Gap Uptrend",
+    "Hard Floor",
+    "The First Uptrend Gap",
+    "First Red Opening Candle",
+    "Gap Floor Break",
+    "Model of 4 Steps",
+    "Hanger in Daily",
+  ];
+
   const validate = (): string => {
     if (selectedOption === null) {
       return "Select an option";
@@ -145,8 +172,6 @@ export default function TradeModal({
       return "Fill out the buy date";
     } else if (expiryDate === "") {
       return "Fill out the expiry date";
-    } else if (strategy === "") {
-      return "Fill out the strategy";
     } else if (
       (status === "WIN" && closingSpotPrice === null) ||
       (status === "LOSS" && closingSpotPrice === null) ||
@@ -342,16 +367,18 @@ export default function TradeModal({
           </div>
         </div>
 
-        <input
-          type="text"
+        <select
           value={strategy}
           onChange={(e) => {
-            setStrategy(e.target.value);
+            setStrategy(e.target.value as StrategyList);
             setErrorMessage("");
           }}
-          placeholder="Strategy"
-          className="w-full p-2 text-white bg-[#1A1A1D] rounded"
-        />
+          className="w-full p-2 bg-[#2b2b2f] text-white rounded"
+        >
+          {strategies.map((strategy) => {
+            return <option value={strategy}>{strategy}</option>;
+          })}
+        </select>
 
         <select
           value={status}

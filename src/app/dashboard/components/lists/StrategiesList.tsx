@@ -1,6 +1,7 @@
 "use client";
 
 import { useTrades } from "@/hooks/useTrades";
+import { useRouter } from "next/navigation";
 import React from "react";
 
 export default function StrategiesList({ userId }: { userId: string }) {
@@ -48,6 +49,8 @@ export default function StrategiesList({ userId }: { userId: string }) {
     (a, b) => b[1] - a[1]
   );
 
+  const router = useRouter();
+
   return (
     <div className="text-white p-6 space-y-4 w-[100%] max-w-150">
       <h2 className="font-semibold">Most used strategies:</h2>
@@ -67,7 +70,10 @@ export default function StrategiesList({ userId }: { userId: string }) {
         })}
       </ul>
       <div className="flex justify-end">
-        <button className="bg-blue-800 py-2 px-4 rounded-md cursor-pointer ease-in-out transition duration-100 hover:bg-blue-700">
+        <button
+          className="bg-blue-800 py-2 px-4 rounded-md cursor-pointer ease-in-out transition duration-100 hover:bg-blue-700"
+          onClick={() => router.push(`/strategies/${userId}`)}
+        >
           See all
         </button>
       </div>
