@@ -14,7 +14,7 @@ export default function Navbar() {
     <div className="fixed top-0 left-0 right-0 flex justify-center z-50">
       <div
         className="flex justify-between items-center w-full max-w-[1500px] 
-        mt-6 m-10 p-4 px-5 bg-white/3 backdrop-blur-sm rounded-full border border-white/10"
+        mt-6 m-10 p-4 px-5 bg-white/3 backdrop-blur-xs rounded-full border border-white/10"
       >
         {/* Left Side */}
         <div className="">
