@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { DM_Mono } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
+import Navbar from "./dashboard/components/navbar/Navbar";
 
 const dmMono = DM_Mono({
   subsets: ["latin"],
@@ -22,7 +23,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link
+          rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css"
+        />
+      </head>
       <body className={dmMono.className}>
+        <Navbar />
         <Providers>{children}</Providers>
       </body>
     </html>

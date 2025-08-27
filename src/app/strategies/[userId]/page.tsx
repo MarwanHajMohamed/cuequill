@@ -42,7 +42,7 @@ export default function Page({ params }: { params: { userId: string } }) {
   strategyList.sort((a, b) => b.count - a.count);
 
   return (
-    <div className="p-10 text-white flex flex-col items-center">
+    <div className="p-10 text-white flex flex-col items-center mt-20">
       <div className="text-xl mb-4 text-center">Most Used Strategies</div>
       <div className="space-y-4 w-200">
         {strategyList.map((s) => (

@@ -41,7 +41,7 @@ export default function page({
   };
 
   return (
-    <div className="overflow-x-auto p-10">
+    <div className="overflow-x-auto p-10 mt-20">
       <table className="border-collapse table-auto min-w-full">
         <thead>
           <tr>
