@@ -72,7 +72,7 @@ export default function StrategiesList({ userId }: { userId: string }) {
       <div className="flex justify-end">
         <button
           className="bg-blue-800 py-2 px-4 rounded-md cursor-pointer ease-in-out transition duration-100 hover:bg-blue-700"
-          onClick={() => router.push(`/strategies/${userId}`)}
+          onClick={() => router.push(`/strategies_used/${userId}`)}
         >
           See all
         </button>
