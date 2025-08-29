@@ -3,12 +3,7 @@
 import React, { useState, useEffect } from "react";
 
 export default function Time() {
-  const [currentTime, setCurrentTime] = useState(
-    new Date(
-      new Date().toLocaleString("en-US", { timeZone: "America/New_York" })
-    )
-  );
-
+  const [currentTime, setCurrentTime] = useState<Date | null>(null);
   const name = "Marwan";
 
   useEffect(() => {
@@ -21,8 +16,10 @@ export default function Time() {
       setCurrentTime(newTime);
     };
 
+    updateTime();
+
     const msUntilNextMinute =
-      60000 - (currentTime.getSeconds() * 1000 + currentTime.getMilliseconds());
+      60000 - (new Date().getSeconds() * 1000 + new Date().getMilliseconds());
     const timeout = setTimeout(() => {
       updateTime();
       const interval = setInterval(updateTime, 60000);
@@ -32,7 +29,25 @@ export default function Time() {
     return () => clearTimeout(timeout);
   }, []);
 
-  const day = currentTime.getDay(); // 0 = Sunday, 6 = Saturday
+  if (!currentTime) {
+    return (
+      <div className="flex flex-row justify-between h-70 pl-10 pr-10 mt-30 mb-5 w-[100%] max-w-400">
+        <div className="flex flex-col space-y-4 w-full">
+          <div className="h-10 w-1/3 rounded-lg bg-white/10 animate-pulse"></div>
+          <div className="h-10 w-1/6 rounded-lg bg-white/10 animate-pulse"></div>
+        </div>
+
+        <div className="flex flex-col items-end space-y-3 h-[100%] justify-end">
+          <div className="h-8 w-20 rounded-lg bg-white/10 animate-pulse"></div>
+          <div className="h-6 w-24 rounded-lg bg-white/10 animate-pulse"></div>
+          <div className="h-6 w-28 rounded-lg bg-white/10 animate-pulse"></div>
+          <div className="h-6 w-32 rounded-lg bg-white/10 animate-pulse"></div>
+        </div>
+      </div>
+    );
+  }
+
+  const day = currentTime.getDay();
   const hours = currentTime.getHours();
   const minutes = currentTime.getMinutes();
 
@@ -46,9 +61,9 @@ export default function Time() {
     <div className="flex flex-row justify-between h-70 pl-10 pr-10 mt-30 mb-5 w-[100%] max-w-400">
       <div className="flex flex-col justify-between">
         <div className="flex flex-col text-5xl">
-          {currentTime.getHours() < 13
+          {hours < 13
             ? "Good morning,"
-            : currentTime.getHours() < 17
+            : hours < 17
             ? "Good afternoon,"
             : "Good evening,"}
           <span className="text-teal-500">{name}</span>
@@ -63,9 +78,8 @@ export default function Time() {
       </div>
       <div className="flex flex-col justify-end items-end">
         <div className="text-2xl">
-          {currentTime.getHours().toString().padStart(2, "0")}:
-          {currentTime.getMinutes().toString().padStart(2, "0")}{" "}
-          {currentTime.getHours() < 13 ? "AM" : "PM"}
+          {hours.toString().padStart(2, "0")}:
+          {minutes.toString().padStart(2, "0")} {hours < 13 ? "AM" : "PM"}
         </div>
         <div>
           Market:{" "}

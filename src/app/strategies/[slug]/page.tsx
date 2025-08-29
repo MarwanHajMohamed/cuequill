@@ -1,9 +1,13 @@
-import React from "react";
+import React, { use } from "react";
 import { strategies } from "../../../../data/strategies";
 import StrategyContent from "../StrategyContent/StrategyContent";
 
-export default function page({ params }: { params: { slug: string } }) {
-  const { slug } = params;
+export default function page({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = use(params);
 
   const strategy = strategies.find((s) => s.slug === slug);
 

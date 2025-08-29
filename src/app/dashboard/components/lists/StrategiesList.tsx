@@ -7,6 +7,8 @@ import React from "react";
 export default function StrategiesList({ userId }: { userId: string }) {
   const { data: trades, isLoading, isError } = useTrades(userId);
 
+  const router = useRouter();
+
   if (isLoading)
     return (
       <div className="text-[#5B5B5B] p-6 space-y-4 w-[100%] max-w-150">
@@ -48,8 +50,6 @@ export default function StrategiesList({ userId }: { userId: string }) {
   const sortedStrategies = Object.entries(strategyCounts).sort(
     (a, b) => b[1] - a[1]
   );
-
-  const router = useRouter();
 
   return (
     <div className="text-white p-6 space-y-4 w-[100%] max-w-150">

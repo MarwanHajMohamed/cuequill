@@ -1200,20 +1200,22 @@ __turbopack_context__.s({
     "default": ()=>page
 });
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/server/route-modules/app-page/vendored/rsc/react-jsx-dev-runtime.js [app-rsc] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/server/route-modules/app-page/vendored/rsc/react.js [app-rsc] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$data$2f$strategies$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/data/strategies.ts [app-rsc] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$strategies$2f$StrategyContent$2f$StrategyContent$2e$tsx__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/app/strategies/StrategyContent/StrategyContent.tsx [app-rsc] (ecmascript)");
 ;
 ;
 ;
+;
 function page({ params }) {
-    const { slug } = params;
+    const { slug } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["use"])(params);
     const strategy = __TURBOPACK__imported__module__$5b$project$5d2f$data$2f$strategies$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["strategies"].find((s)=>s.slug === slug);
     if (!strategy) {
         return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
             children: "Strategy not found"
         }, void 0, false, {
             fileName: "[project]/src/app/strategies/[slug]/page.tsx",
-            lineNumber: 11,
+            lineNumber: 15,
             columnNumber: 12
         }, this);
     }
@@ -1235,13 +1237,13 @@ function page({ params }) {
                                     children: strategy.options
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/strategies/[slug]/page.tsx",
-                                    lineNumber: 20,
+                                    lineNumber: 24,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/strategies/[slug]/page.tsx",
-                            lineNumber: 18,
+                            lineNumber: 22,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("h2", {
@@ -1249,31 +1251,31 @@ function page({ params }) {
                             children: Array.isArray(strategy.timeframe) ? strategy.timeframe.join(" / ") : strategy.timeframe
                         }, void 0, false, {
                             fileName: "[project]/src/app/strategies/[slug]/page.tsx",
-                            lineNumber: 28,
+                            lineNumber: 32,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/strategies/[slug]/page.tsx",
-                    lineNumber: 17,
+                    lineNumber: 21,
                     columnNumber: 9
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$strategies$2f$StrategyContent$2f$StrategyContent$2e$tsx__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["default"], {
                     blocks: strategy.blocks
                 }, void 0, false, {
                     fileName: "[project]/src/app/strategies/[slug]/page.tsx",
-                    lineNumber: 34,
+                    lineNumber: 38,
                     columnNumber: 9
                 }, this)
             ]
         }, void 0, true, {
             fileName: "[project]/src/app/strategies/[slug]/page.tsx",
-            lineNumber: 16,
+            lineNumber: 20,
             columnNumber: 7
         }, this)
     }, void 0, false, {
         fileName: "[project]/src/app/strategies/[slug]/page.tsx",
-        lineNumber: 15,
+        lineNumber: 19,
         columnNumber: 5
     }, this);
 }

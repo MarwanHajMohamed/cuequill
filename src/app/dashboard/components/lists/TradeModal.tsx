@@ -375,8 +375,12 @@ export default function TradeModal({
           }}
           className="w-full p-2 bg-[#2b2b2f] text-white rounded"
         >
-          {strategies.map((strategy) => {
-            return <option value={strategy}>{strategy}</option>;
+          {strategies.map((strategy, index) => {
+            return (
+              <option value={strategy} key={index}>
+                {strategy}
+              </option>
+            );
           })}
         </select>
 

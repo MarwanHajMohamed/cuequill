@@ -1,10 +1,14 @@
 "use client";
 
 import { useTrades } from "@/hooks/useTrades";
-import React from "react";
+import React, { use } from "react";
 
-export default function Page({ params }: { params: { userId: string } }) {
-  const { userId } = params;
+export default function Page({
+  params,
+}: {
+  params: Promise<{ userId: string }>;
+}) {
+  const { userId } = use(params);
 
   const { data: trades, isLoading, isError } = useTrades(userId);
 
@@ -34,12 +38,12 @@ export default function Page({ params }: { params: { userId: string } }) {
     "Hanger in Daily",
   ];
 
-  const strategyList = strategies.map((s) => ({
-    name: s,
-    count: strategyCounts[s] || 0,
-  }));
-
-  strategyList.sort((a, b) => b.count - a.count);
+  const strategyList = strategies
+    .map((s) => ({
+      name: s,
+      count: strategyCounts[s] || 0,
+    }))
+    .sort((a, b) => b.count - a.count);
 
   return (
     <div className="p-10 text-white flex flex-col items-center mt-20">

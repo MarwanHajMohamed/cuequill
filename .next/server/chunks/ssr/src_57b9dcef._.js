@@ -12,9 +12,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist
 ;
 ;
 function Time() {
-    const [currentTime, setCurrentTime] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(new Date(new Date().toLocaleString("en-US", {
-        timeZone: "America/New_York"
-    })));
+    const [currentTime, setCurrentTime] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(null);
     const name = "Marwan";
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
         const updateTime = ()=>{
@@ -23,7 +21,8 @@ function Time() {
             }));
             setCurrentTime(newTime);
         };
-        const msUntilNextMinute = 60000 - (currentTime.getSeconds() * 1000 + currentTime.getMilliseconds());
+        updateTime();
+        const msUntilNextMinute = 60000 - (new Date().getSeconds() * 1000 + new Date().getMilliseconds());
         const timeout = setTimeout(()=>{
             updateTime();
             const interval = setInterval(updateTime, 60000);
@@ -31,7 +30,78 @@ function Time() {
         }, msUntilNextMinute);
         return ()=>clearTimeout(timeout);
     }, []);
-    const day = currentTime.getDay(); // 0 = Sunday, 6 = Saturday
+    if (!currentTime) {
+        return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+            className: "flex flex-row justify-between h-70 pl-10 pr-10 mt-30 mb-5 w-[100%] max-w-400",
+            children: [
+                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                    className: "flex flex-col space-y-4 w-full",
+                    children: [
+                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                            className: "h-10 w-1/3 rounded-lg bg-white/10 animate-pulse"
+                        }, void 0, false, {
+                            fileName: "[project]/src/app/dashboard/components/landing/Time.tsx",
+                            lineNumber: 36,
+                            columnNumber: 11
+                        }, this),
+                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                            className: "h-10 w-1/6 rounded-lg bg-white/10 animate-pulse"
+                        }, void 0, false, {
+                            fileName: "[project]/src/app/dashboard/components/landing/Time.tsx",
+                            lineNumber: 37,
+                            columnNumber: 11
+                        }, this)
+                    ]
+                }, void 0, true, {
+                    fileName: "[project]/src/app/dashboard/components/landing/Time.tsx",
+                    lineNumber: 35,
+                    columnNumber: 9
+                }, this),
+                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                    className: "flex flex-col items-end space-y-3 h-[100%] justify-end",
+                    children: [
+                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                            className: "h-8 w-20 rounded-lg bg-white/10 animate-pulse"
+                        }, void 0, false, {
+                            fileName: "[project]/src/app/dashboard/components/landing/Time.tsx",
+                            lineNumber: 41,
+                            columnNumber: 11
+                        }, this),
+                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                            className: "h-6 w-24 rounded-lg bg-white/10 animate-pulse"
+                        }, void 0, false, {
+                            fileName: "[project]/src/app/dashboard/components/landing/Time.tsx",
+                            lineNumber: 42,
+                            columnNumber: 11
+                        }, this),
+                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                            className: "h-6 w-28 rounded-lg bg-white/10 animate-pulse"
+                        }, void 0, false, {
+                            fileName: "[project]/src/app/dashboard/components/landing/Time.tsx",
+                            lineNumber: 43,
+                            columnNumber: 11
+                        }, this),
+                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                            className: "h-6 w-32 rounded-lg bg-white/10 animate-pulse"
+                        }, void 0, false, {
+                            fileName: "[project]/src/app/dashboard/components/landing/Time.tsx",
+                            lineNumber: 44,
+                            columnNumber: 11
+                        }, this)
+                    ]
+                }, void 0, true, {
+                    fileName: "[project]/src/app/dashboard/components/landing/Time.tsx",
+                    lineNumber: 40,
+                    columnNumber: 9
+                }, this)
+            ]
+        }, void 0, true, {
+            fileName: "[project]/src/app/dashboard/components/landing/Time.tsx",
+            lineNumber: 34,
+            columnNumber: 7
+        }, this);
+    }
+    const day = currentTime.getDay();
     const hours = currentTime.getHours();
     const minutes = currentTime.getMinutes();
     const isWeekday = day >= 1 && day <= 5;
@@ -47,19 +117,19 @@ function Time() {
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                         className: "flex flex-col text-5xl",
                         children: [
-                            currentTime.getHours() < 13 ? "Good morning," : currentTime.getHours() < 17 ? "Good afternoon," : "Good evening,",
+                            hours < 13 ? "Good morning," : hours < 17 ? "Good afternoon," : "Good evening,",
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                 className: "text-teal-500",
                                 children: name
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/components/landing/Time.tsx",
-                                lineNumber: 54,
+                                lineNumber: 69,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/dashboard/components/landing/Time.tsx",
-                        lineNumber: 48,
+                        lineNumber: 63,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -72,7 +142,7 @@ function Time() {
                                 children: "affirmations"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/components/landing/Time.tsx",
-                                lineNumber: 58,
+                                lineNumber: 73,
                                 columnNumber: 11
                             }, this),
                             " ",
@@ -80,13 +150,13 @@ function Time() {
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/dashboard/components/landing/Time.tsx",
-                        lineNumber: 56,
+                        lineNumber: 71,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/dashboard/components/landing/Time.tsx",
-                lineNumber: 47,
+                lineNumber: 62,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -95,15 +165,15 @@ function Time() {
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                         className: "text-2xl",
                         children: [
-                            currentTime.getHours().toString().padStart(2, "0"),
+                            hours.toString().padStart(2, "0"),
                             ":",
-                            currentTime.getMinutes().toString().padStart(2, "0"),
+                            minutes.toString().padStart(2, "0"),
                             " ",
-                            currentTime.getHours() < 13 ? "AM" : "PM"
+                            hours < 13 ? "AM" : "PM"
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/dashboard/components/landing/Time.tsx",
-                        lineNumber: 65,
+                        lineNumber: 80,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -115,20 +185,20 @@ function Time() {
                                 children: "Open"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/components/landing/Time.tsx",
-                                lineNumber: 73,
+                                lineNumber: 87,
                                 columnNumber: 13
                             }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                 className: "text-red-500",
                                 children: "Closed"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/components/landing/Time.tsx",
-                                lineNumber: 75,
+                                lineNumber: 89,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/dashboard/components/landing/Time.tsx",
-                        lineNumber: 70,
+                        lineNumber: 84,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -139,7 +209,7 @@ function Time() {
                         })
                     }, void 0, false, {
                         fileName: "[project]/src/app/dashboard/components/landing/Time.tsx",
-                        lineNumber: 78,
+                        lineNumber: 92,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -154,25 +224,25 @@ function Time() {
                                 children: "premarket"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/components/landing/Time.tsx",
-                                lineNumber: 87,
+                                lineNumber: 101,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/dashboard/components/landing/Time.tsx",
-                        lineNumber: 85,
+                        lineNumber: 99,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/dashboard/components/landing/Time.tsx",
-                lineNumber: 64,
+                lineNumber: 79,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/dashboard/components/landing/Time.tsx",
-        lineNumber: 46,
+        lineNumber: 61,
         columnNumber: 5
     }, this);
 }
@@ -509,14 +579,14 @@ function TradeModal({ date, onClose, onSave, initialTrade, onDelete }) {
                         setErrorMessage("");
                     },
                     className: "w-full p-2 bg-[#2b2b2f] text-white rounded",
-                    children: strategies.map((strategy)=>{
+                    children: strategies.map((strategy, index)=>{
                         return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
                             value: strategy,
                             children: strategy
-                        }, void 0, false, {
+                        }, index, false, {
                             fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                            lineNumber: 379,
-                            columnNumber: 20
+                            lineNumber: 380,
+                            columnNumber: 15
                         }, this);
                     })
                 }, void 0, false, {
@@ -537,7 +607,7 @@ function TradeModal({ date, onClose, onSave, initialTrade, onDelete }) {
                             children: "Open"
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                            lineNumber: 391,
+                            lineNumber: 395,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
@@ -545,7 +615,7 @@ function TradeModal({ date, onClose, onSave, initialTrade, onDelete }) {
                             children: "Win"
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                            lineNumber: 392,
+                            lineNumber: 396,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
@@ -553,13 +623,13 @@ function TradeModal({ date, onClose, onSave, initialTrade, onDelete }) {
                             children: "Loss"
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                            lineNumber: 393,
+                            lineNumber: 397,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                    lineNumber: 383,
+                    lineNumber: 387,
                     columnNumber: 9
                 }, this),
                 (status === "WIN" || status === "LOSS") && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -573,7 +643,7 @@ function TradeModal({ date, onClose, onSave, initialTrade, onDelete }) {
                                     children: "Closing Spot"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                                    lineNumber: 399,
+                                    lineNumber: 403,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -588,13 +658,13 @@ function TradeModal({ date, onClose, onSave, initialTrade, onDelete }) {
                                     className: "w-full p-2 text-white bg-[#1A1A1D] rounded"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                                    lineNumber: 402,
+                                    lineNumber: 406,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                            lineNumber: 398,
+                            lineNumber: 402,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -605,7 +675,7 @@ function TradeModal({ date, onClose, onSave, initialTrade, onDelete }) {
                                     children: "Closing Contract"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                                    lineNumber: 415,
+                                    lineNumber: 419,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -620,13 +690,13 @@ function TradeModal({ date, onClose, onSave, initialTrade, onDelete }) {
                                     className: "w-full p-2 text-white bg-[#1A1A1D] rounded"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                                    lineNumber: 418,
+                                    lineNumber: 422,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                            lineNumber: 414,
+                            lineNumber: 418,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -637,7 +707,7 @@ function TradeModal({ date, onClose, onSave, initialTrade, onDelete }) {
                                     children: "P/L"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                                    lineNumber: 431,
+                                    lineNumber: 435,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -652,19 +722,19 @@ function TradeModal({ date, onClose, onSave, initialTrade, onDelete }) {
                                     className: "w-full p-2 text-white bg-[#1A1A1D] rounded"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                                    lineNumber: 434,
+                                    lineNumber: 438,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                            lineNumber: 430,
+                            lineNumber: 434,
                             columnNumber: 13
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                    lineNumber: 397,
+                    lineNumber: 401,
                     columnNumber: 11
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -675,7 +745,7 @@ function TradeModal({ date, onClose, onSave, initialTrade, onDelete }) {
                     className: "w-full p-2 text-white bg-[#1A1A1D] rounded"
                 }, void 0, false, {
                     fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                    lineNumber: 449,
+                    lineNumber: 453,
                     columnNumber: 9
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -687,7 +757,7 @@ function TradeModal({ date, onClose, onSave, initialTrade, onDelete }) {
                             children: "Delete"
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                            lineNumber: 461,
+                            lineNumber: 465,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -699,7 +769,7 @@ function TradeModal({ date, onClose, onSave, initialTrade, onDelete }) {
                                     children: "Cancel"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                                    lineNumber: 470,
+                                    lineNumber: 474,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -708,19 +778,19 @@ function TradeModal({ date, onClose, onSave, initialTrade, onDelete }) {
                                     children: "Save"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                                    lineNumber: 476,
+                                    lineNumber: 480,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                            lineNumber: 469,
+                            lineNumber: 473,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/dashboard/components/lists/TradeModal.tsx",
-                    lineNumber: 457,
+                    lineNumber: 461,
                     columnNumber: 9
                 }, this)
             ]
@@ -1061,6 +1131,8 @@ function TradeList({ userId }) {
     const [isModalOpen, setIsModalOpen] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(false);
     const [editingTrade, setEditingTrade] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(null);
     const today = new Date();
+    const router = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$navigation$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRouter"])();
+    const queryClient = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$tanstack$2f$react$2d$query$2f$build$2f$modern$2f$QueryClientProvider$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useQueryClient"])();
     if (isLoading) return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
         className: "text-[#5B5B5B] p-6 space-y-4 w-[100%] max-w-150",
         children: [
@@ -1069,7 +1141,7 @@ function TradeList({ userId }) {
                 children: "Trades:"
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/components/lists/TradeList.tsx",
-                lineNumber: 19,
+                lineNumber: 21,
                 columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("ul", {
@@ -1078,18 +1150,18 @@ function TradeList({ userId }) {
                     children: "Loading trades..."
                 }, void 0, false, {
                     fileName: "[project]/src/app/dashboard/components/lists/TradeList.tsx",
-                    lineNumber: 21,
+                    lineNumber: 23,
                     columnNumber: 11
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/components/lists/TradeList.tsx",
-                lineNumber: 20,
+                lineNumber: 22,
                 columnNumber: 9
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/dashboard/components/lists/TradeList.tsx",
-        lineNumber: 18,
+        lineNumber: 20,
         columnNumber: 7
     }, this);
     if (isError) return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1100,7 +1172,7 @@ function TradeList({ userId }) {
                 children: "Trades:"
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/components/lists/TradeList.tsx",
-                lineNumber: 28,
+                lineNumber: 30,
                 columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("ul", {
@@ -1109,22 +1181,20 @@ function TradeList({ userId }) {
                     children: "Error loading trades"
                 }, void 0, false, {
                     fileName: "[project]/src/app/dashboard/components/lists/TradeList.tsx",
-                    lineNumber: 30,
+                    lineNumber: 32,
                     columnNumber: 11
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/components/lists/TradeList.tsx",
-                lineNumber: 29,
+                lineNumber: 31,
                 columnNumber: 9
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/dashboard/components/lists/TradeList.tsx",
-        lineNumber: 27,
+        lineNumber: 29,
         columnNumber: 7
     }, this);
-    const router = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$navigation$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRouter"])();
-    const queryClient = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$tanstack$2f$react$2d$query$2f$build$2f$modern$2f$QueryClientProvider$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useQueryClient"])();
     const handleSaveTrade = async (trade)=>{
         if (trade._id) {
             // UPDATE EXISTING TRADE
@@ -1184,7 +1254,7 @@ function TradeList({ userId }) {
                         children: "Trades:"
                     }, void 0, false, {
                         fileName: "[project]/src/app/dashboard/components/lists/TradeList.tsx",
-                        lineNumber: 78,
+                        lineNumber: 76,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("ul", {
@@ -1195,7 +1265,7 @@ function TradeList({ userId }) {
                                 children: "No trades found"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/components/lists/TradeList.tsx",
-                                lineNumber: 81,
+                                lineNumber: 79,
                                 columnNumber: 13
                             }, this) : [
                                 ...trades
@@ -1219,7 +1289,7 @@ function TradeList({ userId }) {
                                                         children: "x"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/dashboard/components/lists/TradeList.tsx",
-                                                        lineNumber: 102,
+                                                        lineNumber: 100,
                                                         columnNumber: 38
                                                     }, this),
                                                     " ",
@@ -1227,7 +1297,7 @@ function TradeList({ userId }) {
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/dashboard/components/lists/TradeList.tsx",
-                                                lineNumber: 101,
+                                                lineNumber: 99,
                                                 columnNumber: 21
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1235,18 +1305,18 @@ function TradeList({ userId }) {
                                                 children: trade.status === "OPEN" ? trade.status : "CLOSED"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/dashboard/components/lists/TradeList.tsx",
-                                                lineNumber: 105,
+                                                lineNumber: 103,
                                                 columnNumber: 21
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/dashboard/components/lists/TradeList.tsx",
-                                        lineNumber: 100,
+                                        lineNumber: 98,
                                         columnNumber: 19
                                     }, this)
                                 }, trade._id, false, {
                                     fileName: "[project]/src/app/dashboard/components/lists/TradeList.tsx",
-                                    lineNumber: 91,
+                                    lineNumber: 89,
                                     columnNumber: 17
                                 }, this)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("li", {
@@ -1260,18 +1330,18 @@ function TradeList({ userId }) {
                                     children: "+"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/components/lists/TradeList.tsx",
-                                    lineNumber: 119,
+                                    lineNumber: 117,
                                     columnNumber: 13
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/components/lists/TradeList.tsx",
-                                lineNumber: 118,
+                                lineNumber: 116,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/dashboard/components/lists/TradeList.tsx",
-                        lineNumber: 79,
+                        lineNumber: 77,
                         columnNumber: 9
                     }, this),
                     trades?.length === 0 ? "" : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1282,18 +1352,18 @@ function TradeList({ userId }) {
                             children: "See all"
                         }, void 0, false, {
                             fileName: "[project]/src/app/dashboard/components/lists/TradeList.tsx",
-                            lineNumber: 134,
+                            lineNumber: 132,
                             columnNumber: 13
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/dashboard/components/lists/TradeList.tsx",
-                        lineNumber: 133,
+                        lineNumber: 131,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/dashboard/components/lists/TradeList.tsx",
-                lineNumber: 77,
+                lineNumber: 75,
                 columnNumber: 7
             }, this),
             isModalOpen && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$dashboard$2f$components$2f$lists$2f$TradeModal$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
@@ -1307,7 +1377,7 @@ function TradeList({ userId }) {
                 onDelete: handleDeleteTrade
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/components/lists/TradeList.tsx",
-                lineNumber: 144,
+                lineNumber: 142,
                 columnNumber: 9
             }, this)
         ]
@@ -1329,6 +1399,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$navi
 ;
 function StrategiesList({ userId }) {
     const { data: trades, isLoading, isError } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$useTrades$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useTrades"])(userId);
+    const router = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$navigation$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRouter"])();
     if (isLoading) return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
         className: "text-[#5B5B5B] p-6 space-y-4 w-[100%] max-w-150",
         children: [
@@ -1337,7 +1408,7 @@ function StrategiesList({ userId }) {
                 children: "Most used strategies:"
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/components/lists/StrategiesList.tsx",
-                lineNumber: 13,
+                lineNumber: 15,
                 columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("ul", {
@@ -1346,18 +1417,18 @@ function StrategiesList({ userId }) {
                     children: "Loading strategies..."
                 }, void 0, false, {
                     fileName: "[project]/src/app/dashboard/components/lists/StrategiesList.tsx",
-                    lineNumber: 15,
+                    lineNumber: 17,
                     columnNumber: 11
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/components/lists/StrategiesList.tsx",
-                lineNumber: 14,
+                lineNumber: 16,
                 columnNumber: 9
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/dashboard/components/lists/StrategiesList.tsx",
-        lineNumber: 12,
+        lineNumber: 14,
         columnNumber: 7
     }, this);
     if (isError) return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1368,7 +1439,7 @@ function StrategiesList({ userId }) {
                 children: "Most used strategies:"
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/components/lists/StrategiesList.tsx",
-                lineNumber: 23,
+                lineNumber: 25,
                 columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("ul", {
@@ -1377,18 +1448,18 @@ function StrategiesList({ userId }) {
                     children: "Error loading strategies"
                 }, void 0, false, {
                     fileName: "[project]/src/app/dashboard/components/lists/StrategiesList.tsx",
-                    lineNumber: 25,
+                    lineNumber: 27,
                     columnNumber: 11
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/components/lists/StrategiesList.tsx",
-                lineNumber: 24,
+                lineNumber: 26,
                 columnNumber: 9
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/dashboard/components/lists/StrategiesList.tsx",
-        lineNumber: 22,
+        lineNumber: 24,
         columnNumber: 7
     }, this);
     if (!trades || trades.length === 0) return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1399,7 +1470,7 @@ function StrategiesList({ userId }) {
                 children: "Most used strategies:"
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/components/lists/StrategiesList.tsx",
-                lineNumber: 33,
+                lineNumber: 35,
                 columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("ul", {
@@ -1408,18 +1479,18 @@ function StrategiesList({ userId }) {
                     children: "No strategies found"
                 }, void 0, false, {
                     fileName: "[project]/src/app/dashboard/components/lists/StrategiesList.tsx",
-                    lineNumber: 35,
+                    lineNumber: 37,
                     columnNumber: 11
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/components/lists/StrategiesList.tsx",
-                lineNumber: 34,
+                lineNumber: 36,
                 columnNumber: 9
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/dashboard/components/lists/StrategiesList.tsx",
-        lineNumber: 32,
+        lineNumber: 34,
         columnNumber: 7
     }, this);
     const strategyCounts = {};
@@ -1429,7 +1500,6 @@ function StrategiesList({ userId }) {
         }
     });
     const sortedStrategies = Object.entries(strategyCounts).sort((a, b)=>b[1] - a[1]);
-    const router = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$navigation$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRouter"])();
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
         className: "text-white p-6 space-y-4 w-[100%] max-w-150",
         children: [

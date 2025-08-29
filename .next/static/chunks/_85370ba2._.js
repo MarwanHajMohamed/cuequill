@@ -52,21 +52,23 @@ __turbopack_context__.s({
 });
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react/jsx-dev-runtime.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$useTrades$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/hooks/useTrades.ts [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react/index.js [app-client] (ecmascript)");
 ;
 var _s = __turbopack_context__.k.signature();
 "use client";
 ;
+;
 function Page(param) {
     let { params } = param;
     _s();
-    const { userId } = params;
+    const { userId } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["use"])(params);
     const { data: trades, isLoading, isError } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$useTrades$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useTrades"])(userId);
     if (isLoading) return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
         className: "text-white",
         children: "Loading strategies..."
     }, void 0, false, {
         fileName: "[project]/src/app/strategies_used/[userId]/page.tsx",
-        lineNumber: 11,
+        lineNumber: 15,
         columnNumber: 25
     }, this);
     if (isError) return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -74,7 +76,7 @@ function Page(param) {
         children: "Error loading strategies"
     }, void 0, false, {
         fileName: "[project]/src/app/strategies_used/[userId]/page.tsx",
-        lineNumber: 13,
+        lineNumber: 17,
         columnNumber: 12
     }, this);
     if (!trades || trades.length === 0) return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -82,7 +84,7 @@ function Page(param) {
         children: "No strategies found."
     }, void 0, false, {
         fileName: "[project]/src/app/strategies_used/[userId]/page.tsx",
-        lineNumber: 16,
+        lineNumber: 20,
         columnNumber: 12
     }, this);
     const strategyCounts = trades.reduce((acc, trade)=>{
@@ -105,8 +107,7 @@ function Page(param) {
     const strategyList = strategies.map((s)=>({
             name: s,
             count: strategyCounts[s] || 0
-        }));
-    strategyList.sort((a, b)=>b.count - a.count);
+        })).sort((a, b)=>b.count - a.count);
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
         className: "p-10 text-white flex flex-col items-center mt-20",
         children: [
@@ -115,7 +116,7 @@ function Page(param) {
                 children: "Most Used Strategies"
             }, void 0, false, {
                 fileName: "[project]/src/app/strategies_used/[userId]/page.tsx",
-                lineNumber: 46,
+                lineNumber: 50,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -127,7 +128,7 @@ function Page(param) {
                                 children: s.name
                             }, void 0, false, {
                                 fileName: "[project]/src/app/strategies_used/[userId]/page.tsx",
-                                lineNumber: 53,
+                                lineNumber: 57,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -135,24 +136,24 @@ function Page(param) {
                                 children: s.count
                             }, void 0, false, {
                                 fileName: "[project]/src/app/strategies_used/[userId]/page.tsx",
-                                lineNumber: 54,
+                                lineNumber: 58,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, s.name, true, {
                         fileName: "[project]/src/app/strategies_used/[userId]/page.tsx",
-                        lineNumber: 49,
+                        lineNumber: 53,
                         columnNumber: 11
                     }, this))
             }, void 0, false, {
                 fileName: "[project]/src/app/strategies_used/[userId]/page.tsx",
-                lineNumber: 47,
+                lineNumber: 51,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/strategies_used/[userId]/page.tsx",
-        lineNumber: 45,
+        lineNumber: 49,
         columnNumber: 5
     }, this);
 }

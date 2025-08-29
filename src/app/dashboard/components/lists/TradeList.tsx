@@ -12,6 +12,8 @@ export default function TradeList({ userId }: { userId: string }) {
   const [editingTrade, setEditingTrade] = useState<any | null>(null);
 
   const today = new Date();
+  const router = useRouter();
+  const queryClient = useQueryClient();
 
   if (isLoading)
     return (
@@ -31,10 +33,6 @@ export default function TradeList({ userId }: { userId: string }) {
         </ul>
       </div>
     );
-
-  const router = useRouter();
-
-  const queryClient = useQueryClient();
 
   const handleSaveTrade = async (trade: any) => {
     if (trade._id) {

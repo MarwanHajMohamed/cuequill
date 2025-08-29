@@ -4,5 +4,6 @@
   "/favicon.ico/route": "app/favicon.ico/route.js",
   "/strategies/[slug]/page": "app/strategies/[slug]/page.js",
   "/strategies/page": "app/strategies/page.js",
-  "/strategies_used/[userId]/page": "app/strategies_used/[userId]/page.js"
+  "/strategies_used/[userId]/page": "app/strategies_used/[userId]/page.js",
+  "/trades/[userId]/page": "app/trades/[userId]/page.js"
 }

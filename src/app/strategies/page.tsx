@@ -23,7 +23,7 @@ export default function page() {
   };
 
   return (
-    <div className="p-10 mt-20 flex flex-col items-center">
+    <div className="p-10 flex flex-col items-center h-[100vh] justify-center">
       <div className="grid grid-cols-3 gap-5">
         {strategies.map((strategy, index) => {
           return (
