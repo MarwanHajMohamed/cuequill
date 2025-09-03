@@ -1,10 +1,12 @@
 "use client";
 
+import { useSession } from "next-auth/react";
 import React, { useState, useEffect } from "react";
 
 export default function Time() {
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
-  const name = "Marwan";
+  const { data: session } = useSession();
+  const name = session?.user.name;
 
   useEffect(() => {
     const updateTime = () => {
