@@ -1,13 +1,10 @@
 "use client";
 
 import { useTrades } from "@/hooks/useTrades";
-import React, { useEffect } from "react";
+import { withAuth } from "@/lib/withAuth";
+import React from "react";
 
-export default function page({
-  params,
-}: {
-  params: Promise<{ userId: string }>;
-}) {
+function page({ params }: { params: Promise<{ userId: string }> }) {
   const { userId } = React.use(params);
 
   const { data: trades, isLoading, isError } = useTrades(userId);
@@ -159,3 +156,5 @@ export default function page({
     </div>
   );
 }
+
+export default withAuth(page);

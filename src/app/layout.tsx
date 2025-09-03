@@ -3,6 +3,9 @@ import { DM_Mono } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
 import Navbar from "./dashboard/components/navbar/Navbar";
+import { getServerSession } from "next-auth";
+import { authOptions } from "./api/auth/[...nextauth]/route"; // adjust path
+import NavbarWrapper from "./dashboard/components/navbar/NavbarWrapper";
 
 const dmMono = DM_Mono({
   subsets: ["latin"],
@@ -18,9 +21,9 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
       <head>
@@ -30,8 +33,10 @@ export default function RootLayout({
         />
       </head>
       <body className={dmMono.className}>
-        <Navbar />
-        <Providers>{children}</Providers>
+        <Providers>
+          <NavbarWrapper />
+          {children}
+        </Providers>
       </body>
     </html>
   );

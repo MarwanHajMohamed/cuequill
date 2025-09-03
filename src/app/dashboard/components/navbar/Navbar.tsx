@@ -1,14 +1,33 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { signOut } from "next-auth/react";
 
 export default function Navbar() {
+  const [open, setOpen] = useState<boolean>(false);
   const router = useRouter();
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const handleRoute = (path: string) => {
     router.push(path);
   };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [dropdownRef]);
 
   return (
     <div className="fixed top-0 left-0 right-0 flex justify-center z-50">
@@ -17,7 +36,7 @@ export default function Navbar() {
         mt-6 m-10 p-4 px-5 bg-white/3 backdrop-blur-xs rounded-full border border-white/10"
       >
         {/* Left Side */}
-        <div className="">
+        <div>
           <i
             className="fa-solid fa-house cursor-pointer transition duration-100 hover:text-teal-500"
             onClick={() => handleRoute("/dashboard")}
@@ -51,8 +70,25 @@ export default function Navbar() {
           </div>
         </div>
         {/* Right Side */}
-        <div>
-          <i className="fa-solid fa-user cursor-pointer transition duration-100 hover:text-teal-500"></i>
+        <div ref={dropdownRef}>
+          <div>
+            <i
+              className="fa-solid fa-user cursor-pointer transition duration-100 hover:text-teal-500"
+              onClick={() => setOpen(!open)}
+            ></i>
+          </div>
+          <div
+            className={`absolute bottom-[-35px] right-3 bg-white text-black p-3 rounded-sm ${
+              open ? "block" : "hidden"
+            }`}
+          >
+            <div
+              className="cursor-pointer transition duration-50 hover:text-teal-500"
+              onClick={() => signOut({ callbackUrl: "/" })}
+            >
+              Logout
+            </div>
+          </div>
         </div>
       </div>
     </div>

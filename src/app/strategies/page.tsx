@@ -3,8 +3,9 @@
 import React from "react";
 import { strategies } from "../../../data/strategies";
 import { useRouter } from "next/navigation";
+import { withAuth } from "@/lib/withAuth";
 
-export default function page() {
+function page() {
   const Card = ({ title, path }: { title: string; path: string }) => {
     const router = useRouter();
 
@@ -38,3 +39,5 @@ export default function page() {
     </div>
   );
 }
+
+export default withAuth(page);

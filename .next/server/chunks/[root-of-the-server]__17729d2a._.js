@@ -88,7 +88,7 @@ if (!cached) {
         promise: null
     };
 }
-async function dbConnect() {
+async function connectDb() {
     if (cached.conn) return cached.conn;
     if (!cached.promise) {
         cached.promise = __TURBOPACK__imported__module__$5b$externals$5d2f$mongoose__$5b$external$5d$__$28$mongoose$2c$__cjs$29$__["default"].connect(MONGODB_URI, {
@@ -103,7 +103,7 @@ async function dbConnect() {
     }
     return cached.conn;
 }
-const __TURBOPACK__default__export__ = dbConnect;
+const __TURBOPACK__default__export__ = connectDb;
 }),
 "[project]/src/lib/models/Trade.ts [app-route] (ecmascript)": ((__turbopack_context__) => {
 "use strict";

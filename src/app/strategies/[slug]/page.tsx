@@ -1,12 +1,11 @@
+"use client";
+
 import React, { use } from "react";
 import { strategies } from "../../../../data/strategies";
 import StrategyContent from "../StrategyContent/StrategyContent";
+import { withAuth } from "@/lib/withAuth";
 
-export default function page({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+function page({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
 
   const strategy = strategies.find((s) => s.slug === slug);
@@ -40,3 +39,5 @@ export default function page({
     </div>
   );
 }
+
+export default withAuth(page);
