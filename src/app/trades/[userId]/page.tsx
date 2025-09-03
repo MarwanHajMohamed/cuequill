@@ -2,10 +2,10 @@
 
 import { useTrades } from "@/hooks/useTrades";
 import { withAuth } from "@/lib/withAuth";
-import React from "react";
+import React, { use } from "react";
 
-function page({ params }: { params: Promise<{ userId: string }> }) {
-  const { userId } = React.use(params);
+function Page({ params }: { params: Promise<{ userId: string }> }) {
+  const { userId } = use(params);
 
   const { data: trades, isLoading, isError } = useTrades(userId);
 
@@ -157,4 +157,4 @@ function page({ params }: { params: Promise<{ userId: string }> }) {
   );
 }
 
-export default withAuth(page);
+export default withAuth(Page);

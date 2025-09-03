@@ -2,57 +2,13 @@
 
 import React, { useState } from "react";
 import { format } from "date-fns";
-
-type TradeEventType = "WIN" | "LOSS" | "OPEN";
-
-type StrategyList =
-  | "Moving Average 40"
-  | "Normal Fall & Hard Fall"
-  | "Bearish Channel Break"
-  | "Normal Bullish Gap"
-  | "Bearish Gap Uptrend"
-  | "Hard Floor"
-  | "The First Uptrend Gap"
-  | "First Red Opening Candle"
-  | "Gap Floor Break"
-  | "Model of 4 Steps"
-  | "Hanger in Daily";
+import { TradeEventType, StrategyList, Trade } from "@/app/types/Trades";
 
 type TradeModalProps = {
   date: Date;
   onClose: () => void;
-  onSave: (trade: {
-    date: string;
-    status: TradeEventType;
-    symbol?: string;
-    spotPrice?: number | null;
-    contractPrice?: number | null;
-    qty?: number | null;
-    strike?: number | null;
-    dateBought?: string;
-    dateExpiry?: string;
-    closingSpotPrice?: number | null;
-    closingContractPrice?: number | null;
-    profitLoss?: number | null;
-    notes?: string;
-  }) => void;
-  initialTrade?: {
-    _id?: string;
-    symbol?: string;
-    spotPrice?: number | null;
-    contractPrice?: number | null;
-    qty?: number | null;
-    strike?: number | null;
-    dateBought?: string;
-    expiryDate?: string;
-    status?: TradeEventType;
-    strategy?: StrategyList;
-    closingSpotPrice?: number | null;
-    closingContractPrice?: number | null;
-    profitLoss?: number | null;
-    notes?: string;
-    option?: "CALL" | "PUT" | null;
-  };
+  onSave: (trade: Trade) => void;
+  initialTrade?: Partial<Trade>;
   onDelete?: (_id: string) => void;
 };
 
@@ -207,25 +163,25 @@ export default function TradeModal({
 
     const formattedDate = format(date, "yyyy-MM-dd");
 
-    const tradeData = {
+    const tradeData: Trade = {
       _id: initialTrade?._id,
+      userID: "68935cd4dd45fa2028f00caa",
       date: formattedDate,
       status,
       symbol,
-      spotPrice,
-      contractPrice,
-      qty,
-      strike,
+      spotPrice: spotPrice ?? 0,
+      contractPrice: contractPrice ?? 0,
+      qty: qty ?? 0,
+      strike: strike ?? 0,
       dateBought,
-      expiryDate: expiryDate,
-      option: selectedOption,
-      userID: "68935cd4dd45fa2028f00caa",
+      expiryDate,
+      option: selectedOption!,
       strategy,
       closingSpotPrice:
-        status === "WIN" || status === "LOSS" ? closingSpotPrice : 0,
+        status === "WIN" || status === "LOSS" ? closingSpotPrice : null,
       closingContractPrice:
-        status === "WIN" || status === "LOSS" ? closingContractPrice : 0,
-      profitLoss: status === "WIN" || status === "LOSS" ? profitLoss : 0,
+        status === "WIN" || status === "LOSS" ? closingContractPrice : null,
+      profitLoss: status === "WIN" || status === "LOSS" ? profitLoss : null,
       notes,
     };
 

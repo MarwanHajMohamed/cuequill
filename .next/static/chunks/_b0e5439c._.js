@@ -1546,7 +1546,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$withAuth$2e$ts
 ;
 ;
 ;
-function page(param) {
+function Page(param) {
     let { params } = param;
     const { slug } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["use"])(params);
     const strategy = __TURBOPACK__imported__module__$5b$project$5d2f$data$2f$strategies$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["strategies"].find((s)=>s.slug === slug);
@@ -1619,7 +1619,11 @@ function page(param) {
         columnNumber: 5
     }, this);
 }
-const __TURBOPACK__default__export__ = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$withAuth$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["withAuth"])(page);
+_c = Page;
+const __TURBOPACK__default__export__ = _c1 = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$withAuth$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["withAuth"])(Page);
+var _c, _c1;
+__turbopack_context__.k.register(_c, "Page");
+__turbopack_context__.k.register(_c1, "%default%");
 if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelpers !== null) {
     __turbopack_context__.k.registerExports(module, globalThis.$RefreshHelpers$);
 }

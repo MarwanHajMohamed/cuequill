@@ -11,13 +11,13 @@ function page() {
           Daily Affirmations
         </h1>
         <ul className="list-decimal list-inside">
-          <li>I'm an excellent manager of my money!</li>
+          <li>I&apos;m an excellent manager of my money!</li>
           <li>I always pay myself first!</li>
           <li>Money works hard for me and produces more and more money!</li>
           <li>Everything I do prospers and overwhelms!</li>
-          <li>I'm a multimillionaire, prosperous and wealthy!</li>
+          <li>I&apos;m a multimillionaire, prosperous and wealthy!</li>
           <li>
-            Everything I spend comes back to me multiplied because I'm the
+            Everything I spend comes back to me multiplied because I&apos;m the
             source of all wealth!
           </li>
           <li>

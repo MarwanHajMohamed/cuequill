@@ -1,22 +1,5 @@
+import { Trade } from "@/app/types/Trades";
 import { useQuery } from "@tanstack/react-query";
-
-export type Trade = {
-  _id: string;
-  symbol: string;
-  dateBought: string;
-  status: "OPEN" | "WIN" | "LOSS";
-  option: "CALL" | "PUT";
-  qty: number;
-  expiryDate: string;
-  strategy: string;
-  spotPrice: string;
-  contractPrice: string;
-  strike: string;
-  closingSpotPrice: string;
-  closingContractPrice: string;
-  profitLoss: string;
-  notes: string;
-};
 
 const fetchTrades = async (userId: string): Promise<Trade[]> => {
   const res = await fetch(`/api/trades?userId=${userId}`);

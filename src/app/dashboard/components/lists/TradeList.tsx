@@ -5,11 +5,12 @@ import React, { useState } from "react";
 import TradeModal from "./TradeModal";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
+import { Trade } from "@/app/types/Trades";
 
 export default function TradeList({ userId }: { userId: string }) {
   const { data: trades, isLoading, isError } = useTrades(userId);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingTrade, setEditingTrade] = useState<any | null>(null);
+  const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
 
   const today = new Date();
   const router = useRouter();
@@ -34,7 +35,7 @@ export default function TradeList({ userId }: { userId: string }) {
       </div>
     );
 
-  const handleSaveTrade = async (trade: any) => {
+  const handleSaveTrade = async (trade: Trade) => {
     if (trade._id) {
       // UPDATE EXISTING TRADE
       await fetch(`/api/trades/${trade._id}`, {

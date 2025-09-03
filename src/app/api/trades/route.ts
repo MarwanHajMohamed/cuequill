@@ -30,7 +30,11 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const trade = await Trade.create(body);
     return NextResponse.json(trade, { status: 201 });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to create trade" }, { status: 400 });
+  } catch (err: unknown) {
+    const message =
+      err instanceof Error ? err.message : "Failed to create trade";
+  
+    return NextResponse.json({ error: message }, { status: 400 });
   }
+  
 }

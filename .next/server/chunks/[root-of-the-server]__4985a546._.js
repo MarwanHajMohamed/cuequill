@@ -159,15 +159,15 @@ var __TURBOPACK__imported__module__$5b$externals$5d2f$mongoose__$5b$external$5d$
 ;
 const MONGODB_URI = process.env.MONGODB_URI;
 if (!MONGODB_URI) {
-    throw new Error('Please define the MONGODB_URI environment variable inside .env.local');
+    throw new Error("Please define the MONGODB_URI environment variable inside .env.local");
 }
-let cached = ("TURBOPACK ident replacement", globalThis).mongoose;
-if (!cached) {
-    cached = ("TURBOPACK ident replacement", globalThis).mongoose = {
+if (!global.mongooseCache) {
+    global.mongooseCache = {
         conn: null,
         promise: null
     };
 }
+const cached = global.mongooseCache;
 async function connectDb() {
     if (cached.conn) return cached.conn;
     if (!cached.promise) {

@@ -79,15 +79,15 @@ var __TURBOPACK__imported__module__$5b$externals$5d2f$mongoose__$5b$external$5d$
 ;
 const MONGODB_URI = process.env.MONGODB_URI;
 if (!MONGODB_URI) {
-    throw new Error('Please define the MONGODB_URI environment variable inside .env.local');
+    throw new Error("Please define the MONGODB_URI environment variable inside .env.local");
 }
-let cached = ("TURBOPACK ident replacement", globalThis).mongoose;
-if (!cached) {
-    cached = ("TURBOPACK ident replacement", globalThis).mongoose = {
+if (!global.mongooseCache) {
+    global.mongooseCache = {
         conn: null,
         promise: null
     };
 }
+const cached = global.mongooseCache;
 async function connectDb() {
     if (cached.conn) return cached.conn;
     if (!cached.promise) {
@@ -231,8 +231,9 @@ async function POST(req) {
             status: 201
         });
     } catch (err) {
+        const message = err instanceof Error ? err.message : "Failed to create trade";
         return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
-            error: err.message || "Failed to create trade"
+            error: message
         }, {
             status: 400
         });
