@@ -2,28 +2,26 @@ import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Trade from "@/lib/models/Trade";
 
-// GET one trade
 export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
-) {
+): Promise<NextResponse> {
   await connectDB();
-  const trade = await Trade.findById(params.id);
+  const trade = await Trade.findById(params.id).lean();
   if (!trade) {
     return NextResponse.json({ error: "Trade not found" }, { status: 404 });
   }
   return NextResponse.json(trade);
 }
 
-// PATCH (partial update)
 export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } }
-) {
+): Promise<NextResponse> {
   await connectDB();
   try {
     const data = await req.json();
-    const updated = await Trade.findByIdAndUpdate(params.id, data, { new: true });
+    const updated = await Trade.findByIdAndUpdate(params.id, data, { new: true }).lean();
     if (!updated) {
       return NextResponse.json({ error: "Trade not found" }, { status: 404 });
     }
@@ -33,14 +31,13 @@ export async function PATCH(
   }
 }
 
-// DELETE a trade
 export async function DELETE(
   req: NextRequest,
   { params }: { params: { id: string } }
-) {
+): Promise<NextResponse> {
   await connectDB();
   try {
-    const deleted = await Trade.findByIdAndDelete(params.id);
+    const deleted = await Trade.findByIdAndDelete(params.id).lean();
     if (!deleted) {
       return NextResponse.json({ error: "Trade not found" }, { status: 404 });
     }
