@@ -214,6 +214,7 @@
     --radius-md: .375rem;
     --radius-lg: .5rem;
     --radius-xl: .75rem;
+    --ease-in: cubic-bezier(.4, 0, 1, 1);
     --ease-in-out: cubic-bezier(.4, 0, .2, 1);
     --animate-spin: spin 1s linear infinite;
     --animate-pulse: pulse 2s cubic-bezier(.4, 0, .6, 1) infinite;
@@ -1125,6 +1126,16 @@
     background-color: var(--color-blue-500);
   }
 
+  .bg-blue-500\/20 {
+    background-color: rgba(48, 128, 255, .2);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .bg-blue-500\/20 {
+      background-color: color-mix(in oklab, var(--color-blue-500) 20%, transparent);
+    }
+  }
+
   .bg-blue-600 {
     background-color: var(--color-blue-600);
   }
@@ -1169,6 +1180,36 @@
 
   .bg-teal-500 {
     background-color: var(--color-teal-500);
+  }
+
+  .bg-teal-500\/20 {
+    background-color: rgba(0, 186, 167, .2);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .bg-teal-500\/20 {
+      background-color: color-mix(in oklab, var(--color-teal-500) 20%, transparent);
+    }
+  }
+
+  .bg-teal-500\/50 {
+    background-color: rgba(0, 186, 167, .5);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .bg-teal-500\/50 {
+      background-color: color-mix(in oklab, var(--color-teal-500) 50%, transparent);
+    }
+  }
+
+  .bg-teal-500\/60 {
+    background-color: rgba(0, 186, 167, .6);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .bg-teal-500\/60 {
+      background-color: color-mix(in oklab, var(--color-teal-500) 60%, transparent);
+    }
   }
 
   .bg-white {
@@ -1415,6 +1456,11 @@
   .duration-200 {
     --tw-duration: .2s;
     transition-duration: .2s;
+  }
+
+  .ease-in {
+    --tw-ease: var(--ease-in);
+    transition-timing-function: var(--ease-in);
   }
 
   .ease-in-out {

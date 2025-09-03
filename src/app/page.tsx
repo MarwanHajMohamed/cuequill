@@ -9,6 +9,7 @@ export default function Home() {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [error, setError] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
 
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -29,6 +30,7 @@ export default function Home() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
     const res = await signIn("credentials", {
       email,
       password,
@@ -40,6 +42,7 @@ export default function Home() {
     } else {
       router.push("/dashboard");
     }
+    setLoading(false);
   };
 
   return (
@@ -73,10 +76,18 @@ export default function Home() {
           }}
         />
         <button
-          className="bg-teal-500 rounded-md p-2 cursor-pointer hover:bg-teal-600 transition duration-200 ease-in-out"
+          className={`rounded-md p-2 cursor-pointer ${
+            loading
+              ? "bg-teal-500/50 disabled"
+              : "bg-teal-500 hover:bg-teal-600 transition duration-200 ease-in-out"
+          }`}
           type="submit"
         >
-          Login
+          {loading ? (
+            <i className="fa-solid fa-circle-notch animate-spin"></i>
+          ) : (
+            <div>Login</div>
+          )}
         </button>
         <div
           className={`absolute w-[300px] bottom-[-50px] left-[-35px] border-1 border-red-500/50 text-red-500 text-center p-1 rounded bg-red-700/10 ${
