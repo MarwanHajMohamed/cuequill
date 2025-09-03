@@ -215,8 +215,7 @@ const User = __TURBOPACK__imported__module__$5b$externals$5d2f$mongoose__$5b$ext
 
 __turbopack_context__.s({
     "GET": ()=>handler,
-    "POST": ()=>handler,
-    "authOptions": ()=>authOptions
+    "POST": ()=>handler
 });
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2d$auth$2f$index$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next-auth/index.js [app-route] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2d$auth$2f$providers$2f$credentials$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next-auth/providers/credentials.js [app-route] (ecmascript)");
