@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 6, "column": 0}, "map": {"version":3,"sources":[],"names":[],"mappings":"","debugId":null}},
-    {"offset": {"line": 18, "column": 0}, "map": {"version":3,"sources":["file:///Users/marwan/Documents/GitHub/mindovermarket/src/app/strategies/page.tsx"],"sourcesContent":["import React from \"react\";\nimport { strategies } from \"../../../data/strategies\";\n\nexport default function page() {\n  return (\n    <div>\n      <div></div>\n    </div>\n  );\n}\n"],"names":[],"mappings":";;;;;AAGe,SAAS;IACtB,qBACE,8OAAC;kBACC,cAAA,8OAAC;;;;;;;;;;AAGP","debugId":null}}]
-}

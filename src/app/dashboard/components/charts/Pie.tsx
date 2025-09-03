@@ -1,4 +1,4 @@
-import { Trade } from "@/hooks/useTrades";
+import { Trade } from "@/app/types/Trades";
 import { PieChart } from "@mui/x-charts";
 import React from "react";
 

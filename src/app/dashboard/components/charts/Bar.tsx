@@ -2,7 +2,7 @@
 
 import React from "react";
 import { BarChart } from "@mui/x-charts/BarChart";
-import { Trade } from "@/hooks/useTrades";
+import { Trade } from "@/app/types/Trades";
 
 export default function Bar({ data }: { data: Trade[] }) {
   const counts = data.reduce(
