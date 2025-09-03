@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { format } from "date-fns";
 import { TradeEventType, StrategyList, Trade } from "@/app/types/Trades";
+import { useSession } from "next-auth/react";
 
 type TradeModalProps = {
   date: Date;
@@ -44,6 +45,9 @@ export default function TradeModal({
   initialTrade,
   onDelete,
 }: TradeModalProps) {
+  const { data: session } = useSession();
+  const userId = session?.user?.id;
+
   const [symbol, setSymbol] = useState<string>(initialTrade?.symbol ?? "");
   const [spotPrice, setSpotPrice] = useState<number | null>(
     initialTrade?.spotPrice ?? null
@@ -165,7 +169,7 @@ export default function TradeModal({
 
     const tradeData: Trade = {
       _id: initialTrade?._id,
-      userID: "68935cd4dd45fa2028f00caa",
+      userID: userId,
       date: formattedDate,
       status,
       symbol,
