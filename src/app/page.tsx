@@ -3,6 +3,7 @@
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import PageLoading from "./PageLoading";
 
 export default function Home() {
   const [email, setEmail] = useState<string>("");
@@ -19,11 +20,11 @@ export default function Home() {
   }, [status, router]);
 
   if (status === "loading") {
-    return <div>Loading...</div>;
+    return <PageLoading />;
   }
 
   if (status === "authenticated") {
-    return null; // don’t flash login form
+    return null;
   }
 
   const handleLogin = async (e: React.FormEvent) => {
