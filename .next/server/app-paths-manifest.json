@@ -7,6 +7,7 @@
   "/favicon.ico/route": "app/favicon.ico/route.js",
   "/page": "app/page.js",
   "/rules/page": "app/rules/page.js",
+  "/stocks/page": "app/stocks/page.js",
   "/strategies/[slug]/page": "app/strategies/[slug]/page.js",
   "/strategies/page": "app/strategies/page.js",
   "/strategies_used/[userId]/page": "app/strategies_used/[userId]/page.js",
