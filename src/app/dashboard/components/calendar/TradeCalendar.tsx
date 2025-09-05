@@ -8,6 +8,7 @@ import "./calendar-custom.css";
 import TradeModal from "../lists/TradeModal";
 import { useTrades } from "@/hooks/useTrades";
 import { useQueryClient } from "@tanstack/react-query";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 type TradeEventType = "WIN" | "LOSS" | "OPEN" | "TODAY";
 
@@ -42,7 +43,9 @@ export default function TradeCalendar({ userId }: { userId: string }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [manualTrades, setManualTrades] = useState<TradeEvent[]>([]);
 
-  const { data: trades, isLoading, isError } = useTrades(userId);
+  const [simulated] = useLocalStorage<boolean>("simulated", false);
+
+  const { data: trades, isLoading, isError } = useTrades(userId, simulated);
 
   const tradeEvents: TradeEvent[] = useMemo(() => {
     const baseEvents: TradeEvent[] = trades

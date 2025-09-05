@@ -1,11 +1,13 @@
 "use client";
 
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useTrades } from "@/hooks/useTrades";
 import { useRouter } from "next/navigation";
 import React from "react";
 
 export default function StrategiesList({ userId }: { userId: string }) {
-  const { data: trades, isLoading, isError } = useTrades(userId);
+  const [simulated] = useLocalStorage<boolean>("simulated", false);
+  const { data: trades, isLoading, isError } = useTrades(userId, simulated);
 
   const router = useRouter();
 

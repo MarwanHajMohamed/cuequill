@@ -4,9 +4,12 @@ import React from "react";
 import Pie from "./Pie";
 import Bar from "./Bar";
 import { useTrades } from "@/hooks/useTrades";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 export default function TradeCharts({ userId }: { userId: string }) {
-  const { data: trades, isLoading, isError } = useTrades(userId);
+  const [simulated] = useLocalStorage<boolean>("simulated", false);
+
+  const { data: trades, isLoading, isError } = useTrades(userId, simulated);
 
   if (isLoading) return <div>Loading trades...</div>;
   if (isError) return <div>Error loading trades</div>;
@@ -19,7 +22,8 @@ export default function TradeCharts({ userId }: { userId: string }) {
         <Pie data={trades} />
       </div>
       <div className="w-[100%]">
-        You have made {trades.length} trades so far.
+        You have made {trades.length} trade{trades.length === 1 ? "" : "s"} so
+        far.
       </div>
       <div className="w-[100%]">
         <Bar data={trades} />

@@ -6,9 +6,11 @@ import TradeModal from "./TradeModal";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { Trade } from "@/app/types/Trades";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 export default function TradeList({ userId }: { userId: string }) {
-  const { data: trades, isLoading, isError } = useTrades(userId);
+  const [simulated] = useLocalStorage<boolean>("simulated", false);
+  const { data: trades, isLoading, isError } = useTrades(userId, simulated);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
 

@@ -99,6 +99,10 @@ export default function TradeModal({
   );
 
   const [notes, setNotes] = useState<string>(initialTrade?.notes ?? "");
+  const [simulated, setSimulated] = useState<boolean>(
+    initialTrade?.simulated || false
+  );
+
   const [errorMessage, setErrorMessage] = useState<string>("");
 
   const strategies: StrategyList[] = [
@@ -187,6 +191,7 @@ export default function TradeModal({
         status === "WIN" || status === "LOSS" ? closingContractPrice : null,
       profitLoss: status === "WIN" || status === "LOSS" ? profitLoss : null,
       notes,
+      simulated,
     };
 
     onSave(tradeData);
@@ -417,6 +422,19 @@ export default function TradeModal({
           placeholder="Notes"
           className="w-full p-2 text-white bg-[#1A1A1D] rounded"
         />
+
+        <div className="flex gap-2 items-center">
+          <input
+            type="checkbox"
+            checked={simulated}
+            onChange={(e) => setSimulated(e.target.checked)}
+            className="
+              appearance-none h-5 w-5 rounded border border-gray-400 checked:bg-red-500/60 checked:border-red-500 
+            "
+            id="simulated"
+          />
+          <label htmlFor="simulated">Simulated</label>
+        </div>
 
         <div
           className={`flex justify-between ${!initialTrade && "justify-end"}`}

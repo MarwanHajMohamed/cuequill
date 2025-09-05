@@ -31,4 +31,5 @@ export interface Trade {
   closingContractPrice?: number | null;
   profitLoss?: number | null;
   notes?: string;
+  simulated: boolean;
 }

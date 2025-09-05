@@ -9,16 +9,31 @@ export async function GET(req: NextRequest) {
   await connectDB();
 
   const userId = req.nextUrl.searchParams.get("userId");
+  const simulated = req.nextUrl.searchParams.get("simulated");
 
   try {
-    const trades = userId
-      ? await Trade.find({ userID: new mongoose.Types.ObjectId(userId) }).sort({ dateBought: -1 })
-      : await Trade.find().sort({ dateBought: -1 });  
+    // build query object
+    const query: any = {};
+    if (userId) {
+      query.userID = new mongoose.Types.ObjectId(userId);
+    }
+
+    // handle simulated flag
+    if (simulated === "true") {
+      query.simulated = true;
+    } else {
+      query.simulated = false;
+    }
+
+    const trades = await Trade.find(query).sort({ dateBought: -1 });
 
     return NextResponse.json(trades);
   } catch (err) {
     console.error("Error fetching trades:", err);
-    return NextResponse.json({ error: "Failed to fetch trades" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch trades" },
+      { status: 500 }
+    );
   }
 }
 
@@ -33,8 +48,7 @@ export async function POST(req: NextRequest) {
   } catch (err: unknown) {
     const message =
       err instanceof Error ? err.message : "Failed to create trade";
-  
+
     return NextResponse.json({ error: message }, { status: 400 });
   }
-  
 }
