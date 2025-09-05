@@ -1,13 +1,16 @@
 "use client";
 
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useTrades } from "@/hooks/useTrades";
 import { withAuth } from "@/lib/withAuth";
 import React, { use } from "react";
 
 function Page({ params }: { params: Promise<{ userId: string }> }) {
+  const [simulated] = useLocalStorage<boolean>("simulated", false);
+
   const { userId } = use(params);
 
-  const { data: trades, isLoading, isError } = useTrades(userId);
+  const { data: trades, isLoading, isError } = useTrades(userId, simulated);
 
   if (isLoading) return <div className="text-white">Loading strategies...</div>;
   if (isError)
