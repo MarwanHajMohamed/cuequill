@@ -3,7 +3,7 @@ import connectDB from "@/lib/db";
 import Trade from "@/lib/models/Trade";
 
 // Get trades for each user
-import mongoose from "mongoose";
+import mongoose, { FilterQuery } from "mongoose";
 
 export async function GET(req: NextRequest) {
   await connectDB();
@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
 
   try {
     // build query object
-    const query: any = {};
+    const query: Record<string, unknown> = {};
     if (userId) {
       query.userID = new mongoose.Types.ObjectId(userId);
     }

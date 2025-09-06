@@ -1,9 +1,0 @@
-{
-  "/api/auth/[...nextauth]/route": "app/api/auth/[...nextauth]/route.js",
-  "/api/trades/[id]/route": "app/api/trades/[id]/route.js",
-  "/api/trades/route": "app/api/trades/route.js",
-  "/dashboard/page": "app/dashboard/page.js",
-  "/favicon.ico/route": "app/favicon.ico/route.js",
-  "/strategies_used/[userId]/page": "app/strategies_used/[userId]/page.js",
-  "/trades/[userId]/page": "app/trades/[userId]/page.js"
-}

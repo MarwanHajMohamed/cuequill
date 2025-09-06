@@ -34,7 +34,7 @@ export default function Navbar() {
   return (
     <div className="fixed top-0 left-0 right-0 flex justify-center z-50">
       {simulated && (
-        <div className="border absolute top-0 w-full text-center text-xs p-[3px] border-red-500 bg-red-500/20">
+        <div className="border absolute top-0 backdrop-blur-xs w-full text-center text-xs p-[3px] border-red-500 bg-red-500/20">
           Simulated trading
         </div>
       )}

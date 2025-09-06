@@ -7,7 +7,7 @@ import { useEffect, ComponentType } from "react";
 
 export function withAuth<P extends object>(WrappedComponent: ComponentType<P>) {
   return function ProtectedComponent(props: P) {
-    const { data: session, status } = useSession();
+    const { status } = useSession();
     const router = useRouter();
 
     useEffect(() => {
