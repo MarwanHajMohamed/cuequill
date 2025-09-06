@@ -1,0 +1,16 @@
+{
+  "/_not-found/page": "/_not-found",
+  "/api/auth/[...nextauth]/route": "/api/auth/[...nextauth]",
+  "/api/trades/route": "/api/trades",
+  "/api/trades/[id]/route": "/api/trades/[id]",
+  "/favicon.ico/route": "/favicon.ico",
+  "/affirmations/page": "/affirmations",
+  "/dashboard/page": "/dashboard",
+  "/stocks/page": "/stocks",
+  "/rules/page": "/rules",
+  "/strategies/[slug]/page": "/strategies/[slug]",
+  "/trades/[userId]/page": "/trades/[userId]",
+  "/strategies_used/[userId]/page": "/strategies_used/[userId]",
+  "/page": "/",
+  "/strategies/page": "/strategies"
+}
