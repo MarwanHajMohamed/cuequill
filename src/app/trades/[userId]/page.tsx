@@ -1,16 +1,24 @@
 "use client";
 
+import TradeModal from "@/app/dashboard/components/lists/TradeModal";
+import { Trade } from "@/app/types/Trades";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useTrades } from "@/hooks/useTrades";
 import { withAuth } from "@/lib/withAuth";
-import React, { use } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import React, { use, useState } from "react";
 
 function Page({ params }: { params: Promise<{ userId: string }> }) {
   const [simulated] = useLocalStorage<boolean>("simulated", false);
 
   const { userId } = use(params);
-
   const { data: trades, isLoading, isError } = useTrades(userId, simulated);
+
+  const today = new Date();
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
 
   if (isLoading) return <div className="text-white">Loading trades...</div>;
   if (isError) return <div className="text-red-500">Error loading trades</div>;
@@ -18,7 +26,44 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
   if (!trades || trades.length === 0)
     return <div className="text-gray-400">No trades found.</div>;
 
+  const handleSaveTrade = async (trade: Trade) => {
+    if (trade._id) {
+      // UPDATE EXISTING TRADE
+      await fetch(`/api/trades/${trade._id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(trade),
+      });
+    } else {
+      // CREATE NEW TRADE
+      await fetch("/api/trades", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...trade, userId }),
+      });
+    }
+
+    await queryClient.invalidateQueries({ queryKey: ["trades", userId] });
+    setIsModalOpen(false);
+    setEditingTrade(null);
+  };
+
+  const handleDeleteTrade = async (tradeId: string) => {
+    try {
+      await fetch(`/api/trades/${tradeId}`, {
+        method: "DELETE",
+      });
+
+      await queryClient.invalidateQueries({ queryKey: ["trades", userId] });
+      setIsModalOpen(false);
+      setEditingTrade(null);
+    } catch (err) {
+      console.error("Failed to delete trade", err);
+    }
+  };
+
   const headings = [
+    "",
     "Symbol",
     "PUT/CALL",
     "Status",
@@ -41,126 +86,153 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
   };
 
   return (
-    <div className="p-10 mt-20 w-full flex flex-col items-center">
-      <div className="w-full max-w-[1500px] overflow-x-auto">
-        <table className="border-collapse table-auto min-w-full">
-          <thead>
-            <tr>
-              {headings.map((h) => (
-                <th
-                  key={h}
-                  className="px-4 py-1 whitespace-nowrap w-full text-[#5B5B5B] text-xs text-left"
-                >
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {trades.map((trade, index) => (
-              <tr key={index}>
-                <td className="px-4 py-1 whitespace-nowrap w-full">
-                  {trade.symbol}
-                </td>
-                <td
-                  className={`px-4 py-1 whitespace-nowrap w-full ${
-                    trade.option === "CALL" ? "text-green-500" : "text-red-500"
-                  }`}
-                >
-                  {trade.option.slice(0, 1) +
-                    trade.option.slice(1, trade.option.length).toLowerCase()}
-                </td>
-                <td
-                  className={`px-4 py-1 whitespace-nowrap w-full ${
-                    trade.status === "OPEN"
-                      ? "text-blue-500"
-                      : trade.status === "WIN"
-                      ? "text-green-500"
-                      : "text-red-500"
-                  }`}
-                >
-                  {trade.status.slice(0, 1) +
-                    trade.status.slice(1, trade.status.length).toLowerCase()}
-                </td>
-                <td className={`px-4 py-1 whitespace-nowrap w-full`}>
-                  {trade.status === "OPEN" ? (
-                    "-"
-                  ) : (
-                    <span
-                      className={
-                        trade.status === "WIN"
-                          ? "text-green-500"
-                          : "text-red-500"
-                      }
-                    >
-                      {trade.status === "LOSS" ? "-" : ""}${trade.profitLoss}
-                    </span>
-                  )}
-                </td>
-                <td className={`px-4 py-1 whitespace-nowrap w-full`}>
-                  {trade.status === "OPEN" ? (
-                    "-"
-                  ) : (
-                    <span
-                      className={
-                        Number(
-                          calcChange(
-                            Number(trade.closingContractPrice),
-                            Number(trade.contractPrice)
-                          )
-                        ) > 0
-                          ? "text-green-500"
-                          : "text-red-500"
-                      }
-                    >
-                      {calcChange(
-                        Number(trade.closingContractPrice),
-                        Number(trade.contractPrice)
-                      )}
-                      %
-                    </span>
-                  )}
-                </td>
-                <td className={`px-4 py-1 whitespace-nowrap w-full`}>
-                  {trade.spotPrice}
-                </td>
-                <td className={`px-4 py-1 whitespace-nowrap w-full`}>
-                  {trade.contractPrice}
-                </td>
-                <td className={`px-4 py-1 whitespace-nowrap w-full`}>
-                  {trade.qty}
-                </td>
-                <td className={`px-4 py-1 whitespace-nowrap w-full`}>
-                  {trade.strike}
-                </td>
-                <td className={`px-4 py-1 whitespace-nowrap w-full`}>
-                  {new Date(trade.dateBought).toLocaleDateString("en-GB")}
-                </td>
-                <td className={`px-4 py-1 whitespace-nowrap w-full`}>
-                  {new Date(trade.expiryDate).toLocaleDateString("en-GB")}
-                </td>
-                <td className={`px-4 py-1 whitespace-nowrap w-full`}>
-                  {trade.closingSpotPrice === null
-                    ? "-"
-                    : trade.closingSpotPrice}
-                </td>
-                <td className={`px-4 py-1 whitespace-nowrap w-full`}>
-                  {trade.closingContractPrice === null
-                    ? "-"
-                    : trade.closingContractPrice}
-                </td>
-                <td className={`px-4 py-1 whitespace-nowrap w-full`}>
-                  {trade.strategy}
-                </td>
-                <td className={`px-4 py-1 whitespace-nowrap w-full`}>
-                  {trade.notes}
-                </td>
+    <>
+      <div className="p-10 mt-20 w-full flex flex-col items-center">
+        <div className="w-full max-w-[1500px] overflow-x-auto">
+          <table className="border-collapse table-auto min-w-full">
+            <thead>
+              <tr>
+                {headings.map((h) => (
+                  <th
+                    key={h}
+                    className="px-4 py-1 whitespace-nowrap w-full text-[#5B5B5B] text-xs text-left"
+                  >
+                    {h}
+                  </th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {trades.map((trade, index) => (
+                <tr key={index}>
+                  <td>
+                    <i
+                      className="fa-solid fa-pen-to-square cursor-pointer text-white/30 transition duration-100 hover:text-white/100 text-lg"
+                      onClick={() => {
+                        setEditingTrade(trade);
+                        setIsModalOpen(true);
+                      }}
+                    ></i>
+                  </td>
+                  <td className="px-4 py-1 whitespace-nowrap w-full">
+                    {trade.symbol}
+                  </td>
+                  <td
+                    className={`px-4 py-1 whitespace-nowrap w-full ${
+                      trade.option === "CALL"
+                        ? "text-green-500"
+                        : "text-red-500"
+                    }`}
+                  >
+                    {trade.option.slice(0, 1) +
+                      trade.option.slice(1, trade.option.length).toLowerCase()}
+                  </td>
+                  <td
+                    className={`px-4 py-1 whitespace-nowrap w-full ${
+                      trade.status === "OPEN"
+                        ? "text-blue-500"
+                        : trade.status === "WIN"
+                        ? "text-green-500"
+                        : "text-red-500"
+                    }`}
+                  >
+                    {trade.status.slice(0, 1) +
+                      trade.status.slice(1, trade.status.length).toLowerCase()}
+                  </td>
+                  <td className={`px-4 py-1 whitespace-nowrap w-full`}>
+                    {trade.status === "OPEN" ? (
+                      "-"
+                    ) : (
+                      <span
+                        className={
+                          trade.status === "WIN"
+                            ? "text-green-500"
+                            : "text-red-500"
+                        }
+                      >
+                        {trade.status === "LOSS" ? "-" : ""}${trade.profitLoss}
+                      </span>
+                    )}
+                  </td>
+                  <td className={`px-4 py-1 whitespace-nowrap w-full`}>
+                    {trade.status === "OPEN" ? (
+                      "-"
+                    ) : (
+                      <span
+                        className={
+                          Number(
+                            calcChange(
+                              Number(trade.closingContractPrice),
+                              Number(trade.contractPrice)
+                            )
+                          ) > 0
+                            ? "text-green-500"
+                            : "text-red-500"
+                        }
+                      >
+                        {calcChange(
+                          Number(trade.closingContractPrice),
+                          Number(trade.contractPrice)
+                        )}
+                        %
+                      </span>
+                    )}
+                  </td>
+                  <td className={`px-4 py-1 whitespace-nowrap w-full`}>
+                    {trade.spotPrice}
+                  </td>
+                  <td className={`px-4 py-1 whitespace-nowrap w-full`}>
+                    {trade.contractPrice}
+                  </td>
+                  <td className={`px-4 py-1 whitespace-nowrap w-full`}>
+                    {trade.qty}
+                  </td>
+                  <td className={`px-4 py-1 whitespace-nowrap w-full`}>
+                    {trade.strike}
+                  </td>
+                  <td className={`px-4 py-1 whitespace-nowrap w-full`}>
+                    {new Date(trade.dateBought).toLocaleDateString("en-GB")}
+                  </td>
+                  <td className={`px-4 py-1 whitespace-nowrap w-full`}>
+                    {new Date(trade.expiryDate).toLocaleDateString("en-GB")}
+                  </td>
+                  <td className={`px-4 py-1 whitespace-nowrap w-full`}>
+                    {trade.closingSpotPrice === null
+                      ? "-"
+                      : trade.closingSpotPrice}
+                  </td>
+                  <td className={`px-4 py-1 whitespace-nowrap w-full`}>
+                    {trade.closingContractPrice === null
+                      ? "-"
+                      : trade.closingContractPrice}
+                  </td>
+                  <td className={`px-4 py-1 whitespace-nowrap w-full`}>
+                    {trade.strategy}
+                  </td>
+                  <td className={`px-4 py-1 whitespace-nowrap w-full`}>
+                    {trade.notes}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
+      {isModalOpen && (
+        <TradeModal
+          date={
+            editingTrade?.dateBought ? new Date(editingTrade.dateBought) : today
+          }
+          onClose={() => {
+            setIsModalOpen(false);
+            setEditingTrade(null);
+          }}
+          onSave={handleSaveTrade}
+          initialTrade={editingTrade ?? undefined}
+          onDelete={handleDeleteTrade}
+        />
+      )}
+    </>
   );
 }
 
