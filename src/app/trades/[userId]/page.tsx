@@ -7,6 +7,7 @@ import { useTrades } from "@/hooks/useTrades";
 import { withAuth } from "@/lib/withAuth";
 import { useQueryClient } from "@tanstack/react-query";
 import React, { use, useState } from "react";
+import NotesModal from "../NotesModal";
 
 function Page({ params }: { params: Promise<{ userId: string }> }) {
   const [simulated] = useLocalStorage<boolean>("simulated", false);
@@ -16,9 +17,12 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
 
   const today = new Date();
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const queryClient = useQueryClient();
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
+
+  const [isNotesOpen, setIsNotesOpen] = useState<boolean>(false);
+  const [notes, setNotes] = useState<string>("");
 
   if (isLoading) return <div className="text-white">Loading trades...</div>;
   if (isError) return <div className="text-red-500">Error loading trades</div>;
@@ -60,6 +64,16 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
     } catch (err) {
       console.error("Failed to delete trade", err);
     }
+  };
+
+  const handleSaveNotes = async (newNotes: string, tradeId: string) => {
+    await fetch(`/api/trades/${tradeId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ notes: newNotes }),
+    });
+
+    await queryClient.invalidateQueries({ queryKey: ["trades", userId] });
   };
 
   const headings = [
@@ -209,8 +223,17 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                   <td className={`px-4 py-1 whitespace-nowrap w-full`}>
                     {trade.strategy}
                   </td>
-                  <td className={`px-4 py-1 whitespace-nowrap w-full`}>
-                    {trade.notes}
+                  <td
+                    className={`px-4 py-1 whitespace-nowrap w-full text-center`}
+                  >
+                    <i
+                      className="fa-solid fa-book cursor-pointer text-white/50 transition duration-100 hover:text-white/100 text-lg"
+                      onClick={() => {
+                        setIsNotesOpen(true);
+                        setEditingTrade(trade);
+                        setNotes(trade.notes || "");
+                      }}
+                    ></i>
                   </td>
                 </tr>
               ))}
@@ -230,6 +253,14 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
           onSave={handleSaveTrade}
           initialTrade={editingTrade ?? undefined}
           onDelete={handleDeleteTrade}
+        />
+      )}
+      {isNotesOpen && (
+        <NotesModal
+          notes={notes}
+          onClose={() => setIsNotesOpen(false)}
+          onSave={handleSaveNotes}
+          tradeId={editingTrade?._id}
         />
       )}
     </>

@@ -95,7 +95,6 @@ export default function TradeList({ userId }: { userId: string }) {
                   onClick={() => {
                     setEditingTrade(trade);
                     setIsModalOpen(true);
-                    console.log(trade.expiryDate);
                   }}
                 >
                   <div className="flex justify-between items-center">
