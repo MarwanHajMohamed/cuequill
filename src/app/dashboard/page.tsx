@@ -39,7 +39,6 @@ function Page() {
           <label className="inline-flex items-center cursor-pointer flex gap-2">
             <input
               type="checkbox"
-              id="simulated"
               checked={simulated}
               onChange={(e) => {
                 setSimulated(e.target.checked);
