@@ -59,6 +59,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
       });
 
       await queryClient.invalidateQueries({ queryKey: ["trades", userId] });
+
       setIsModalOpen(false);
       setEditingTrade(null);
     } catch (err) {

@@ -3,6 +3,7 @@ import { DM_Mono } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
 import NavbarWrapper from "./dashboard/components/navbar/NavbarWrapper";
+import { ToastProvider } from "@/hooks/useToast";
 
 const dmMono = DM_Mono({
   subsets: ["latin"],
@@ -33,8 +34,10 @@ export default function RootLayout({
       </head>
       <body className={dmMono.className}>
         <Providers>
-          <NavbarWrapper />
-          {children}
+          <ToastProvider>
+            <NavbarWrapper />
+            {children}
+          </ToastProvider>
         </Providers>
       </body>
     </html>

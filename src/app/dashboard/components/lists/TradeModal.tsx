@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { format } from "date-fns";
 import { TradeEventType, StrategyList, Trade } from "@/app/types/Trades";
 import { useSession } from "next-auth/react";
+import { useToast } from "@/hooks/useToast";
 
 type TradeModalProps = {
   date: Date;
@@ -105,6 +106,10 @@ export default function TradeModal({
 
   const [errorMessage, setErrorMessage] = useState<string>("");
 
+  const [delModal, setDelModal] = useState<boolean>(false);
+
+  const toast = useToast();
+
   const strategies: StrategyList[] = [
     "Moving Average 40",
     "Normal Fall & Hard Fall",
@@ -194,276 +199,308 @@ export default function TradeModal({
       simulated,
     };
 
+    if (tradeData._id) {
+      toast(`Trade ${tradeData.symbol} updated successfully!`);
+    } else {
+      toast(`Trade ${tradeData.symbol} added successfully!`);
+    }
+
     onSave(tradeData);
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="relative flex flex-col gap-4 bg-[#0F0F17] p-6 rounded-xl w-[90%] max-w-lg text-white">
-        <div
-          className={`absolute top-[-40px] left-0 w-[100%] border-1 border-red-500/50 text-red-500 text-center p-1 rounded bg-red-700/10 ${
-            errorMessage === "" ? "hidden" : "shake"
-          }`}
-        >
-          {errorMessage}
-        </div>
-        <div className="flex gap-4">
-          <button
-            onClick={() => {
-              setSelectedOption("CALL");
-              setErrorMessage("");
-            }}
-            className={`w-1/2 cursor-pointer border rounded py-1 transition duration-100 ease-in-out
+    <>
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="relative flex flex-col gap-4 bg-[#0F0F17] p-6 rounded-xl w-[90%] max-w-lg text-white">
+          <div
+            className={`absolute top-[-40px] left-0 w-[100%] border-1 border-red-500/50 text-red-500 text-center p-1 rounded bg-red-700/10 ${
+              errorMessage === "" ? "hidden" : "shake"
+            }`}
+          >
+            {errorMessage}
+          </div>
+          <div className="flex gap-4">
+            <button
+              onClick={() => {
+                setSelectedOption("CALL");
+                setErrorMessage("");
+              }}
+              className={`w-1/2 cursor-pointer border rounded py-1 transition duration-100 ease-in-out
           ${
             selectedOption === "CALL"
               ? "bg-green-700 text-white border-green-700"
               : "text-green-500 border-green-500 hover:bg-green-700/30"
           }
         `}
-          >
-            CALL
-          </button>
+            >
+              CALL
+            </button>
 
-          <button
-            onClick={() => {
-              setSelectedOption("PUT");
-              setErrorMessage("");
-            }}
-            className={`w-1/2 cursor-pointer border rounded py-1 transition duration-100 ease-in-out
+            <button
+              onClick={() => {
+                setSelectedOption("PUT");
+                setErrorMessage("");
+              }}
+              className={`w-1/2 cursor-pointer border rounded py-1 transition duration-100 ease-in-out
           ${
             selectedOption === "PUT"
               ? "bg-red-700 text-white border-red-700"
               : "text-red-500 border-red-500 hover:bg-red-700/30"
           }
         `}
-          >
-            PUT
-          </button>
-        </div>
-
-        <input
-          type="text"
-          value={symbol}
-          onChange={(e) => {
-            setSymbol(e.target.value);
-            setErrorMessage("");
-          }}
-          placeholder="Symbol"
-          className="w-full p-2 text-white bg-[#1A1A1D] rounded"
-        />
-
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <div>
-            <FormInput
-              label="Spot Price"
-              name="spotPrice"
-              placeholder="Spot"
-              type="number"
-              value={spotPrice ?? ""}
-              onChange={(e) => {
-                setSpotPrice(parseFloat(e.target.value));
-                setErrorMessage("");
-              }}
-            />
-          </div>
-          <div>
-            <FormInput
-              label="Contract Price"
-              name="contractPrice"
-              placeholder="Contract"
-              type="number"
-              value={contractPrice ?? ""}
-              onChange={(e) => {
-                setContractPrice(parseFloat(e.target.value));
-                setErrorMessage("");
-              }}
-            />
-          </div>
-          <div>
-            <FormInput
-              label="Qty"
-              name="qty"
-              placeholder="Qty"
-              type="number"
-              value={qty ?? ""}
-              onChange={(e) => {
-                setQty(parseFloat(e.target.value));
-                setErrorMessage("");
-              }}
-            />
-          </div>
-          <div>
-            <FormInput
-              label="Strike"
-              name="strike"
-              placeholder="Strike"
-              type="number"
-              value={strike ?? ""}
-              onChange={(e) => {
-                setStrike(parseFloat(e.target.value));
-                setErrorMessage("");
-              }}
-            />
-          </div>
-          <div>
-            <FormInput
-              label="Date Bought"
-              name="dateBought"
-              type="date"
-              value={dateBought ?? ""}
-              onChange={(e) => {
-                setDateBought(e.target.value);
-                setErrorMessage("");
-              }}
-            />
-          </div>
-          <div>
-            <FormInput
-              label="Expiry Date"
-              name="expiryDate"
-              type="date"
-              value={expiryDate ?? ""}
-              onChange={(e) => {
-                setExpiryDate(e.target.value);
-                setErrorMessage("");
-              }}
-              min={dateBought}
-            />
-          </div>
-        </div>
-
-        <select
-          value={strategy}
-          onChange={(e) => {
-            setStrategy(e.target.value as StrategyList);
-            setErrorMessage("");
-          }}
-          className="w-full p-2 bg-[#2b2b2f] text-white rounded"
-        >
-          {strategies.map((strategy, index) => {
-            return (
-              <option value={strategy} key={index}>
-                {strategy}
-              </option>
-            );
-          })}
-        </select>
-
-        <select
-          value={status}
-          onChange={(e) => {
-            setStatus(e.target.value as TradeEventType);
-            setErrorMessage("");
-          }}
-          className="w-full p-2 bg-[#2b2b2f] text-white rounded"
-        >
-          <option value="OPEN">Open</option>
-          <option value="WIN">Win</option>
-          <option value="LOSS">Loss</option>
-        </select>
-
-        {(status === "WIN" || status === "LOSS") && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label htmlFor="closingSpotPrice" className="text-sm">
-                Closing Spot
-              </label>
-              <input
-                name="closingSpotPrice"
-                type="number"
-                value={closingSpotPrice!}
-                onChange={(e) => {
-                  setClosingSpotPrice(parseFloat(e.target.value));
-                  setErrorMessage("");
-                }}
-                placeholder="Closing Spot"
-                className="w-full p-2 text-white bg-[#1A1A1D] rounded"
-              />
-            </div>
-            <div>
-              <label htmlFor="closingContractPrice" className="text-sm">
-                Closing Contract
-              </label>
-              <input
-                name="closingContractPrice"
-                type="number"
-                value={closingContractPrice!}
-                onChange={(e) => {
-                  setClosingContractPrice(parseFloat(e.target.value));
-                  setErrorMessage("");
-                }}
-                placeholder="Closing Contract"
-                className="w-full p-2 text-white bg-[#1A1A1D] rounded"
-              />
-            </div>
-            <div>
-              <label htmlFor="profitLoss" className="text-sm">
-                P/L
-              </label>
-              <input
-                name="profitLoss"
-                type="number"
-                value={profitLoss!}
-                onChange={(e) => {
-                  setProfitLoss(parseFloat(e.target.value));
-                  setErrorMessage("");
-                }}
-                placeholder="P/L"
-                className="w-full p-2 text-white bg-[#1A1A1D] rounded"
-              />
-            </div>
-          </div>
-        )}
-
-        <input
-          type="text"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          placeholder="Notes"
-          className="w-full p-2 text-white bg-[#1A1A1D] rounded"
-        />
-
-        <div className="flex gap-2 items-center">
-          <input
-            type="checkbox"
-            checked={simulated}
-            onChange={(e) => setSimulated(e.target.checked)}
-            className="
-              appearance-none h-5 w-5 rounded border border-gray-400 checked:bg-red-500/60 checked:border-red-500 
-            "
-            id="simulated"
-          />
-          <label htmlFor="simulated">Simulated</label>
-        </div>
-
-        <div
-          className={`flex justify-between ${!initialTrade && "justify-end"}`}
-        >
-          {onDelete && initialTrade?._id && (
-            <button
-              className="px-4 py-2 bg-red-700 transition duration-200 ease-in-out rounded hover:bg-red-500 cursor-pointer"
-              onClick={() => onDelete(initialTrade._id!)}
             >
-              Delete
+              PUT
             </button>
+          </div>
+
+          <input
+            type="text"
+            value={symbol}
+            onChange={(e) => {
+              setSymbol(e.target.value);
+              setErrorMessage("");
+            }}
+            placeholder="Symbol"
+            className="w-full p-2 text-white bg-[#1A1A1D] rounded"
+          />
+
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div>
+              <FormInput
+                label="Spot Price"
+                name="spotPrice"
+                placeholder="Spot"
+                type="number"
+                value={spotPrice ?? ""}
+                onChange={(e) => {
+                  setSpotPrice(parseFloat(e.target.value));
+                  setErrorMessage("");
+                }}
+              />
+            </div>
+            <div>
+              <FormInput
+                label="Contract Price"
+                name="contractPrice"
+                placeholder="Contract"
+                type="number"
+                value={contractPrice ?? ""}
+                onChange={(e) => {
+                  setContractPrice(parseFloat(e.target.value));
+                  setErrorMessage("");
+                }}
+              />
+            </div>
+            <div>
+              <FormInput
+                label="Qty"
+                name="qty"
+                placeholder="Qty"
+                type="number"
+                value={qty ?? ""}
+                onChange={(e) => {
+                  setQty(parseFloat(e.target.value));
+                  setErrorMessage("");
+                }}
+              />
+            </div>
+            <div>
+              <FormInput
+                label="Strike"
+                name="strike"
+                placeholder="Strike"
+                type="number"
+                value={strike ?? ""}
+                onChange={(e) => {
+                  setStrike(parseFloat(e.target.value));
+                  setErrorMessage("");
+                }}
+              />
+            </div>
+            <div>
+              <FormInput
+                label="Date Bought"
+                name="dateBought"
+                type="date"
+                value={dateBought ?? ""}
+                onChange={(e) => {
+                  setDateBought(e.target.value);
+                  setErrorMessage("");
+                }}
+              />
+            </div>
+            <div>
+              <FormInput
+                label="Expiry Date"
+                name="expiryDate"
+                type="date"
+                value={expiryDate ?? ""}
+                onChange={(e) => {
+                  setExpiryDate(e.target.value);
+                  setErrorMessage("");
+                }}
+                min={dateBought}
+              />
+            </div>
+          </div>
+
+          <select
+            value={strategy}
+            onChange={(e) => {
+              setStrategy(e.target.value as StrategyList);
+              setErrorMessage("");
+            }}
+            className="w-full p-2 bg-[#2b2b2f] text-white rounded"
+          >
+            {strategies.map((strategy, index) => {
+              return (
+                <option value={strategy} key={index}>
+                  {strategy}
+                </option>
+              );
+            })}
+          </select>
+
+          <select
+            value={status}
+            onChange={(e) => {
+              setStatus(e.target.value as TradeEventType);
+              setErrorMessage("");
+            }}
+            className="w-full p-2 bg-[#2b2b2f] text-white rounded"
+          >
+            <option value="OPEN">Open</option>
+            <option value="WIN">Win</option>
+            <option value="LOSS">Loss</option>
+          </select>
+
+          {(status === "WIN" || status === "LOSS") && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label htmlFor="closingSpotPrice" className="text-sm">
+                  Closing Spot
+                </label>
+                <input
+                  name="closingSpotPrice"
+                  type="number"
+                  value={closingSpotPrice!}
+                  onChange={(e) => {
+                    setClosingSpotPrice(parseFloat(e.target.value));
+                    setErrorMessage("");
+                  }}
+                  placeholder="Closing Spot"
+                  className="w-full p-2 text-white bg-[#1A1A1D] rounded"
+                />
+              </div>
+              <div>
+                <label htmlFor="closingContractPrice" className="text-sm">
+                  Closing Contract
+                </label>
+                <input
+                  name="closingContractPrice"
+                  type="number"
+                  value={closingContractPrice!}
+                  onChange={(e) => {
+                    setClosingContractPrice(parseFloat(e.target.value));
+                    setErrorMessage("");
+                  }}
+                  placeholder="Closing Contract"
+                  className="w-full p-2 text-white bg-[#1A1A1D] rounded"
+                />
+              </div>
+              <div>
+                <label htmlFor="profitLoss" className="text-sm">
+                  P/L
+                </label>
+                <input
+                  name="profitLoss"
+                  type="number"
+                  value={profitLoss!}
+                  onChange={(e) => {
+                    setProfitLoss(parseFloat(e.target.value));
+                    setErrorMessage("");
+                  }}
+                  placeholder="P/L"
+                  className="w-full p-2 text-white bg-[#1A1A1D] rounded"
+                />
+              </div>
+            </div>
           )}
 
-          <div className="flex gap-2">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 bg-[#16151C] transition duration-200 ease-in-out rounded hover:bg-gray-700 cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700 cursor-pointer"
-            >
-              Save
-            </button>
+          <input
+            type="text"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Notes"
+            className="w-full p-2 text-white bg-[#1A1A1D] rounded"
+          />
+
+          <div className="flex gap-2 items-center">
+            <input
+              type="checkbox"
+              checked={simulated}
+              onChange={(e) => setSimulated(e.target.checked)}
+              className="
+              appearance-none h-5 w-5 rounded border border-gray-400 checked:bg-red-500/60 checked:border-red-500 
+            "
+              id="simulated"
+            />
+            <label htmlFor="simulated">Simulated</label>
+          </div>
+
+          <div
+            className={`flex justify-between ${!initialTrade && "justify-end"}`}
+          >
+            {onDelete && initialTrade?._id && (
+              <button
+                className="px-4 py-2 bg-red-700 transition duration-200 ease-in-out rounded hover:bg-red-500 cursor-pointer"
+                onClick={() => setDelModal(true)}
+              >
+                Delete
+              </button>
+            )}
+
+            <div className="flex gap-2">
+              <button
+                onClick={onClose}
+                className="px-4 py-2 bg-[#16151C] transition duration-200 ease-in-out rounded hover:bg-gray-700 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700 cursor-pointer"
+              >
+                Save
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+      {onDelete && initialTrade?._id && delModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-51">
+          <div className="flex flex-col gap-4 bg-[#0F0F17] items-center p-6 rounded-xl w-[90%] max-w-lg text-white">
+            <div>Are you sure you want to delete this trade?</div>
+            <div className="flex gap-3">
+              <button
+                className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700 cursor-pointer"
+                onClick={() => setDelModal(false)}
+              >
+                No
+              </button>
+              <button
+                className="px-4 py-2 bg-[#16151C] transition duration-200 ease-in-out rounded hover:bg-gray-700 cursor-pointer"
+                onClick={() => {
+                  onDelete(initialTrade._id!);
+                  toast(`Trade deleted successfully!`);
+                }}
+              >
+                Yes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

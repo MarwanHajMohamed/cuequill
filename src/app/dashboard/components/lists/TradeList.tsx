@@ -13,6 +13,7 @@ export default function TradeList({ userId }: { userId: string }) {
   const { data: trades, isLoading, isError } = useTrades(userId, simulated);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
   const today = new Date();
   const router = useRouter();
@@ -66,10 +67,13 @@ export default function TradeList({ userId }: { userId: string }) {
       });
 
       await queryClient.invalidateQueries({ queryKey: ["trades", userId] });
+
+      setToast("Trade deleted successfully!");
       setIsModalOpen(false);
       setEditingTrade(null);
     } catch (err) {
       console.error("Failed to delete trade", err);
+      setToast("Error deleting trade");
     }
   };
 
