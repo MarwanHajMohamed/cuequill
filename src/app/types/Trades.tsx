@@ -25,7 +25,6 @@ export interface Trade {
   strike: number;
   dateBought: string;
   expiryDate: string;
-  dateClosed: string;
   option: "CALL" | "PUT";
   strategy: StrategyList;
   closingSpotPrice?: number | null;
