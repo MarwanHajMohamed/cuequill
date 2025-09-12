@@ -17,7 +17,7 @@ const TradeSchema = new mongoose.Schema({
 
   dateBought: { type: Date, required: true },
   expiryDate: { type: Date, required: true },
-  dateClosed: { type: Date },
+  dateClosed: { type: Date, required: true },
 
   closingSpotPrice: { type: Number },
   closingContractPrice: { type: Number },

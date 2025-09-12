@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Trade from "@/lib/models/Trade";
+import mongoose from "mongoose";
 
 // Get trades for each user
-import mongoose, { FilterQuery } from "mongoose";
-
 export async function GET(req: NextRequest) {
   await connectDB();
 
