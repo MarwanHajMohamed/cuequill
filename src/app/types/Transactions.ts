@@ -1,3 +1,4 @@
+// Balance Event
 export type BalanceEvent = {
   date: Date;
   amount: number;

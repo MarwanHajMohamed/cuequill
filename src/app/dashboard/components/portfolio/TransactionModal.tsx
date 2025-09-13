@@ -20,6 +20,7 @@ export default function TransactionModal({ type, userId, onClose }: Props) {
 
   const toast = useToast();
 
+  // Save transaction
   const handleSave = async () => {
     if (!amount || !type) return alert("Please enter a valid amount");
 
