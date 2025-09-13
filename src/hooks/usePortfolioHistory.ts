@@ -16,6 +16,8 @@ export function usePortfolioHistory(userId: string) {
     amount: t.type === "DEPOSIT" ? t.amount : -t.amount,
   }));
 
+  console.log(txEvents);
+
   const tradeEvents = trades
     .filter((t) => t.status !== "OPEN" && t.profitLoss !== undefined)
     .map((t) => ({
@@ -24,19 +26,30 @@ export function usePortfolioHistory(userId: string) {
       amount: t.status === "LOSS" ? -t.profitLoss! : t.profitLoss!,
     }));
 
+  console.log(tradeEvents);
+
   const allEvents = [...txEvents, ...tradeEvents].sort(
     (a, b) => a.date.getTime() - b.date.getTime()
   );
 
-  let runningBalance = 0;
-  const history = allEvents.map((e) => {
-    runningBalance += e.amount;
+  // console.log(allEvents);
 
-    return {
-      date: format(e.date, "MMM dd"),
-      balance: runningBalance,
-      type: e.type,
-    };
+  // group by day
+  const grouped: Record<string, number> = {};
+  for (const e of allEvents) {
+    const key = format(e.date, "yyyy-MM-dd");
+    grouped[key] = (grouped[key] ?? 0) + e.amount;
+  }
+
+  const dailyEvents = Object.entries(grouped)
+    .map(([day, amount]) => ({ date: new Date(day), amount }))
+    .sort((a, b) => a.date.getTime() - b.date.getTime());
+
+  // running balance
+  let runningBalance = 0;
+  const history = dailyEvents.map((e) => {
+    runningBalance += e.amount;
+    return { date: format(e.date, "MMM dd"), balance: runningBalance };
   });
 
   return { data: history, loading: false };

@@ -14,10 +14,6 @@ export async function GET(req: NextRequest) {
   }
 
   const transactions = await Transaction.find({ userID: userId });
-  const trades = await Trade.find({
-    userID: userId,
-    status: { $in: ["WIN", "LOSS"] },
-  });
 
   const events: BalanceEvent[] = [];
 
@@ -28,17 +24,6 @@ export async function GET(req: NextRequest) {
       amount: t.amount,
       type: t.type,
     });
-  }
-
-  // Push all trades
-  for (const trade of trades) {
-    if (trade.dateClosed && typeof trade.profitLoss === "number") {
-      events.push({
-        date: trade.dateClosed,
-        amount: trade.profitLoss,
-        type: "TRADE",
-      });
-    }
   }
 
   // Sort events by date
@@ -65,6 +50,7 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+
     if (type !== "DEPOSIT" && type !== "WITHDRAW") {
       return NextResponse.json(
         { error: "Invalid transaction type" },
@@ -72,21 +58,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Calculate current balance (all transactions + trades)
+    // Calculate current balance
     const transactions = await Transaction.find({ userID: userId });
-    const trades = await Trade.find({
-      userID: userId,
-      status: { $in: ["WIN", "LOSS"] },
-    });
 
     let currentBalance = 0;
     for (const t of transactions) {
       currentBalance += t.type === "DEPOSIT" ? t.amount : -t.amount;
-    }
-    for (const trade of trades) {
-      if (trade.dateClosed && typeof trade.profitLoss === "number") {
-        currentBalance += trade.profitLoss;
-      }
     }
 
     // Check withdrawal limit
