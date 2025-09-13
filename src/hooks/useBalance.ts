@@ -10,6 +10,7 @@ export function useBalance(userId: string) {
   useEffect(() => {
     if (!userId) return;
 
+    // Get Balance
     const fetchBalance = async () => {
       try {
         const res = await fetch(`/api/transactions?userId=${userId}`);
