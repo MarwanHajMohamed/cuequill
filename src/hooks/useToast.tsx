@@ -1,5 +1,6 @@
 "use client";
 
+import { Trade } from "@/app/types/Trades";
 import React, {
   createContext,
   useContext,
@@ -17,7 +18,7 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [message, setMessage] = useState<string | null>(null);
-  const [trades, setTrades] = useState<any[]>([]);
+  const [trades, setTrades] = useState<Trade[]>([]);
   const notifiedTrades = useRef<Set<string>>(new Set());
 
   const showToast = useCallback((msg: string) => {
@@ -50,9 +51,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             expiry.toLocaleDateString("en-GB") ===
             nowUK.toLocaleDateString("en-GB");
 
-          if (isSameDay && !notifiedTrades.current.has(trade._id)) {
+          if (isSameDay && !notifiedTrades.current.has(trade._id!)) {
             showToast(`⚠️ Trade ${trade.symbol} is expiring today!`);
-            notifiedTrades.current.add(trade._id);
+            notifiedTrades.current.add(trade._id!);
           }
         });
       }
