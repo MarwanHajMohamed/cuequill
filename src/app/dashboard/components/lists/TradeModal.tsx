@@ -75,6 +75,12 @@ export default function TradeModal({
       : format(date, "yyyy-MM-dd")
   );
 
+  const [dateClosed, setDateClosed] = useState<string>(
+    initialTrade?.dateClosed
+      ? format(new Date(initialTrade.dateClosed), "yyyy-MM-dd")
+      : format(date, "yyyy-MM-dd")
+  );
+
   const [status, setStatus] = useState<TradeEventType>(
     initialTrade?.status ?? "OPEN"
   );
@@ -188,6 +194,7 @@ export default function TradeModal({
       strike: strike ?? 0,
       dateBought,
       expiryDate,
+      dateClosed,
       option: selectedOption!,
       strategy,
       closingSpotPrice:
@@ -210,7 +217,7 @@ export default function TradeModal({
 
   return (
     <>
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
         <div className="relative flex flex-col gap-4 bg-[#0F0F17] p-6 rounded-xl w-[90%] max-w-lg text-white">
           <div
             className={`absolute top-[-40px] left-0 w-[100%] border-1 border-red-500/50 text-red-500 text-center p-1 rounded bg-red-700/10 ${
@@ -375,56 +382,72 @@ export default function TradeModal({
           </select>
 
           {(status === "WIN" || status === "LOSS") && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label htmlFor="closingSpotPrice" className="text-sm">
-                  Closing Spot
-                </label>
-                <input
-                  name="closingSpotPrice"
-                  type="number"
-                  value={closingSpotPrice!}
-                  onChange={(e) => {
-                    setClosingSpotPrice(parseFloat(e.target.value));
-                    setErrorMessage("");
-                  }}
-                  placeholder="Closing Spot"
-                  className="w-full p-2 text-white bg-[#1A1A1D] rounded"
-                />
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label htmlFor="closingSpotPrice" className="text-sm">
+                    Closing Spot
+                  </label>
+                  <input
+                    name="closingSpotPrice"
+                    type="number"
+                    value={closingSpotPrice!}
+                    onChange={(e) => {
+                      setClosingSpotPrice(parseFloat(e.target.value));
+                      setErrorMessage("");
+                    }}
+                    placeholder="Closing Spot"
+                    className="w-full p-2 text-white bg-[#1A1A1D] rounded"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="closingContractPrice" className="text-sm">
+                    Closing Contract
+                  </label>
+                  <input
+                    name="closingContractPrice"
+                    type="number"
+                    value={closingContractPrice!}
+                    onChange={(e) => {
+                      setClosingContractPrice(parseFloat(e.target.value));
+                      setErrorMessage("");
+                    }}
+                    placeholder="Closing Contract"
+                    className="w-full p-2 text-white bg-[#1A1A1D] rounded"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="profitLoss" className="text-sm">
+                    P/L
+                  </label>
+                  <input
+                    name="profitLoss"
+                    type="number"
+                    value={profitLoss!}
+                    onChange={(e) => {
+                      setProfitLoss(parseFloat(e.target.value));
+                      setErrorMessage("");
+                    }}
+                    placeholder="P/L"
+                    className="w-full p-2 text-white bg-[#1A1A1D] rounded"
+                  />
+                </div>
               </div>
               <div>
-                <label htmlFor="closingContractPrice" className="text-sm">
-                  Closing Contract
-                </label>
-                <input
-                  name="closingContractPrice"
-                  type="number"
-                  value={closingContractPrice!}
+                <FormInput
+                  label="Date Closed"
+                  name="expiryDate"
+                  type="date"
+                  value={dateClosed ?? ""}
                   onChange={(e) => {
-                    setClosingContractPrice(parseFloat(e.target.value));
+                    setDateClosed(e.target.value);
                     setErrorMessage("");
                   }}
-                  placeholder="Closing Contract"
-                  className="w-full p-2 text-white bg-[#1A1A1D] rounded"
+                  min={dateBought}
+                  max={expiryDate}
                 />
               </div>
-              <div>
-                <label htmlFor="profitLoss" className="text-sm">
-                  P/L
-                </label>
-                <input
-                  name="profitLoss"
-                  type="number"
-                  value={profitLoss!}
-                  onChange={(e) => {
-                    setProfitLoss(parseFloat(e.target.value));
-                    setErrorMessage("");
-                  }}
-                  placeholder="P/L"
-                  className="w-full p-2 text-white bg-[#1A1A1D] rounded"
-                />
-              </div>
-            </div>
+            </>
           )}
 
           <input
