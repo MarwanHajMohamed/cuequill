@@ -1,5 +1,6 @@
 import mongoose, { Schema, Document, models } from "mongoose";
 
+// Transactions
 export interface ITransaction extends Document {
   userID: mongoose.Types.ObjectId;
   type: "DEPOSIT" | "WITHDRAW";
