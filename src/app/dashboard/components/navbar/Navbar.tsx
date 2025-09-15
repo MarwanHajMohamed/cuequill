@@ -75,6 +75,13 @@ export default function Navbar() {
           >
             Stocks/ETFs
           </div>
+          <div
+            className="cursor-pointer transition duration-100 hover:text-teal-500"
+            onClick={() => handleRoute("/community")}
+          >
+
+            Community
+          </div>
         </div>
         {/* Right Side */}
         <div ref={dropdownRef}>
@@ -85,9 +92,8 @@ export default function Navbar() {
             ></i>
           </div>
           <div
-            className={`absolute bottom-[-35px] right-3 bg-white text-black p-3 rounded-sm ${
-              open ? "block" : "hidden"
-            }`}
+            className={`absolute bottom-[-35px] right-3 bg-white text-black p-3 rounded-sm ${open ? "block" : "hidden"
+              }`}
           >
             <div
               className="cursor-pointer transition duration-50 hover:text-teal-500"
