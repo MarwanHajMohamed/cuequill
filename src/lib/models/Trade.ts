@@ -9,7 +9,6 @@ const TradeSchema = new mongoose.Schema({
   status: { type: String, enum: ["OPEN", "WIN", "LOSS"], default: "OPEN" },
   profitLoss: { type: Number },
 
-  spotPrice: { type: Number, required: true },
   contractPrice: { type: Number, required: true },
   qty: { type: Number, required: true },
 
@@ -19,7 +18,6 @@ const TradeSchema = new mongoose.Schema({
   expiryDate: { type: Date, required: true },
   dateClosed: { type: Date },
 
-  closingSpotPrice: { type: Number },
   closingContractPrice: { type: Number },
 
   simulated: { type: Boolean, required: true },

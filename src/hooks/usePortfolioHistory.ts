@@ -23,7 +23,7 @@ export function usePortfolioHistory(userId: string) {
     .map((t) => ({
       date: new Date(t.dateClosed ?? t.expiryDate),
       type: "TRADE",
-      amount: t.status === "LOSS" ? -t.profitLoss! : t.profitLoss!,
+      amount: t.profitLoss!,
     }));
 
   console.log(tradeEvents);

@@ -50,9 +50,6 @@ export default function TradeModal({
   const userId = session?.user?.id;
 
   const [symbol, setSymbol] = useState<string>(initialTrade?.symbol ?? "");
-  const [spotPrice, setSpotPrice] = useState<number | null>(
-    initialTrade?.spotPrice ?? null
-  );
 
   const [contractPrice, setContractPrice] = useState<number | null>(
     initialTrade?.contractPrice ?? null
@@ -89,20 +86,12 @@ export default function TradeModal({
     initialTrade?.strategy ?? "Moving Average 40"
   );
 
-  const [closingSpotPrice, setClosingSpotPrice] = useState<number | null>(
-    initialTrade?.closingSpotPrice ?? null
-  );
-
   const [closingContractPrice, setClosingContractPrice] = useState<
     number | null
   >(initialTrade?.closingContractPrice ?? null);
 
   const [selectedOption, setSelectedOption] = useState<"CALL" | "PUT" | null>(
     initialTrade?.option ?? null
-  );
-
-  const [profitLoss, setProfitLoss] = useState<number | null>(
-    initialTrade?.profitLoss ?? null
   );
 
   const [notes, setNotes] = useState<string>(initialTrade?.notes ?? "");
@@ -128,6 +117,7 @@ export default function TradeModal({
     "Gap Floor Break",
     "Model of 4 Steps",
     "Hanger in Daily",
+    "Other",
   ];
 
   const validate = (): string => {
@@ -135,8 +125,6 @@ export default function TradeModal({
       return "Select an option";
     } else if (symbol === "") {
       return "Enter a symbol";
-    } else if (spotPrice === null || Number.isNaN(spotPrice)) {
-      return "Fill out the spot price";
     } else if (contractPrice === null || Number.isNaN(contractPrice)) {
       return "Fill out the contract price";
     } else if (qty === null || Number.isNaN(qty)) {
@@ -148,26 +136,12 @@ export default function TradeModal({
     } else if (expiryDate === "") {
       return "Fill out the expiry date";
     } else if (
-      (status === "WIN" && closingSpotPrice === null) ||
-      (status === "LOSS" && closingSpotPrice === null) ||
-      (status === "WIN" && Number.isNaN(closingSpotPrice)) ||
-      (status === "LOSS" && Number.isNaN(closingSpotPrice))
-    ) {
-      return "Fill out the closing spot price";
-    } else if (
       (status === "WIN" && closingContractPrice === null) ||
       (status === "LOSS" && closingContractPrice === null) ||
       (status === "WIN" && Number.isNaN(closingContractPrice)) ||
       (status === "LOSS" && Number.isNaN(closingContractPrice))
     ) {
       return "Fill out the closing contract price";
-    } else if (
-      (status === "WIN" && profitLoss === null) ||
-      (status === "LOSS" && profitLoss === null) ||
-      (status === "WIN" && Number.isNaN(profitLoss)) ||
-      (status === "LOSS" && Number.isNaN(profitLoss))
-    ) {
-      return "Fill out the P/L";
     } else {
       return "";
     }
@@ -182,13 +156,25 @@ export default function TradeModal({
 
     const formattedDate = format(date, "yyyy-MM-dd");
 
+    let profitLoss = 0;
+
+    if (
+      closingContractPrice !== null &&
+      contractPrice !== null &&
+      qty !== null
+    ) {
+      profitLoss = Number(
+        ((closingContractPrice - contractPrice) * 100 * qty).toFixed(2)
+      );
+      console.log("Profit Loss: ", profitLoss);
+    }
+
     const tradeData: Trade = {
       _id: initialTrade?._id,
       userID: userId,
       date: formattedDate,
       status,
       symbol,
-      spotPrice: spotPrice ?? 0,
       contractPrice: contractPrice ?? 0,
       qty: qty ?? 0,
       strike: strike ?? 0,
@@ -197,8 +183,6 @@ export default function TradeModal({
       dateClosed,
       option: selectedOption!,
       strategy,
-      closingSpotPrice:
-        status === "WIN" || status === "LOSS" ? closingSpotPrice : null,
       closingContractPrice:
         status === "WIN" || status === "LOSS" ? closingContractPrice : null,
       profitLoss: status === "WIN" || status === "LOSS" ? profitLoss : null,
@@ -271,20 +255,7 @@ export default function TradeModal({
             className="w-full p-2 text-white bg-[#1A1A1D] rounded"
           />
 
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <div>
-              <FormInput
-                label="Spot Price"
-                name="spotPrice"
-                placeholder="Spot"
-                type="number"
-                value={spotPrice ?? ""}
-                onChange={(e) => {
-                  setSpotPrice(parseFloat(e.target.value));
-                  setErrorMessage("");
-                }}
-              />
-            </div>
+          <div className="grid md:grid-cols-3 gap-4">
             <div>
               <FormInput
                 label="Contract Price"
@@ -324,6 +295,8 @@ export default function TradeModal({
                 }}
               />
             </div>
+          </div>
+          <div className="grid md:grid-cols-2 gap-4">
             <div>
               <FormInput
                 label="Date Bought"
@@ -383,23 +356,7 @@ export default function TradeModal({
 
           {(status === "WIN" || status === "LOSS") && (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label htmlFor="closingSpotPrice" className="text-sm">
-                    Closing Spot
-                  </label>
-                  <input
-                    name="closingSpotPrice"
-                    type="number"
-                    value={closingSpotPrice!}
-                    onChange={(e) => {
-                      setClosingSpotPrice(parseFloat(e.target.value));
-                      setErrorMessage("");
-                    }}
-                    placeholder="Closing Spot"
-                    className="w-full p-2 text-white bg-[#1A1A1D] rounded"
-                  />
-                </div>
+              <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="closingContractPrice" className="text-sm">
                     Closing Contract
@@ -417,35 +374,19 @@ export default function TradeModal({
                   />
                 </div>
                 <div>
-                  <label htmlFor="profitLoss" className="text-sm">
-                    P/L
-                  </label>
-                  <input
-                    name="profitLoss"
-                    type="number"
-                    value={profitLoss!}
+                  <FormInput
+                    label="Date Closed"
+                    name="expiryDate"
+                    type="date"
+                    value={dateClosed ?? ""}
                     onChange={(e) => {
-                      setProfitLoss(parseFloat(e.target.value));
+                      setDateClosed(e.target.value);
                       setErrorMessage("");
                     }}
-                    placeholder="P/L"
-                    className="w-full p-2 text-white bg-[#1A1A1D] rounded"
+                    min={dateBought}
+                    max={expiryDate}
                   />
                 </div>
-              </div>
-              <div>
-                <FormInput
-                  label="Date Closed"
-                  name="expiryDate"
-                  type="date"
-                  value={dateClosed ?? ""}
-                  onChange={(e) => {
-                    setDateClosed(e.target.value);
-                    setErrorMessage("");
-                  }}
-                  min={dateBought}
-                  max={expiryDate}
-                />
               </div>
             </>
           )}

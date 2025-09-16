@@ -11,7 +11,8 @@ export type StrategyList =
   | "First Red Opening Candle"
   | "Gap Floor Break"
   | "Model of 4 Steps"
-  | "Hanger in Daily";
+  | "Hanger in Daily"
+  | "Other";
 
 export interface Trade {
   _id?: string;
@@ -19,7 +20,6 @@ export interface Trade {
   date: string;
   status: TradeEventType;
   symbol: string;
-  spotPrice: number;
   contractPrice: number;
   qty: number;
   strike: number;
@@ -28,7 +28,6 @@ export interface Trade {
   dateClosed: string;
   option: "CALL" | "PUT";
   strategy: StrategyList;
-  closingSpotPrice?: number | null;
   closingContractPrice?: number | null;
   profitLoss?: number | null;
   notes?: string;

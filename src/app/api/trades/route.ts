@@ -3,7 +3,7 @@ import connectDB from "@/lib/db";
 import Trade from "@/lib/models/Trade";
 
 // Get trades for each user
-import mongoose, { FilterQuery } from "mongoose";
+import mongoose from "mongoose";
 
 export async function GET(req: NextRequest) {
   await connectDB();

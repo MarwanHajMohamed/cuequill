@@ -84,13 +84,11 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
     "Status",
     "P/L",
     "Change %",
-    "Spot Price",
     "Contract Price",
     "Qty",
     "Strike",
     "Date Bought",
     "Expiry Date",
-    "Closing Spot Price",
     "Closing Contract Price",
     "Strategy",
     "Notes",
@@ -194,9 +192,6 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                     )}
                   </td>
                   <td className={`px-4 py-1 whitespace-nowrap w-full`}>
-                    {trade.spotPrice}
-                  </td>
-                  <td className={`px-4 py-1 whitespace-nowrap w-full`}>
                     {trade.contractPrice}
                   </td>
                   <td className={`px-4 py-1 whitespace-nowrap w-full`}>
@@ -210,11 +205,6 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                   </td>
                   <td className={`px-4 py-1 whitespace-nowrap w-full`}>
                     {new Date(trade.expiryDate).toLocaleDateString("en-GB")}
-                  </td>
-                  <td className={`px-4 py-1 whitespace-nowrap w-full`}>
-                    {trade.closingSpotPrice === null
-                      ? "-"
-                      : trade.closingSpotPrice}
                   </td>
                   <td className={`px-4 py-1 whitespace-nowrap w-full`}>
                     {trade.closingContractPrice === null
