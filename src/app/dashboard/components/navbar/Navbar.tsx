@@ -5,31 +5,44 @@ import React, { useState, useRef, useEffect } from "react";
 import { signOut } from "next-auth/react";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 
+type NavItemsType = {
+  name: string;
+  slug: string;
+  side: "LEFT" | "MIDDLE" | "RIGHT";
+};
+
 export default function Navbar() {
-  const [open, setOpen] = useState<boolean>(false);
+  const [open, setOpen] = useState(false);
   const router = useRouter();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [simulated] = useLocalStorage<boolean>("simulated", false);
 
-  const handleRoute = (path: string) => {
-    router.push(path);
+  const navItems: NavItemsType[] = [
+    { name: "fa-solid fa-house", slug: "dashboard", side: "LEFT" },
+    { name: "Affirmations", slug: "affirmations", side: "MIDDLE" },
+    { name: "Strategies", slug: "strategies", side: "MIDDLE" },
+    { name: "Rules", slug: "rules", side: "MIDDLE" },
+    { name: "Stocks/ETFs", slug: "stocks", side: "MIDDLE" },
+    { name: "Community", slug: "community", side: "MIDDLE" },
+    { name: "fa-solid fa-user", slug: "", side: "RIGHT" },
+  ];
+
+  const handleRoute = (slug: string) => {
+    if (slug) router.push(`/${slug}`);
   };
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (e: MouseEvent) => {
       if (
         dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
+        !dropdownRef.current.contains(e.target as Node)
       ) {
         setOpen(false);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [dropdownRef]);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <div className="fixed top-0 left-0 right-0 flex justify-center z-50">
@@ -38,70 +51,59 @@ export default function Navbar() {
           Simulated trading
         </div>
       )}
-      <div
-        className="flex justify-between items-center w-full max-w-[1500px] 
-        mt-6 m-10 p-4 px-5 bg-white/3 backdrop-blur-xs rounded-full border border-white/10"
-      >
-        {/* Left Side */}
-        <div>
-          <i
-            className="fa-solid fa-house cursor-pointer transition duration-100 hover:text-teal-500"
-            onClick={() => handleRoute("/dashboard")}
-          ></i>
-        </div>
+
+      <div className="flex justify-between items-center w-full max-w-[1500px] mt-6 m-10 p-4 px-5 bg-white/3 backdrop-blur-xs rounded-full border border-white/10">
+        {/* Left */}
+        {navItems
+          .filter((item) => item.side === "LEFT")
+          .map((item, i) => (
+            <i
+              key={i}
+              className={`${item.name} cursor-pointer transition duration-100 hover:text-teal-500`}
+              onClick={() => handleRoute(item.slug)}
+            />
+          ))}
+
         {/* Middle */}
         <div className="flex gap-10">
-          <div
-            className="cursor-pointer transition duration-100 hover:text-teal-500"
-            onClick={() => handleRoute("/affirmations")}
-          >
-            Affirmations
-          </div>
-          <div
-            className="cursor-pointer transition duration-100 hover:text-teal-500"
-            onClick={() => handleRoute("/strategies")}
-          >
-            Strategies
-          </div>
-          <div
-            className="cursor-pointer transition duration-100 hover:text-teal-500"
-            onClick={() => handleRoute("/rules")}
-          >
-            Rules
-          </div>
-          <div
-            className="cursor-pointer transition duration-100 hover:text-teal-500"
-            onClick={() => handleRoute("/stocks")}
-          >
-            Stocks/ETFs
-          </div>
-          <div
-            className="cursor-pointer transition duration-100 hover:text-teal-500"
-            onClick={() => handleRoute("/community")}
-          >
-
-            Community
-          </div>
+          {navItems
+            .filter((item) => item.side === "MIDDLE")
+            .map((item, i) => (
+              <div
+                key={i}
+                className="cursor-pointer transition duration-100 hover:text-teal-500"
+                onClick={() => handleRoute(item.slug)}
+              >
+                {item.name}
+              </div>
+            ))}
         </div>
-        {/* Right Side */}
-        <div ref={dropdownRef}>
-          <div>
-            <i
-              className="fa-solid fa-user cursor-pointer transition duration-100 hover:text-teal-500"
-              onClick={() => setOpen(!open)}
-            ></i>
-          </div>
-          <div
-            className={`absolute bottom-[-35px] right-3 bg-white text-black p-3 rounded-sm ${open ? "block" : "hidden"
-              }`}
-          >
-            <div
-              className="cursor-pointer transition duration-50 hover:text-teal-500"
-              onClick={() => signOut({ callbackUrl: "/" })}
-            >
-              Logout
+
+        {/* Right */}
+        <div ref={dropdownRef} className="relative">
+          {navItems
+            .filter((item) => item.side === "RIGHT")
+            .map((item, i) => (
+              <i
+                key={i}
+                className={`${item.name} cursor-pointer transition duration-100 hover:text-teal-500`}
+                onClick={() => setOpen((o) => !o)}
+              />
+            ))}
+
+          {open && (
+            <div className="absolute bottom-[-80px] flex flex-col right-[-5px] bg-white text-black rounded-sm">
+              <div className="cursor-pointer hover:text-teal-500 border-b p-2">
+                Settings
+              </div>
+              <div
+                className="cursor-pointer hover:text-teal-500 p-2"
+                onClick={() => signOut({ callbackUrl: "/" })}
+              >
+                Logout
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
