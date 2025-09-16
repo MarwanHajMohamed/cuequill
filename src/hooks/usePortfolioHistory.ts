@@ -1,6 +1,7 @@
 import { useTrades } from "./useTrades";
 import { useBalance } from "./useBalance";
 import { format } from "date-fns";
+import { BalanceEvent } from "@/app/types/Transactions";
 
 export function usePortfolioHistory(userId: string) {
   const { data: transactions = [], loading: loadingTx } = useBalance(userId);
@@ -10,13 +11,11 @@ export function usePortfolioHistory(userId: string) {
     return { data: [], loading: true };
   }
 
-  const txEvents = transactions.map((t) => ({
+  const txEvents = transactions.map((t: BalanceEvent) => ({
     date: new Date(t.date),
     type: t.type,
     amount: t.type === "DEPOSIT" ? t.amount : -t.amount,
   }));
-
-  console.log(txEvents);
 
   const tradeEvents = trades
     .filter((t) => t.status !== "OPEN" && t.profitLoss !== undefined)
@@ -26,13 +25,9 @@ export function usePortfolioHistory(userId: string) {
       amount: t.profitLoss!,
     }));
 
-  console.log(tradeEvents);
-
   const allEvents = [...txEvents, ...tradeEvents].sort(
     (a, b) => a.date.getTime() - b.date.getTime()
   );
-
-  // console.log(allEvents);
 
   // group by day
   const grouped: Record<string, number> = {};
