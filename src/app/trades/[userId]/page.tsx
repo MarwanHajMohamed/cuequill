@@ -163,7 +163,8 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                             : "text-red-500"
                         }
                       >
-                        {trade.status === "LOSS" ? "-" : ""}${trade.profitLoss}
+                        {trade.status === "LOSS" ? "-" : ""}$
+                        {trade.profitLoss?.toFixed(2)}
                       </span>
                     )}
                   </td>
