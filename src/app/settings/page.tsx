@@ -1,10 +1,11 @@
 "use client";
+import { withAuth } from "@/lib/withAuth";
 import { useSession } from "next-auth/react";
 import React, { useRef, useState } from "react";
 
 type settingsType = { setting: string; content: React.ReactNode };
 
-export default function page() {
+function Page() {
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -160,3 +161,5 @@ export default function page() {
     </div>
   );
 }
+
+export default withAuth(Page);
