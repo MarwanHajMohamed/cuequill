@@ -38,6 +38,14 @@ export default function StrategiesList({ userId }: { userId: string }) {
         <ul className="bg-[#16151C] border border-white/10 rounded-lg p-4 min-h-44">
           <li>No strategies found</li>
         </ul>
+        <div className="flex justify-end text-white">
+          <button
+            className="bg-blue-600 py-2 px-4 rounded-md cursor-pointer ease-in-out transition duration-100 hover:bg-blue-700"
+            onClick={() => router.push(`/strategies_used/${userId}`)}
+          >
+            See all
+          </button>
+        </div>
       </div>
     );
 
@@ -73,7 +81,7 @@ export default function StrategiesList({ userId }: { userId: string }) {
       </ul>
       <div className="flex justify-end">
         <button
-          className="bg-blue-800 py-2 px-4 rounded-md cursor-pointer ease-in-out transition duration-100 hover:bg-blue-700"
+          className="bg-blue-600 py-2 px-4 rounded-md cursor-pointer ease-in-out transition duration-100 hover:bg-blue-700"
           onClick={() => router.push(`/strategies_used/${userId}`)}
         >
           See all

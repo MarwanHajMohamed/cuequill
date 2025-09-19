@@ -52,3 +52,30 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }
+
+// Delete all trades
+export async function DELETE(req: NextRequest) {
+  await connectDB();
+
+  try {
+    const { userId } = await req.json();
+
+    if (!userId) {
+      return NextResponse.json({ error: "Missing userId" }, { status: 400 });
+    }
+
+    const filter = { userID: new mongoose.Types.ObjectId(userId) };
+
+    const result = await Trade.deleteMany(filter);
+
+    return NextResponse.json({
+      message: `Deleted ${result.deletedCount} trades.`,
+    });
+  } catch (err) {
+    console.error("Delete trades error:", err);
+    return NextResponse.json(
+      { error: "Failed to delete all trades", details: err },
+      { status: 500 }
+    );
+  }
+}

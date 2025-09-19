@@ -36,7 +36,7 @@ export async function PATCH(
     return NextResponse.json(updated);
   } catch (err) {
     return NextResponse.json(
-      { error: "Failed to update trade" },
+      { error: "Failed to update trade", err },
       { status: 400 }
     );
   }
@@ -58,7 +58,7 @@ export async function DELETE(
     return NextResponse.json({ message: "Trade deleted" });
   } catch (err) {
     return NextResponse.json(
-      { error: "Failed to delete trade" },
+      { error: "Failed to delete trade", err },
       { status: 400 }
     );
   }

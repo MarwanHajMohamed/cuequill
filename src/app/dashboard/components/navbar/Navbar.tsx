@@ -93,16 +93,22 @@ export default function Navbar() {
 
           {open && (
             <div className="absolute bottom-[-100px] flex flex-col right-[-5px] bg-white text-black rounded-sm">
-              <div className="flex items-center gap-2 cursor-pointer hover:bg-black/10 transition duration-100 border-b border-black/20 hover:border-black/20 p-3">
+              <div
+                className="flex items-center gap-2 cursor-pointer hover:bg-black/10 transition duration-100 border-b border-black/20 hover:border-black/20 p-3"
+                onClick={() => {
+                  handleRoute("settings");
+                  setOpen(false);
+                }}
+              >
                 <i className="fa-solid fa-gear"></i>
                 <div>Settings</div>
               </div>
               <div
-                className="flex items-center gap-2 cursor-pointer hover:bg-black/10 transition duration-100 p-3"
+                className="flex items-center gap-2 cursor-pointer hover:bg-black/10 transition duration-100 border-b border-black/20 hover:border-black/20 p-3"
                 onClick={() => signOut({ callbackUrl: "/" })}
               >
                 <i className="fa-solid fa-right-from-bracket"></i>
-                <div>Logout</div>
+                Logout
               </div>
             </div>
           )}
