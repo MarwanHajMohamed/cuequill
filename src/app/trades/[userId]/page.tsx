@@ -26,6 +26,8 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
   const [isNotesOpen, setIsNotesOpen] = useState<boolean>(false);
   const [notes, setNotes] = useState<string>("");
 
+  const [delAllModal, setDelAllModal] = useState<boolean>(false);
+
   if (isLoading)
     return (
       <div className="flex flex-col gap-2 items-center h-screen justify-center">
@@ -302,7 +304,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
             <button
               className="text-xs border border-red-500 bg-red-500/20 p-2 rounded-lg flex gap-2 items-center cursor-pointer
             transition duration-100 hover:bg-red-500/50"
-              onClick={handleDeleteAllTrades}
+              onClick={() => setDelAllModal(true)}
             >
               <i className="fa-solid fa-trash-can"></i>
               Delete all trades
@@ -331,6 +333,30 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
           onSave={handleSaveNotes}
           tradeId={editingTrade?._id}
         />
+      )}
+      {delAllModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-51">
+          <div className="flex flex-col gap-4 bg-[#0F0F17] items-center p-6 rounded-xl w-[90%] max-w-lg text-white text-center">
+            <div>
+              Are you sure you want to delete all trades? This action is
+              irreversible.
+            </div>
+            <div className="flex gap-3">
+              <button
+                className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700 cursor-pointer"
+                onClick={() => setDelAllModal(false)}
+              >
+                No
+              </button>
+              <button
+                className="px-4 py-2 bg-[#16151C] transition duration-200 ease-in-out rounded hover:bg-gray-700 cursor-pointer"
+                onClick={handleDeleteAllTrades}
+              >
+                Yes
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );
