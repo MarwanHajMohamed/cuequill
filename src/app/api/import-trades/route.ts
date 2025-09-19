@@ -4,6 +4,21 @@ import connectDb from "@/lib/db";
 import Trade from "@/lib/models/Trade";
 import Papa from "papaparse";
 
+type CsvRow = {
+  Symbol: string;
+  Strike: string;
+  Expiry: string;
+  "Put/Call": "C" | "P";
+  "Buy/Sell": "BUY" | "SELL";
+  Quantity: string;
+  TradePrice: string;
+  DateTime: string;
+  FifoPnlRealized: string;
+};
+
+// When you need to add remainingQty:
+type CsvRowWithQty = CsvRow & { remainingQty: number };
+
 function parseDateTime(dateStr: string) {
   const [date, time] = dateStr.split(";");
   const year = parseInt(date.substring(0, 4));
@@ -35,16 +50,19 @@ export async function POST(req: Request) {
   }
 
   const text = await file.text();
-  const { data } = Papa.parse(text, { header: true, skipEmptyLines: true });
+  const { data } = Papa.parse<CsvRow>(text, {
+    header: true,
+    skipEmptyLines: true,
+  });
 
-  data.sort((a: any, b: any) => {
+  data.sort((a: CsvRow, b: CsvRow) => {
     return (
       parseDateTime(a.DateTime).getTime() - parseDateTime(b.DateTime).getTime()
     );
   });
 
-  const grouped: Record<string, any[]> = {};
-  data.forEach((row: any) => {
+  const grouped: Record<string, CsvRow[]> = {};
+  data.forEach((row) => {
     const key = `${row.Symbol}-${row.Strike}-${row.Expiry}-${row["Put/Call"]}`;
     if (!grouped[key]) grouped[key] = [];
     grouped[key].push(row);
@@ -54,7 +72,7 @@ export async function POST(req: Request) {
 
   for (const key in grouped) {
     const rows = grouped[key];
-    const openQueue: any[] = [];
+    const openQueue: CsvRowWithQty[] = [];
 
     for (const row of rows) {
       const qty = Math.abs(parseInt(row.Quantity));
@@ -83,7 +101,7 @@ export async function POST(req: Request) {
             expiryDate: parseExpiry(buyRow.Expiry),
             dateClosed: parseDateTime(row.DateTime),
             closingContractPrice: parseFloat(row.TradePrice),
-            profitLoss: (parseFloat(row.FifoPnlRealized) / qty) * matchQty, // distribute pnl by qty
+            profitLoss: (parseFloat(row.FifoPnlRealized) / qty) * matchQty,
             status:
               (parseFloat(row.FifoPnlRealized) / qty) * matchQty > 0
                 ? "WIN"

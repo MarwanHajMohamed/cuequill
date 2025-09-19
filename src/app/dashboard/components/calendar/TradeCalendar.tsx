@@ -41,7 +41,7 @@ export default function TradeCalendar({ userId }: { userId: string }) {
   const queryClient = useQueryClient();
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const manualTrades: TradeEvent[] = [];
+  const manualTrades: TradeEvent[] = useMemo<TradeEvent[]>(() => [], []);
 
   const [simulated] = useLocalStorage<boolean>("simulated", false);
 

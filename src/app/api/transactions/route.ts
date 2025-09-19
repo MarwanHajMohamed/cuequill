@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectDb from "@/lib/db";
 import { Transaction } from "@/lib/models/Transaction";
-import Trade from "@/lib/models/Trade";
 import { BalanceEvent } from "@/app/types/Transactions";
 
 // GET handler

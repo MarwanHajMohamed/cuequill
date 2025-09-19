@@ -19,7 +19,7 @@ function Page() {
       return;
     }
 
-    const formData = new FormData();
+    const formData: FormData = new FormData();
     formData.append("file", file);
     formData.append("userId", userId!);
 
@@ -129,7 +129,7 @@ function Page() {
   return (
     <div className="m-10 mt-[140px] flex flex-col items-center">
       {/* Settings Box */}
-      <div className="bg-[#111115] w-full max-w-[1500px] rounded-lg h-[calc(100vh-200px)] overflow-scroll">
+      <div className="bg-[#0e0e10] border border-white/10 w-full max-w-[1500px] rounded-sm h-[calc(100vh-200px)] overflow-scroll">
         {/* Header */}
         <div className="flex items-center h-20 gap-3 text-2xl border-b border-white/10">
           <i className="fa-solid fa-gear pl-6"></i>
