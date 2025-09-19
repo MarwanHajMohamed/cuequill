@@ -8,9 +8,11 @@ import { withAuth } from "@/lib/withAuth";
 import { useQueryClient } from "@tanstack/react-query";
 import React, { use, useState } from "react";
 import NotesModal from "../NotesModal";
+import { useToast } from "@/hooks/useToast";
 
 function Page({ params }: { params: Promise<{ userId: string }> }) {
   const [simulated] = useLocalStorage<boolean>("simulated", false);
+  const toast = useToast();
 
   const { userId } = use(params);
   const { data: trades, isLoading, isError } = useTrades(userId, simulated);
@@ -24,11 +26,18 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
   const [isNotesOpen, setIsNotesOpen] = useState<boolean>(false);
   const [notes, setNotes] = useState<string>("");
 
-  if (isLoading) return <div className="text-white">Loading trades...</div>;
-  if (isError) return <div className="text-red-500">Error loading trades</div>;
-
-  if (!trades || trades.length === 0)
-    return <div className="text-gray-400">No trades found.</div>;
+  if (isLoading)
+    return (
+      <div className="flex flex-col gap-2 items-center h-screen justify-center">
+        Loading trades...
+      </div>
+    );
+  if (isError)
+    return (
+      <div className="text-red-500 lex flex-col gap-2 items-center h-screen justify-center">
+        Error loading trades
+      </div>
+    );
 
   const handleSaveTrade = async (trade: Trade) => {
     if (trade._id) {
@@ -67,6 +76,30 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
     }
   };
 
+  const handleDeleteAllTrades = async () => {
+    try {
+      const res = await fetch(`/api/trades`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId }),
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to delete trades");
+      }
+
+      const result = await res.json();
+
+      toast(result.message);
+      queryClient.invalidateQueries({ queryKey: ["trades", userId] });
+    } catch (err) {
+      console.error("Error deleting trades:", err);
+    }
+  };
+
   const handleSaveNotes = async (newNotes: string, tradeId: string) => {
     await fetch(`/api/trades/${tradeId}`, {
       method: "PATCH",
@@ -76,6 +109,40 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
 
     await queryClient.invalidateQueries({ queryKey: ["trades", userId] });
   };
+
+  if (!trades || trades.length === 0)
+    return (
+      <>
+        <div className="flex flex-col gap-2 items-center h-screen justify-center">
+          <div className="text-gray-400">No trades found.</div>
+          <button
+            className="cursor-pointer bg-blue-600 p-2 rounded-lg transition duration-100 hover:bg-blue-700"
+            onClick={() => {
+              setEditingTrade(null);
+              setIsModalOpen(true);
+            }}
+          >
+            Add new trade
+          </button>
+        </div>
+        {isModalOpen && (
+          <TradeModal
+            date={
+              editingTrade?.dateBought
+                ? new Date(editingTrade.dateBought)
+                : today
+            }
+            onClose={() => {
+              setIsModalOpen(false);
+              setEditingTrade(null);
+            }}
+            onSave={handleSaveTrade}
+            initialTrade={editingTrade ?? undefined}
+            onDelete={handleDeleteTrade}
+          />
+        )}
+      </>
+    );
 
   const headings = [
     "",
@@ -231,6 +298,16 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
               ))}
             </tbody>
           </table>
+          <div className="flex justify-end mt-5">
+            <button
+              className="text-xs border border-red-500 bg-red-500/20 p-2 rounded-lg flex gap-2 items-center cursor-pointer
+            transition duration-100 hover:bg-red-500/50"
+              onClick={handleDeleteAllTrades}
+            >
+              <i className="fa-solid fa-trash-can"></i>
+              Delete all trades
+            </button>
+          </div>
         </div>
       </div>
       {isModalOpen && (

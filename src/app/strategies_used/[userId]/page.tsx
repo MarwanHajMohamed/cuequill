@@ -16,13 +16,13 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
   if (isError)
     return <div className="text-red-500">Error loading strategies</div>;
 
-  if (!trades || trades.length === 0)
-    return <div className="text-gray-400">No strategies found.</div>;
-
-  const strategyCounts: Record<string, number> = trades.reduce((acc, trade) => {
-    acc[trade.strategy] = (acc[trade.strategy] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+  const strategyCounts: Record<string, number> = (trades ?? []).reduce(
+    (acc, trade) => {
+      acc[trade.strategy] = (acc[trade.strategy] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
 
   const strategies = [
     "Moving Average 40",
@@ -36,6 +36,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
     "Gap Floor Break",
     "Model of 4 Steps",
     "Hanger in Daily",
+    "Other",
   ];
 
   const strategyList = strategies

@@ -128,18 +128,14 @@ export default function TradeList({ userId }: { userId: string }) {
             </div>
           </li>
         </ul>
-        {trades?.length === 0 ? (
-          ""
-        ) : (
-          <div className="flex justify-end">
-            <button
-              className="bg-blue-800 py-2 px-4 rounded-md cursor-pointer ease-in-out transition duration-100 hover:bg-blue-700"
-              onClick={() => router.push(`/trades/${userId}`)}
-            >
-              See all
-            </button>
-          </div>
-        )}
+        <div className="flex justify-end">
+          <button
+            className="bg-blue-600 py-2 px-4 rounded-md cursor-pointer ease-in-out transition duration-100 hover:bg-blue-700"
+            onClick={() => router.push(`/trades/${userId}`)}
+          >
+            See all
+          </button>
+        </div>
       </div>
       {isModalOpen && (
         <TradeModal
