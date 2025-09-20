@@ -85,8 +85,8 @@ export default function TradeList({ userId }: { userId: string }) {
             [...trades]
               .sort(
                 (a, b) =>
-                  new Date(a.expiryDate).getTime() -
-                  new Date(b.expiryDate).getTime()
+                  new Date(b.dateBought).getTime() -
+                  new Date(a.dateBought).getTime()
               )
               .slice(0, 3)
               .map((trade) => (
