@@ -5,7 +5,7 @@ export default function CommunityPage() {
 
   const [addPost, setAddPost] = useState(false);
 
-  // This runs every time addPost changes
+
   useEffect(() => {
     console.log("addPost changed:", addPost);
   }, [addPost]);
