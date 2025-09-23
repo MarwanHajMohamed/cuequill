@@ -85,7 +85,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ userId }),
+        body: JSON.stringify({ userId, simulated }),
       });
 
       if (!res.ok) {
@@ -232,8 +232,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                             : "text-red-500"
                         }
                       >
-                        {trade.status === "LOSS" ? "-" : ""}$
-                        {trade.profitLoss?.toFixed(2)}
+                        ${trade.profitLoss?.toFixed(2)}
                       </span>
                     )}
                   </td>

@@ -58,13 +58,22 @@ export async function DELETE(req: NextRequest) {
   await connectDB();
 
   try {
-    const { userId } = await req.json();
+    const { userId, simulated }: { userId: string; simulated: boolean } =
+      await req.json();
 
     if (!userId) {
       return NextResponse.json({ error: "Missing userId" }, { status: 400 });
     }
 
-    const filter = { userID: new mongoose.Types.ObjectId(userId) };
+    const filter: Record<string, unknown> = {
+      userID: new mongoose.Types.ObjectId(userId),
+    };
+
+    if (simulated) {
+      filter.simulated = true;
+    } else if (!simulated) {
+      filter.simulated = { $ne: true };
+    }
 
     const result = await Trade.deleteMany(filter);
 
