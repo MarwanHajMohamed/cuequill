@@ -66,15 +66,15 @@ function Page() {
   ];
 
   return (
-    <div className="m-10 mt-[140px] flex flex-col items-center">
-      <div className="bg-[#0e0e10] border border-white/10 w-full max-w-[1500px] rounded-sm h-[calc(100vh-200px)] overflow-scroll">
+    <div className="mt-[100px] flex flex-col items-center">
+      <div className="bg-[#0e0e10] w-full rounded-sm h-[calc(100vh-105px)] overflow-scroll">
         <div className="flex items-center h-20 gap-3 text-2xl border-b border-white/10">
           <i className="fa-solid fa-gear pl-6"></i>
           <div>Settings</div>
         </div>
         <div className="flex">
           {/* Left: tabs */}
-          <div className="border-r border-white/10 text-sm">
+          <div className="border-r border-white/10 text-sm h-[calc(100vh-185px)]">
             {settingsTabs.map((setting, index) => (
               <div
                 className="p-3 px-7 border-b border-white/10 cursor-pointer"
@@ -85,7 +85,7 @@ function Page() {
             ))}
           </div>
           {/* Right: content */}
-          <div>
+          <div className="w-full">
             {settingsTabs.map((setting, index) => (
               <div key={index}>{setting.content}</div>
             ))}
