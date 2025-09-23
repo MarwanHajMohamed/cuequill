@@ -18,7 +18,7 @@ export default function PortfolioChart({ userId }: { userId: string }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [type, setType] = useState<"DEPOSIT" | "WITHDRAW" | null>(null);
 
-  if (loading) return <p>Loading balance history...</p>;
+  if (loading) return <div>Loading balance history...</div>;
 
   return (
     <>
@@ -26,7 +26,7 @@ export default function PortfolioChart({ userId }: { userId: string }) {
         <div>
           <div className="text-white flex gap-2 justify-center items-center">
             <div className="text-3xl">
-              ${(chartData[chartData.length - 1]?.balance ?? 0).toFixed(2)}
+              ${chartData[chartData.length - 1]?.balance ?? 0}
             </div>
           </div>
           <div className="flex gap-4 w-full items-center justify-center mb-5 mt-2">

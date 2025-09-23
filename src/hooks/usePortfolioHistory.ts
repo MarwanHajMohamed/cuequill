@@ -44,7 +44,10 @@ export function usePortfolioHistory(userId: string) {
   let runningBalance = 0;
   const history = dailyEvents.map((e) => {
     runningBalance += e.amount;
-    return { date: format(e.date, "MMM dd"), balance: runningBalance };
+    return {
+      date: format(e.date, "MMM dd"),
+      balance: runningBalance.toFixed(2),
+    };
   });
 
   return { data: history, loading: false };
