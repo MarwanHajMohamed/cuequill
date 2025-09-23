@@ -16,7 +16,6 @@ type CsvRow = {
   FifoPnlRealized: string;
 };
 
-// When you need to add remainingQty:
 type CsvRowWithQty = CsvRow & { remainingQty: number };
 
 function parseDateTime(dateStr: string) {
@@ -55,14 +54,17 @@ export async function POST(req: Request) {
     skipEmptyLines: true,
   });
 
-  data.sort((a: CsvRow, b: CsvRow) => {
+  // Filter out forex trades like GBP.USD, EUR.USD etc.
+  const filteredData = data.filter((row) => !row.Symbol.includes("."));
+
+  filteredData.sort((a: CsvRow, b: CsvRow) => {
     return (
       parseDateTime(a.DateTime).getTime() - parseDateTime(b.DateTime).getTime()
     );
   });
 
   const grouped: Record<string, CsvRow[]> = {};
-  data.forEach((row) => {
+  filteredData.forEach((row) => {
     const key = `${row.Symbol}-${row.Strike}-${row.Expiry}-${row["Put/Call"]}`;
     if (!grouped[key]) grouped[key] = [];
     grouped[key].push(row);
@@ -89,7 +91,6 @@ export async function POST(req: Request) {
           const buyRow = openQueue[0];
           const matchQty = Math.min(buyRow.remainingQty, remainingSell);
 
-          // Create a trade record
           const trade = {
             userID: userId,
             symbol: buyRow.Symbol.split(" ")[0],
