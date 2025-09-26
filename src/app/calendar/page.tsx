@@ -10,6 +10,7 @@ import TradeModal from "../dashboard/components/lists/TradeModal";
 import { useQueryClient } from "@tanstack/react-query";
 import { Trade } from "../types/Trades";
 import dynamic from "next/dynamic";
+import { withAuth } from "@/lib/withAuth";
 const Calendar = dynamic(() => import("react-calendar"), { ssr: false });
 
 type TradeEventType = "WIN" | "LOSS" | "OPEN" | "TODAY";
@@ -52,7 +53,7 @@ const getHoverColor = (status: TradeEventType) => {
   }
 };
 
-export default function Page() {
+function Page() {
   const [simulated] = useLocalStorage<boolean>("simulated", false);
   const { data: session } = useSession();
   const userId = session?.user?.id;
@@ -335,3 +336,5 @@ export default function Page() {
     </>
   );
 }
+
+export default withAuth(Page);
