@@ -1,4 +1,8 @@
-export default function CommunityPage() {
+"use client";
+
+import { withAuth } from "@/lib/withAuth";
+
+function Page() {
   return (
     <div className="mt-[100px] flex justify-center">
       <div className="flex gap-[35px] w-full max-w-[1500px] px-5 mt-6 m-10 p-4 ">
@@ -104,3 +108,5 @@ export default function CommunityPage() {
     </div>
   );
 }
+
+export default withAuth(Page);
