@@ -9,6 +9,7 @@ import TradeModal from "../lists/TradeModal";
 import { useTrades } from "@/hooks/useTrades";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { useRouter } from "next/navigation";
 
 type TradeEventType = "WIN" | "LOSS" | "OPEN" | "TODAY";
 
@@ -46,6 +47,8 @@ export default function TradeCalendar({ userId }: { userId: string }) {
   const [simulated] = useLocalStorage<boolean>("simulated", false);
 
   const { data: trades, isLoading, isError } = useTrades(userId, simulated);
+
+  const router = useRouter();
 
   const tradeEvents: TradeEvent[] = useMemo(() => {
     const baseEvents: TradeEvent[] = trades
@@ -111,17 +114,25 @@ export default function TradeCalendar({ userId }: { userId: string }) {
     return <div className="text-red-500 p-10">Error loading trades</div>;
 
   return (
-    <div className="flex justify-center p-20 w-[100%] max-w-400 gap-3">
-      <Calendar
-        onChange={(val) => handleDateClick(val as Date)}
-        value={value}
-        tileContent={renderTileContent}
-        formatShortWeekday={(locale, date) => format(date, "EEE")}
-        formatMonthYear={(locale, date) => format(date, "LLLL yyyy")}
-        next2Label={null}
-        prev2Label={null}
-        className="custom-calendar"
-      />
+    <div className="flex justify-center py-10 px-20 w-[100%] gap-3 relative">
+      <div className="relative">
+        <div className="absolute top-[-30px] right-0 flex items-center gap-2">
+          <i
+            className="fa-solid fa-expand cursor-pointer transition duration-100 hover:scale-110"
+            onClick={() => router.push("/calendar")}
+          ></i>
+        </div>
+        <Calendar
+          onChange={(val) => handleDateClick(val as Date)}
+          value={value}
+          tileContent={renderTileContent}
+          formatShortWeekday={(locale, date) => format(date, "EEE")}
+          formatMonthYear={(locale, date) => format(date, "LLLL yyyy")}
+          next2Label={null}
+          prev2Label={null}
+          className="custom-calendar"
+        />
+      </div>
       <div className="flex flex-col gap-2">
         <div>Key</div>
         <div className="flex gap-2 items-center">
