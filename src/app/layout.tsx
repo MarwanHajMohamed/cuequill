@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { DM_Mono } from "next/font/google";
 import "./globals.css";
+import "react-calendar/dist/Calendar.css";
+import "@/app/calendar/custom-calendar.css";
 import Providers from "./providers";
 import NavbarWrapper from "./dashboard/components/navbar/NavbarWrapper";
 import { ToastProvider } from "@/hooks/useToast";

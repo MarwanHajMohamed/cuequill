@@ -4,6 +4,10 @@
   border-radius: 6px;
 }
 
+.react-calendar .react-calendar__navigation button:focus {
+  background-color: transparent !important;
+}
+
 .react-calendar__tile {
   background: transparent;
   color: white;

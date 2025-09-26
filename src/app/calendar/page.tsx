@@ -6,10 +6,11 @@ import { useTrades } from "@/hooks/useTrades";
 import { format, startOfWeek, addDays, subWeeks, addWeeks } from "date-fns";
 import { useSession } from "next-auth/react";
 import React, { useMemo, useState } from "react";
-import Calendar from "react-calendar";
 import TradeModal from "../dashboard/components/lists/TradeModal";
 import { useQueryClient } from "@tanstack/react-query";
 import { Trade } from "../types/Trades";
+import dynamic from "next/dynamic";
+const Calendar = dynamic(() => import("react-calendar"), { ssr: false });
 
 type TradeEventType = "WIN" | "LOSS" | "OPEN" | "TODAY";
 
