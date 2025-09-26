@@ -51,7 +51,6 @@ function Page() {
             <span>Simulated trading</span>
           </label>
         </div>
-
         <TradeCalendar userId={userId} />
         <TradeStrategies userId={userId} />
       </div>
