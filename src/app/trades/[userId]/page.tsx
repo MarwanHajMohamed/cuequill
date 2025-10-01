@@ -381,7 +381,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                       >
                         {trade.notes !== "" ? (
                           <i
-                            className={`fa-solid fa-book-open cursor-pointer text-white/70 transition duration-100 hover:text-white/100 text-lg`}
+                            className="fa-solid fa-book-open cursor-pointer text-white/70 transition duration-100 hover:text-white/100 text-lg"
                             onClick={() => {
                               setIsNotesOpen(true);
                               setEditingTrade(trade);
@@ -390,7 +390,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                           ></i>
                         ) : (
                           <i
-                            className={`fa-solid fa-book cursor-pointer text-white/20 transition duration-100 hover:text-white/100 text-lg`}
+                            className="fa-solid fa-book cursor-pointer text-white/20 transition duration-100 hover:text-white/100 text-lg"
                             onClick={() => {
                               setIsNotesOpen(true);
                               setEditingTrade(trade);
