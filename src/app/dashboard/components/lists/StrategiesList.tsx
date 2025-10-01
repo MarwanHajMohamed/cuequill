@@ -65,7 +65,7 @@ export default function StrategiesList({ userId }: { userId: string }) {
     <div className="text-white p-6 space-y-4 w-[100%] max-w-150">
       <h2 className="font-semibold">Most used strategies:</h2>
       <ul className="bg-[#16151C] border border-white/10 rounded-lg pl-4 min-h-44 text-sm">
-        {sortedStrategies.map(([strategy, count]) => {
+        {sortedStrategies.slice(0, 4).map(([strategy, count]) => {
           return (
             <li
               key={strategy}

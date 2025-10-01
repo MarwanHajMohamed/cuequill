@@ -77,7 +77,18 @@ export default function TradeList({ userId }: { userId: string }) {
   return (
     <>
       <div className="text-white p-6 space-y-4 w-[100%] max-w-150">
-        <h2 className="font-semibold">Trades:</h2>
+        <div className="flex justify-between items-center">
+          <h2 className="font-semibold">Trades:</h2>
+          <div
+            className="bg-white/10 w-6 text-center rounded-full cursor-pointer"
+            onClick={() => {
+              setEditingTrade(null);
+              setIsModalOpen(true);
+            }}
+          >
+            +
+          </div>
+        </div>
         <ul className="bg-[#16151C] border border-white/10 rounded-lg pl-4 min-h-44">
           {!trades || trades.length === 0 ? (
             <li className="text-[#5B5B5B] py-4">No trades found</li>
@@ -88,7 +99,7 @@ export default function TradeList({ userId }: { userId: string }) {
                   new Date(b.dateBought).getTime() -
                   new Date(a.dateBought).getTime()
               )
-              .slice(0, 3)
+              .slice(0, 4)
               .map((trade) => (
                 <li
                   key={trade._id}
@@ -116,17 +127,6 @@ export default function TradeList({ userId }: { userId: string }) {
                 </li>
               ))
           )}
-          <li className="p-2 pr-3 flex justify-end">
-            <div
-              className="bg-white/10 w-6 text-center rounded-full cursor-pointer"
-              onClick={() => {
-                setEditingTrade(null);
-                setIsModalOpen(true);
-              }}
-            >
-              +
-            </div>
-          </li>
         </ul>
         <div className="flex justify-end">
           <button
