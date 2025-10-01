@@ -1,6 +1,7 @@
 export type TradeEventType = "WIN" | "LOSS" | "OPEN";
 
 export type StrategyList =
+  | "All"
   | "Moving Average 40"
   | "Normal Fall & Hard Fall"
   | "Bearish Channel Break"
