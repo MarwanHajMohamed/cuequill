@@ -379,14 +379,25 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                       <td
                         className={`px-4 py-1 whitespace-nowrap w-full text-center`}
                       >
-                        <i
-                          className="fa-solid fa-book cursor-pointer text-white/50 transition duration-100 hover:text-white/100 text-lg"
-                          onClick={() => {
-                            setIsNotesOpen(true);
-                            setEditingTrade(trade);
-                            setNotes(trade.notes || "");
-                          }}
-                        ></i>
+                        {trade.notes !== "" ? (
+                          <i
+                            className={`fa-solid fa-book-open cursor-pointer text-white/70 transition duration-100 hover:text-white/100 text-lg`}
+                            onClick={() => {
+                              setIsNotesOpen(true);
+                              setEditingTrade(trade);
+                              setNotes(trade.notes || "");
+                            }}
+                          ></i>
+                        ) : (
+                          <i
+                            className={`fa-solid fa-book cursor-pointer text-white/20 transition duration-100 hover:text-white/100 text-lg`}
+                            onClick={() => {
+                              setIsNotesOpen(true);
+                              setEditingTrade(trade);
+                              setNotes(trade.notes || "");
+                            }}
+                          ></i>
+                        )}
                       </td>
                     </tr>
                   ))}
