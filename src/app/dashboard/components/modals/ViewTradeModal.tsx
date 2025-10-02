@@ -113,7 +113,9 @@ export default function ViewTradeModal({
                           Profit: ${initialTrade.profitLoss?.toFixed(2)}
                         </div>
                       ) : (
-                        <div className="text-red-500">Loss:</div>
+                        <div className="text-red-500">
+                          Loss: ${initialTrade.profitLoss?.toFixed(2)}
+                        </div>
                       )}
                     </div>
                   </div>
