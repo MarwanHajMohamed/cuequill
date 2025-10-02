@@ -29,6 +29,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
   const [delAllModal, setDelAllModal] = useState<boolean>(false);
 
   const [strategy, setStrategy] = useState<StrategyList>("All");
+  const [symbol, setSymbol] = useState<string>("All");
   const [filter, setFilter] = useState<"All" | "Win" | "Loss">("All");
 
   useEffect(() => {
@@ -71,6 +72,11 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
     "Model of 4 Steps",
     "Hanger in Daily",
     "Other",
+  ];
+
+  const symbols = [
+    "All",
+    ...Array.from(new Set(trades?.map((trade: Trade) => trade.symbol) || [])),
   ];
 
   const handleSaveTrade = async (trade: Trade) => {
@@ -176,6 +182,9 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
       // Filter by strategy
       if (strategy !== "All" && trade.strategy !== strategy) return false;
 
+      // Filter by symbol
+      if (symbol !== "All" && trade.symbol !== symbol) return false;
+
       return true;
     });
 
@@ -235,21 +244,43 @@ ${
             </button>
 
             <div className="w-[1px] h-5 bg-white"></div>
-            <select
-              value={strategy}
-              onChange={(e) => {
-                setStrategy(e.target.value as StrategyList);
-              }}
-              className="p-1 bg-[#2b2b2f] text-white rounded"
-            >
-              {strategies.map((strategy, index) => {
-                return (
-                  <option value={strategy} key={index}>
-                    {strategy}
-                  </option>
-                );
-              })}
-            </select>
+            <div>
+              <div className="text-xs text-white/40 mb-1">Strategies:</div>
+              <select
+                value={strategy}
+                onChange={(e) => {
+                  setStrategy(e.target.value as StrategyList);
+                }}
+                className="p-1 bg-[#2b2b2f] text-white rounded"
+              >
+                {strategies.map((strategy, index) => {
+                  return (
+                    <option value={strategy} key={index}>
+                      {strategy}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+            <div className="w-[1px] h-5 bg-white"></div>
+            <div>
+              <div className="text-xs text-white/40 mb-1">Symbol:</div>
+              <select
+                value={symbol}
+                onChange={(e) => {
+                  setSymbol(e.target.value);
+                }}
+                className="p-1 bg-[#2b2b2f] text-white rounded"
+              >
+                {symbols.map((symbol, index) => {
+                  return (
+                    <option value={symbol} key={index}>
+                      {symbol}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
           </div>
           <div className="w-full max-w-[1500px] overflow-x-auto mt-5">
             {filteredTrades?.length === 0 ? (
