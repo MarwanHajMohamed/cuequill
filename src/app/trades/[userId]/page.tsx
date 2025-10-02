@@ -1,6 +1,6 @@
 "use client";
 
-import TradeModal from "@/app/dashboard/components/lists/TradeModal";
+import TradeModal from "@/app/dashboard/components/modals/EditTradeModal";
 import { StrategyList, Trade } from "@/app/types/Trades";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useTrades } from "@/hooks/useTrades";

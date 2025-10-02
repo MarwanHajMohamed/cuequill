@@ -39,7 +39,7 @@ function FormInput({ label, name, placeholder, ...props }: InputProps) {
   );
 }
 
-export default function TradeModal({
+export default function EditTradeModal({
   date,
   onClose,
   onSave,
@@ -48,59 +48,46 @@ export default function TradeModal({
 }: TradeModalProps) {
   const { data: session } = useSession();
   const userId = session?.user?.id;
-
   const [symbol, setSymbol] = useState<string>(initialTrade?.symbol ?? "");
-
   const [contractPrice, setContractPrice] = useState<number | null>(
     initialTrade?.contractPrice ?? null
   );
-
   const [qty, setQty] = useState<number | null>(initialTrade?.qty ?? null);
   const [strike, setStrike] = useState<number | null>(
     initialTrade?.strike ?? null
   );
-
   const [dateBought, setDateBought] = useState<string>(
     initialTrade?.dateBought
       ? format(new Date(initialTrade.dateBought), "yyyy-MM-dd")
       : format(date, "yyyy-MM-dd")
   );
-
   const [expiryDate, setExpiryDate] = useState<string>(
     initialTrade?.expiryDate
       ? format(new Date(initialTrade.expiryDate), "yyyy-MM-dd")
       : format(date, "yyyy-MM-dd")
   );
-
   const [dateClosed, setDateClosed] = useState<string>(
     initialTrade?.dateClosed
       ? format(new Date(initialTrade.dateClosed), "yyyy-MM-dd")
       : format(date, "yyyy-MM-dd")
   );
-
   const [status, setStatus] = useState<TradeEventType>(
     initialTrade?.status ?? "OPEN"
   );
-
   const [strategy, setStrategy] = useState<StrategyList>(
     initialTrade?.strategy ?? "Moving Average 40"
   );
-
   const [closingContractPrice, setClosingContractPrice] = useState<
     number | null
   >(initialTrade?.closingContractPrice ?? null);
-
   const [selectedOption, setSelectedOption] = useState<"CALL" | "PUT" | null>(
     initialTrade?.option ?? null
   );
-
   const [notes, setNotes] = useState<string>(initialTrade?.notes ?? "");
   const [simulated, setSimulated] = useState<boolean>(
     initialTrade?.simulated || false
   );
-
   const [errorMessage, setErrorMessage] = useState<string>("");
-
   const [delModal, setDelModal] = useState<boolean>(false);
 
   const toast = useToast();
@@ -440,7 +427,7 @@ export default function TradeModal({
             <div className="flex gap-2">
               <button
                 onClick={onClose}
-                className="px-4 py-2 bg-[#16151C] transition duration-200 ease-in-out rounded hover:bg-gray-700 cursor-pointer"
+                className="px-4 py-2 bg-[#16151C] transition duration-200 ease-in-out rounded hover:bg-[#16151C]/70 cursor-pointer"
               >
                 Cancel
               </button>

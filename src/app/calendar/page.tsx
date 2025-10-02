@@ -6,7 +6,7 @@ import { useTrades } from "@/hooks/useTrades";
 import { format, startOfWeek, addDays, subWeeks, addWeeks } from "date-fns";
 import { useSession } from "next-auth/react";
 import React, { useMemo, useState } from "react";
-import TradeModal from "../dashboard/components/lists/TradeModal";
+import TradeModal from "../dashboard/components/modals/TradeModal";
 import { useQueryClient } from "@tanstack/react-query";
 import { Trade } from "../types/Trades";
 import dynamic from "next/dynamic";

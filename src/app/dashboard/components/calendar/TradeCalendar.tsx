@@ -5,7 +5,7 @@ import Calendar from "react-calendar";
 import { format } from "date-fns";
 import "react-calendar/dist/Calendar.css";
 import "./calendar-custom.css";
-import TradeModal from "../lists/TradeModal";
+import TradeModal from "../modals/EditTradeModal";
 import { useTrades } from "@/hooks/useTrades";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocalStorage } from "@/hooks/useLocalStorage";

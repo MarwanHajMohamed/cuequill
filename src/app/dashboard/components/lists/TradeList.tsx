@@ -2,7 +2,7 @@
 
 import { useTrades } from "@/hooks/useTrades";
 import React, { useState } from "react";
-import TradeModal from "./TradeModal";
+import TradeModal from "../modals/TradeModal";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { Trade } from "@/app/types/Trades";
