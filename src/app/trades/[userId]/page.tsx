@@ -6,7 +6,7 @@ import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useTrades } from "@/hooks/useTrades";
 import { withAuth } from "@/lib/withAuth";
 import { useQueryClient } from "@tanstack/react-query";
-import React, { use, useState } from "react";
+import React, { use, useEffect, useState } from "react";
 import NotesModal from "../NotesModal";
 import { useToast } from "@/hooks/useToast";
 
@@ -30,6 +30,19 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
 
   const [strategy, setStrategy] = useState<StrategyList>("All");
   const [filter, setFilter] = useState<"All" | "Win" | "Loss">("All");
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setDelAllModal(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
 
   if (isLoading)
     return (
@@ -113,6 +126,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
       }
 
       const result = await res.json();
+      setDelAllModal(false);
 
       toast(result.message);
       queryClient.invalidateQueries({ queryKey: ["trades", userId] });
@@ -130,40 +144,6 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
 
     await queryClient.invalidateQueries({ queryKey: ["trades", userId] });
   };
-
-  if (!trades || trades.length === 0)
-    return (
-      <>
-        <div className="flex flex-col gap-2 items-center h-screen justify-center">
-          <div className="text-gray-400">No trades found.</div>
-          <button
-            className="cursor-pointer bg-blue-600 p-2 rounded-lg transition duration-100 hover:bg-blue-700"
-            onClick={() => {
-              setEditingTrade(null);
-              setIsModalOpen(true);
-            }}
-          >
-            Add new trade
-          </button>
-        </div>
-        {isModalOpen && (
-          <TradeModal
-            date={
-              editingTrade?.dateBought
-                ? new Date(editingTrade.dateBought)
-                : today
-            }
-            onClose={() => {
-              setIsModalOpen(false);
-              setEditingTrade(null);
-            }}
-            onSave={handleSaveTrade}
-            initialTrade={editingTrade ?? undefined}
-            onDelete={handleDeleteTrade}
-          />
-        )}
-      </>
-    );
 
   const headings = [
     "",
@@ -186,237 +166,259 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
     return (((newPrice - oldPrice) / oldPrice) * 100).toFixed(0);
   };
 
-  const filteredTrades = trades.filter((trade) => {
-    // Filter by status (win/loss)
-    if (filter === "Win" && trade.status !== "WIN") return false;
-    if (filter === "Loss" && trade.status !== "LOSS") return false;
+  const filteredTrades =
+    trades &&
+    trades.filter((trade) => {
+      // Filter by status
+      if (filter === "Win" && trade.status !== "WIN") return false;
+      if (filter === "Loss" && trade.status !== "LOSS") return false;
 
-    // Filter by strategy
-    if (strategy !== "All" && trade.strategy !== strategy) return false;
+      // Filter by strategy
+      if (strategy !== "All" && trade.strategy !== strategy) return false;
 
-    return true;
-  });
+      return true;
+    });
 
   return (
     <>
-      <div className="p-10 mt-20 w-full flex flex-col items-center">
-        <div className="flex items-center w-full max-w-[1500px] gap-7">
-          <div>Filters:</div>
+      {!trades || trades.length === 0 ? (
+        <div className="flex flex-col gap-2 items-center h-screen justify-center">
+          <div className="text-gray-400">No trades found.</div>
           <button
-            onClick={() => setFilter("All")}
-            className={`border px-3 rounded cursor-pointer transition duration-100
-    ${
-      filter === "All"
-        ? "bg-blue-600/80 border-blue-600"
-        : "bg-blue-600/10 border-blue-600 hover:bg-blue-600/60"
-    }`}
-          >
-            All
-          </button>
-
-          <button
-            onClick={() => setFilter("Win")}
-            className={`border px-3 rounded cursor-pointer transition duration-100
-    ${
-      filter === "Win"
-        ? "bg-green-600/80 border-green-600"
-        : "bg-green-600/10 border-green-600 hover:bg-green-600/60"
-    }`}
-          >
-            Win
-          </button>
-
-          <button
-            onClick={() => setFilter("Loss")}
-            className={`border px-3 rounded cursor-pointer transition duration-100
-    ${
-      filter === "Loss"
-        ? "bg-red-600/80 border-red-600"
-        : "bg-red-600/10 border-red-600 hover:bg-red-600/60"
-    }`}
-          >
-            Loss
-          </button>
-
-          <div className="w-[1px] h-5 bg-white"></div>
-          <select
-            value={strategy}
-            onChange={(e) => {
-              setStrategy(e.target.value as StrategyList);
+            className="cursor-pointer bg-blue-600 p-2 rounded-lg transition duration-100 hover:bg-blue-700"
+            onClick={() => {
+              setEditingTrade(null);
+              setIsModalOpen(true);
             }}
-            className="p-1 bg-[#2b2b2f] text-white rounded"
           >
-            {strategies.map((strategy, index) => {
-              return (
-                <option value={strategy} key={index}>
-                  {strategy}
-                </option>
-              );
-            })}
-          </select>
+            Add new trade
+          </button>
         </div>
-        <div className="w-full max-w-[1500px] overflow-x-auto mt-5">
-          {filteredTrades.length === 0 ? (
-            <div className="text-center">No trades found</div>
-          ) : (
-            <>
-              <table className="border-collapse table-auto min-w-full">
-                <thead>
-                  <tr>
-                    {headings.map((h) => (
-                      <th
-                        key={h}
-                        className="px-4 py-1 whitespace-nowrap w-full text-[#5B5B5B] text-xs text-left"
-                      >
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredTrades.map((trade, index) => (
-                    <tr key={index}>
-                      <td>
-                        <i
-                          className="fa-solid fa-pen-to-square cursor-pointer text-white/30 transition duration-100 hover:text-white/100 text-lg"
-                          onClick={() => {
-                            setEditingTrade(trade);
-                            setIsModalOpen(true);
-                          }}
-                        ></i>
-                      </td>
-                      <td className="px-4 py-1 whitespace-nowrap w-full">
-                        {trade.symbol}
-                      </td>
-                      <td
-                        className={`px-4 py-1 whitespace-nowrap w-full ${
-                          trade.option === "CALL"
-                            ? "text-green-500"
-                            : "text-red-500"
-                        }`}
-                      >
-                        {trade.option.slice(0, 1) +
-                          trade.option
-                            .slice(1, trade.option.length)
-                            .toLowerCase()}
-                      </td>
-                      <td
-                        className={`px-4 py-1 whitespace-nowrap w-full ${
-                          trade.status === "OPEN"
-                            ? "text-blue-500"
-                            : trade.status === "WIN"
-                            ? "text-green-500"
-                            : "text-red-500"
-                        }`}
-                      >
-                        {trade.status.slice(0, 1) +
-                          trade.status
-                            .slice(1, trade.status.length)
-                            .toLowerCase()}
-                      </td>
-                      <td className={`px-4 py-1 whitespace-nowrap w-full`}>
-                        {trade.status === "OPEN" ? (
-                          "-"
-                        ) : (
-                          <span
-                            className={
-                              trade.status === "WIN"
-                                ? "text-green-500"
-                                : "text-red-500"
-                            }
-                          >
-                            ${trade.profitLoss?.toFixed(2)}
-                          </span>
-                        )}
-                      </td>
-                      <td className={`px-4 py-1 whitespace-nowrap w-full`}>
-                        {trade.status === "OPEN" ? (
-                          "-"
-                        ) : (
-                          <span
-                            className={
-                              Number(
-                                calcChange(
-                                  Number(trade.closingContractPrice),
-                                  Number(trade.contractPrice)
-                                )
-                              ) > 0
-                                ? "text-green-500"
-                                : "text-red-500"
-                            }
-                          >
-                            {calcChange(
-                              Number(trade.closingContractPrice),
-                              Number(trade.contractPrice)
-                            )}
-                            %
-                          </span>
-                        )}
-                      </td>
-                      <td className={`px-4 py-1 whitespace-nowrap w-full`}>
-                        {trade.contractPrice}
-                      </td>
-                      <td className={`px-4 py-1 whitespace-nowrap w-full`}>
-                        {trade.qty}
-                      </td>
-                      <td className={`px-4 py-1 whitespace-nowrap w-full`}>
-                        {trade.strike}
-                      </td>
-                      <td className={`px-4 py-1 whitespace-nowrap w-full`}>
-                        {new Date(trade.dateBought).toLocaleDateString("en-GB")}
-                      </td>
-                      <td className={`px-4 py-1 whitespace-nowrap w-full`}>
-                        {new Date(trade.expiryDate).toLocaleDateString("en-GB")}
-                      </td>
-                      <td className={`px-4 py-1 whitespace-nowrap w-full`}>
-                        {trade.closingContractPrice === null
-                          ? "-"
-                          : trade.closingContractPrice}
-                      </td>
-                      <td className={`px-4 py-1 whitespace-nowrap w-full`}>
-                        {trade.strategy}
-                      </td>
-                      <td
-                        className={`px-4 py-1 whitespace-nowrap w-full text-center`}
-                      >
-                        {trade.notes !== "" ? (
-                          <i
-                            className="fa-solid fa-book-open cursor-pointer text-white/70 transition duration-100 hover:text-white/100 text-lg"
-                            onClick={() => {
-                              setIsNotesOpen(true);
-                              setEditingTrade(trade);
-                              setNotes(trade.notes || "");
-                            }}
-                          ></i>
-                        ) : (
-                          <i
-                            className="fa-solid fa-book cursor-pointer text-white/20 transition duration-100 hover:text-white/100 text-lg"
-                            onClick={() => {
-                              setIsNotesOpen(true);
-                              setEditingTrade(trade);
-                              setNotes(trade.notes || "");
-                            }}
-                          ></i>
-                        )}
-                      </td>
+      ) : (
+        <div className="p-10 mt-20 w-full flex flex-col items-center">
+          <div className="flex items-center w-full max-w-[1500px] gap-7">
+            <div>Filters:</div>
+            <button
+              onClick={() => setFilter("All")}
+              className={`border px-3 rounded cursor-pointer transition duration-100
+${
+  filter === "All"
+    ? "bg-blue-600/80 border-blue-600"
+    : "bg-blue-600/10 border-blue-600 hover:bg-blue-600/60"
+}`}
+            >
+              All
+            </button>
+
+            <button
+              onClick={() => setFilter("Win")}
+              className={`border px-3 rounded cursor-pointer transition duration-100
+${
+  filter === "Win"
+    ? "bg-green-600/80 border-green-600"
+    : "bg-green-600/10 border-green-600 hover:bg-green-600/60"
+}`}
+            >
+              Win
+            </button>
+
+            <button
+              onClick={() => setFilter("Loss")}
+              className={`border px-3 rounded cursor-pointer transition duration-100
+${
+  filter === "Loss"
+    ? "bg-red-600/80 border-red-600"
+    : "bg-red-600/10 border-red-600 hover:bg-red-600/60"
+}`}
+            >
+              Loss
+            </button>
+
+            <div className="w-[1px] h-5 bg-white"></div>
+            <select
+              value={strategy}
+              onChange={(e) => {
+                setStrategy(e.target.value as StrategyList);
+              }}
+              className="p-1 bg-[#2b2b2f] text-white rounded"
+            >
+              {strategies.map((strategy, index) => {
+                return (
+                  <option value={strategy} key={index}>
+                    {strategy}
+                  </option>
+                );
+              })}
+            </select>
+          </div>
+          <div className="w-full max-w-[1500px] overflow-x-auto mt-5">
+            {filteredTrades?.length === 0 ? (
+              <div className="text-center">No trades found</div>
+            ) : (
+              <>
+                <table className="border-collapse table-auto min-w-full">
+                  <thead>
+                    <tr>
+                      {headings.map((h) => (
+                        <th
+                          key={h}
+                          className="px-4 py-1 whitespace-nowrap w-full text-[#5B5B5B] text-xs text-left"
+                        >
+                          {h}
+                        </th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-              <div className="flex justify-end mt-5">
-                <button
-                  className="text-xs border border-red-500 bg-red-500/20 p-2 rounded-lg flex gap-2 items-center cursor-pointer
-            transition duration-100 hover:bg-red-500/50"
-                  onClick={() => setDelAllModal(true)}
-                >
-                  <i className="fa-solid fa-trash-can"></i>
-                  Delete all trades
-                </button>
-              </div>
-            </>
-          )}
+                  </thead>
+                  <tbody>
+                    {filteredTrades?.map((trade, index) => (
+                      <tr key={index}>
+                        <td>
+                          <i
+                            className="fa-solid fa-pen-to-square cursor-pointer text-white/30 transition duration-100 hover:text-white/100 text-lg"
+                            onClick={() => {
+                              setEditingTrade(trade);
+                              setIsModalOpen(true);
+                            }}
+                          ></i>
+                        </td>
+                        <td className="px-4 py-1 whitespace-nowrap w-full">
+                          {trade.symbol}
+                        </td>
+                        <td
+                          className={`px-4 py-1 whitespace-nowrap w-full ${
+                            trade.option === "CALL"
+                              ? "text-green-500"
+                              : "text-red-500"
+                          }`}
+                        >
+                          {trade.option.slice(0, 1) +
+                            trade.option
+                              .slice(1, trade.option.length)
+                              .toLowerCase()}
+                        </td>
+                        <td
+                          className={`px-4 py-1 whitespace-nowrap w-full ${
+                            trade.status === "OPEN"
+                              ? "text-blue-500"
+                              : trade.status === "WIN"
+                              ? "text-green-500"
+                              : "text-red-500"
+                          }`}
+                        >
+                          {trade.status.slice(0, 1) +
+                            trade.status
+                              .slice(1, trade.status.length)
+                              .toLowerCase()}
+                        </td>
+                        <td className={`px-4 py-1 whitespace-nowrap w-full`}>
+                          {trade.status === "OPEN" ? (
+                            "-"
+                          ) : (
+                            <span
+                              className={
+                                trade.status === "WIN"
+                                  ? "text-green-500"
+                                  : "text-red-500"
+                              }
+                            >
+                              ${trade.profitLoss?.toFixed(2)}
+                            </span>
+                          )}
+                        </td>
+                        <td className={`px-4 py-1 whitespace-nowrap w-full`}>
+                          {trade.status === "OPEN" ? (
+                            "-"
+                          ) : (
+                            <span
+                              className={
+                                Number(
+                                  calcChange(
+                                    Number(trade.closingContractPrice),
+                                    Number(trade.contractPrice)
+                                  )
+                                ) > 0
+                                  ? "text-green-500"
+                                  : "text-red-500"
+                              }
+                            >
+                              {calcChange(
+                                Number(trade.closingContractPrice),
+                                Number(trade.contractPrice)
+                              )}
+                              %
+                            </span>
+                          )}
+                        </td>
+                        <td className={`px-4 py-1 whitespace-nowrap w-full`}>
+                          {trade.contractPrice}
+                        </td>
+                        <td className={`px-4 py-1 whitespace-nowrap w-full`}>
+                          {trade.qty}
+                        </td>
+                        <td className={`px-4 py-1 whitespace-nowrap w-full`}>
+                          {trade.strike}
+                        </td>
+                        <td className={`px-4 py-1 whitespace-nowrap w-full`}>
+                          {new Date(trade.dateBought).toLocaleDateString(
+                            "en-GB"
+                          )}
+                        </td>
+                        <td className={`px-4 py-1 whitespace-nowrap w-full`}>
+                          {new Date(trade.expiryDate).toLocaleDateString(
+                            "en-GB"
+                          )}
+                        </td>
+                        <td className={`px-4 py-1 whitespace-nowrap w-full`}>
+                          {trade.closingContractPrice === null
+                            ? "-"
+                            : trade.closingContractPrice}
+                        </td>
+                        <td className={`px-4 py-1 whitespace-nowrap w-full`}>
+                          {trade.strategy}
+                        </td>
+                        <td
+                          className={`px-4 py-1 whitespace-nowrap w-full text-center`}
+                        >
+                          {trade.notes !== "" ? (
+                            <i
+                              className="fa-solid fa-book-open cursor-pointer text-white/70 transition duration-100 hover:text-white/100 text-lg"
+                              onClick={() => {
+                                setIsNotesOpen(true);
+                                setEditingTrade(trade);
+                                setNotes(trade.notes || "");
+                              }}
+                            ></i>
+                          ) : (
+                            <i
+                              className="fa-solid fa-book cursor-pointer text-white/20 transition duration-100 hover:text-white/100 text-lg"
+                              onClick={() => {
+                                setIsNotesOpen(true);
+                                setEditingTrade(trade);
+                                setNotes(trade.notes || "");
+                              }}
+                            ></i>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div className="flex justify-end mt-5">
+                  <button
+                    className="text-xs border border-red-500 bg-red-500/20 p-2 rounded-lg flex gap-2 items-center cursor-pointer
+        transition duration-100 hover:bg-red-500/50"
+                    onClick={() => setDelAllModal(true)}
+                  >
+                    <i className="fa-solid fa-trash-can"></i>
+                    Delete all trades
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
-      </div>
+      )}
+
       {isModalOpen && (
         <TradeModal
           date={
