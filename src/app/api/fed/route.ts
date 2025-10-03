@@ -25,8 +25,10 @@ export async function GET() {
 
     const data = await res.json();
     return NextResponse.json(data);
-  } catch (err: any) {
-    console.error("Error fetching Fed meetings:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err) {
+    const message =
+      err instanceof Error ? err.message : "Error fetching Fed meetings";
+
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

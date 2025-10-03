@@ -1,3 +1,5 @@
+import { NextResponse } from "next/server";
+
 export async function fetchMeetings() {
   try {
     const res = await fetch("/api/fed");
@@ -6,7 +8,11 @@ export async function fetchMeetings() {
     }
     const data = await res.json();
     return data;
-  } catch (err: any) {
-    throw new Error(err.message || "Failed to fetch meetings");
+  } catch (err) {
+    console.error("Error fetching meetings:", err);
+    return NextResponse.json(
+      { error: "Failed to fetch meetings" },
+      { status: 500 }
+    );
   }
 }

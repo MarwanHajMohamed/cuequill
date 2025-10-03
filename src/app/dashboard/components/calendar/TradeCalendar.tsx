@@ -12,7 +12,7 @@ import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useRouter } from "next/navigation";
 import { handleSaveTrade } from "@/handlers/tradeHandlers";
 import { fetchMeetings } from "@/hooks/useFed";
-import { FedMeeting, FedMeetingsResponse } from "@/app/types/FedMeeting";
+import { FedMeetingsResponse } from "@/app/types/FedMeeting";
 
 type TradeEventType = "WIN" | "LOSS" | "OPEN" | "TODAY" | "FED";
 
@@ -20,6 +20,11 @@ type TradeEvent = {
   date: string;
   label?: string;
   status: TradeEventType;
+};
+
+type FedMeetingPayload = {
+  meetingDt: string;
+  offsetDayCount: number;
 };
 
 const now = new Date();
@@ -60,14 +65,18 @@ export default function TradeCalendar({ userId }: { userId: string }) {
     async function load() {
       try {
         const data: FedMeetingsResponse = await fetchMeetings();
-        const meetingEvents: TradeEvent[] = data.payload.map((m: any) => ({
-          date: m.meetingDt,
-          status: "FED",
-          offsetDayCount: m.offsetDayCount,
-        }));
+        const meetingEvents: TradeEvent[] = data.payload.map(
+          (m: FedMeetingPayload) => ({
+            date: m.meetingDt,
+            status: "FED",
+            offsetDayCount: m.offsetDayCount,
+          })
+        );
         setFedMeetings(meetingEvents);
-      } catch (err: any) {
-        console.error(err.message);
+      } catch (err) {
+        console.error(
+          err instanceof Error ? err.message : "Error fetching Fed meetings"
+        );
       }
     }
 

@@ -453,9 +453,9 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
             )
           }
           initialTrade={editingTrade ?? undefined}
-          onDelete={(e) =>
+          onDelete={() =>
             handleDeleteTrade(
-              editingTrade?._id!,
+              editingTrade?._id,
               userId,
               setIsModalOpen,
               setEditingTrade,
@@ -469,7 +469,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
           notes={notes}
           onClose={() => setIsNotesOpen(false)}
           onSave={(e) =>
-            handleSaveNotes(e, editingTrade?._id!, userId, queryClient)
+            handleSaveNotes(e, editingTrade?._id, userId, queryClient)
           }
           tradeId={editingTrade?._id}
         />

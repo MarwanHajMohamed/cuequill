@@ -31,7 +31,7 @@ export const handleSaveTrade = async (
 };
 
 export const handleDeleteTrade = async (
-  tradeId: string,
+  tradeId: string | undefined,
   userId: string,
   setIsModalOpen: React.Dispatch<React.SetStateAction<boolean>>,
   setEditingTrade: React.Dispatch<React.SetStateAction<Trade | null>>,
@@ -84,7 +84,7 @@ export const handleDeleteAllTrades = async (
 
 export const handleSaveNotes = async (
   newNotes: string,
-  tradeId: string,
+  tradeId: string | undefined,
   userId: string,
   queryClient: QueryClient
 ) => {
