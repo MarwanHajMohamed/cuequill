@@ -15,25 +15,24 @@ import {
   handleSaveNotes,
   handleSaveTrade,
 } from "../../../handlers/tradeHandlers";
+import Filters from "./Filters";
 
 function Page({ params }: { params: Promise<{ userId: string }> }) {
   const [simulated] = useLocalStorage<boolean>("simulated", false);
   const toast = useToast();
+  const today = new Date();
+  const queryClient = useQueryClient();
 
   const { userId } = use(params);
   const { data: trades, isLoading, isError } = useTrades(userId, simulated);
 
-  const today = new Date();
-
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const queryClient = useQueryClient();
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
 
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isNotesOpen, setIsNotesOpen] = useState<boolean>(false);
-  const [notes, setNotes] = useState<string>("");
-
   const [delAllModal, setDelAllModal] = useState<boolean>(false);
 
+  const [notes, setNotes] = useState<string>("");
   const [strategy, setStrategy] = useState<StrategyList>("All");
   const [symbol, setSymbol] = useState<string>("All");
   const [filter, setFilter] = useState<"All" | "Win" | "Loss">("All");
@@ -143,129 +142,18 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
         </div>
       ) : (
         <div className="p-10 mt-20 w-full flex flex-col items-center">
-          <div className="flex items-center w-full max-w-[1500px] gap-7">
-            <div>Filters:</div>
-
-            {/* STATUS FILTERING */}
-            <div>
-              <div className="text-xs text-white/40 mb-1">Status:</div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setFilter("All")}
-                  className={`border px-3 rounded cursor-pointer transition duration-100 ${
-                    filter === "All"
-                      ? "bg-blue-600/80 border-blue-600"
-                      : "bg-blue-600/10 border-blue-600 hover:bg-blue-600/60"
-                  }`}
-                >
-                  All
-                </button>
-
-                <button
-                  onClick={() => setFilter("Win")}
-                  className={`border px-3 rounded cursor-pointer transition duration-100 ${
-                    filter === "Win"
-                      ? "bg-green-600/80 border-green-600"
-                      : "bg-green-600/10 border-green-600 hover:bg-green-600/60"
-                  }`}
-                >
-                  Win
-                </button>
-
-                <button
-                  onClick={() => setFilter("Loss")}
-                  className={`border px-3 rounded cursor-pointer transition duration-100 ${
-                    filter === "Loss"
-                      ? "bg-red-600/80 border-red-600"
-                      : "bg-red-600/10 border-red-600 hover:bg-red-600/60"
-                  }`}
-                >
-                  Loss
-                </button>
-              </div>
-            </div>
-
-            <div className="w-[1px] h-6 bg-white/50"></div>
-
-            {/* STRATEGIES FILTERING */}
-            <div>
-              <div className="text-xs text-white/40 mb-1">Strategies:</div>
-              <select
-                value={strategy}
-                onChange={(e) => {
-                  setStrategy(e.target.value as StrategyList);
-                }}
-                className="p-1 bg-[#2b2b2f] text-white rounded"
-              >
-                {strategies.map((strategy, index) => {
-                  return (
-                    <option value={strategy} key={index}>
-                      {strategy}
-                    </option>
-                  );
-                })}
-              </select>
-            </div>
-            <div className="w-[1px] h-6 bg-white/50"></div>
-            <div>
-              <div className="text-xs text-white/40 mb-1">Symbol:</div>
-              <select
-                value={symbol}
-                onChange={(e) => {
-                  setSymbol(e.target.value);
-                }}
-                className="p-1 bg-[#2b2b2f] text-white rounded"
-              >
-                {symbols.map((symbol, index) => {
-                  return (
-                    <option value={symbol} key={index}>
-                      {symbol}
-                    </option>
-                  );
-                })}
-              </select>
-            </div>
-            <div className="w-[1px] h-6 bg-white/50"></div>
-
-            {/* OPTION FILTERING */}
-            <div>
-              <div className="text-xs text-white/40 mb-1">Option:</div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setOption("All")}
-                  className={`border px-3 rounded cursor-pointer transition duration-100 ${
-                    option === "All"
-                      ? "bg-blue-600/80 border-blue-600"
-                      : "bg-blue-600/10 border-blue-600 hover:bg-blue-600/60"
-                  }`}
-                >
-                  All
-                </button>
-
-                <button
-                  onClick={() => setOption("CALL")}
-                  className={`border px-3 rounded cursor-pointer transition duration-100 ${
-                    option === "CALL"
-                      ? "bg-green-600/80 border-green-600"
-                      : "bg-green-600/10 border-green-600 hover:bg-green-600/60"
-                  }`}
-                >
-                  Call
-                </button>
-
-                <button
-                  onClick={() => setOption("PUT")}
-                  className={`border px-3 rounded cursor-pointer transition duration-100 ${
-                    option === "PUT"
-                      ? "bg-red-600/80 border-red-600"
-                      : "bg-red-600/10 border-red-600 hover:bg-red-600/60"
-                  }`}
-                >
-                  Put
-                </button>
-              </div>
-            </div>
-          </div>
+          <Filters
+            filter={filter}
+            setFilter={setFilter}
+            strategy={strategy}
+            setStrategy={setStrategy}
+            strategies={strategies}
+            symbol={symbol}
+            setSymbol={setSymbol}
+            option={option}
+            setOption={setOption}
+            symbols={symbols}
+          />
           <div className="w-full max-w-[1500px] overflow-x-auto mt-5">
             {filteredTrades?.length === 0 ? (
               <div className="text-center">No trades found</div>
