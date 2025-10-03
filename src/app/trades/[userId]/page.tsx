@@ -32,7 +32,6 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isNotesOpen, setIsNotesOpen] = useState<boolean>(false);
   const [delAllModal, setDelAllModal] = useState<boolean>(false);
-  const [showStatistics, setShowStatistics] = useState<boolean>(false);
 
   const [notes, setNotes] = useState<string>("");
   const [strategy, setStrategy] = useState<StrategyList>("All");
@@ -322,7 +321,9 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                 </div>
 
                 <Statistics
-                  data={filteredTrades!}
+                  data={trades!}
+                  status={filter}
+                  filteredData={filteredTrades!}
                   option={option}
                   symbol={symbol}
                   strategy={strategy}

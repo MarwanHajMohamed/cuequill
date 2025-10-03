@@ -50,7 +50,7 @@ export default function Navbar() {
         <div className="border-3 absolute top-0 w-screen h-screen text-center text-xs border-red-500 pointer-events-none" />
       )}
 
-      <div className="flex justify-between items-center w-full max-w-[1500px] mt-6 m-10 p-4 px-5 bg-white/3 backdrop-blur-xs rounded-full border border-white/10">
+      <div className="flex justify-between items-center w-full max-w-[1500px] mt-6 mx-10 p-4 px-5 bg-white/3 backdrop-blur-xs rounded-full border border-white/10">
         {/* Left */}
         {navItems
           .filter((item) => item.side === "LEFT")
