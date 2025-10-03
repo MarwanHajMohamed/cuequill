@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import { ContentBlock } from "../../../../data/strategies";
-import Image from "next/image";
 
 interface Props {
   blocks: ContentBlock[];

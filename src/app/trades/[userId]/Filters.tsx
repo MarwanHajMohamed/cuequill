@@ -25,9 +25,7 @@ export default function Filters({
   symbols: string[];
 }) {
   return (
-    <div className="flex items-center w-full max-w-[1500px] gap-7">
-      <div>Filters:</div>
-
+    <div className="flex items-end pb-5 w-full max-w-[1500px] gap-7 sticky top-0 bg-[#0E0E10]/80 h-40 backdrop-blur-xs">
       {/* STATUS FILTERING */}
       <div>
         <div className="text-xs text-white/40 mb-1">Status:</div>

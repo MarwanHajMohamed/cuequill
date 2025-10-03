@@ -16,6 +16,7 @@ import {
   handleSaveTrade,
 } from "../../../handlers/tradeHandlers";
 import Filters from "./Filters";
+import Statistics from "./Statistics";
 
 function Page({ params }: { params: Promise<{ userId: string }> }) {
   const [simulated] = useLocalStorage<boolean>("simulated", false);
@@ -31,6 +32,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isNotesOpen, setIsNotesOpen] = useState<boolean>(false);
   const [delAllModal, setDelAllModal] = useState<boolean>(false);
+  const [showStatistics, setShowStatistics] = useState<boolean>(false);
 
   const [notes, setNotes] = useState<string>("");
   const [strategy, setStrategy] = useState<StrategyList>("All");
@@ -141,7 +143,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
           </button>
         </div>
       ) : (
-        <div className="p-10 mt-20 w-full flex flex-col items-center">
+        <div className="p-10 pt-5 mt-0 w-full flex flex-col items-center">
           <Filters
             filter={filter}
             setFilter={setFilter}
@@ -306,16 +308,25 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                     ))}
                   </tbody>
                 </table>
+
                 <div className="flex justify-end mt-5">
                   <button
-                    className="text-xs border border-red-500 bg-red-500/20 p-2 rounded-lg flex gap-2 items-center cursor-pointer
-        transition duration-100 hover:bg-red-500/50"
+                    className="text-xs border border-red-500 bg-red-500/20 p-2 rounded-lg 
+                      flex gap-2 items-center cursor-pointer
+                      transition duration-100 hover:bg-red-500/50"
                     onClick={() => setDelAllModal(true)}
                   >
                     <i className="fa-solid fa-trash-can"></i>
                     Delete all trades
                   </button>
                 </div>
+
+                <Statistics
+                  data={filteredTrades!}
+                  option={option}
+                  symbol={symbol}
+                  strategy={strategy}
+                />
               </>
             )}
           </div>
