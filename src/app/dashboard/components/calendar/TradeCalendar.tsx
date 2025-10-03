@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Calendar from "react-calendar";
 import { format } from "date-fns";
 import "react-calendar/dist/Calendar.css";
@@ -11,8 +11,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useRouter } from "next/navigation";
 import { handleSaveTrade } from "@/handlers/tradeHandlers";
+import { fetchMeetings } from "@/hooks/useFed";
+import { FedMeeting, FedMeetingsResponse } from "@/app/types/FedMeeting";
 
-type TradeEventType = "WIN" | "LOSS" | "OPEN" | "TODAY";
+type TradeEventType = "WIN" | "LOSS" | "OPEN" | "TODAY" | "FED";
 
 type TradeEvent = {
   date: string;
@@ -33,6 +35,8 @@ const getColor = (status: TradeEventType) => {
       return "bg-red-600";
     case "OPEN":
       return "bg-orange-400";
+    case "FED":
+      return "bg-purple-500";
     default:
       return "";
   }
@@ -44,12 +48,31 @@ export default function TradeCalendar({ userId }: { userId: string }) {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const manualTrades: TradeEvent[] = useMemo<TradeEvent[]>(() => [], []);
+  const [fedMeetings, setFedMeetings] = useState<TradeEvent[]>([]);
 
   const [simulated] = useLocalStorage<boolean>("simulated", false);
 
   const { data: trades, isLoading, isError } = useTrades(userId, simulated);
 
   const router = useRouter();
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const data: FedMeetingsResponse = await fetchMeetings();
+        const meetingEvents: TradeEvent[] = data.payload.map((m: any) => ({
+          date: m.meetingDt,
+          status: "FED",
+          offsetDayCount: m.offsetDayCount,
+        }));
+        setFedMeetings(meetingEvents);
+      } catch (err: any) {
+        console.error(err.message);
+      }
+    }
+
+    load();
+  }, []);
 
   const tradeEvents: TradeEvent[] = useMemo(() => {
     const baseEvents: TradeEvent[] = trades
@@ -59,32 +82,18 @@ export default function TradeCalendar({ userId }: { userId: string }) {
         }))
       : [];
 
-    return [{ date: today, status: "TODAY" }, ...baseEvents, ...manualTrades];
-  }, [trades, manualTrades]);
+    return [
+      { date: today, status: "TODAY" },
+      ...baseEvents,
+      ...manualTrades,
+      ...fedMeetings,
+    ];
+  }, [trades, manualTrades, fedMeetings]);
 
   const handleDateClick = (date: Date) => {
     setSelectedDate(date);
     setIsModalOpen(true);
   };
-
-  // const handleSaveTrade = async (newTrade: TradeEvent) => {
-  //   const { ...rest } = newTrade;
-
-  //   const response = await fetch("/api/trades", {
-  //     method: "POST",
-  //     headers: { "Content-Type": "application/json" },
-  //     body: JSON.stringify({ ...rest, userId }),
-  //   });
-
-  //   if (!response.ok) {
-  //     console.error("Failed to save trade");
-  //     return;
-  //   }
-
-  //   queryClient.invalidateQueries({ queryKey: ["trades", userId] });
-
-  //   setIsModalOpen(false);
-  // };
 
   const renderTileContent = ({ date }: { date: Date }) => {
     const dayStr = format(date, "yyyy-MM-dd");
@@ -149,6 +158,10 @@ export default function TradeCalendar({ userId }: { userId: string }) {
         <div className="flex gap-2 items-center">
           <div className="w-[15px] h-[15px] bg-orange-500 rounded-full"></div>
           <div>Open Position</div>
+        </div>
+        <div className="flex gap-2 items-center">
+          <div className="w-[15px] h-[15px] bg-purple-500 rounded-full"></div>
+          <div>Fed Meeting</div>
         </div>
       </div>
       {isModalOpen && selectedDate && (
