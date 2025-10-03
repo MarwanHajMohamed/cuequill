@@ -10,6 +10,7 @@ import { useTrades } from "@/hooks/useTrades";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useRouter } from "next/navigation";
+import { handleSaveTrade } from "@/handlers/tradeHandlers";
 
 type TradeEventType = "WIN" | "LOSS" | "OPEN" | "TODAY";
 
@@ -66,26 +67,24 @@ export default function TradeCalendar({ userId }: { userId: string }) {
     setIsModalOpen(true);
   };
 
-  const handleSaveTrade = async (newTrade: TradeEvent) => {
-    const { status, ...rest } = newTrade;
+  // const handleSaveTrade = async (newTrade: TradeEvent) => {
+  //   const { ...rest } = newTrade;
 
-    if (status === "TODAY") return;
+  //   const response = await fetch("/api/trades", {
+  //     method: "POST",
+  //     headers: { "Content-Type": "application/json" },
+  //     body: JSON.stringify({ ...rest, userId }),
+  //   });
 
-    const response = await fetch("/api/trades", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...rest, status, userId }),
-    });
+  //   if (!response.ok) {
+  //     console.error("Failed to save trade");
+  //     return;
+  //   }
 
-    if (!response.ok) {
-      console.error("Failed to save trade");
-      return;
-    }
+  //   queryClient.invalidateQueries({ queryKey: ["trades", userId] });
 
-    queryClient.invalidateQueries({ queryKey: ["trades", userId] });
-
-    setIsModalOpen(false);
-  };
+  //   setIsModalOpen(false);
+  // };
 
   const renderTileContent = ({ date }: { date: Date }) => {
     const dayStr = format(date, "yyyy-MM-dd");
@@ -156,7 +155,9 @@ export default function TradeCalendar({ userId }: { userId: string }) {
         <TradeModal
           date={selectedDate}
           onClose={() => setIsModalOpen(false)}
-          onSave={handleSaveTrade}
+          onSave={(e) =>
+            handleSaveTrade(e, userId, setIsModalOpen, queryClient)
+          }
         />
       )}
     </div>

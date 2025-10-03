@@ -9,6 +9,12 @@ import { useQueryClient } from "@tanstack/react-query";
 import React, { use, useEffect, useState } from "react";
 import NotesModal from "../NotesModal";
 import { useToast } from "@/hooks/useToast";
+import {
+  handleDeleteAllTrades,
+  handleDeleteTrade,
+  handleSaveNotes,
+  handleSaveTrade,
+} from "../../../handlers/tradeHandlers";
 
 function Page({ params }: { params: Promise<{ userId: string }> }) {
   const [simulated] = useLocalStorage<boolean>("simulated", false);
@@ -31,6 +37,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
   const [strategy, setStrategy] = useState<StrategyList>("All");
   const [symbol, setSymbol] = useState<string>("All");
   const [filter, setFilter] = useState<"All" | "Win" | "Loss">("All");
+  const [option, setOption] = useState<"All" | "CALL" | "PUT">("All");
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -79,78 +86,6 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
     ...Array.from(new Set(trades?.map((trade: Trade) => trade.symbol) || [])),
   ];
 
-  const handleSaveTrade = async (trade: Trade) => {
-    if (trade._id) {
-      // UPDATE EXISTING TRADE
-      await fetch(`/api/trades/${trade._id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(trade),
-      });
-    } else {
-      // CREATE NEW TRADE
-      await fetch("/api/trades", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...trade, userId }),
-      });
-    }
-
-    await queryClient.invalidateQueries({ queryKey: ["trades", userId] });
-    setIsModalOpen(false);
-    setEditingTrade(null);
-  };
-
-  const handleDeleteTrade = async (tradeId: string) => {
-    try {
-      await fetch(`/api/trades/${tradeId}`, {
-        method: "DELETE",
-      });
-
-      await queryClient.invalidateQueries({ queryKey: ["trades", userId] });
-
-      setIsModalOpen(false);
-      setEditingTrade(null);
-    } catch (err) {
-      console.error("Failed to delete trade", err);
-    }
-  };
-
-  const handleDeleteAllTrades = async () => {
-    try {
-      const res = await fetch(`/api/trades`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ userId, simulated }),
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to delete trades");
-      }
-
-      const result = await res.json();
-      setDelAllModal(false);
-
-      toast(result.message);
-      queryClient.invalidateQueries({ queryKey: ["trades", userId] });
-    } catch (err) {
-      console.error("Error deleting trades:", err);
-    }
-  };
-
-  const handleSaveNotes = async (newNotes: string, tradeId: string) => {
-    await fetch(`/api/trades/${tradeId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ notes: newNotes }),
-    });
-
-    await queryClient.invalidateQueries({ queryKey: ["trades", userId] });
-  };
-
   const headings = [
     "",
     "Symbol",
@@ -185,6 +120,9 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
       // Filter by symbol
       if (symbol !== "All" && trade.symbol !== symbol) return false;
 
+      // Filter by option
+      if (option !== "All" && trade.option !== option) return false;
+
       return true;
     });
 
@@ -207,43 +145,49 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
         <div className="p-10 mt-20 w-full flex flex-col items-center">
           <div className="flex items-center w-full max-w-[1500px] gap-7">
             <div>Filters:</div>
-            <button
-              onClick={() => setFilter("All")}
-              className={`border px-3 rounded cursor-pointer transition duration-100
-${
-  filter === "All"
-    ? "bg-blue-600/80 border-blue-600"
-    : "bg-blue-600/10 border-blue-600 hover:bg-blue-600/60"
-}`}
-            >
-              All
-            </button>
 
-            <button
-              onClick={() => setFilter("Win")}
-              className={`border px-3 rounded cursor-pointer transition duration-100
-${
-  filter === "Win"
-    ? "bg-green-600/80 border-green-600"
-    : "bg-green-600/10 border-green-600 hover:bg-green-600/60"
-}`}
-            >
-              Win
-            </button>
+            {/* STATUS FILTERING */}
+            <div>
+              <div className="text-xs text-white/40 mb-1">Status:</div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setFilter("All")}
+                  className={`border px-3 rounded cursor-pointer transition duration-100 ${
+                    filter === "All"
+                      ? "bg-blue-600/80 border-blue-600"
+                      : "bg-blue-600/10 border-blue-600 hover:bg-blue-600/60"
+                  }`}
+                >
+                  All
+                </button>
 
-            <button
-              onClick={() => setFilter("Loss")}
-              className={`border px-3 rounded cursor-pointer transition duration-100
-${
-  filter === "Loss"
-    ? "bg-red-600/80 border-red-600"
-    : "bg-red-600/10 border-red-600 hover:bg-red-600/60"
-}`}
-            >
-              Loss
-            </button>
+                <button
+                  onClick={() => setFilter("Win")}
+                  className={`border px-3 rounded cursor-pointer transition duration-100 ${
+                    filter === "Win"
+                      ? "bg-green-600/80 border-green-600"
+                      : "bg-green-600/10 border-green-600 hover:bg-green-600/60"
+                  }`}
+                >
+                  Win
+                </button>
 
-            <div className="w-[1px] h-5 bg-white"></div>
+                <button
+                  onClick={() => setFilter("Loss")}
+                  className={`border px-3 rounded cursor-pointer transition duration-100 ${
+                    filter === "Loss"
+                      ? "bg-red-600/80 border-red-600"
+                      : "bg-red-600/10 border-red-600 hover:bg-red-600/60"
+                  }`}
+                >
+                  Loss
+                </button>
+              </div>
+            </div>
+
+            <div className="w-[1px] h-6 bg-white/50"></div>
+
+            {/* STRATEGIES FILTERING */}
             <div>
               <div className="text-xs text-white/40 mb-1">Strategies:</div>
               <select
@@ -262,7 +206,7 @@ ${
                 })}
               </select>
             </div>
-            <div className="w-[1px] h-5 bg-white"></div>
+            <div className="w-[1px] h-6 bg-white/50"></div>
             <div>
               <div className="text-xs text-white/40 mb-1">Symbol:</div>
               <select
@@ -280,6 +224,46 @@ ${
                   );
                 })}
               </select>
+            </div>
+            <div className="w-[1px] h-6 bg-white/50"></div>
+
+            {/* OPTION FILTERING */}
+            <div>
+              <div className="text-xs text-white/40 mb-1">Option:</div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setOption("All")}
+                  className={`border px-3 rounded cursor-pointer transition duration-100 ${
+                    option === "All"
+                      ? "bg-blue-600/80 border-blue-600"
+                      : "bg-blue-600/10 border-blue-600 hover:bg-blue-600/60"
+                  }`}
+                >
+                  All
+                </button>
+
+                <button
+                  onClick={() => setOption("CALL")}
+                  className={`border px-3 rounded cursor-pointer transition duration-100 ${
+                    option === "CALL"
+                      ? "bg-green-600/80 border-green-600"
+                      : "bg-green-600/10 border-green-600 hover:bg-green-600/60"
+                  }`}
+                >
+                  Call
+                </button>
+
+                <button
+                  onClick={() => setOption("PUT")}
+                  className={`border px-3 rounded cursor-pointer transition duration-100 ${
+                    option === "PUT"
+                      ? "bg-red-600/80 border-red-600"
+                      : "bg-red-600/10 border-red-600 hover:bg-red-600/60"
+                  }`}
+                >
+                  Put
+                </button>
+              </div>
             </div>
           </div>
           <div className="w-full max-w-[1500px] overflow-x-auto mt-5">
@@ -459,16 +443,34 @@ ${
             setIsModalOpen(false);
             setEditingTrade(null);
           }}
-          onSave={handleSaveTrade}
+          onSave={(e) =>
+            handleSaveTrade(
+              e,
+              userId,
+              setIsModalOpen,
+              queryClient,
+              setEditingTrade
+            )
+          }
           initialTrade={editingTrade ?? undefined}
-          onDelete={handleDeleteTrade}
+          onDelete={(e) =>
+            handleDeleteTrade(
+              editingTrade?._id!,
+              userId,
+              setIsModalOpen,
+              setEditingTrade,
+              queryClient
+            )
+          }
         />
       )}
       {isNotesOpen && (
         <NotesModal
           notes={notes}
           onClose={() => setIsNotesOpen(false)}
-          onSave={handleSaveNotes}
+          onSave={(e) =>
+            handleSaveNotes(e, editingTrade?._id!, userId, queryClient)
+          }
           tradeId={editingTrade?._id}
         />
       )}
@@ -488,7 +490,15 @@ ${
               </button>
               <button
                 className="px-4 py-2 bg-[#16151C] transition duration-200 ease-in-out rounded hover:bg-gray-700 cursor-pointer"
-                onClick={handleDeleteAllTrades}
+                onClick={() =>
+                  handleDeleteAllTrades(
+                    userId,
+                    simulated,
+                    setDelAllModal,
+                    toast,
+                    queryClient
+                  )
+                }
               >
                 Yes
               </button>

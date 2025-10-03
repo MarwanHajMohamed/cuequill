@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { TradeEventType, StrategyList, Trade } from "@/app/types/Trades";
 import { useSession } from "next-auth/react";
 import { useToast } from "@/hooks/useToast";
+import { handleSave } from "./helpers";
 
 type TradeModalProps = {
   date: Date;
@@ -48,6 +49,7 @@ export default function EditTradeModal({
 }: TradeModalProps) {
   const { data: session } = useSession();
   const userId = session?.user?.id;
+
   const [symbol, setSymbol] = useState<string>(initialTrade?.symbol ?? "");
   const [contractPrice, setContractPrice] = useState<number | null>(
     initialTrade?.contractPrice ?? null
@@ -106,85 +108,6 @@ export default function EditTradeModal({
     "Hanger in Daily",
     "Other",
   ];
-
-  const validate = (): string => {
-    if (selectedOption === null) {
-      return "Select an option";
-    } else if (symbol === "") {
-      return "Enter a symbol";
-    } else if (contractPrice === null || Number.isNaN(contractPrice)) {
-      return "Fill out the contract price";
-    } else if (qty === null || Number.isNaN(qty)) {
-      return "Fill out the quantity";
-    } else if (strike === null || Number.isNaN(strike)) {
-      return "Fill out the strike";
-    } else if (dateBought === "") {
-      return "Fill out the buy date";
-    } else if (expiryDate === "") {
-      return "Fill out the expiry date";
-    } else if (
-      (status === "WIN" && closingContractPrice === null) ||
-      (status === "LOSS" && closingContractPrice === null) ||
-      (status === "WIN" && Number.isNaN(closingContractPrice)) ||
-      (status === "LOSS" && Number.isNaN(closingContractPrice))
-    ) {
-      return "Fill out the closing contract price";
-    } else {
-      return "";
-    }
-  };
-
-  const handleSave = () => {
-    const error: string = validate();
-    if (error) {
-      setErrorMessage(error);
-      return;
-    }
-
-    const formattedDate = format(date, "yyyy-MM-dd");
-
-    let profitLoss = 0;
-
-    if (
-      closingContractPrice !== null &&
-      contractPrice !== null &&
-      qty !== null
-    ) {
-      profitLoss = Number(
-        ((closingContractPrice - contractPrice) * 100 * qty).toFixed(2)
-      );
-      console.log("Profit Loss: ", profitLoss);
-    }
-
-    const tradeData: Trade = {
-      _id: initialTrade?._id,
-      userID: userId,
-      date: formattedDate,
-      status,
-      symbol,
-      contractPrice: contractPrice ?? 0,
-      qty: qty ?? 0,
-      strike: strike ?? 0,
-      dateBought,
-      expiryDate,
-      dateClosed,
-      option: selectedOption!,
-      strategy,
-      closingContractPrice:
-        status === "WIN" || status === "LOSS" ? closingContractPrice : null,
-      profitLoss: status === "WIN" || status === "LOSS" ? profitLoss : null,
-      notes,
-      simulated,
-    };
-
-    if (tradeData._id) {
-      toast(`Trade ${tradeData.symbol} updated successfully!`);
-    } else {
-      toast(`Trade ${tradeData.symbol} added successfully!`);
-    }
-
-    onSave(tradeData);
-  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -432,7 +355,29 @@ export default function EditTradeModal({
                 Cancel
               </button>
               <button
-                onClick={handleSave}
+                onClick={() =>
+                  handleSave(
+                    setErrorMessage,
+                    date,
+                    selectedOption,
+                    userId as string,
+                    symbol,
+                    contractPrice,
+                    qty,
+                    strike,
+                    dateBought,
+                    expiryDate,
+                    status,
+                    closingContractPrice,
+                    strategy,
+                    dateClosed,
+                    notes,
+                    simulated,
+                    toast,
+                    onSave,
+                    initialTrade!
+                  )
+                }
                 className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700 cursor-pointer"
               >
                 Save
