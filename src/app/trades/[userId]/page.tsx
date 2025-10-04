@@ -42,6 +42,9 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
   const [option, setOption] = useState<"All" | "CALL" | "PUT">("All");
   const [isFavourite, setIsFavourite] = useState<boolean>(false);
 
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const tradesPerPage = 15;
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -132,6 +135,15 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
       return true;
     });
 
+  const indexOfLastTrade = currentPage * tradesPerPage;
+  const indexOfFirstTrade = indexOfLastTrade - tradesPerPage;
+  const currentTrades = filteredTrades?.slice(
+    indexOfFirstTrade,
+    indexOfLastTrade
+  );
+
+  const totalPages = Math.ceil((filteredTrades?.length || 0) / tradesPerPage);
+
   return (
     <>
       {!trades || trades.length === 0 ? (
@@ -182,7 +194,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredTrades?.map((trade, index) => (
+                    {currentTrades?.map((trade, index) => (
                       <tr key={index}>
                         <td className="flex gap-2 py-1">
                           <FavouriteButton
@@ -321,29 +333,56 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                     ))}
                   </tbody>
                 </table>
-
-                <div className="flex justify-end mt-5">
-                  <button
-                    className="text-xs border border-red-500 bg-red-500/20 p-2 rounded-lg 
-                      flex gap-2 items-center cursor-pointer
-                      transition duration-100 hover:bg-red-500/50"
-                    onClick={() => setDelAllModal(true)}
-                  >
-                    <i className="fa-solid fa-trash-can"></i>
-                    Delete all trades
-                  </button>
-                </div>
               </>
             )}
           </div>
-          <Statistics
-            data={trades!}
-            status={filter}
-            filteredData={filteredTrades!}
-            option={option}
-            symbol={symbol}
-            strategy={strategy}
-          />
+          {filteredTrades?.length !== 0 && (
+            <div className="flex justify-end mt-5 w-full max-w-[1500px]">
+              <button
+                className="text-xs border border-red-500 bg-red-500/20 p-2 rounded-lg 
+                      flex gap-2 items-center cursor-pointer
+                      transition duration-100 hover:bg-red-500/50"
+                onClick={() => setDelAllModal(true)}
+              >
+                <i className="fa-solid fa-trash-can"></i>
+                Delete all trades
+              </button>
+            </div>
+          )}
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-2 mt-5">
+              <button
+                className="px-3 py-1 rounded bg-gray-700 text-white cursor-pointer disabled:opacity-30 disabled:cursor-default"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((prev) => prev - 1)}
+              >
+                &lt;
+              </button>
+
+              <span className="text-sm text-gray-400">
+                Page {currentPage} of {totalPages}
+              </span>
+
+              <button
+                className="px-3 py-1 rounded bg-gray-700 text-white cursor-pointer disabled:opacity-30"
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((prev) => prev + 1)}
+              >
+                &gt;
+              </button>
+            </div>
+          )}
+
+          {filteredTrades?.length !== 0 && (
+            <Statistics
+              data={trades!}
+              status={filter}
+              filteredData={filteredTrades!}
+              option={option}
+              symbol={symbol}
+              strategy={strategy}
+            />
+          )}
         </div>
       )}
 

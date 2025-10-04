@@ -62,11 +62,15 @@ export default function Statistics({
         <div className="border p-5 rounded-lg bg-[#16151C] border-white/20 max-w-[30%] w-full">
           <div>
             Biggest win:{" "}
-            <span className="text-green-500">${biggestWin.profitLoss}</span>
+            <span className="text-green-500">
+              ${biggestWin.profitLoss?.toFixed(2)}
+            </span>
           </div>
           <div>
             Biggest loss:{" "}
-            <span className="text-red-500">${biggestLoss.profitLoss}</span>
+            <span className="text-red-500">
+              ${biggestLoss.profitLoss?.toFixed(2)}
+            </span>
           </div>
           <div>Win rate: {winRate.toFixed(2)}%</div>
           <div>
