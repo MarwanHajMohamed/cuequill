@@ -337,7 +337,18 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
             )}
           </div>
           {filteredTrades?.length !== 0 && (
-            <div className="flex justify-end mt-5 w-full max-w-[1500px]">
+            <div className="flex justify-between mt-5 w-full max-w-[1500px]">
+              <button
+                className="text-xs border border-green-500 bg-green-500/20 p-2 rounded-lg 
+                      flex gap-2 items-center cursor-pointer
+                      transition duration-100 hover:bg-green-500/50"
+                onClick={() => {
+                  setEditingTrade(null);
+                  setIsModalOpen(true);
+                }}
+              >
+                + Add new trade
+              </button>
               <button
                 className="text-xs border border-red-500 bg-red-500/20 p-2 rounded-lg 
                       flex gap-2 items-center cursor-pointer

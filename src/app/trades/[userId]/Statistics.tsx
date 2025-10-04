@@ -48,40 +48,42 @@ export default function Statistics({
         {symbol === "All" ? strategy === "All" && "" : ` with ${symbol}`}
         {strategy === "All" ? "" : ` with ${strategy} strategy`}.
       </div>
-      <div className="flex flex-col items-center lg:flex-row justify-between gap-5 w-full max-w-[1500px]">
-        <div className="border p-5 rounded-lg bg-[#16151C] border-white/20 max-w-[30%] w-full">
-          <div>Total trades: {filteredData.length}</div>
-          <div>Strategy: {strategy}</div>
-          <div>Status: {status}</div>
-          <div>Option: {option}</div>
-        </div>
+      <div className="flex flex-col items-center justify-between gap-5 w-full max-w-[1500px]">
         <div className="flex items-center gap-5">
           <Pie data={filteredData} />
           <Bar data={filteredData} />
         </div>
-        <div className="border p-5 rounded-lg bg-[#16151C] border-white/20 max-w-[30%] w-full">
-          <div>
-            Biggest win:{" "}
-            <span className="text-green-500">
-              ${biggestWin.profitLoss?.toFixed(2)}
-            </span>
+        <div className="w-full flex justify-center gap-3">
+          <div className="border p-5 rounded-lg bg-[#16151C] border-white/20 w-80">
+            <div>Total trades: {filteredData.length}</div>
+            <div>Strategy: {strategy}</div>
+            <div>Status: {status}</div>
+            <div>Option: {option}</div>
           </div>
-          <div>
-            Biggest loss:{" "}
-            <span className="text-red-500">
-              ${biggestLoss.profitLoss?.toFixed(2)}
-            </span>
-          </div>
-          <div>Win rate: {winRate.toFixed(2)}%</div>
-          <div>
-            Net profit:{" "}
-            <span
-              className={`${
-                netProfit >= 0 ? "text-green-500" : "text-red-500"
-              }`}
-            >
-              ${netProfit.toFixed(2)}
-            </span>
+          <div className="border p-5 rounded-lg bg-[#16151C] border-white/20 w-80">
+            <div>
+              Biggest win:{" "}
+              <span className="text-green-500">
+                ${biggestWin.profitLoss?.toFixed(2)}
+              </span>
+            </div>
+            <div>
+              Biggest loss:{" "}
+              <span className="text-red-500">
+                ${biggestLoss.profitLoss?.toFixed(2)}
+              </span>
+            </div>
+            <div>Win rate: {winRate.toFixed(2)}%</div>
+            <div>
+              Net profit:{" "}
+              <span
+                className={`${
+                  netProfit >= 0 ? "text-green-500" : "text-red-500"
+                }`}
+              >
+                ${netProfit.toFixed(2)}
+              </span>
+            </div>
           </div>
         </div>
       </div>
