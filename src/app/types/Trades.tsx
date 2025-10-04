@@ -33,4 +33,5 @@ export interface Trade {
   profitLoss?: number | null;
   notes?: string;
   simulated: boolean;
+  favourite: boolean;
 }

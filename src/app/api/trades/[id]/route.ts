@@ -23,11 +23,18 @@ export async function PATCH(
 ) {
   const { id } = await params;
   await connectDB();
+
   try {
     const data = await req.json();
-    const updated = await Trade.findByIdAndUpdate(id, data, {
-      new: true,
-    }).lean();
+
+    if (typeof data.favourite !== "undefined") {
+    }
+
+    const updated = await Trade.findByIdAndUpdate(
+      id,
+      { $set: data },
+      { new: true, upsert: false }
+    ).lean();
 
     if (!updated) {
       return NextResponse.json({ error: "Trade not found" }, { status: 404 });

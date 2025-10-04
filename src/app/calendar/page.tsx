@@ -90,6 +90,7 @@ function Page() {
           closingContractPrice: trade.closingContractPrice,
           notes: trade.notes,
           profitLoss: trade.profitLoss,
+          favourite: trade.favourite,
         }))
       : [];
 

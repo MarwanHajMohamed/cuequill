@@ -83,7 +83,6 @@ export const handleSave = (
     profitLoss = Number(
       ((closingContractPrice - contractPrice) * 100 * qty).toFixed(2)
     );
-    console.log("Profit Loss: ", profitLoss);
   }
 
   const tradeData: Trade = {
@@ -105,6 +104,7 @@ export const handleSave = (
     profitLoss: status === "WIN" || status === "LOSS" ? profitLoss : null,
     notes,
     simulated,
+    favourite: false,
   };
 
   if (tradeData._id) {

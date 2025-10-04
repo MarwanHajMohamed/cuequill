@@ -96,3 +96,24 @@ export const handleSaveNotes = async (
 
   await queryClient.invalidateQueries({ queryKey: ["trades", userId] });
 };
+
+export const handleFavourite = async (
+  tradeId: string | undefined,
+  userId: string,
+  favourite: boolean,
+  queryClient: QueryClient
+) => {
+  if (!tradeId) return;
+
+  try {
+    await fetch(`/api/trades/${tradeId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ favourite }),
+    });
+
+    await queryClient.invalidateQueries({ queryKey: ["trades", userId] });
+  } catch (err) {
+    console.error("Failed to toggle favourite", err);
+  }
+};

@@ -21,6 +21,7 @@ const TradeSchema = new mongoose.Schema({
   closingContractPrice: { type: Number },
 
   simulated: { type: Boolean, required: true },
+  favourite: { type: Boolean, default: false },
 
   strategy: { type: String },
   notes: { type: String },

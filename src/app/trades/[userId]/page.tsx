@@ -6,6 +6,7 @@ import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useTrades } from "@/hooks/useTrades";
 import { withAuth } from "@/lib/withAuth";
 import { useQueryClient } from "@tanstack/react-query";
+import { motion } from "framer-motion";
 import React, { use, useEffect, useState } from "react";
 import NotesModal from "../NotesModal";
 import { useToast } from "@/hooks/useToast";
@@ -17,6 +18,7 @@ import {
 } from "../../../handlers/tradeHandlers";
 import Filters from "./Filters";
 import Statistics from "./Statistics";
+import { FavouriteButton } from "./FavouriteButton";
 
 function Page({ params }: { params: Promise<{ userId: string }> }) {
   const [simulated] = useLocalStorage<boolean>("simulated", false);
@@ -38,6 +40,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
   const [symbol, setSymbol] = useState<string>("All");
   const [filter, setFilter] = useState<"All" | "Win" | "Loss">("All");
   const [option, setOption] = useState<"All" | "CALL" | "PUT">("All");
+  const [isFavourite, setIsFavourite] = useState<boolean>(false);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -123,6 +126,9 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
       // Filter by option
       if (option !== "All" && trade.option !== option) return false;
 
+      // Filter by favourite
+      if (isFavourite === true && trade.favourite === false) return false;
+
       return true;
     });
 
@@ -154,6 +160,8 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
             option={option}
             setOption={setOption}
             symbols={symbols}
+            isFavourite={isFavourite}
+            setIsFavourite={setIsFavourite}
           />
           <div className="w-full max-w-[1500px] overflow-x-auto mt-5">
             {filteredTrades?.length === 0 ? (
@@ -176,9 +184,15 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                   <tbody>
                     {filteredTrades?.map((trade, index) => (
                       <tr key={index}>
-                        <td>
+                        <td className="flex gap-2 py-1">
+                          <FavouriteButton
+                            tradeId={trade._id!}
+                            userId={userId}
+                            isFavourite={trade.favourite}
+                            queryClient={queryClient}
+                          />
                           <i
-                            className="fa-solid fa-pen-to-square cursor-pointer text-white/30 transition duration-100 hover:text-white/100 text-lg"
+                            className="fa-regular fa-pen-to-square cursor-pointer text-white/30 transition duration-100 hover:text-white/100 text-xl"
                             onClick={() => {
                               setEditingTrade(trade);
                               setIsModalOpen(true);
@@ -319,18 +333,17 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                     Delete all trades
                   </button>
                 </div>
-
-                <Statistics
-                  data={trades!}
-                  status={filter}
-                  filteredData={filteredTrades!}
-                  option={option}
-                  symbol={symbol}
-                  strategy={strategy}
-                />
               </>
             )}
           </div>
+          <Statistics
+            data={trades!}
+            status={filter}
+            filteredData={filteredTrades!}
+            option={option}
+            symbol={symbol}
+            strategy={strategy}
+          />
         </div>
       )}
 

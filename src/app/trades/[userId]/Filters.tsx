@@ -12,6 +12,8 @@ export default function Filters({
   option,
   setOption,
   symbols,
+  isFavourite,
+  setIsFavourite,
 }: {
   filter: "All" | "Win" | "Loss";
   setFilter: React.Dispatch<React.SetStateAction<"All" | "Win" | "Loss">>;
@@ -23,9 +25,11 @@ export default function Filters({
   option: "All" | "CALL" | "PUT";
   setOption: React.Dispatch<React.SetStateAction<"All" | "CALL" | "PUT">>;
   symbols: string[];
+  isFavourite: boolean;
+  setIsFavourite: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   return (
-    <div className="flex items-end pb-5 w-full max-w-[1500px] gap-7 sticky top-0 bg-[#0E0E10]/80 h-40 backdrop-blur-xs">
+    <div className="flex items-end pb-5 w-full max-w-[1500px] gap-7 sticky top-0 bg-[#0E0E10]/80 h-40 backdrop-blur-xs z-2">
       {/* STATUS FILTERING */}
       <div>
         <div className="text-xs text-white/40 mb-1">Status:</div>
@@ -144,6 +148,24 @@ export default function Filters({
             Put
           </button>
         </div>
+      </div>
+
+      {/* FAVOURITE FILTERING */}
+      <div className="w-[1px] h-6 bg-white/50"></div>
+      <div
+        className="flex gap-1 items-center cursor-pointer"
+        onClick={() => setIsFavourite(!isFavourite)}
+      >
+        <i
+          className={`fa-${isFavourite ? "solid" : "regular"} fa-star 
+                    ${
+                      isFavourite
+                        ? "text-yellow-300 hover:text-yellow-500"
+                        : "text-white/30 hover:text-white/100"
+                    } 
+                    cursor-pointer text-xl transition duration-100`}
+        ></i>
+        <div>Favourites</div>
       </div>
     </div>
   );

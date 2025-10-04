@@ -340,7 +340,7 @@ export default function EditTradeModal({
           >
             {onDelete && initialTrade?._id && (
               <button
-                className="px-4 py-2 bg-red-700 transition duration-200 ease-in-out rounded hover:bg-red-500 cursor-pointer"
+                className="px-4 py-2 bg-red-700 transition duration-100 ease-in-out rounded hover:bg-red-800 cursor-pointer"
                 onClick={() => setDelModal(true)}
               >
                 Delete
@@ -350,7 +350,7 @@ export default function EditTradeModal({
             <div className="flex gap-2">
               <button
                 onClick={onClose}
-                className="px-4 py-2 bg-[#16151C] transition duration-200 ease-in-out rounded hover:bg-[#16151C]/70 cursor-pointer"
+                className="px-4 py-2 bg-[#16151C] transition duration-100 ease-in-out rounded hover:bg-[#121217] cursor-pointer"
               >
                 Cancel
               </button>
@@ -378,7 +378,7 @@ export default function EditTradeModal({
                     initialTrade!
                   )
                 }
-                className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700 cursor-pointer"
+                className="px-4 py-2 bg-blue-600 transition duration-100 rounded hover:bg-blue-700 cursor-pointer"
               >
                 Save
               </button>

@@ -39,7 +39,7 @@ export default function Statistics({
   );
 
   return (
-    <div className="mt-10 flex flex-col items-center">
+    <div className="mt-10 flex flex-col items-center w-full max-w-[1500px]">
       <div className="mb-5 text-xl font-bold">Statistics</div>
       <div className="mb-10">
         You have made {filteredData.length}{" "}
