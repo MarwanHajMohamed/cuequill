@@ -4,7 +4,7 @@ import "./globals.css";
 import "react-calendar/dist/Calendar.css";
 import "@/app/calendar/custom-calendar.css";
 import Providers from "./providers";
-import NavbarWrapper from "./dashboard/components/navbar/NavbarWrapper";
+import NavbarWrapper from "./navbar/NavbarWrapper";
 import { ToastProvider } from "@/hooks/useToast";
 
 const dmMono = DM_Mono({

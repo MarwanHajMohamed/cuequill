@@ -6,7 +6,6 @@ import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useTrades } from "@/hooks/useTrades";
 import { withAuth } from "@/lib/withAuth";
 import { useQueryClient } from "@tanstack/react-query";
-import { motion } from "framer-motion";
 import React, { use, useEffect, useState } from "react";
 import NotesModal from "../NotesModal";
 import { useToast } from "@/hooks/useToast";
