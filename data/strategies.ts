@@ -1,8 +1,22 @@
-import MA40 from "../public/MA40.png";
-import MA402 from "../public/MA40_2.png";
-import MA403 from "../public/MA40_3.png";
+// Successful Moving Average 40
+import MA40_S from "../public/Moving Average/Successful/MA40.png";
+import MA402_S from "../public/Moving Average/Successful/MA40_2.png";
+import MA403_S from "../public/Moving Average/Successful/MA40_3.png";
+import MA404_S from "../public/Moving Average/Successful/MA40_4.png";
+import MA405_S from "../public/Moving Average/Successful/MA40_5.png";
+import MA406_S from "../public/Moving Average/Successful/MA40_6.png";
+import MA407_S from "../public/Moving Average/Successful/MA40_7.png";
+import MA408_S from "../public/Moving Average/Successful/MA40_8.png";
+import MA409_S from "../public/Moving Average/Successful/MA40_9.png";
+import MA4010_S from "../public/Moving Average/Successful/MA40_10.png";
+
+// Unsuccessful Moving Average 40
+import MA401_U from "../public/Moving Average/Unsuccessful/MA40_1.png";
+
+// Successful Normal Fall Hard Fall
 import NFHF1 from "../public/NFHF1.png";
 import NFHF2 from "../public/NFHF2.png";
+
 import BCB from "../public/BCB.png";
 import BCB2 from "../public/BCB2.png";
 import BCB3 from "../public/BCB3.png";
@@ -32,7 +46,14 @@ export type ContentBlock =
   | { type: "image"; src: string; alt?: string }
   | { type: "chart"; src: string; alt?: string }
   | { type: "video"; src: string }
-  | { type: "list"; items: string[] };
+  | { type: "list"; items: string[] }
+  | {
+      type: "file";
+      items: {
+        type: "Successful" | "Unsuccessful";
+        src: string;
+      }[];
+    };
 
 export interface Strategy {
   slug: string;
@@ -61,9 +82,55 @@ export const strategies: Strategy[] = [
         ],
       },
       { type: "text", content: "Moving Average 40 Charts:" },
-      { type: "image", src: MA40.src, alt: "Moving Average 40 chart" },
-      { type: "image", src: MA402.src, alt: "Moving Average 40 chart 2" },
-      { type: "image", src: MA403.src, alt: "Moving Average 40 chart 3" },
+      {
+        type: "file",
+        items: [
+          {
+            type: "Successful",
+            src: MA40_S.src,
+          },
+          {
+            type: "Successful",
+            src: MA402_S.src,
+          },
+          {
+            type: "Successful",
+            src: MA403_S.src,
+          },
+          {
+            type: "Successful",
+            src: MA404_S.src,
+          },
+          {
+            type: "Successful",
+            src: MA405_S.src,
+          },
+          {
+            type: "Successful",
+            src: MA406_S.src,
+          },
+          {
+            type: "Successful",
+            src: MA407_S.src,
+          },
+          {
+            type: "Successful",
+            src: MA408_S.src,
+          },
+          {
+            type: "Successful",
+            src: MA409_S.src,
+          },
+          {
+            type: "Successful",
+            src: MA4010_S.src,
+          },
+          {
+            type: "Unsuccessful",
+            src: MA401_U.src,
+          },
+        ],
+      },
       { type: "text", content: "Seminar: S2Day1Vid5 - 01:13:50" },
     ],
   },
@@ -92,7 +159,10 @@ export const strategies: Strategy[] = [
         content:
           "In an uptrend, a normal fall or a hard fall could occur & go beneath the 40MA. Then when a bullish candle forms, buy CALL and sell next day.",
       },
-      { type: "text", content: "20MA doesn't have to be over 40MA, but it does help." },
+      {
+        type: "text",
+        content: "20MA doesn't have to be over 40MA, but it does help.",
+      },
       { type: "text", content: "Normal fall & hard fall charts:" },
       { type: "image", src: NFHF1.src, alt: "Normal Fall Hard Fall chart" },
       { type: "image", src: NFHF2.src, alt: "Normal Fall Hard Fall chart 2" },
