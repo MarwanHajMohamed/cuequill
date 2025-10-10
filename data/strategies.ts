@@ -9,6 +9,8 @@ import MA407_S from "../public/Moving Average/Successful/MA40_7.png";
 import MA408_S from "../public/Moving Average/Successful/MA40_8.png";
 import MA409_S from "../public/Moving Average/Successful/MA40_9.png";
 import MA4010_S from "../public/Moving Average/Successful/MA40_10.png";
+import MA4011_S from "../public/Moving Average/Successful/MA40_11.png";
+import MA4012_S from "../public/Moving Average/Successful/MA40_12.png";
 
 // Unsuccessful Moving Average 40
 import MA401_U from "../public/Moving Average/Unsuccessful/MA40_1.png";
@@ -124,6 +126,14 @@ export const strategies: Strategy[] = [
           {
             type: "Successful",
             src: MA4010_S.src,
+          },
+          {
+            type: "Successful",
+            src: MA4011_S.src,
+          },
+          {
+            type: "Successful",
+            src: MA4012_S.src,
           },
           {
             type: "Unsuccessful",

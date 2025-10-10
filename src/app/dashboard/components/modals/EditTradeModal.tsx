@@ -185,7 +185,7 @@ export default function EditTradeModal({
                 name="contractPrice"
                 placeholder="Contract"
                 type="number"
-                value={contractPrice ?? ""}
+                value={isNaN(contractPrice!) ? "" : contractPrice ?? ""}
                 onChange={(e) => {
                   setContractPrice(parseFloat(e.target.value));
                   setErrorMessage("");
@@ -198,7 +198,7 @@ export default function EditTradeModal({
                 name="qty"
                 placeholder="Qty"
                 type="number"
-                value={qty ?? ""}
+                value={isNaN(qty!) ? "" : qty ?? ""}
                 onChange={(e) => {
                   setQty(parseFloat(e.target.value));
                   setErrorMessage("");
@@ -211,7 +211,7 @@ export default function EditTradeModal({
                 name="strike"
                 placeholder="Strike"
                 type="number"
-                value={strike ?? ""}
+                value={isNaN(strike!) ? "" : strike ?? ""}
                 onChange={(e) => {
                   setStrike(parseFloat(e.target.value));
                   setErrorMessage("");
@@ -287,7 +287,11 @@ export default function EditTradeModal({
                   <input
                     name="closingContractPrice"
                     type="number"
-                    value={closingContractPrice!}
+                    value={
+                      isNaN(closingContractPrice!)
+                        ? ""
+                        : closingContractPrice ?? ""
+                    }
                     onChange={(e) => {
                       setClosingContractPrice(parseFloat(e.target.value));
                       setErrorMessage("");

@@ -213,7 +213,7 @@ export default function Filters({
         <div>
           <div></div>
           <i
-            className="fa-solid fa-rotate cursor-pointer transition duration-100 hover:rotate-30"
+            className="fa-solid fa-rotate text-white/40 cursor-pointer transition duration-100 hover:rotate-30"
             onClick={() => {
               setStartDate("");
               setEndDate("");
