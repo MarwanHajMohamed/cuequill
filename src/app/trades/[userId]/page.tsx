@@ -40,6 +40,8 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
   const [filter, setFilter] = useState<"All" | "Win" | "Loss">("All");
   const [option, setOption] = useState<"All" | "CALL" | "PUT">("All");
   const [isFavourite, setIsFavourite] = useState<boolean>(false);
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
 
   const [currentPage, setCurrentPage] = useState<number>(1);
   const tradesPerPage = 15;
@@ -131,6 +133,14 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
       // Filter by favourite
       if (isFavourite === true && trade.favourite === false) return false;
 
+      const tradeDate = new Date(trade.dateBought);
+      const from = startDate ? new Date(startDate) : null;
+      const to = endDate ? new Date(endDate) : null;
+
+      // Filter by start date and end date (inclusive)
+      if (from && tradeDate < from) return false;
+      if (to && tradeDate > to) return false;
+
       return true;
     });
 
@@ -173,6 +183,10 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
             symbols={symbols}
             isFavourite={isFavourite}
             setIsFavourite={setIsFavourite}
+            startDate={startDate}
+            setStartDate={setStartDate}
+            endDate={endDate}
+            setEndDate={setEndDate}
           />
           <div className="w-full max-w-[1500px] overflow-x-auto mt-5">
             {filteredTrades?.length === 0 ? (
