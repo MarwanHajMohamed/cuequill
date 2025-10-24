@@ -18,7 +18,7 @@ export type StrategyList =
 export interface Trade {
   _id?: string;
   userID?: string;
-  date: string;
+  date?: string;
   status: TradeEventType;
   symbol: string;
   contractPrice: number;

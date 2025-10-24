@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import connectDb from "@/lib/db";
 import Trade from "@/lib/models/Trade";
 import Papa from "papaparse";
+import { Trade as TradeType } from "@/app/types/Trades";
 
 type CsvRow = {
   Symbol: string;
@@ -91,16 +92,16 @@ export async function POST(req: Request) {
           const buyRow = openQueue[0];
           const matchQty = Math.min(buyRow.remainingQty, remainingSell);
 
-          const trade = {
+          const trade: TradeType = {
             userID: userId,
             symbol: buyRow.Symbol.split(" ")[0],
             option: buyRow["Put/Call"] === "C" ? "CALL" : "PUT",
             strike: parseFloat(buyRow.Strike),
             qty: matchQty,
             contractPrice: parseFloat(buyRow.TradePrice),
-            dateBought: parseDateTime(buyRow.DateTime),
-            expiryDate: parseExpiry(buyRow.Expiry),
-            dateClosed: parseDateTime(row.DateTime),
+            dateBought: parseDateTime(buyRow.DateTime).toLocaleString(),
+            expiryDate: parseExpiry(buyRow.Expiry).toLocaleString(),
+            dateClosed: parseDateTime(row.DateTime).toLocaleString(),
             closingContractPrice: parseFloat(row.TradePrice),
             profitLoss: (parseFloat(row.FifoPnlRealized) / qty) * matchQty,
             status:
@@ -108,6 +109,9 @@ export async function POST(req: Request) {
                 ? "WIN"
                 : "LOSS",
             simulated: false,
+            notes: "",
+            strategy: "Other",
+            favourite: false,
           };
 
           trades.push(trade);
