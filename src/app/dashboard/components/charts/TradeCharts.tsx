@@ -19,14 +19,21 @@ export default function TradeCharts({ userId }: { userId: string }) {
   return (
     <div className="flex justify-between w-[100%] max-w-250 items-center my-50 mx-10">
       <div className="w-[100%]">
-        <Pie data={trades} />
+        <Pie
+          data={trades}
+          innerRadius={60}
+          outerRadius={90}
+          height={180}
+          width={180}
+          fontSize={12}
+        />
       </div>
       <div className="w-[100%]">
         You have made {trades.length} trade{trades.length === 1 ? "" : "s"} so
         far.
       </div>
       <div className="w-[100%]">
-        <Bar data={trades} />
+        <Bar data={trades} height={250} width={250} />
       </div>
     </div>
   );

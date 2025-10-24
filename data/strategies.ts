@@ -19,6 +19,26 @@ import MA401_U from "../public/Moving Average/Unsuccessful/MA40_1.png";
 import NFHF1 from "../public/NFHF1.png";
 import NFHF2 from "../public/NFHF2.png";
 
+// Successful FRC
+import FROC1 from "../public/FRC/Successful/FROC_1.png";
+import FROC2 from "../public/FRC/Successful/FROC_2.png";
+import FROC3 from "../public/FRC/Successful/FROC_3.png";
+import FROC4 from "../public/FRC/Successful/FROC_4.png";
+import FROC5 from "../public/FRC/Successful/FROC_5.png";
+import FROC6 from "../public/FRC/Successful/FROC_6.png";
+import FROC7 from "../public/FRC/Successful/FROC_7.png";
+import FROC8 from "../public/FRC/Successful/FROC_8.png";
+
+// Unsuccessful FRC
+import FROC1_U from "../public/FRC/Unsuccessful/FROC_1.png";
+import FROC2_U from "../public/FRC/Unsuccessful/FROC_2.png";
+import FROC3_U from "../public/FRC/Unsuccessful/FROC_3.png";
+import FROC4_U from "../public/FRC/Unsuccessful/FROC_4.png";
+import FROC5_U from "../public/FRC/Unsuccessful/FROC_5.png";
+import FROC6_U from "../public/FRC/Unsuccessful/FROC_6.png";
+import FROC7_U from "../public/FRC/Unsuccessful/FROC_7.png";
+import FROC8_U from "../public/FRC/Unsuccessful/FROC_8.png";
+
 import BCB from "../public/BCB.png";
 import BCB2 from "../public/BCB2.png";
 import BCB3 from "../public/BCB3.png";
@@ -32,8 +52,6 @@ import FUG1 from "../public/FUG1.png";
 import FUG2 from "../public/FUG2.png";
 import FUG3 from "../public/FUG3.png";
 import FUG4 from "../public/FUG4.png";
-import FROC from "../public/FROC.png";
-import FROC2 from "../public/FROC2.png";
 import GFB from "../public/GFB.png";
 import GFB2 from "../public/GFB2.png";
 import M4S from "../public/M4S.png";
@@ -338,11 +356,26 @@ export const strategies: Strategy[] = [
         ],
       },
       { type: "text", content: "First red opening candle charts:" },
-      { type: "image", src: FROC.src, alt: "First Red Opening Candle chart" },
       {
-        type: "image",
-        src: FROC2.src,
-        alt: "First Red Opening Candle chart 2",
+        type: "file",
+        items: [
+          { src: FROC1.src, type: "Successful" },
+          { src: FROC2.src, type: "Successful" },
+          { src: FROC3.src, type: "Successful" },
+          { src: FROC4.src, type: "Successful" },
+          { src: FROC5.src, type: "Successful" },
+          { src: FROC6.src, type: "Successful" },
+          { src: FROC7.src, type: "Successful" },
+          { src: FROC8.src, type: "Successful" },
+          { src: FROC1_U.src, type: "Unsuccessful" },
+          { src: FROC2_U.src, type: "Unsuccessful" },
+          { src: FROC3_U.src, type: "Unsuccessful" },
+          { src: FROC4_U.src, type: "Unsuccessful" },
+          { src: FROC5_U.src, type: "Unsuccessful" },
+          { src: FROC6_U.src, type: "Unsuccessful" },
+          { src: FROC7_U.src, type: "Unsuccessful" },
+          { src: FROC8_U.src, type: "Unsuccessful" },
+        ],
       },
       { type: "text", content: "Seminar: S2Day2Vid7 - 01:20:07" },
     ],

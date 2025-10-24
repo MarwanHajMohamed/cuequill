@@ -24,16 +24,14 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
   const toast = useToast();
   const today = new Date();
   const queryClient = useQueryClient();
-
   const { userId } = use(params);
   const { data: trades, isLoading, isError } = useTrades(userId, simulated);
 
+  // USE STATES
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
-
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isNotesOpen, setIsNotesOpen] = useState<boolean>(false);
   const [delAllModal, setDelAllModal] = useState<boolean>(false);
-
   const [notes, setNotes] = useState<string>("");
   const [strategy, setStrategy] = useState<StrategyList>("All");
   const [symbol, setSymbol] = useState<string>("All");
@@ -42,7 +40,6 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
   const [isFavourite, setIsFavourite] = useState<boolean>(false);
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
-
   const [currentPage, setCurrentPage] = useState<number>(1);
   const tradesPerPage = 15;
 
@@ -144,6 +141,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
       return true;
     });
 
+  // Pagination controls
   const indexOfLastTrade = currentPage * tradesPerPage;
   const indexOfFirstTrade = indexOfLastTrade - tradesPerPage;
   const currentTrades = filteredTrades?.slice(
@@ -188,7 +186,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
             endDate={endDate}
             setEndDate={setEndDate}
           />
-          <div className="w-full max-w-[1500px] overflow-x-auto mt-5">
+          <div className="w-full max-w-[1500px] overflow-x-auto mt-5 h-126">
             {filteredTrades?.length === 0 ? (
               <div className="text-center">No trades found</div>
             ) : (
@@ -373,7 +371,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
               </button>
             </div>
           )}
-          {totalPages > 1 && (
+          {
             <div className="flex justify-center items-center gap-2 mt-5">
               <button
                 className="px-3 py-1 rounded bg-gray-700 text-white cursor-pointer disabled:opacity-30 disabled:cursor-default"
@@ -395,7 +393,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                 &gt;
               </button>
             </div>
-          )}
+          }
 
           {filteredTrades?.length !== 0 && (
             <Statistics
@@ -403,7 +401,6 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
               status={filter}
               filteredData={filteredTrades!}
               option={option}
-              symbol={symbol}
               strategy={strategy}
             />
           )}

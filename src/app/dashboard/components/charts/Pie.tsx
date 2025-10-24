@@ -2,11 +2,25 @@ import { Trade } from "@/app/types/Trades";
 import { PieChart } from "@mui/x-charts";
 import React from "react";
 
-export default function Pie({ data }: { data: Trade[] }) {
+export default function Pie({
+  data,
+  innerRadius,
+  outerRadius,
+  width,
+  height,
+  fontSize,
+}: {
+  data: Trade[];
+  innerRadius: number;
+  outerRadius: number;
+  width: number;
+  height: number;
+  fontSize: number;
+}) {
   const settings = {
     margin: { right: 5 },
-    width: 200,
-    height: 200,
+    width: width,
+    height: height,
     hideLegend: true,
   };
 
@@ -35,12 +49,14 @@ export default function Pie({ data }: { data: Trade[] }) {
   const winRate = total > 0 ? (wins / total) * 100 : 0;
 
   return (
-    <div className="relative w-[200px] h-[200px] flex items-center justify-center">
+    <div
+      className={`relative w-[${width}px] h-[${height}px] flex items-center justify-center`}
+    >
       <PieChart
         series={[
           {
-            innerRadius: 70,
-            outerRadius: 100,
+            innerRadius: innerRadius,
+            outerRadius: outerRadius,
             paddingAngle: 5,
             data: chartData,
           },
@@ -53,8 +69,10 @@ export default function Pie({ data }: { data: Trade[] }) {
         }}
       />
       <div className="absolute text-center">
-        <div className="text-xl font-bold">{winRate.toFixed(2)}%</div>
-        <div className="text-sm text-gray-500">Wins</div>
+        <div className={`text-[${fontSize}px] font-bold`}>
+          {winRate.toFixed(2)}%
+        </div>
+        <div className={`text-[${fontSize}px] text-gray-500`}>Wins</div>
       </div>
     </div>
   );

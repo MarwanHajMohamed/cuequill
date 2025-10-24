@@ -4,7 +4,15 @@ import React from "react";
 import { BarChart } from "@mui/x-charts/BarChart";
 import { Trade } from "@/app/types/Trades";
 
-export default function Bar({ data }: { data: Trade[] }) {
+export default function Bar({
+  data,
+  height,
+  width,
+}: {
+  data: Trade[];
+  height: number;
+  width: number;
+}) {
   const counts = data.reduce(
     (acc, trade) => {
       if (trade.status === "WIN") acc.WIN += 1;
@@ -20,7 +28,7 @@ export default function Bar({ data }: { data: Trade[] }) {
   };
 
   return (
-    <div>
+    <div className="mr-10">
       <BarChart
         xAxis={[
           {
@@ -37,7 +45,8 @@ export default function Bar({ data }: { data: Trade[] }) {
           },
         ]}
         series={[{ data: [counts.WIN, counts.LOSS] }]}
-        height={250}
+        height={height}
+        width={width}
         sx={{
           //change left yAxis label styles
           "& .MuiChartsAxis-left .MuiChartsAxis-tickLabel": {
