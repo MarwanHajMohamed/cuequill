@@ -15,6 +15,7 @@ import { usePortfolioHistory } from "@/hooks/usePortfolioHistory";
 export default function PortfolioChart({ userId }: { userId: string }) {
   const { data: chartData, loading } = usePortfolioHistory(userId);
 
+  const [hideBalance, setHideBalance] = useState<boolean>(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [type, setType] = useState<"DEPOSIT" | "WITHDRAW" | null>(null);
 
@@ -25,8 +26,23 @@ export default function PortfolioChart({ userId }: { userId: string }) {
       <div className="mb-20">
         <div>
           <div className="text-white flex gap-2 justify-center items-center">
+            {hideBalance ? (
+              <i
+                className="fa-solid fa-eye cursor-pointer text-[#AAAAAA] transition duration-100 hover:text-[#424242] text-xl"
+                onClick={() => setHideBalance(false)}
+              ></i>
+            ) : (
+              <i
+                className="fa-solid fa-eye-slash cursor-pointer text-[#AAAAAA] transition duration-100 hover:text-[#424242] text-xl"
+                onClick={() => setHideBalance(true)}
+              ></i>
+            )}
             <div className="text-3xl">
-              ${chartData[chartData.length - 1]?.balance ?? 0}
+              {hideBalance ? (
+                "****"
+              ) : (
+                <span>${chartData[chartData.length - 1]?.balance ?? 0}</span>
+              )}
             </div>
           </div>
           <div className="flex gap-4 w-full items-center justify-center mb-5 mt-2">
@@ -58,12 +74,16 @@ export default function PortfolioChart({ userId }: { userId: string }) {
               <XAxis dataKey="date" />
               <YAxis
                 dataKey="balance"
-                domain={[
-                  (dataMin: number) => Math.floor(dataMin / 10) * 10 - 10,
-                  (dataMax: number) => Math.ceil(dataMax / 10) * 10 + 10,
-                ]}
+                domain={
+                  !hideBalance
+                    ? [
+                        (dataMin: number) => Math.floor(dataMin / 10) * 10 - 10,
+                        (dataMax: number) => Math.ceil(dataMax / 10) * 10 + 10,
+                      ]
+                    : []
+                }
               />
-              <Tooltip />
+              <Tooltip active={!hideBalance} />
               <Line
                 type="linear"
                 dataKey="balance"
