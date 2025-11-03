@@ -28,6 +28,7 @@ export default function Navbar() {
     { name: "fa-solid fa-house", slug: "dashboard", side: "LEFT" },
     { name: "Trades", slug: "trades/" + userId, side: "MIDDLE" },
     { name: "Calendar", slug: "calendar", side: "MIDDLE" },
+    { name: "Goals", slug: "goals", side: "MIDDLE" },
     { name: "Affirmations", slug: "affirmations", side: "MIDDLE" },
     {
       name: "Guide",
@@ -38,7 +39,6 @@ export default function Navbar() {
         { name: "Stocks/ETFs", slug: "stocks" },
       ],
     },
-    // { name: "Community", slug: "community", side: "MIDDLE" },
     { name: "fa-solid fa-user", slug: "", side: "RIGHT" },
   ];
 

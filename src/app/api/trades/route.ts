@@ -9,19 +9,27 @@ export async function GET(req: NextRequest) {
 
   const userId = req.nextUrl.searchParams.get("userId");
   const simulated = req.nextUrl.searchParams.get("simulated");
+  const month = req.nextUrl.searchParams.get("month");
+  const year = req.nextUrl.searchParams.get("year");
 
   try {
-    // build query object
     const query: Record<string, unknown> = {};
+
     if (userId) {
       query.userID = new mongoose.Types.ObjectId(userId);
     }
 
-    // handle simulated flag
-    if (simulated === "true") {
-      query.simulated = true;
-    } else {
-      query.simulated = false;
+    if (simulated === "true") query.simulated = true;
+    if (simulated === "false") query.simulated = false;
+
+    if (month && year) {
+      const m = Number(month);
+      const y = Number(year);
+
+      const startDate = new Date(y, m, 1);
+      const endDate = new Date(y, m + 1, 0, 23, 59, 59);
+
+      query.dateBought = { $gte: startDate, $lte: endDate };
     }
 
     const trades = await Trade.find(query).sort({ dateBought: -1 });
