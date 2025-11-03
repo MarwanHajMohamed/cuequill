@@ -26,8 +26,8 @@ export default function Goals({
       <div className="flex flex-col gap-1 w-full">
         {goals.length === 0 ? (
           <div className="text-sm text-gray-400">
-            You haven't added any goals this month. <br /> Add a new goal using
-            the button below.
+            You haven&apos;t added any goals this month. <br /> Add a new goal
+            using the button below.
           </div>
         ) : (
           goals.map((goal) => (

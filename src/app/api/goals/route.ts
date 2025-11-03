@@ -1,6 +1,5 @@
 import connectDb from "@/lib/db";
 import Goal from "@/lib/models/Goal";
-import mongoose from "mongoose";
 import { NextRequest, NextResponse } from "next/server";
 
 // Get goals for each user
@@ -17,7 +16,7 @@ export async function GET(req: NextRequest) {
   }
 
   // Build query
-  const query: any = { userId };
+  const query: Record<string, unknown> = { userId };
 
   // Filter by month and year if provided
   if (month && year) {
@@ -31,10 +30,10 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(goals);
   } catch (err) {
-    return NextResponse.json(
-      { error: "Failed to fetch goals" },
-      { status: 500 }
-    );
+    const message =
+      err instanceof Error ? err.message : "Failed to fetch goals";
+
+    return NextResponse.json({ error: message }, { status: 400 });
   }
 }
 

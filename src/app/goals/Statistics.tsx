@@ -29,7 +29,7 @@ export default function Statistics({ goals }: { goals: Goal[] }) {
         setProfitLoss(profit)
       );
     }
-  }, []);
+  }, [userId, simulated]);
 
   const monthsTrades = trades?.filter((trade) => {
     const tradeDate = new Date(trade.dateBought);

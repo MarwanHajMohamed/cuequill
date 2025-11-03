@@ -66,7 +66,7 @@ export default function PreviousMonths({ userId }: { userId: string }) {
         }
       );
     }
-  }, [selectedMonth, selectedYear]);
+  }, [selectedMonth, selectedYear, userId, simulated]);
 
   const chosenMonthTrades = trades?.filter((trade) => {
     const tradeDate = new Date(trade.dateBought);

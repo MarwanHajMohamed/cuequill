@@ -92,7 +92,7 @@ export default function Navbar() {
                 ref={item.dropdown ? guideDropdownRef : null}
                 className={`relative cursor-pointer transition duration-100 hover:text-teal-500`}
                 onClick={() => {
-                  item.slug && handleRoute(item.slug);
+                  handleRoute(item.slug!);
                   item.dropdown && setDropdown(!dropdown);
                 }}
               >
