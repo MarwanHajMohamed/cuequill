@@ -64,7 +64,7 @@ function Page() {
       </div>
       <div className="w-[100%] flex flex-col items-center">
         <TradeCharts userId={userId} />
-        <Portfolio userId={userId} />
+        {/* <Portfolio userId={userId} /> */}
       </div>
     </div>
   );
