@@ -61,9 +61,21 @@ export default function Statistics({ goals }: { goals: Goal[] }) {
             <div className="text-[#838383] text-sm flex flex-col">
               You have made:
               <span className="text-white text-xl">
-                {hideBalance
-                  ? "****"
-                  : `$${profitLoss ? profitLoss.toFixed(2) : "0.00"}`}
+                {hideBalance ? (
+                  "****"
+                ) : profitLoss ? (
+                  profitLoss > 0 ? (
+                    <span className="text-green-500">
+                      ${profitLoss.toFixed(2)}
+                    </span>
+                  ) : (
+                    <span className="text-red-500">
+                      ${profitLoss.toFixed(2)}
+                    </span>
+                  )
+                ) : (
+                  <span>$0.00</span>
+                )}
               </span>
             </div>
           </div>
