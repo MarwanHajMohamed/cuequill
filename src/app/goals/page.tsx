@@ -58,7 +58,7 @@ export default function Page() {
     };
 
     fetchGoals();
-  }, [userId, today]);
+  }, [userId]);
 
   if (!userId) return "No user found";
 
