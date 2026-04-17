@@ -4,10 +4,13 @@ import { useRouter } from "next/navigation";
 import React, { useState, useRef, useEffect } from "react";
 import { signOut, useSession } from "next-auth/react";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { motion, AnimatePresence } from "framer-motion";
+import TimezoneDisplay from "@/helpers/TimezoneDisplay";
 
 type NavItemsType = {
   name: string;
   slug?: string;
+  isDropdown?: boolean;
   side: "LEFT" | "MIDDLE" | "RIGHT";
   dropdown?: { name: string; slug: string }[];
 };
@@ -33,6 +36,7 @@ export default function Navbar() {
     {
       name: "Guide",
       side: "MIDDLE",
+      isDropdown: true,
       dropdown: [
         { name: "Strategies", slug: "strategies" },
         { name: "Rules", slug: "rules" },
@@ -65,101 +69,130 @@ export default function Navbar() {
   }, []);
 
   return (
-    <div className="fixed top-0 left-0 right-0 flex justify-center z-50">
-      {simulated && (
-        <div className="border-3 absolute top-0 w-screen h-screen text-center text-xs border-red-500 pointer-events-none" />
-      )}
+    <>
+      <div className="fixed left-[50%] top-1 text-[10px] z-20000 translate-x-[-50%]">
+        <TimezoneDisplay
+          showWeekDay
+          showMonth
+          showYear
+          showDay
+          weekDayFormat="short"
+          monthFormat="2-digit"
+        />
+      </div>
+      <div className="fixed top-0 left-0 right-0 flex justify-center z-50">
+        {simulated && (
+          <div className="border-3 absolute top-0 w-screen h-screen text-center text-xs border-red-500 pointer-events-none" />
+        )}
 
-      <div className="flex justify-between items-center w-full max-w-[1500px] mt-6 mx-10 p-4 px-5 bg-white/3 backdrop-blur-xs rounded-full border border-white/10">
-        {/* Left */}
-        {navItems
-          .filter((item) => item.side === "LEFT")
-          .map((item, i) => (
-            <i
-              key={i}
-              className={`${item.name} cursor-pointer transition duration-100 hover:text-teal-500`}
-              onClick={() => item.slug && handleRoute(item.slug)}
-            />
-          ))}
-
-        {/* Middle */}
-        <div className="flex gap-10">
+        <div className="flex justify-between items-center w-full max-w-[1500px] mt-6 mx-10 p-4 px-5 bg-white/3 backdrop-blur-xs rounded-full border border-white/10">
+          {/* LEFT */}
           {navItems
-            .filter((item) => item.side === "MIDDLE")
-            .map((item, i) => (
-              <div
-                key={i}
-                ref={item.dropdown ? guideDropdownRef : null}
-                className={`relative cursor-pointer transition duration-100 hover:text-teal-500`}
-                onClick={() => {
-                  handleRoute(item.slug!);
-                  item.dropdown && setDropdown(!dropdown);
-                }}
-              >
-                <div>
-                  {item.name}
-                  {item.dropdown && (
-                    <i className="fa-solid fa-chevron-down ml-1"></i>
-                  )}
-                </div>
-                {item.dropdown && dropdown && (
-                  <div
-                    className="absolute left-0 top-8 flex flex-col bg-white text-black rounded-md 
-                  border border-black/10 shadow-md min-w-[140px] z-50"
-                  >
-                    {item.dropdown.map((subItem, j) => (
-                      <div
-                        key={j}
-                        className="p-2 px-4 cursor-pointer hover:bg-black/10 transition duration-100"
-                        onClick={() => handleRoute(subItem.slug)}
-                      >
-                        {subItem.name}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-        </div>
-
-        {/* Right */}
-        <div ref={dropdownRef} className="relative">
-          {navItems
-            .filter((item) => item.side === "RIGHT")
+            .filter((item) => item.side === "LEFT")
             .map((item, i) => (
               <i
                 key={i}
                 className={`${item.name} cursor-pointer transition duration-100 hover:text-teal-500`}
-                onClick={() => setOpen((o) => !o)}
+                onClick={() => item.slug && handleRoute(item.slug)}
               />
             ))}
 
-          {open && (
-            <div
-              className="absolute -left-[120px] top-8 flex flex-col bg-white text-black rounded-md 
-            border border-black/10 shadow-md min-w-[140px] z-50"
-            >
-              <div
-                className="flex items-center gap-1 p-2 px-4 cursor-pointer hover:bg-black/10 transition duration-100"
-                onClick={() => {
-                  handleRoute("settings");
-                  setOpen(false);
-                }}
-              >
-                <i className="fa-solid fa-gear"></i>
-                <div>Settings</div>
-              </div>
-              <div
-                className="flex items-center gap-1 p-2 px-4 cursor-pointer hover:bg-black/10 transition duration-100"
-                onClick={() => signOut({ callbackUrl: "/" })}
-              >
-                <i className="fa-solid fa-right-from-bracket"></i>
-                Logout
-              </div>
-            </div>
-          )}
+          {/* MIDDLE */}
+          <div className="flex gap-10">
+            {navItems
+              .filter((item) => item.side === "MIDDLE")
+              .map((item, i) => (
+                <div
+                  key={i}
+                  ref={item.dropdown ? guideDropdownRef : null}
+                  className={`relative cursor-pointer transition duration-100 hover:text-teal-500`}
+                  onClick={() => {
+                    handleRoute(item.slug!);
+                    item.isDropdown && setDropdown(!dropdown);
+                  }}
+                >
+                  <div>
+                    {item.name}
+                    {item.dropdown && (
+                      <i
+                        className={`fa-solid fa-chevron-down ml-1 transition duration-200 ${
+                          dropdown && "-rotate-180"
+                        }`}
+                      ></i>
+                    )}
+                  </div>
+                  <AnimatePresence>
+                    {item.dropdown && dropdown && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 2 }}
+                        transition={{ duration: 0.3 }}
+                        className="absolute left-0 top-8 flex flex-col bg-white text-black rounded-md 
+                  border border-black/10 shadow-md min-w-[140px] z-50"
+                      >
+                        {item.dropdown.map((subItem, j) => (
+                          <div
+                            key={j}
+                            className="p-2 px-4 cursor-pointer hover:bg-black/10 transition duration-100"
+                            onClick={() => handleRoute(subItem.slug)}
+                          >
+                            {subItem.name}
+                          </div>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ))}
+          </div>
+
+          {/* RIGHT */}
+          <div ref={dropdownRef} className="relative">
+            {navItems
+              .filter((item) => item.side === "RIGHT")
+              .map((item, i) => (
+                <i
+                  key={i}
+                  className={`${item.name} cursor-pointer transition duration-100 hover:text-teal-500`}
+                  onClick={() => setOpen((o) => !o)}
+                />
+              ))}
+
+            {/* MODAL */}
+            <AnimatePresence>
+              {open && (
+                <motion.div
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 2 }}
+                  transition={{ duration: 0.3 }}
+                  className="absolute -left-[120px] top-8 flex flex-col bg-white text-black rounded-md 
+                            border border-black/10 shadow-md min-w-[140px] z-50"
+                >
+                  <div
+                    className="flex items-center gap-1 p-2 px-4 cursor-pointer hover:bg-black/10 transition duration-100"
+                    onClick={() => {
+                      handleRoute("settings");
+                      setOpen(false);
+                    }}
+                  >
+                    <i className="fa-solid fa-gear"></i>
+                    <div>Settings</div>
+                  </div>
+                  <div
+                    className="flex items-center gap-1 p-2 px-4 cursor-pointer hover:bg-black/10 transition duration-100"
+                    onClick={() => signOut({ callbackUrl: "/" })}
+                  >
+                    <i className="fa-solid fa-right-from-bracket"></i>
+                    Logout
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

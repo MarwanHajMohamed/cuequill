@@ -7,7 +7,6 @@ import TradeStrategies from "./components/lists/TradeStrategies";
 import TradeCharts from "./components/charts/TradeCharts";
 import { withAuth } from "@/lib/withAuth";
 import { useSession } from "next-auth/react";
-import Portfolio from "./components/portfolio/Portfolio";
 
 function Page() {
   const { data: session } = useSession();

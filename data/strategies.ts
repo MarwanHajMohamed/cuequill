@@ -39,9 +39,12 @@ import FROC6_U from "../public/FRC/Unsuccessful/FROC_6.png";
 import FROC7_U from "../public/FRC/Unsuccessful/FROC_7.png";
 import FROC8_U from "../public/FRC/Unsuccessful/FROC_8.png";
 
+// Successful BCB
 import BCB from "../public/BCB.png";
 import BCB2 from "../public/BCB2.png";
 import BCB3 from "../public/BCB3.png";
+import BCB4 from "../public/BCB4.png";
+
 import NBG from "../public/NBG.png";
 import NBG2 from "../public/NBG2.png";
 import BGU from "../public/BGU.png";
@@ -221,11 +224,9 @@ export const strategies: Strategy[] = [
           { type: "Successful", src: BCB.src },
           { type: "Successful", src: BCB2.src },
           { type: "Successful", src: BCB3.src },
+          { type: "Successful", src: BCB4.src },
         ],
       },
-      // { type: "image", src: BCB.src, alt: "Bearish Channel Break chart" },
-      // { type: "image", src: BCB2.src, alt: "Bearish Channel Break chart 2" },
-      // { type: "image", src: BCB3.src, alt: "Bearish Channel Break chart 3" },
       { type: "text", content: "Seminar: S2Day1Vid8 - 00:09:51" },
     ],
   },

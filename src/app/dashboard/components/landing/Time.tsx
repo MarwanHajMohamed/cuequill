@@ -1,12 +1,13 @@
 "use client";
 
+import TimezoneDisplay from "@/helpers/TimezoneDisplay";
 import { useSession } from "next-auth/react";
 import React, { useState, useEffect } from "react";
 
 export default function Time() {
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
   const { data: session } = useSession();
-  const name = session?.user.name;
+  const name = session?.user.firstname;
 
   useEffect(() => {
     const updateTime = () => {
@@ -80,8 +81,7 @@ export default function Time() {
       </div>
       <div className="flex flex-col justify-end items-end">
         <div className="text-2xl">
-          {hours.toString().padStart(2, "0")}:
-          {minutes.toString().padStart(2, "0")} {hours < 13 ? "AM" : "PM"}
+          <TimezoneDisplay />
         </div>
         <div>
           Market:{" "}
@@ -92,11 +92,15 @@ export default function Time() {
           )}
         </div>
         <div>
-          {currentTime.toLocaleDateString("en-GB", {
-            weekday: "short",
-            day: "numeric",
-            month: "short",
-          })}
+          <TimezoneDisplay
+            showWeekDay
+            showDay
+            showMonth
+            weekDayFormat="short"
+            showHours={false}
+            showMinutes={false}
+            showSeconds={false}
+          />
         </div>
         <div>
           Check out the{" "}

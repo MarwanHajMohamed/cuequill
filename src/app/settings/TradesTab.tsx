@@ -18,7 +18,10 @@ export default function TradesTab({
 }: TradesTabProps) {
   return (
     <div className="p-7">
-      <div className="underline text-xl">Import your trades</div>
+      <div className="text-lg flex items-center gap-2">
+        <i className="fa-solid fa-chevron-right"></i>
+        <div>Import your trades</div>
+      </div>
       <div className="pt-5">
         To import your trades from IBKR, you must follow these steps:
       </div>

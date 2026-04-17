@@ -4,8 +4,11 @@ import { useSession } from "next-auth/react";
 import React, { useRef, useState } from "react";
 import TradesTab from "./TradesTab";
 import { useQueryClient } from "@tanstack/react-query";
+import Account from "./Account";
 
 function Page() {
+  const [selectedSetting, setSelectedSetting] = useState<string>("Account");
+
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -52,7 +55,11 @@ function Page() {
 
   const settingsTabs = [
     {
-      setting: "Trades",
+      title: "Account",
+      content: <Account />,
+    },
+    {
+      title: "Trades",
       content: (
         <TradesTab
           file={file}
@@ -77,18 +84,24 @@ function Page() {
           <div className="border-r border-white/10 text-sm h-[calc(100vh-185px)]">
             {settingsTabs.map((setting, index) => (
               <div
-                className="p-3 px-7 border-b border-white/10 cursor-pointer"
+                className={`p-3 px-7 border-b border-white/10 cursor-pointer hover:bg-[#19191B] ${
+                  selectedSetting === setting.title && "bg-[#19191B]"
+                }`}
                 key={index}
+                onClick={() => setSelectedSetting(setting.title)}
               >
-                {setting.setting}
+                {setting.title}
               </div>
             ))}
           </div>
           {/* Right: content */}
           <div className="w-full">
-            {settingsTabs.map((setting, index) => (
-              <div key={index}>{setting.content}</div>
-            ))}
+            {settingsTabs.map(
+              (setting, index) =>
+                selectedSetting === setting.title && (
+                  <div key={index}>{setting.content}</div>
+                )
+            )}
           </div>
         </div>
       </div>
