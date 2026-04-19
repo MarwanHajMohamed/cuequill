@@ -132,7 +132,15 @@ export default function Navbar() {
 
   /* ---------------- COMPONENTS ---------------- */
 
-  const SidebarItem = ({ icon, label, slug }: any) => (
+  const SidebarItem = ({
+    icon,
+    label,
+    slug,
+  }: {
+    icon: string;
+    label: string;
+    slug: string;
+  }) => (
     <div
       onClick={() => handleNavClick(slug)}
       className="flex items-center gap-2 border p-3 rounded-lg border-[#323232] cursor-pointer"
