@@ -40,7 +40,7 @@ export default function StrategiesList({ userId }: { userId: string }) {
         </ul>
         <div className="flex justify-end text-white">
           <button
-            className="bg-blue-600 py-2 px-4 rounded-md cursor-pointer ease-in-out transition duration-100 hover:bg-blue-700"
+            className="bg-blue-600 py-2 px-4 rounded-md cursor-pointer ease-in-out transition duration-100 hover:bg-blue-700 text-xs md:text-base"
             onClick={() => router.push(`/strategies_used/${userId}`)}
           >
             See all
@@ -63,7 +63,9 @@ export default function StrategiesList({ userId }: { userId: string }) {
 
   return (
     <div className="text-white p-6 space-y-4 w-[100%] max-w-150">
-      <h2 className="font-semibold">Most used strategies:</h2>
+      <h2 className="font-semibold md:text-base text-sm">
+        Most used strategies:
+      </h2>
       <ul className="bg-[#16151C] border border-white/10 rounded-lg pl-4 min-h-44 text-sm">
         {sortedStrategies.slice(0, 4).map(([strategy, count]) => {
           return (
@@ -71,7 +73,7 @@ export default function StrategiesList({ userId }: { userId: string }) {
               key={strategy}
               className="p-3 pl-0 border-b border-white/10 last:border-0"
             >
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center md:text-sm text-xs">
                 <div>{strategy}</div>
                 <div>{count}</div>
               </div>
@@ -81,7 +83,7 @@ export default function StrategiesList({ userId }: { userId: string }) {
       </ul>
       <div className="flex justify-end">
         <button
-          className="bg-blue-600 py-2 px-4 rounded-md cursor-pointer ease-in-out transition duration-100 hover:bg-blue-700"
+          className="bg-blue-600 py-2 px-4 rounded-md cursor-pointer ease-in-out transition duration-100 hover:bg-blue-700 text-xs md:text-base"
           onClick={() => router.push(`/strategies_used/${userId}`)}
         >
           See all

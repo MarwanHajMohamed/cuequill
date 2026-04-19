@@ -10,7 +10,7 @@ export default function TradeStrategies({ userId }: { userId: string }) {
 
   return (
     <div className="w-[100%] max-w-350">
-      <div className="flex justify-between w-[100%] max-w-350">
+      <div className="flex flex-col md:flex-row justify-between items-center w-[100%] max-w-350">
         <TradeList userId={userId} />
         <StrategiesList userId={userId} />
       </div>

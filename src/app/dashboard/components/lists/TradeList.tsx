@@ -78,7 +78,7 @@ export default function TradeList({ userId }: { userId: string }) {
     <>
       <div className="text-white p-6 space-y-4 w-[100%] max-w-150">
         <div className="flex justify-between items-center">
-          <h2 className="font-semibold">Trades:</h2>
+          <h2 className="font-semibold md:text-base text-sm">Trades</h2>
           <div
             className="bg-white/10 w-6 text-center rounded-full cursor-pointer"
             onClick={() => {
@@ -110,12 +110,12 @@ export default function TradeList({ userId }: { userId: string }) {
                   }}
                 >
                   <div className="flex justify-between items-center">
-                    <div className="uppercase text-sm">
+                    <div className="uppercase md:text-sm text-xs">
                       {trade.symbol} <span className="lowercase">x</span>{" "}
                       {trade.qty}
                     </div>
                     <div
-                      className={`text-sm ${
+                      className={`md:text-sm text-xs ${
                         trade.status === "OPEN"
                           ? "text-green-600"
                           : "text-red-600"
@@ -130,7 +130,7 @@ export default function TradeList({ userId }: { userId: string }) {
         </ul>
         <div className="flex justify-end">
           <button
-            className="bg-blue-600 py-2 px-4 rounded-md cursor-pointer ease-in-out transition duration-100 hover:bg-blue-700"
+            className="bg-blue-600 py-2 px-4 rounded-md cursor-pointer ease-in-out transition duration-100 hover:bg-blue-700 text-xs md:text-base"
             onClick={() => router.push(`/trades/${userId}`)}
           >
             See all

@@ -131,7 +131,7 @@ export default function TradeCalendar({ userId }: { userId: string }) {
     return <div className="text-red-500 p-10">Error loading trades</div>;
 
   return (
-    <div className="flex justify-center py-10 px-20 w-[100%] gap-3 relative">
+    <div className="flex flex-col-reverse md:flex-row items-center md:items-start justify-center py-10 px-20 w-[100%] gap-3 relative">
       <div className="relative">
         <div className="absolute top-[-30px] right-0 flex items-center gap-2">
           <i
@@ -150,27 +150,29 @@ export default function TradeCalendar({ userId }: { userId: string }) {
           className="custom-calendar"
         />
       </div>
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col items-center md:items-start md:gap-2 gap-5">
         <div>Key</div>
-        <div className="flex gap-2 items-center">
-          <div className="w-[15px] h-[15px] bg-blue-600 rounded-full"></div>
-          <div>Today</div>
-        </div>
-        <div className="flex gap-2 items-center">
-          <div className="w-[15px] h-[15px] bg-green-500 rounded-full"></div>
-          <div>Won Position</div>
-        </div>
-        <div className="flex gap-2 items-center">
-          <div className="w-[15px] h-[15px] bg-red-700 rounded-full"></div>
-          <div>Lost Position</div>
-        </div>
-        <div className="flex gap-2 items-center">
-          <div className="w-[15px] h-[15px] bg-orange-500 rounded-full"></div>
-          <div>Open Position</div>
-        </div>
-        <div className="flex gap-2 items-center">
-          <div className="w-[15px] h-[15px] bg-purple-500 rounded-full"></div>
-          <div>Fed Meeting</div>
+        <div className="flex md:flex-col gap-8 md:gap-2 mb-10 text-xs md:text-base">
+          <div className="flex gap-2 items-center flex-col md:flex-row">
+            <div className="w-[15px] h-[15px] bg-blue-600 rounded-full"></div>
+            <div>Today</div>
+          </div>
+          <div className="flex gap-2 items-center flex-col md:flex-row">
+            <div className="w-[15px] h-[15px] bg-green-500 rounded-full"></div>
+            <div>Won</div>
+          </div>
+          <div className="flex gap-2 items-center flex-col md:flex-row">
+            <div className="w-[15px] h-[15px] bg-red-700 rounded-full"></div>
+            <div>Lost</div>
+          </div>
+          <div className="flex gap-2 items-center flex-col md:flex-row">
+            <div className="w-[15px] h-[15px] bg-orange-500 rounded-full"></div>
+            <div>Open</div>
+          </div>
+          <div className="flex gap-2 items-center flex-col md:flex-row">
+            <div className="w-[15px] h-[15px] bg-purple-500 rounded-full"></div>
+            <div>Fed</div>
+          </div>
         </div>
       </div>
       {isModalOpen && selectedDate && (
