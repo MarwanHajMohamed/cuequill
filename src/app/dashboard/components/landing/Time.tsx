@@ -61,9 +61,9 @@ export default function Time() {
   const marketOpen = isWeekday && isAfterOpen && isBeforeClose;
 
   return (
-    <div className="flex flex-row justify-between h-70 pl-10 pr-10 mt-30 mb-5 w-[100%] max-w-400">
+    <div className="flex flex-row justify-between md:h-70 h-40 pl-10 pr-10 mt-30 mb-5 w-[100%] md:max-w-400">
       <div className="flex flex-col justify-between">
-        <div className="flex flex-col text-5xl">
+        <div className="flex flex-col md:text-5xl text-3xl">
           {hours < 13
             ? "Good morning,"
             : hours < 17
@@ -71,7 +71,7 @@ export default function Time() {
             : "Good evening,"}
           <span className="text-teal-500">{name}</span>
         </div>
-        <div>
+        <div className="text-xs md:text-sm">
           Have you read your{" "}
           <a href="/affirmations" className="underline">
             affirmations
@@ -79,7 +79,7 @@ export default function Time() {
           today?
         </div>
       </div>
-      <div className="flex flex-col justify-end items-end">
+      <div className="md:flex flex-col justify-end items-end hidden">
         <div className="text-2xl">
           <TimezoneDisplay />
         </div>

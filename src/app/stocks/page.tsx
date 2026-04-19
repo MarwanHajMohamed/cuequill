@@ -21,10 +21,10 @@ const stockData = [
 
 export default function page() {
   return (
-    <div className="m-10 mt-25 flex items-center justify-center">
+    <div className="md:m-10 md:mt-25 flex items-center justify-center mt-25 m-5">
       <table className="border border-white/10">
         <thead>
-          <tr className="text-teal-500 text-left">
+          <tr className="text-teal-500 text-left text-xs md:text-sm">
             <th className="p-2 px-5">Stock / ETF</th>
             <th className="p-2 px-5">Cost ($)</th>
             <th className="p-2 px-5">Volume (M)</th>
@@ -37,10 +37,10 @@ export default function page() {
               key={item.name}
               className={index % 2 === 0 ? "bg-[#1a1a1d]" : "bg-[#131316]"}
             >
-              <td className="p-2 px-5">{item.name}</td>
-              <td className="p-2 px-5">{item.cost}</td>
-              <td className="p-2 px-5">{item.volume}</td>
-              <td className="p-2 px-5">{item.distance}</td>
+              <td className="p-2 px-5 text-xs md:text-base">{item.name}</td>
+              <td className="p-2 px-5 text-xs md:text-base">{item.cost}</td>
+              <td className="p-2 px-5 text-xs md:text-base">{item.volume}</td>
+              <td className="p-2 px-5 text-xs md:text-base">{item.distance}</td>
             </tr>
           ))}
         </tbody>
