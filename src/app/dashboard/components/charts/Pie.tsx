@@ -69,10 +69,12 @@ export default function Pie({
         }}
       />
       <div className="absolute text-center">
-        <div className={`text-[${fontSize}px] font-bold`}>
+        <div className={`text-xs md:text-[${fontSize}px] font-bold`}>
           {winRate.toFixed(2)}%
         </div>
-        <div className={`text-[${fontSize}px] text-gray-500`}>Wins</div>
+        <div className={`text-xs md:text-[${fontSize}px] text-gray-500`}>
+          Wins
+        </div>
       </div>
     </div>
   );

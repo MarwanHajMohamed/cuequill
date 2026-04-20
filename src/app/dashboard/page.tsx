@@ -55,7 +55,7 @@ function Page() {
             after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 
             dark:peer-checked:bg-blue-600"
             />
-            <span>Simulated trading</span>
+            <span className="text-xs md:text-sm">Simulated trading</span>
           </label>
         </div>
         <TradeCalendar userId={userId} />

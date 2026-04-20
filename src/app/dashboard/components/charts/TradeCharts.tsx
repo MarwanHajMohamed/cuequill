@@ -17,7 +17,7 @@ export default function TradeCharts({ userId }: { userId: string }) {
     return <div className="my-50 mx-10">You have made 0 trades so far.</div>;
 
   return (
-    <div className="flex justify-between w-[100%] max-w-250 items-center my-50 mx-10">
+    <div className="flex flex-col md:flex-row text-center justify-between w-[100%] max-w-250 items-center mx-10 my-20 md:my-50">
       <div className="w-[100%]">
         <Pie
           data={trades}
@@ -28,7 +28,7 @@ export default function TradeCharts({ userId }: { userId: string }) {
           fontSize={12}
         />
       </div>
-      <div className="w-[100%]">
+      <div className="w-[100%] mt-15 md:mt-0 text-sm md:text-base">
         You have made {trades.length} trade{trades.length === 1 ? "" : "s"} so
         far.
       </div>
