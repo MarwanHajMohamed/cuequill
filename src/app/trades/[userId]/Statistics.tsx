@@ -219,19 +219,19 @@ export default function Statistics({
       {/* Trades Stats */}
       <div className="flex w-full flex-col justify-between xl:flex-row">
         {/* Filtered Stats */}
-        <div className="flex flex-col items-center w-full">
-          <div className="mb-5 text-sm font-bold">
+        <div className="flex flex-col items-center w-full gap-6 md:gap-0">
+          <div className="mb-0 md:mb-5 text-sm font-bold">
             Statistics for Filtered Trades
           </div>
-          <div className="flex gap-6 w-full pr-5">
-            <div className="flex flex-col gap-6 w-full">
-              <div className="border p-6 border-[#707070] w-full rounded-lg">
+          <div className="flex md:gap-6 gap-0 w-full min-[1280px]:pr-6">
+            <div className="flex md:flex-col gap-6 w-full max-[500px]:flex-col">
+              <div className="border md:p-6 border-[#282828] w-full rounded-lg md:text-base text-xs flex flex-col gap-1 md:gap-0 p-3 py-6">
                 <div>Total trades: {filteredData.length}</div>
                 <div>Strategy: {strategy}</div>
                 <div>Status: {status}</div>
                 <div>Option: {option}</div>
               </div>
-              <div className="border p-6 border-[#707070] w-full rounded-lg">
+              <div className="border md:p-6 border-[#282828] w-full rounded-lg md:text-base text-xs flex flex-col gap-1 md:gap-0 p-3 py-6">
                 <div>Biggest win: {calcBiggestFilteredWin()}</div>
                 <div>Biggest loss: {calcBiggestFilteredLoss()}</div>
                 <div>Win rate: {calcFilteredWinRate()}</div>
@@ -239,7 +239,7 @@ export default function Statistics({
               </div>
             </div>
             <div>
-              <div className="flex flex-col items-center border border-[#707070] rounded-lg py-5 pb-1">
+              <div className="hidden md:flex flex-col items-center border border-[#282828] rounded-lg py-5 pb-1">
                 <Pie
                   data={filteredData}
                   innerRadius={40}
@@ -248,23 +248,38 @@ export default function Statistics({
                   height={130}
                   fontSize={12}
                 />
-                <Bar data={filteredData} width={230} height={160} />
+                <Bar
+                  data={filteredData}
+                  width={230}
+                  height={160}
+                  translate={-20}
+                />
               </div>
+            </div>
+          </div>
+          <div className="flex md:hidden md:flex-col items-center justify-center border border-[#282828] rounded-lg py-5 w-full  min-[400px]:gap-0">
+            <Pie
+              data={filteredData}
+              innerRadius={35}
+              outerRadius={50}
+              width={100}
+              height={100}
+              fontSize={10}
+            />
+            <div className="w-40">
+              <Bar data={filteredData} width={200} height={150} translate={0} />
             </div>
           </div>
         </div>
         <div className="h-auto w-1 bg-[#3A3A3A]"></div>
         {/* Total Stats */}
-        <div className="flex flex-col items-center w-full mt-10 xl:mt-0">
-          <div className="mb-5 text-sm font-bold">Total Statistics</div>
-          <div className="flex gap-6 w-full pl-5">
-            <div className="flex flex-col gap-6 w-full">
-              <div className="border p-6 border-[#707070] w-full rounded-lg">
+        <div className="flex flex-col items-center w-full gap-6 md:gap-0 mt-10 xl:mt-0 min-[1280px]:ml-6">
+          <div className="mb-0 md:mb-5 text-sm font-bold">Total Statistics</div>
+          <div className="flex md:gap-6 gap-0 w-full min-[1280px]:pr-6">
+            <div className="flex md:flex-col gap-6 w-full max-[500px]:flex-col">
+              <div className="border md:p-6 border-[#282828] w-full rounded-lg md:text-base text-xs flex flex-col gap-1 md:gap-0 p-3 py-6">
                 <div>Total trades: {data.length}</div>
-                <div
-                  className="truncate sm:w-100 xl:w-60 2xl:w-90"
-                  title={mostUsedStrat}
-                >
+                <div className="truncate" title={mostUsedStrat}>
                   Top strat: {mostUsedStrat}
                 </div>
                 <div>
@@ -281,7 +296,7 @@ export default function Statistics({
                 </div>
                 <div>Top symbol: {mostUsedSymbol}</div>
               </div>
-              <div className="border p-6 border-[#707070] w-full rounded-lg">
+              <div className="border md:p-6 border-[#282828] w-full rounded-lg md:text-base text-xs flex flex-col gap-1 md:gap-0 p-3 py-6">
                 <div>
                   Biggest win:{" "}
                   <span className="text-green-500">
@@ -311,7 +326,7 @@ export default function Statistics({
               </div>
             </div>
             <div>
-              <div className="flex flex-col items-center border border-[#707070] rounded-lg py-5 pb-1">
+              <div className="hidden md:flex flex-col items-center border border-[#282828] rounded-lg py-5 pb-1">
                 <Pie
                   data={data}
                   innerRadius={40}
@@ -320,19 +335,31 @@ export default function Statistics({
                   height={130}
                   fontSize={12}
                 />
-                <Bar data={data} width={230} height={160} />
+                <Bar data={data} width={230} height={160} translate={-20} />
               </div>
             </div>
           </div>
+          <div className="flex md:hidden md:flex-col items-center justify-center border border-[#282828] rounded-lg py-5 w-full min-[400px]:gap-0">
+            <Pie
+              data={data}
+              innerRadius={35}
+              outerRadius={50}
+              width={100}
+              height={100}
+              fontSize={10}
+            />
+            <div className="w-40">
+              <Bar data={data} width={200} height={150} translate={0} />
+            </div>
+          </div>
         </div>
-        <div></div>
       </div>
 
       {/* Monthly Section */}
-      <div className="flex flex-col items-center mt-20 w-full max-w-[1000px]">
-        <div className="text-xl font-bold">Statistics per Month</div>
+      <div className="flex flex-col items-center mt-10 md:mt-20 w-full max-w-[1000px]">
+        <div className="md:text-xl text-sm font-bold">Statistics per Month</div>
 
-        <div className="flex flex-col border border-[#707070] rounded-md w-full mt-5">
+        <div className="flex flex-col border border-[#282828] rounded-md w-full mt-5">
           <div className="flex justify-between p-2 border-b border-[#343434] items-center">
             <div
               onClick={handlePrevMonth}
@@ -340,7 +367,7 @@ export default function Statistics({
             >
               &lt;
             </div>
-            <div>
+            <div className="text-xs md:text-base">
               {currentMonth} {year}
             </div>
             <div
@@ -353,8 +380,8 @@ export default function Statistics({
 
           <div className="flex flex-col items-center justify-between gap-5">
             {monthlyData.length > 0 ? (
-              <div className="flex justify-between w-full">
-                <div className="flex flex-col gap-2 p-5">
+              <div className="flex flex-col min-[500px]:flex-row justify-between w-full">
+                <div className="flex flex-col gap-2 p-5 text-xs md:text-base">
                   <div>Total trades: {monthlyData.length}</div>
                   <div>Biggest win: {calcBiggestMonthlyWin()}</div>
                   <div>Biggest loss: {calcBiggestMonthlyLoss()}</div>
@@ -381,7 +408,23 @@ export default function Statistics({
                     </span>
                   </div>
                 </div>
-                <div className="flex items-center justify-end w-1/2 max-w-140">
+                <div className="flex md:hidden items-center min-[500px]:justify-end justify-center min-[500px]:w-1/2 max-w-140">
+                  <Pie
+                    data={monthlyData}
+                    innerRadius={35}
+                    outerRadius={50}
+                    height={100}
+                    width={100}
+                    fontSize={13}
+                  />
+                  <Bar
+                    data={monthlyData}
+                    height={150}
+                    width={170}
+                    translate={0}
+                  />
+                </div>
+                <div className="hidden md:flex items-center justify-end w-1/2 max-w-140">
                   <Pie
                     data={monthlyData}
                     innerRadius={50}
@@ -390,7 +433,12 @@ export default function Statistics({
                     width={150}
                     fontSize={13}
                   />
-                  <Bar data={monthlyData} height={180} width={200} />
+                  <Bar
+                    data={monthlyData}
+                    height={180}
+                    width={200}
+                    translate={-10}
+                  />
                 </div>
               </div>
             ) : (

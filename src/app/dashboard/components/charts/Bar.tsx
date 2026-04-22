@@ -8,10 +8,12 @@ export default function Bar({
   data,
   height,
   width,
+  translate,
 }: {
   data: Trade[];
   height: number;
   width: number;
+  translate: number;
 }) {
   const counts = data.reduce(
     (acc, trade) => {
@@ -28,7 +30,7 @@ export default function Bar({
   };
 
   return (
-    <div className="mr-10">
+    <div style={{ transform: `translateX(${translate}px)` }}>
       <BarChart
         xAxis={[
           {

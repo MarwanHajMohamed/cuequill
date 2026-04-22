@@ -167,7 +167,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
           </button>
         </div>
       ) : (
-        <div className="p-10 pt-5 mt-0 w-full flex flex-col items-center">
+        <div className="md:p-10 pt-5 mt-0 w-full flex flex-col items-center p-5">
           <Filters
             filter={filter}
             setFilter={setFilter}
@@ -186,7 +186,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
             endDate={endDate}
             setEndDate={setEndDate}
           />
-          <div className="w-full max-w-[1500px] overflow-x-auto mt-5 h-126">
+          <div className="w-full max-w-[1500px] overflow-x-auto max-[1130px]:mt-0 mt-5 md:h-126 h-110">
             {filteredTrades?.length === 0 ? (
               <div className="text-center">No trades found</div>
             ) : (
@@ -197,7 +197,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                       {headings.map((h) => (
                         <th
                           key={h}
-                          className="px-4 py-1 whitespace-nowrap w-full text-[#5B5B5B] text-xs text-left"
+                          className="px-2 md:px-4 py-1 whitespace-nowrap w-full text-[#5B5B5B] md:text-xs text-[10px] text-left"
                         >
                           {h}
                         </th>
@@ -206,7 +206,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                   </thead>
                   <tbody>
                     {currentTrades?.map((trade, index) => (
-                      <tr key={index}>
+                      <tr key={index} className="text-xs md:text-base">
                         <td className="flex gap-2 py-1">
                           <FavouriteButton
                             tradeId={trade._id!}
@@ -215,18 +215,18 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                             queryClient={queryClient}
                           />
                           <i
-                            className="fa-regular fa-pen-to-square cursor-pointer text-white/30 transition duration-100 hover:text-white/100 text-xl"
+                            className="fa-regular fa-pen-to-square cursor-pointer text-white/30 transition duration-100 hover:text-white/100 text-sm md:text-xl"
                             onClick={() => {
                               setEditingTrade(trade);
                               setIsModalOpen(true);
                             }}
                           ></i>
                         </td>
-                        <td className="px-4 py-1 whitespace-nowrap w-full">
+                        <td className="px-2 md:px-4 py-1 whitespace-nowrap w-full">
                           {trade.symbol}
                         </td>
                         <td
-                          className={`px-4 py-1 whitespace-nowrap w-full ${
+                          className={`px-2 md:px-4 py-1 whitespace-nowrap w-full ${
                             trade.option === "CALL"
                               ? "text-green-500"
                               : "text-red-500"
@@ -238,7 +238,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                               .toLowerCase()}
                         </td>
                         <td
-                          className={`px-4 py-1 whitespace-nowrap w-full ${
+                          className={`px-2 md:px-4 py-1 whitespace-nowrap w-full ${
                             trade.status === "OPEN"
                               ? "text-blue-500"
                               : trade.status === "WIN"
@@ -251,7 +251,9 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                               .slice(1, trade.status.length)
                               .toLowerCase()}
                         </td>
-                        <td className={`px-4 py-1 whitespace-nowrap w-full`}>
+                        <td
+                          className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
+                        >
                           {trade.status === "OPEN" ? (
                             "-"
                           ) : (
@@ -266,7 +268,9 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                             </span>
                           )}
                         </td>
-                        <td className={`px-4 py-1 whitespace-nowrap w-full`}>
+                        <td
+                          className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
+                        >
                           {trade.status === "OPEN" ? (
                             "-"
                           ) : (
@@ -290,35 +294,49 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                             </span>
                           )}
                         </td>
-                        <td className={`px-4 py-1 whitespace-nowrap w-full`}>
+                        <td
+                          className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
+                        >
                           {trade.contractPrice}
                         </td>
-                        <td className={`px-4 py-1 whitespace-nowrap w-full`}>
+                        <td
+                          className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
+                        >
                           {trade.qty}
                         </td>
-                        <td className={`px-4 py-1 whitespace-nowrap w-full`}>
+                        <td
+                          className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
+                        >
                           {trade.strike}
                         </td>
-                        <td className={`px-4 py-1 whitespace-nowrap w-full`}>
+                        <td
+                          className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
+                        >
                           {new Date(trade.dateBought).toLocaleDateString(
                             "en-GB"
                           )}
                         </td>
-                        <td className={`px-4 py-1 whitespace-nowrap w-full`}>
+                        <td
+                          className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
+                        >
                           {new Date(trade.expiryDate).toLocaleDateString(
                             "en-GB"
                           )}
                         </td>
-                        <td className={`px-4 py-1 whitespace-nowrap w-full`}>
+                        <td
+                          className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
+                        >
                           {trade.closingContractPrice === null
                             ? "-"
                             : trade.closingContractPrice}
                         </td>
-                        <td className={`px-4 py-1 whitespace-nowrap w-full`}>
+                        <td
+                          className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
+                        >
                           {trade.strategy}
                         </td>
                         <td
-                          className={`px-4 py-1 whitespace-nowrap w-full text-center`}
+                          className={`px-2 md:px-4 py-1 whitespace-nowrap w-full text-center`}
                         >
                           {trade.notes !== "" ? (
                             <i
@@ -348,26 +366,26 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
             )}
           </div>
           {filteredTrades?.length !== 0 && (
-            <div className="flex justify-between mt-5 w-full max-w-[1500px]">
+            <div className="flex md:justify-between gap-2 md:mt-5 w-full max-w-[1500px]">
               <button
-                className="text-xs border border-green-500 bg-green-500/20 p-2 rounded-lg 
+                className="md:text-xs border border-green-500 bg-green-500/20 justify-center md:p-2 rounded-lg 
                       flex gap-2 items-center cursor-pointer
-                      transition duration-100 hover:bg-green-500/50"
+                      transition duration-100 hover:bg-green-500/50 w-8 h-8 md:w-auto text-lg"
                 onClick={() => {
                   setEditingTrade(null);
                   setIsModalOpen(true);
                 }}
               >
-                + Add new trade
+                + <span className="md:flex hidden">Add new trade</span>
               </button>
               <button
-                className="text-xs border border-red-500 bg-red-500/20 p-2 rounded-lg 
+                className="text-xs border border-red-500 bg-red-500/20 justify-center md:p-2 rounded-lg 
                       flex gap-2 items-center cursor-pointer
-                      transition duration-100 hover:bg-red-500/50"
+                      transition duration-100 hover:bg-red-500/50 w-8 h-8 md:w-auto text-lg"
                 onClick={() => setDelAllModal(true)}
               >
                 <i className="fa-solid fa-trash-can"></i>
-                Delete all trades
+                <span className="md:flex hidden">Delete all trades</span>
               </button>
             </div>
           )}

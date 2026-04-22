@@ -34,13 +34,15 @@ export function FavouriteButton({
   return (
     <div className="relative inline-flex">
       <i
-        className={`fa-${isFavourite ? "solid" : "regular"} fa-star 
+        className={`fa-${
+          isFavourite ? "solid" : "regular"
+        } fa-star text-sm md:text-xl
                     ${
                       isFavourite
                         ? "text-yellow-300 hover:text-yellow-500"
                         : "text-white/30 hover:text-white/100"
                     } 
-                    cursor-pointer text-xl transition duration-100`}
+                    cursor-pointer transition duration-100`}
         onClick={handleClick}
       ></i>
 
