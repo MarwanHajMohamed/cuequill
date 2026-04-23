@@ -205,7 +205,7 @@ export default function Filters({
             }}
           />
         </div>
-        <div className="flex gap-2 items-end">
+        <div className="flex gap-2 flex-col items-start">
           <div className="flex-1">
             <FormInput
               label="From"
@@ -253,7 +253,7 @@ export default function Filters({
 
   return (
     <>
-      {/* ── DESKTOP: inline bar (unchanged) ── */}
+      {/* ── DESKTOP: inline bar ── */}
       <div className="hidden min-[1130px]:flex w-full max-w-[1500px] sticky top-0 bg-[#0E0E10]/80 backdrop-blur-xs z-2 items-end pb-5 pt-22 gap-4">
         <div className="flex flex-wrap gap-x-4 gap-y-3 items-end">
           {/* STATUS */}
@@ -395,7 +395,7 @@ export default function Filters({
         </div>
       </div>
 
-      {/* ── MOBILE: trigger button (sticky top bar) ── */}
+      {/* ── MOBILE ── */}
       <div className="min-[1130px]:hidden sticky mt-15 top-0 bg-[#0E0E10]/80 backdrop-blur-xs z-20 flex items-center flex flex-col gap-2 justify-between px-4 py-3">
         <button
           onClick={() => setIsPanelOpen(true)}

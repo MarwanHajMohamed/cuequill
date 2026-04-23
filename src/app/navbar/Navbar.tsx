@@ -93,6 +93,18 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (openSidebar) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [openSidebar]);
+
   /* ---------------- TIME ---------------- */
 
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
