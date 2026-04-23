@@ -211,47 +211,58 @@ export default function Navbar() {
                 </div>
 
                 {/* Links */}
-                <div className="flex flex-col gap-3 mt-10">
-                  {sidebarItems.map((item, i) => (
-                    <SidebarItem key={i} {...item} />
-                  ))}
+                <div className="flex flex-col justify-between h-full">
+                  <div className="flex flex-col gap-3 mt-10">
+                    {sidebarItems.map((item, i) => (
+                      <SidebarItem key={i} {...item} />
+                    ))}
 
-                  {/* Guide */}
+                    {/* Guide */}
+                    <div>
+                      <div
+                        onClick={() => setOpenGuide((p) => !p)}
+                        className="flex justify-between border p-3 rounded-lg border-[#323232] cursor-pointer"
+                      >
+                        Guide
+                        <span
+                          className={`transition ${
+                            openGuide ? "rotate-180" : ""
+                          }`}
+                        >
+                          ⌄
+                        </span>
+                      </div>
+
+                      <AnimatePresence>
+                        {openGuide && (
+                          <motion.div
+                            initial={{ height: 0 }}
+                            animate={{ height: "auto" }}
+                            exit={{ height: 0 }}
+                            className="overflow-hidden ml-4 mt-2 gap-2 flex flex-col"
+                          >
+                            {guideItems.map((item, i) => (
+                              <div
+                                key={i}
+                                onClick={() => handleNavClick(item.slug)}
+                                className="cursor-pointer py-1 border-b border-[#323232]"
+                              >
+                                {item.label}
+                              </div>
+                            ))}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  </div>
                   <div>
                     <div
-                      onClick={() => setOpenGuide((p) => !p)}
-                      className="flex justify-between border p-3 rounded-lg border-[#323232] cursor-pointer"
+                      className="flex items-center gap-1 p-2 px-4 cursor-pointer hover:bg-black/10 transition duration-100"
+                      onClick={() => signOut({ callbackUrl: "/" })}
                     >
-                      Guide
-                      <span
-                        className={`transition ${
-                          openGuide ? "rotate-180" : ""
-                        }`}
-                      >
-                        ⌄
-                      </span>
+                      <i className="fa-solid fa-right-from-bracket"></i>
+                      Logout
                     </div>
-
-                    <AnimatePresence>
-                      {openGuide && (
-                        <motion.div
-                          initial={{ height: 0 }}
-                          animate={{ height: "auto" }}
-                          exit={{ height: 0 }}
-                          className="overflow-hidden ml-4 mt-2 gap-2 flex flex-col"
-                        >
-                          {guideItems.map((item, i) => (
-                            <div
-                              key={i}
-                              onClick={() => handleNavClick(item.slug)}
-                              className="cursor-pointer py-1 border-b border-[#323232]"
-                            >
-                              {item.label}
-                            </div>
-                          ))}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
                   </div>
                 </div>
               </motion.div>
