@@ -114,7 +114,9 @@ export default function TradeCalendar({ userId }: { userId: string }) {
           {eventsForDay.map((event, idx) => (
             <div
               key={idx}
-              className={`w-2 h-2 rounded-full ${getColor(event.status)}`}
+              className={`md:w-2 md:h-2 w-[6px] h-[6px] rounded-full ${getColor(
+                event.status
+              )}`}
               title={event.label}
             />
           ))}
@@ -133,7 +135,7 @@ export default function TradeCalendar({ userId }: { userId: string }) {
   return (
     <div className="flex flex-col-reverse md:flex-row items-center md:items-start justify-center py-10 px-20 w-[100%] gap-3 relative">
       <div className="relative">
-        <div className="absolute top-[-30px] right-0 flex items-center gap-2">
+        <div className="absolute top-[-30px] right-0 flex items-center gap-2 mx-2">
           <i
             className="fa-solid fa-expand cursor-pointer transition duration-100 hover:scale-110"
             onClick={() => router.push("/calendar")}

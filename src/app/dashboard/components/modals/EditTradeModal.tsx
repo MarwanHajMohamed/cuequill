@@ -23,7 +23,7 @@ function FormInput({ label, name, placeholder, ...props }: InputProps) {
   return (
     <div>
       {label && (
-        <label htmlFor={name} className="block text-sm mb-1">
+        <label htmlFor={name} className="block md:text-sm mb-1 text-[10px]">
           {label}
         </label>
       )}
@@ -125,7 +125,7 @@ export default function EditTradeModal({
   return (
     <>
       <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
-        <div className="relative flex flex-col gap-4 bg-[#0F0F17] p-6 rounded-xl w-[90%] max-w-lg text-white">
+        <div className="relative flex flex-col gap-4 bg-[#0F0F17] md:p-6 p-3 rounded-xl w-[90%] max-w-lg text-white max-h-[90vh] overflow-scroll text-xs md:text-base">
           <div
             className={`absolute top-[-40px] left-0 w-[100%] border-1 border-red-500/50 text-red-500 text-center p-1 rounded bg-red-700/10 ${
               errorMessage === "" ? "hidden" : "shake"
