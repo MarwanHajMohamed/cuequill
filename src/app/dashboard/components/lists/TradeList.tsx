@@ -91,7 +91,9 @@ export default function TradeList({ userId }: { userId: string }) {
         </div>
         <ul className="bg-[#16151C] border border-white/10 rounded-lg pl-4 min-h-44">
           {!trades || trades.length === 0 ? (
-            <li className="text-[#5B5B5B] py-4">No trades found</li>
+            <li className="text-[#5B5B5B] py-4 text-sm md:text-base">
+              No trades found
+            </li>
           ) : (
             [...trades]
               .sort(

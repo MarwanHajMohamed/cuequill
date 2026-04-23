@@ -5,12 +5,12 @@ import React from "react";
 
 function page() {
   return (
-    <div className="m-10 mt-25 flex flex-col items-center">
+    <div className="md:m-10 ml-10 mr-2 md:mt-25 mt-25 flex flex-col items-center">
       <div className="max-w-[1500px]">
-        <h1 className="text-xl mb-5 text-teal-500 font-bold text-center">
+        <h1 className="md:text-xl  mb-5 text-teal-500 font-bold text-center">
           Daily Affirmations
         </h1>
-        <ul className="list-decimal list-inside">
+        <ul className="list-decimal list-outside md:pl-5 text-sm md:text-base">
           <li>I&apos;m an excellent manager of my money!</li>
           <li>I always pay myself first!</li>
           <li>Money works hard for me and produces more and more money!</li>

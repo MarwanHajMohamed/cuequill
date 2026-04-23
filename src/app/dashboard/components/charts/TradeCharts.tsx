@@ -14,7 +14,11 @@ export default function TradeCharts({ userId }: { userId: string }) {
   if (isLoading) return <div>Loading trades...</div>;
   if (isError) return <div>Error loading trades</div>;
   if (!trades || trades.length === 0)
-    return <div className="my-50 mx-10">You have made 0 trades so far.</div>;
+    return (
+      <div className="my-50 mx-10 text-sm md:text-base">
+        You have made 0 trades so far.
+      </div>
+    );
 
   return (
     <div className="flex flex-col md:flex-row text-center justify-between w-[100%] max-w-250 items-center mx-10 my-20 md:my-50">

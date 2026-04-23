@@ -35,7 +35,7 @@ export default function StrategiesList({ userId }: { userId: string }) {
     return (
       <div className="text-[#5B5B5B] p-6 space-y-4 w-[100%] max-w-150">
         <h2 className="font-semibold text-white">Most used strategies:</h2>
-        <ul className="bg-[#16151C] border border-white/10 rounded-lg p-4 min-h-44">
+        <ul className="bg-[#16151C] border border-white/10 rounded-lg p-4 min-h-44 text-sm md:text-base">
           <li>No strategies found</li>
         </ul>
         <div className="flex justify-end text-white">

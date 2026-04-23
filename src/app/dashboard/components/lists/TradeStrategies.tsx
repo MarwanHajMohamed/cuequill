@@ -14,7 +14,7 @@ export default function TradeStrategies({ userId }: { userId: string }) {
         <TradeList userId={userId} />
         <StrategiesList userId={userId} />
       </div>
-      <div className="text-center text-sm text-white/60 mt-4">
+      <div className="text-center text-xs md:text-sm text-white/60 mt-4">
         Click{" "}
         <span
           className="underline cursor-pointer"
