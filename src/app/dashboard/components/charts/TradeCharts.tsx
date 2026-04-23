@@ -33,7 +33,7 @@ export default function TradeCharts({ userId }: { userId: string }) {
         far.
       </div>
       <div className="w-[100%]">
-        <Bar data={trades} height={250} width={250} />
+        <Bar data={trades} height={250} width={250} translate={-20} />
       </div>
     </div>
   );
