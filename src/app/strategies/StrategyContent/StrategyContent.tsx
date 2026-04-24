@@ -77,7 +77,11 @@ export default function StrategyContent({ blocks }: Props) {
       {blocks.map((block, idx) => {
         switch (block.type) {
           case "text":
-            return <p key={idx}>{block.content}</p>;
+            return (
+              <p key={idx} className="text-sm md:text-base">
+                {block.content}
+              </p>
+            );
 
           case "file":
             return (
@@ -101,15 +105,15 @@ export default function StrategyContent({ blocks }: Props) {
                     className="flex flex-col items-center gap-1 cursor-pointer"
                     onClick={() => setFileType("Successful")}
                   >
-                    <i className="fa-solid fa-folder text-7xl text-yellow-400 transition duration-100 hover:text-yellow-500"></i>
-                    <div className="text-sm">Successful</div>
+                    <i className="fa-solid fa-folder md:text-7xl text-6xl text-yellow-400 transition duration-100 hover:text-yellow-500"></i>
+                    <div className="text-xs md:text-sm">Successful</div>
                   </button>
                   <button
                     className="flex flex-col items-center gap-1 cursor-pointer"
                     onClick={() => setFileType("Unsuccessful")}
                   >
-                    <i className="fa-solid fa-folder text-7xl text-yellow-400 transition duration-100 hover:text-yellow-500"></i>
-                    <div className="text-sm">Unsuccessful</div>
+                    <i className="fa-solid fa-folder md:text-7xl text-6xl text-yellow-400 transition duration-100 hover:text-yellow-500"></i>
+                    <div className="text-xs md:text-sm">Unsuccessful</div>
                   </button>
                 </div>
 
@@ -170,7 +174,10 @@ export default function StrategyContent({ blocks }: Props) {
             return (
               <ul key={idx}>
                 {block.items.map((item, i) => (
-                  <li key={i} className="list-disc ml-8">
+                  <li
+                    key={i}
+                    className="list-disc md:ml-8 ml-4 text-sm md:text-base"
+                  >
                     {item}
                   </li>
                 ))}

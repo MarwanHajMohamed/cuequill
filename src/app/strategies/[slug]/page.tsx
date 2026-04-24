@@ -15,10 +15,10 @@ function Page({ params }: { params: Promise<{ slug: string }> }) {
   }
 
   return (
-    <div className="mt-30 mx-10 flex flex-col items-center">
+    <div className="mt-30 md:mx-10 mx-5 flex flex-col items-center">
       <div className="w-full max-w-[1500px]">
         <div>
-          <h1 className="text-xl text-center">
+          <h1 className="md:text-xl text-center">
             {strategy.title} -{" "}
             <span
               className={
@@ -28,7 +28,7 @@ function Page({ params }: { params: Promise<{ slug: string }> }) {
               {strategy.options}
             </span>
           </h1>
-          <h2 className="text-center">
+          <h2 className="text-center text-sm mb-5">
             {Array.isArray(strategy.timeframe)
               ? strategy.timeframe.join(" / ")
               : strategy.timeframe}
