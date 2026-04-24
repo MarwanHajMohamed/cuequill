@@ -26,7 +26,7 @@ function page() {
 
   return (
     <div className="md:p-10 p-5 flex flex-col items-center h-[100vh] justify-center mb-10 md:mb-0">
-      <div className="md:grid md:grid-cols-2 gap-5 w-full max-w-[900px] flex flex-col mt-20 md:mt-0">
+      <div className="md:grid md:grid-cols-2 gap-5 w-full max-w-[900px] flex flex-col mt-30 md:mt-0">
         <div className="flex flex-col gap-2 md:gap-4">
           <div className="text-green-500 md:text-xl text-base md:text-center font-bold">
             CALL
