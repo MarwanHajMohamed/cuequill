@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import Calendar from "react-calendar";
 import { format } from "date-fns";
 import "react-calendar/dist/Calendar.css";
 import "./calendar-custom.css";
@@ -13,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { handleSaveTrade } from "@/handlers/tradeHandlers";
 import { fetchMeetings } from "@/hooks/useFed";
 import { FedMeetingsResponse } from "@/app/types/FedMeeting";
+import AnimatedCalendar from "@/app/reusablecalendar/AnimatedCalendar";
 
 type TradeEventType = "WIN" | "LOSS" | "OPEN" | "TODAY" | "FED";
 
@@ -141,15 +141,11 @@ export default function TradeCalendar({ userId }: { userId: string }) {
             onClick={() => router.push("/calendar")}
           ></i>
         </div>
-        <Calendar
+        <AnimatedCalendar
           onChange={(val) => handleDateClick(val as Date)}
-          value={value}
           tileContent={renderTileContent}
-          formatShortWeekday={(locale, date) => format(date, "EEE")}
-          formatMonthYear={(locale, date) => format(date, "LLLL yyyy")}
-          next2Label={null}
-          prev2Label={null}
           className="custom-calendar"
+          value={value}
         />
       </div>
       <div className="flex flex-col items-center md:items-start md:gap-2 gap-5">

@@ -78,3 +78,12 @@
   max-height: 20%;
   overflow: scroll !important;
 }
+
+.custom-calendar_full-view .react-calendar__month-view__days {
+  overflow: hidden;
+}
+
+/* or on the month view wrapper */
+.custom-calendar_full-view .react-calendar__month-view {
+  overflow: hidden;
+}
