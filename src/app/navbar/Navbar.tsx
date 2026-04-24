@@ -177,98 +177,93 @@ export default function Navbar() {
         )}
 
         {/* -------- MOBILE NAV -------- */}
-        <AnimatePresence>
-          {openSidebar && (
-            <motion.div
-              className="md:hidden fixed inset-0 z-50"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+
+        {/* Backdrop */}
+        <div
+          onClick={() => {
+            setOpenSidebar(false);
+            setOpenGuide(false);
+          }}
+          className={`md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity duration-300 ${
+            openSidebar
+              ? "opacity-100 pointer-events-auto"
+              : "opacity-0 pointer-events-none"
+          }`}
+        />
+
+        {/* Sidebar */}
+        <div
+          className={`md:hidden fixed top-0 left-0 h-full w-[250px] bg-[#111113] border-r border-white/10 z-50 flex flex-col shadow-2xl transition-transform duration-300 ease-in-out ${
+            openSidebar ? "translate-x-0" : "-translate-x-full"
+          }`}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 shrink-0">
+            <span className="text-sm font-medium text-white">Menu</span>
+            <button
+              onClick={() => setOpenSidebar(false)}
+              className="text-white hover:text-white transition duration-100 p-1 px-3 rounded-md border border-[#323232]"
             >
-              {/* Overlay */}
-              <div
-                className="absolute inset-0 bg-black/70"
-                onClick={() => {
-                  setOpenSidebar(false);
-                  setOpenGuide(false);
-                }}
-              />
+              <i className="fa-solid fa-xmark text-base" />
+            </button>
+          </div>
 
-              {/* Sidebar */}
-              <motion.div
-                initial={{ x: -250 }}
-                animate={{ x: 0 }}
-                exit={{ x: -250 }}
-                transition={{ duration: 0.3 }}
-                className="absolute left-0 top-0 h-full w-[250px] bg-[#0E0E10] p-5 text-sm"
-              >
-                {/* Close */}
+          {/* Body */}
+          <div className="flex flex-col justify-between h-full px-5 py-5 text-sm overflow-y-auto">
+            <div className="flex flex-col gap-3">
+              {sidebarItems.map((item, i) => (
+                <SidebarItem key={i} {...item} />
+              ))}
+
+              {/* Guide */}
+              <div>
                 <div
-                  onClick={() => setOpenSidebar(false)}
-                  className="absolute top-5 right-5 border p-2 w-8 h-8 flex items-center justify-center flex items-center rounded border-[#323232] cursor-pointer"
+                  onClick={() => setOpenGuide((p) => !p)}
+                  className="flex justify-between border p-3 rounded-lg border-[#323232] cursor-pointer items-center"
                 >
-                  ✕
+                  Guide
+                  <span
+                    className={`transition ${openGuide ? "rotate-180" : ""}`}
+                  >
+                    <i className="fa-solid fa-chevron-down"></i>
+                  </span>
                 </div>
 
-                {/* Links */}
-                <div className="flex flex-col justify-between h-full">
-                  <div className="flex flex-col gap-3 mt-10">
-                    {sidebarItems.map((item, i) => (
-                      <SidebarItem key={i} {...item} />
-                    ))}
-
-                    {/* Guide */}
-                    <div>
-                      <div
-                        onClick={() => setOpenGuide((p) => !p)}
-                        className="flex justify-between border p-3 rounded-lg border-[#323232] cursor-pointer"
-                      >
-                        Guide
-                        <span
-                          className={`transition ${
-                            openGuide ? "rotate-180" : ""
-                          }`}
-                        >
-                          ⌄
-                        </span>
-                      </div>
-
-                      <AnimatePresence>
-                        {openGuide && (
-                          <motion.div
-                            initial={{ height: 0 }}
-                            animate={{ height: "auto" }}
-                            exit={{ height: 0 }}
-                            className="overflow-hidden ml-4 mt-2 gap-2 flex flex-col"
-                          >
-                            {guideItems.map((item, i) => (
-                              <div
-                                key={i}
-                                onClick={() => handleNavClick(item.slug)}
-                                className="cursor-pointer py-1 border-b border-[#323232]"
-                              >
-                                {item.label}
-                              </div>
-                            ))}
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  </div>
-                  <div>
-                    <div
-                      className="flex items-center gap-1 p-2 px-4 cursor-pointer hover:bg-black/10 transition duration-100"
-                      onClick={() => signOut({ callbackUrl: "/" })}
+                <AnimatePresence>
+                  {openGuide && (
+                    <motion.div
+                      initial={{ height: 0 }}
+                      animate={{ height: "auto" }}
+                      exit={{ height: 0 }}
+                      className="overflow-hidden ml-4 mt-2 gap-2 flex flex-col"
                     >
-                      <i className="fa-solid fa-right-from-bracket"></i>
-                      Logout
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                      {guideItems.map((item, i) => (
+                        <div
+                          key={i}
+                          onClick={() => handleNavClick(item.slug)}
+                          className="cursor-pointer py-1 border-b border-[#323232]"
+                        >
+                          {item.label}
+                        </div>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="-mx-5 px-5 py-4 border-t border-white/10">
+              <div
+                className="flex items-center gap-1 p-2 px-4 cursor-pointer hover:bg-black/10 transition duration-100"
+                onClick={() => signOut({ callbackUrl: "/" })}
+              >
+                <i className="fa-solid fa-right-from-bracket"></i>
+                Logout
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* TOP BAR */}
         <div className="md:hidden flex justify-between w-full p-5 bg-[#0E0E10] border-b border-[#232323] items-center">

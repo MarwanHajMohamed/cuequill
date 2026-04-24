@@ -64,7 +64,7 @@ export default function Filters({
   endDate: string;
   setEndDate: React.Dispatch<React.SetStateAction<string>>;
 }) {
-  const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [isPanelOpen, setIsPanelOpen] = useState<boolean>(false);
 
   // Lock body scroll when panel is open
   useEffect(() => {
@@ -452,7 +452,7 @@ export default function Filters({
       {/* ── MOBILE: backdrop ── */}
       <div
         onClick={() => setIsPanelOpen(false)}
-        className={`min-[1130px]:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-30 transition-opacity duration-300 ${
+        className={`min-[1130px]:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 transition-opacity duration-300 ${
           isPanelOpen
             ? "opacity-100 pointer-events-auto"
             : "opacity-0 pointer-events-none"
