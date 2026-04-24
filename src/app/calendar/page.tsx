@@ -232,7 +232,7 @@ function Page() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -8 }}
                       transition={{ duration: 0.2, ease: "easeOut" }}
-                      className="md:hidden absolute top-40 left-2 bg-[#0E0E10] border border-white/40 p-5 rounded"
+                      className="md:hidden absolute top-40 left-2 bg-[#0E0E10] border border-white/40 p-5 rounded z-3"
                     >
                       <div className="flex flex-col gap-2 text-sm">
                         <div>Key</div>
