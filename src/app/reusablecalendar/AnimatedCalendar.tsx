@@ -32,13 +32,24 @@ export default function AnimatedCalendar({
     action,
     activeStartDate: newDate,
   }: OnArgs) => {
-    if ((action !== "next" && action !== "prev") || !newDate) return;
+    if (!newDate) return;
+
+    // No animation for drillDown/drillUp/onChange — just update the date
+    if (action !== "next" && action !== "prev") {
+      setActiveStartDate(newDate);
+      return;
+    }
 
     const dir = action === "next" ? "left" : "right";
     const days = calendarRef.current?.querySelector(
       ".react-calendar__month-view__days"
     ) as HTMLElement;
-    if (!days) return;
+
+    // If there's no days grid visible (e.g. year view), just update
+    if (!days) {
+      setActiveStartDate(newDate);
+      return;
+    }
 
     days.style.pointerEvents = "none";
     days.style.transition = "transform 0.22s ease, opacity 0.22s ease";
