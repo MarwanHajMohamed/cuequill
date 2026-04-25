@@ -255,7 +255,7 @@ export default function Navbar() {
             {/* Footer */}
             <div className="-mx-5 px-5 py-4 border-t border-white/10">
               <div
-                className="flex items-center gap-1 p-2 px-4 cursor-pointer hover:bg-black/10 transition duration-100"
+                className="flex items-center gap-1 p-2 px-0 cursor-pointer hover:bg-black/10 transition duration-100"
                 onClick={() => signOut({ callbackUrl: "/" })}
               >
                 <i className="fa-solid fa-right-from-bracket"></i>
@@ -267,21 +267,23 @@ export default function Navbar() {
 
         {/* TOP BAR */}
         <div className="md:hidden flex justify-between w-full p-5 bg-[#0E0E10] border-b border-[#232323] items-center">
-          <div
-            onClick={() => setOpenSidebar(true)}
-            className="border p-2 flex items-center rounded border-[#323232] cursor-pointer"
-          >
-            <i className="fa-solid fa-bars text-xl"></i>{" "}
+          <div className="w-full">
+            <div
+              onClick={() => setOpenSidebar(true)}
+              className="border p-2 w-9 h-9 flex items-center rounded border-[#323232] cursor-pointer"
+            >
+              <i className="fa-solid fa-bars text-xl"></i>{" "}
+            </div>
           </div>
 
-          <div className="text-xs">
+          <div className="text-xs text-center w-full">
             Market:{" "}
             <span className={marketOpen ? "text-green-500" : "text-red-500"}>
               {marketOpen ? "Open" : "Closed"}
             </span>
           </div>
 
-          <div className="flex flex-col items-end text-[10px]">
+          <div className="flex flex-col items-end text-[10px] w-full">
             <TimezoneDisplay
               showHours={false}
               showMinutes={false}

@@ -47,13 +47,13 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
     .sort((a, b) => b.count - a.count);
 
   return (
-    <div className="p-10 text-white flex flex-col items-center mt-20">
-      <div className="text-xl mb-4 text-center">Most Used Strategies</div>
-      <div className="space-y-4 w-200">
+    <div className="md:p-10 p-5 text-white flex flex-col items-center mt-20">
+      <div className="md:text-xl mb-4 text-center">Most Used Strategies</div>
+      <div className="space-y-4 max-w-200 w-full">
         {strategyList.map((s) => (
           <div
             key={s.name}
-            className="flex justify-between border-b border-white/10 pb-1"
+            className="text-sm md:text-base flex justify-between border-b border-white/10 pb-1"
           >
             <span>{s.name}</span>
             <span className={s.count === 0 ? "text-[#5B5B5B]" : "text-white"}>
