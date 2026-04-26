@@ -1,6 +1,6 @@
 import { useSession } from "next-auth/react";
 import React, { useEffect, useState } from "react";
-import { components } from "react-select";
+import { GroupBase, InputProps, components } from "react-select";
 import TimezoneSelect, { type ITimezone } from "react-timezone-select";
 
 const Account = () => {
@@ -41,9 +41,9 @@ const Account = () => {
     await update({ timezone: tzValue });
   };
 
-  const NoKeyboardInput = (props: any) => (
-    <components.Input {...props} readOnly />
-  );
+  const NoKeyboardInput = (
+    props: InputProps<ITimezone, boolean, GroupBase<ITimezone>>
+  ) => <components.Input {...props} readOnly />;
 
   return (
     <div>
