@@ -155,7 +155,7 @@ export default function Navbar() {
   }) => (
     <div
       onClick={() => handleNavClick(slug)}
-      className="flex items-center gap-2 border p-3 rounded-lg border-[#323232] cursor-pointer"
+      className="flex items-center gap-5 p-3 rounded-lg cursor-pointer font-bold text-base"
     >
       <i className={icon}></i>
       <div>{label}</div>
@@ -202,7 +202,7 @@ export default function Navbar() {
             <span className="text-sm font-medium text-white">Menu</span>
             <button
               onClick={() => setOpenSidebar(false)}
-              className="text-white hover:text-white transition duration-100 p-1 px-3 rounded-md border border-[#323232]"
+              className="text-white hover:text-white transition duration-100 p-1 px-3 rounded-md"
             >
               <i className="fa-solid fa-xmark text-base" />
             </button>
@@ -219,9 +219,12 @@ export default function Navbar() {
               <div>
                 <div
                   onClick={() => setOpenGuide((p) => !p)}
-                  className="flex justify-between border p-3 rounded-lg border-[#323232] cursor-pointer items-center"
+                  className="flex justify-between p-3 rounded-lg cursor-pointer items-center font-bold text-base"
                 >
-                  Guide
+                  <div className="flex items-center gap-5">
+                    <i className="fa-solid fa-book"></i>
+                    <span>Guide</span>
+                  </div>
                   <span
                     className={`transition ${openGuide ? "rotate-180" : ""}`}
                   >
@@ -255,11 +258,18 @@ export default function Navbar() {
             {/* Footer */}
             <div className="-mx-5 px-5 py-4 border-t border-white/10">
               <div
-                className="flex items-center gap-1 p-2 px-0 cursor-pointer hover:bg-black/10 transition duration-100"
+                className="flex items-center gap-3 p-2 px-0 cursor-pointer hover:bg-black/10 transition duration-100"
+                onClick={() => handleNavClick("settings")}
+              >
+                <i className="fa-solid fa-gear"></i>
+                <span>Settings</span>
+              </div>
+              <div
+                className="flex items-center gap-3 p-2 px-0 cursor-pointer hover:bg-black/10 transition duration-100"
                 onClick={() => signOut({ callbackUrl: "/" })}
               >
                 <i className="fa-solid fa-right-from-bracket"></i>
-                Logout
+                <span>Logout</span>
               </div>
             </div>
           </div>
@@ -270,7 +280,7 @@ export default function Navbar() {
           <div className="w-full">
             <div
               onClick={() => setOpenSidebar(true)}
-              className="border p-2 w-9 h-9 flex items-center rounded border-[#323232] cursor-pointer"
+              className="p-2 w-9 h-9 flex items-center rounded border-[#323232] cursor-pointer"
             >
               <i className="fa-solid fa-bars text-xl"></i>{" "}
             </div>

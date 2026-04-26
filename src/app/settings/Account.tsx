@@ -43,7 +43,7 @@ const Account = () => {
   return (
     <div>
       {/* TOP SECTION */}
-      <div className="m-8 flex flex-col gap-5">
+      <div className="md:m-8 m-5 flex flex-col gap-5 text-sm md:text-base">
         <div className="flex flex-col gap-1 w-60">
           <div className="text-sm">First Name</div>
           <input
@@ -81,7 +81,7 @@ const Account = () => {
       </div>
       <hr className="border-[#262628]" />
       {/* BOTTOM SECTION */}
-      <div className="m-8 flex flex-col gap-5">
+      <div className="md:m-8 m-5 flex flex-col gap-5 text-sm md:text-base">
         <div className="flex flex-col gap-2 w-60">
           <div className="text-sm">Timezone</div>
           <TimezoneSelect

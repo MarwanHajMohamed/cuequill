@@ -73,18 +73,18 @@ function Page() {
   ];
 
   return (
-    <div className="mt-[100px] flex flex-col items-center">
-      <div className="bg-[#0e0e10] w-full rounded-sm h-[calc(100vh-105px)] overflow-scroll">
-        <div className="flex items-center h-20 gap-3 text-2xl border-b border-white/10">
+    <div className="md:mt-[100px] mt-19 flex flex-col items-center">
+      <div className="bg-[#0e0e10] w-full rounded-sm h-[calc(100vh-77px)] md:h-[calc(100vh-105px)] overflow-scroll">
+        <div className="hidden md:flex items-center md:h-20 gap-3 md:text-2xl border-b border-white/10">
           <i className="fa-solid fa-gear pl-6"></i>
           <div>Settings</div>
         </div>
-        <div className="flex">
+        <div className="flex flex-col md:flex-row">
           {/* Left: tabs */}
-          <div className="border-r border-white/10 text-sm h-[calc(100vh-185px)]">
+          <div className="md:border-r border-white/10 text-sm md:h-[calc(100vh-185px)] flex md:flex-col border">
             {settingsTabs.map((setting, index) => (
               <div
-                className={`p-3 px-7 border-b border-white/10 cursor-pointer hover:bg-[#19191B] ${
+                className={`md:p-3 md:px-7 p-2 px-4 text-sm md:border-b border-r md:border-r-0 border-white/10 cursor-pointer hover:bg-[#19191B] ${
                   selectedSetting === setting.title && "bg-[#19191B]"
                 }`}
                 key={index}

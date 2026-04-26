@@ -17,15 +17,15 @@ export default function TradesTab({
   handleUpload,
 }: TradesTabProps) {
   return (
-    <div className="p-7">
-      <div className="text-lg flex items-center gap-2">
+    <div className="md:p-7 p-5">
+      <div className="md:text-lg text-base flex items-center gap-2">
         <i className="fa-solid fa-chevron-right"></i>
         <div>Import your trades</div>
       </div>
-      <div className="pt-5">
+      <div className="pt-5 text-sm md:text-base">
         To import your trades from IBKR, you must follow these steps:
       </div>
-      <ol className="list-decimal p-3 pl-15">
+      <ol className="list-decimal p-3 pl-15 text-sm md:text-base">
         <li>Login to your IBKR account.</li>
         <li>Go to &quot;Performance & Reports &gt; Flex Queries&quot;.</li>
         <li>
@@ -72,13 +72,13 @@ export default function TradesTab({
           />
           <button
             onClick={() => fileInputRef?.current?.click()}
-            className="p-3 bg-[#16151B] border border-white/20 rounded-xl transition duration-100 cursor-pointer hover:border-white/100"
+            className="text-xs md:text-base p-3 bg-[#16151B] border border-white/20 rounded-xl transition duration-100 cursor-pointer hover:border-white/100"
           >
             Upload CSV File
           </button>
           <i className="fa-solid fa-arrow-right"></i>
           <button
-            className={`p-3 bg-[#182A13] border border-white/20 rounded-xl transition duration-100 
+            className={`text-xs md:text-base p-3 bg-[#182A13] border border-white/20 rounded-xl transition duration-100 
               ${
                 file === null
                   ? "text-white/30 cursor-not-allowed"
@@ -91,13 +91,13 @@ export default function TradesTab({
           </button>
         </div>
 
-        <div className="mt-4">
+        <div className="mt-4 text-sm md:text-base">
           File uploaded:{" "}
           {file ? <span className="text-green-400">{file.name}</span> : "None"}
         </div>
       </div>
 
-      <div>{status}</div>
+      <div className="text-sm md:text-base">{status}</div>
     </div>
   );
 }
