@@ -395,8 +395,8 @@ export default function Navbar() {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -2 }}
                         transition={{ duration: 0.2 }}
-                        className="absolute left-0 top-8 flex flex-col bg-white text-black rounded-md 
-                  border border-black/10 shadow-md min-w-[140px] z-50"
+                        className="absolute left-0 top-8 flex flex-col bg-[#1A191D] rounded-lg 
+                        border border-[#212121] shadow-md min-w-[140px] z-50"
                       >
                         {item.dropdown.map((subItem, j) => (
                           <div
