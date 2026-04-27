@@ -15,12 +15,29 @@ export default function Navbar() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const guideDropdownRef = useRef<HTMLDivElement>(null);
 
-  const [simulated] = useLocalStorage<boolean>("simulated", false);
+  // const [simulated] = useLocalStorage<boolean>("simulated", false);
 
   const [open, setOpen] = useState(false);
   const [dropdown, setDropdown] = useState(false);
   const [openSidebar, setOpenSidebar] = useState(false);
   const [openGuide, setOpenGuide] = useState(false);
+  const [simulated, setSimulated] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("simulated") === "true";
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    const stored = localStorage.getItem("simulated");
+    if (stored !== null) {
+      setSimulated(stored === "true");
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("simulated", String(simulated));
+  }, [simulated]);
 
   /* ---------------- HELPERS ---------------- */
 
@@ -256,20 +273,45 @@ export default function Navbar() {
             </div>
 
             {/* Footer */}
-            <div className="-mx-5 px-5 py-4 border-t border-white/10">
-              <div
-                className="flex items-center gap-3 p-2 px-0 cursor-pointer hover:bg-black/10 transition duration-100"
-                onClick={() => handleNavClick("settings")}
-              >
-                <i className="fa-solid fa-gear"></i>
-                <span>Settings</span>
+            <div className="flex flex-col gap-2">
+              <div>
+                <label className="inline-flex items-center cursor-pointer flex gap-2">
+                  <input
+                    type="checkbox"
+                    checked={simulated}
+                    onChange={(e) => {
+                      setSimulated(e.target.checked);
+                      window.location.reload();
+                    }}
+                    className="sr-only peer"
+                  />
+                  <div
+                    className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 
+                            peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 
+                            peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full 
+                            peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] 
+                            after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full 
+                            after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 
+                            dark:peer-checked:bg-blue-600"
+                  />
+                  <span className="text-xs md:text-sm">Simulated trading</span>
+                </label>
               </div>
-              <div
-                className="flex items-center gap-3 p-2 px-0 cursor-pointer hover:bg-black/10 transition duration-100"
-                onClick={() => signOut({ callbackUrl: "/" })}
-              >
-                <i className="fa-solid fa-right-from-bracket"></i>
-                <span>Logout</span>
+              <div className="-mx-5 px-5 py-4 border-t border-white/10">
+                <div
+                  className="flex items-center gap-3 p-2 px-0 cursor-pointer hover:bg-black/10 transition duration-100"
+                  onClick={() => handleNavClick("settings")}
+                >
+                  <i className="fa-solid fa-gear"></i>
+                  <span>Settings</span>
+                </div>
+                <div
+                  className="flex items-center gap-3 p-2 px-0 cursor-pointer hover:bg-black/10 transition duration-100"
+                  onClick={() => signOut({ callbackUrl: "/" })}
+                >
+                  <i className="fa-solid fa-right-from-bracket"></i>
+                  <span>Logout</span>
+                </div>
               </div>
             </div>
           </div>
@@ -349,10 +391,10 @@ export default function Navbar() {
                   <AnimatePresence>
                     {item.dropdown && dropdown && (
                       <motion.div
-                        initial={{ opacity: 0, y: 5 }}
+                        initial={{ opacity: 0, y: -5 }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 2 }}
-                        transition={{ duration: 0.3 }}
+                        exit={{ opacity: 0, y: -2 }}
+                        transition={{ duration: 0.2 }}
                         className="absolute left-0 top-8 flex flex-col bg-white text-black rounded-md 
                   border border-black/10 shadow-md min-w-[140px] z-50"
                       >
@@ -388,29 +430,57 @@ export default function Navbar() {
             <AnimatePresence>
               {open && (
                 <motion.div
-                  initial={{ opacity: 0, y: 5 }}
+                  initial={{ opacity: 0, y: -5 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 2 }}
-                  transition={{ duration: 0.3 }}
-                  className="absolute -left-[120px] top-8 flex flex-col bg-white text-black rounded-md 
-                            border border-black/10 shadow-md min-w-[140px] z-50"
+                  exit={{ opacity: 0, y: -2 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute -left-[220px] top-8 flex flex-col bg-[#1A191D] rounded-lg 
+                            border border-[#212121] shadow-md min-w-[240px] z-50 gap-2 py-3"
                 >
-                  <div
-                    className="flex items-center gap-1 p-2 px-4 cursor-pointer hover:bg-black/10 transition duration-100"
-                    onClick={() => {
-                      handleRoute("settings");
-                      setOpen(false);
-                    }}
-                  >
-                    <i className="fa-solid fa-gear"></i>
-                    <div>Settings</div>
+                  <div>
+                    <div
+                      className="flex items-center gap-3 p-2 px-4 cursor-pointer hover:bg-black/10 transition duration-100"
+                      onClick={() => {
+                        handleRoute("settings");
+                        setOpen(false);
+                      }}
+                    >
+                      <i className="fa-solid fa-gear"></i>
+                      <div>Settings</div>
+                    </div>
+                    <div
+                      className="flex items-center gap-3 p-2 px-4 cursor-pointer hover:bg-black/10 transition duration-100"
+                      onClick={() => signOut({ callbackUrl: "/" })}
+                    >
+                      <i className="fa-solid fa-right-from-bracket"></i>
+                      Logout
+                    </div>
                   </div>
-                  <div
-                    className="flex items-center gap-1 p-2 px-4 cursor-pointer hover:bg-black/10 transition duration-100"
-                    onClick={() => signOut({ callbackUrl: "/" })}
-                  >
-                    <i className="fa-solid fa-right-from-bracket"></i>
-                    Logout
+                  <hr className="mx-3 py-1 text-white/10" />
+                  <div className="px-3">
+                    <label className="inline-flex items-center cursor-pointer flex gap-2">
+                      <input
+                        type="checkbox"
+                        checked={simulated}
+                        onChange={(e) => {
+                          setSimulated(e.target.checked);
+                          window.location.reload();
+                        }}
+                        className="sr-only peer"
+                      />
+                      <div
+                        className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 
+                            peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 
+                            peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full 
+                            peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] 
+                            after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full 
+                            after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 
+                            dark:peer-checked:bg-blue-600"
+                      />
+                      <span className="text-xs md:text-sm">
+                        Simulated trading
+                      </span>
+                    </label>
                   </div>
                 </motion.div>
               )}
