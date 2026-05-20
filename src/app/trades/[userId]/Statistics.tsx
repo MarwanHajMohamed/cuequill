@@ -3,7 +3,187 @@
 import Bar from "@/app/dashboard/components/charts/Bar";
 import Pie from "@/app/dashboard/components/charts/Pie";
 import { Trade } from "@/app/types/Trades";
-import React, { useState } from "react";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
+import React, { useEffect, useRef, useState } from "react";
+
+type StatsVisibility = {
+  netPL: boolean;
+  profitFactor: boolean;
+  winRate: boolean;
+  avgRR: boolean;
+  winStreak: boolean;
+  filteredStats: boolean;
+  totalStats: boolean;
+  monthlyStats: boolean;
+};
+
+const DEFAULT_VISIBILITY: StatsVisibility = {
+  netPL: true,
+  profitFactor: true,
+  winRate: true,
+  avgRR: true,
+  winStreak: true,
+  filteredStats: true,
+  totalStats: true,
+  monthlyStats: true,
+};
+
+const TILE_OPTIONS: Array<{ key: keyof StatsVisibility; label: string }> = [
+  { key: "netPL", label: "Net P&L" },
+  { key: "profitFactor", label: "Profit Factor" },
+  { key: "winRate", label: "Win Rate" },
+  { key: "avgRR", label: "Avg R:R" },
+  { key: "winStreak", label: "Best Win Streak" },
+];
+
+const SECTION_OPTIONS: Array<{ key: keyof StatsVisibility; label: string }> = [
+  { key: "filteredStats", label: "Filtered Stats" },
+  { key: "totalStats", label: "Total Stats" },
+  { key: "monthlyStats", label: "Monthly Stats" },
+];
+
+const CustomizeMenu = ({
+  visibility,
+  setVisibility,
+}: {
+  visibility: StatsVisibility;
+  setVisibility: (v: StatsVisibility) => void;
+}) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node))
+        setOpen(false);
+    };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [open]);
+
+  const toggle = (key: keyof StatsVisibility) => {
+    setVisibility({ ...visibility, [key]: !visibility[key] });
+  };
+
+  const renderRow = ({
+    key,
+    label,
+  }: {
+    key: keyof StatsVisibility;
+    label: string;
+  }) => (
+    <label
+      key={key}
+      className="flex items-center justify-between gap-3 px-2 py-1.5 rounded hover:bg-white/5 cursor-pointer text-xs"
+    >
+      <span>{label}</span>
+      <input
+        type="checkbox"
+        checked={visibility[key]}
+        onChange={() => toggle(key)}
+        className="cursor-pointer accent-green-500"
+      />
+    </label>
+  );
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="text-xs text-white/70 hover:text-white px-3 py-1.5 rounded-md border border-white/10 hover:border-white/30 transition flex items-center gap-2 cursor-pointer"
+      >
+        <i className="fa-solid fa-sliders text-[11px]" />
+        Customize
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-2 bg-[#16151B] border border-white/10 rounded-md shadow-lg z-30 w-56 p-2">
+          <div className="text-[10px] uppercase tracking-wide text-white/40 px-2 pt-1 pb-1">
+            Summary tiles
+          </div>
+          {TILE_OPTIONS.map(renderRow)}
+          <div className="text-[10px] uppercase tracking-wide text-white/40 px-2 pt-3 pb-1">
+            Sections
+          </div>
+          {SECTION_OPTIONS.map(renderRow)}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const MiniDonut = ({
+  greenPct,
+  size = 40,
+}: {
+  greenPct: number;
+  size?: number;
+}) => {
+  const r = size / 2 - 4;
+  const c = 2 * Math.PI * r;
+  const safe = Math.max(0, Math.min(100, greenPct));
+  const dash = (safe / 100) * c;
+  return (
+    <svg
+      width={size}
+      height={size}
+      style={{ transform: "rotate(-90deg)" }}
+      className="shrink-0"
+    >
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        fill="none"
+        stroke="#dc2626"
+        strokeWidth="5"
+      />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        fill="none"
+        stroke="#16a34a"
+        strokeWidth="5"
+        strokeDasharray={`${dash} ${c}`}
+        strokeLinecap="butt"
+      />
+    </svg>
+  );
+};
+
+const SummaryTile = ({
+  label,
+  info,
+  className = "",
+  children,
+}: {
+  label: string;
+  info?: string;
+  className?: string;
+  children: React.ReactNode;
+}) => (
+  <div
+    className={`border border-[#282828] rounded-lg p-4 flex flex-col gap-2 min-w-0 ${className}`}
+  >
+    <div className="text-xs text-white/50 flex items-center gap-1.5">
+      <span>{label}</span>
+      {info && (
+        <span className="relative group cursor-help">
+          <i className="fa-solid fa-circle-info text-[10px] text-white/30 hover:text-white/70 transition-colors" />
+          <span
+            className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block
+                       bg-[#16151B] border border-white/10 text-white/80 text-[11px] rounded-md px-2 py-1.5
+                       whitespace-normal w-48 z-20 leading-snug shadow-md normal-case"
+          >
+            {info}
+          </span>
+        </span>
+      )}
+    </div>
+    <div className="flex items-center justify-between gap-2">{children}</div>
+  </div>
+);
 
 export default function Statistics({
   data,
@@ -41,7 +221,7 @@ export default function Statistics({
 
   const netProfit = closedData.reduce(
     (acc: number, trade: Trade) => acc + (trade.profitLoss ?? 0),
-    0
+    0,
   );
 
   const calcLongestWinStreak = (trades: Trade[]): number => {
@@ -49,7 +229,7 @@ export default function Statistics({
       .filter((t) => t.status !== "OPEN")
       .sort(
         (a, b) =>
-          new Date(a.dateBought).getTime() - new Date(b.dateBought).getTime()
+          new Date(a.dateBought).getTime() - new Date(b.dateBought).getTime(),
       );
 
     let longest = 0;
@@ -67,6 +247,45 @@ export default function Statistics({
 
   const longestWinStreak = calcLongestWinStreak(data);
   const longestFilteredWinStreak = calcLongestWinStreak(filteredData);
+
+  // SUMMARY-TILE METRICS (all-time)
+  const grossWins = closedData
+    .filter((t) => (t.profitLoss ?? 0) > 0)
+    .reduce((sum, t) => sum + (t.profitLoss ?? 0), 0);
+
+  const grossLosses = closedData
+    .filter((t) => (t.profitLoss ?? 0) < 0)
+    .reduce((sum, t) => sum + Math.abs(t.profitLoss ?? 0), 0);
+
+  const profitFactor =
+    grossLosses > 0 ? grossWins / grossLosses : grossWins > 0 ? Infinity : 0;
+
+  const winCount = closedData.filter((t) => t.status === "WIN").length;
+  const lossCount = closedData.filter((t) => t.status === "LOSS").length;
+  const concludedCount = winCount + lossCount;
+  const winRatePct = concludedCount > 0 ? (winCount / concludedCount) * 100 : 0;
+
+  const avgWin = winCount > 0 ? grossWins / winCount : 0;
+  const avgLossAmt = lossCount > 0 ? grossLosses / lossCount : 0;
+  const avgRR =
+    avgLossAmt > 0 ? avgWin / avgLossAmt : avgWin > 0 ? Infinity : 0;
+
+  const pfDonutPct =
+    grossWins + grossLosses > 0
+      ? (grossWins / (grossWins + grossLosses)) * 100
+      : 0;
+
+  const [visibility, setVisibility] = useLocalStorage<StatsVisibility>(
+    "cuequill:stats-visibility",
+    DEFAULT_VISIBILITY,
+  );
+
+  const anyTileVisible =
+    visibility.netPL ||
+    visibility.profitFactor ||
+    visibility.winRate ||
+    visibility.avgRR ||
+    visibility.winStreak;
 
   // FILTERED DATA STATS
   const calcBiggestFilteredWin = () => {
@@ -106,7 +325,7 @@ export default function Statistics({
 
     const filteredTotal = filteredData.length;
     const filteredWins = filteredData.filter(
-      (trade) => trade.status === "WIN"
+      (trade) => trade.status === "WIN",
     ).length;
 
     const filteredWinRate =
@@ -120,7 +339,7 @@ export default function Statistics({
   const calcFilteredNetProfit = () => {
     const filteredNetProfit = closedFilteredData.reduce(
       (acc: number, trade: Trade) => acc + (trade.profitLoss ?? 0),
-      0
+      0,
     );
 
     if (filteredNetProfit >= 0) {
@@ -145,15 +364,15 @@ export default function Statistics({
   });
 
   const mostUsedStrat = Object.entries(strategyCounts).reduce((a, b) =>
-    b[1] > a[1] ? b : a
+    b[1] > a[1] ? b : a,
   )[0];
 
   const mostUsedOption = Object.entries(optionCounts).reduce((a, b) =>
-    b[1] > a[1] ? b : a
+    b[1] > a[1] ? b : a,
   )[0];
 
   const mostUsedSymbol = Object.entries(symbolCounts).reduce((a, b) =>
-    b[1] > a[1] ? b : a
+    b[1] > a[1] ? b : a,
   )[0];
 
   // MONTHLY DATA STATS
@@ -217,7 +436,7 @@ export default function Statistics({
     if (closedMonthlyData.length > 0) {
       const biggestMonthlyWin = closedMonthlyData.reduce(
         (max: Trade, trade: Trade) =>
-          (trade.profitLoss ?? 0) > (max.profitLoss ?? 0) ? trade : max
+          (trade.profitLoss ?? 0) > (max.profitLoss ?? 0) ? trade : max,
       );
       return (
         <span className="text-green-500">
@@ -233,7 +452,7 @@ export default function Statistics({
     if (closedMonthlyData.length > 0) {
       const biggestMonthlyLoss = closedMonthlyData.reduce(
         (max: Trade, trade: Trade) =>
-          (max.profitLoss ?? 0) > (trade.profitLoss ?? 0) ? trade : max
+          (max.profitLoss ?? 0) > (trade.profitLoss ?? 0) ? trade : max,
       );
       return (
         <span className="text-red-500">
@@ -245,14 +464,116 @@ export default function Statistics({
 
   const netProfitMonthly = closedMonthlyData.reduce(
     (acc: number, trade: Trade) => acc + (trade.profitLoss ?? 0),
-    0
+    0,
   );
 
   return (
     <div className="mt-10 flex flex-col items-center w-full max-w-[1500px]">
+      {/* Customize toggle */}
+      <div className="flex justify-end w-full mb-4">
+        <CustomizeMenu visibility={visibility} setVisibility={setVisibility} />
+      </div>
+
+      {/* Summary tiles — at-a-glance, all-time */}
+      {anyTileVisible && (
+        <div className="flex flex-wrap justify-center gap-3 w-full mb-10">
+          {visibility.netPL && (
+            <SummaryTile
+              label="Net P&L"
+              info="Total profit/loss across all closed trades."
+              className="basis-[200px] grow max-w-[280px]"
+            >
+              <div
+                className={`text-2xl md:text-2xl truncate ${
+                  netProfit >= 0 ? "text-green-500" : "text-red-500"
+                }`}
+              >
+                {netProfit >= 0 ? "" : "−"}${Math.abs(netProfit).toFixed(2)}
+              </div>
+            </SummaryTile>
+          )}
+
+          {visibility.profitFactor && (
+            <SummaryTile
+              label="Profit Factor"
+              info="Gross wins ÷ gross losses. Above 1.0 = profitable; above 2.0 = strong system."
+              className="basis-[200px] grow max-w-[280px]"
+            >
+              <div
+                className={`text-2xl md:text-2xl truncate ${
+                  profitFactor >= 1 ? "text-green-500" : "text-red-500"
+                }`}
+              >
+                {profitFactor === Infinity
+                  ? "∞"
+                  : profitFactor > 0
+                    ? profitFactor.toFixed(2)
+                    : "—"}
+              </div>
+              <MiniDonut greenPct={pfDonutPct} />
+            </SummaryTile>
+          )}
+
+          {visibility.winRate && (
+            <SummaryTile
+              label="Win Rate"
+              info="Percentage of closed trades that ended as wins."
+              className="basis-[200px] grow max-w-[280px]"
+            >
+              <div className="text-2xl md:text-2xl truncate">
+                {concludedCount > 0 ? `${winRatePct.toFixed(0)}%` : "—"}
+              </div>
+              <MiniDonut greenPct={winRatePct} />
+            </SummaryTile>
+          )}
+
+          {visibility.avgRR && (
+            <SummaryTile
+              label="Avg R:R"
+              info="Average winner size ÷ average loser size. Above 1R means your wins are bigger than your losses on average."
+              className="basis-[200px] grow max-w-[280px]"
+            >
+              <div
+                className={`text-2xl md:text-2xl truncate ${
+                  avgRR === Infinity || avgRR >= 1
+                    ? "text-green-500"
+                    : avgRR > 0
+                      ? "text-red-500"
+                      : ""
+                }`}
+              >
+                {avgRR === Infinity
+                  ? "∞"
+                  : avgRR > 0
+                    ? `${avgRR.toFixed(2)}R`
+                    : "—"}
+              </div>
+            </SummaryTile>
+          )}
+
+          {visibility.winStreak && (
+            <SummaryTile
+              label="Best Win Streak"
+              info="Longest run of consecutive winning trades in your history (open trades are skipped, losses break the streak)."
+              className="basis-[200px] grow max-w-[280px]"
+            >
+              <div
+                className={`text-2xl md:text-2xl truncate ${
+                  longestWinStreak > 0 ? "text-green-500" : ""
+                }`}
+              >
+                {longestWinStreak > 0 ? longestWinStreak : "—"}
+              </div>
+            </SummaryTile>
+          )}
+        </div>
+      )}
+
       {/* Trades Stats */}
+      {(visibility.filteredStats || visibility.totalStats) && (
       <div className="flex w-full flex-col justify-between xl:flex-row">
         {/* Filtered Stats */}
+        {visibility.filteredStats && (
         <div className="flex flex-col items-center w-full gap-6 md:gap-0">
           <div className="mb-0 md:mb-5 text-sm font-bold">
             Statistics for Filtered Trades
@@ -315,8 +636,12 @@ export default function Statistics({
             </div>
           </div>
         </div>
+        )}
+        {visibility.filteredStats && visibility.totalStats && (
         <div className="h-auto w-1 bg-[#3A3A3A]"></div>
+        )}
         {/* Total Stats */}
+        {visibility.totalStats && (
         <div className="flex flex-col items-center w-full gap-6 md:gap-0 mt-10 xl:mt-0 min-[1280px]:ml-6">
           <div className="mb-0 md:mb-5 text-sm font-bold">Total Statistics</div>
           <div className="flex md:gap-6 gap-0 w-full min-[1280px]:pr-6">
@@ -413,9 +738,12 @@ export default function Statistics({
             </div>
           </div>
         </div>
+        )}
       </div>
+      )}
 
       {/* Monthly Section */}
+      {visibility.monthlyStats && (
       <div className="flex flex-col items-center mt-10 md:mt-20 w-full max-w-[1000px]">
         <div className="md:text-xl text-sm font-bold">Statistics per Month</div>
 
@@ -509,6 +837,7 @@ export default function Statistics({
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }

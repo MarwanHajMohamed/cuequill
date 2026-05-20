@@ -14,8 +14,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import AnimatedCalendar from "../reusablecalendar/AnimatedCalendar";
 import WeekView from "./WeekView";
 
-type TradeEventType = "WIN" | "LOSS" | "OPEN" | "TODAY";
-
 type TradeEvent =
   | Trade
   | {
@@ -25,34 +23,6 @@ type TradeEvent =
 
 const now = new Date();
 const today = now.toISOString().split("T")[0];
-
-const getColor = (status: TradeEventType) => {
-  switch (status) {
-    case "TODAY":
-      return "bg-blue-500";
-    case "WIN":
-      return "bg-green-500";
-    case "LOSS":
-      return "bg-red-600";
-    case "OPEN":
-      return "bg-orange-400";
-    default:
-      return "";
-  }
-};
-
-const getHoverColor = (status: TradeEventType) => {
-  switch (status) {
-    case "WIN":
-      return "hover:bg-green-600";
-    case "LOSS":
-      return "hover:bg-red-700";
-    case "OPEN":
-      return "hover:bg-orange-500";
-    default:
-      return "";
-  }
-};
 
 function Page() {
   const [simulated] = useLocalStorage<boolean>("simulated", false);
@@ -156,38 +126,62 @@ function Page() {
     }
   };
 
-  const renderTileContent = ({ date }: { date: Date }) => {
+  const getDaySummary = (date: Date) => {
     const dayStr = format(date, "yyyy-MM-dd");
-    const eventsForDay = tradeEvents.filter((e) => e.date === dayStr);
+    const events = tradeEvents.filter((e) => e.date === dayStr);
+    const tradeEvts = events.filter((e) => e.status !== "TODAY") as Trade[];
+    const closedEvts = tradeEvts.filter(
+      (e) => e.status === "WIN" || e.status === "LOSS"
+    );
+    const netPL = closedEvts.reduce(
+      (sum, e) => sum + (e.profitLoss ?? 0),
+      0
+    );
+    const hasOpen = tradeEvts.some((e) => e.status === "OPEN");
+    const isToday = events.some((e) => e.status === "TODAY");
+    return {
+      tradeCount: tradeEvts.length,
+      closedCount: closedEvts.length,
+      netPL,
+      hasOpen,
+      isToday,
+    };
+  };
 
-    if (eventsForDay.length > 0) {
-      return (
-        <div className="label mt-1 flex min-[500px]:flex-col gap-1 justify-center items-center">
-          {eventsForDay.map((event, idx) =>
-            event.status === "TODAY" ? (
-              <div key={idx} className={`w-2 h-2 rounded-full bg-blue-500`} />
-            ) : (
+  const renderTileContent = ({ date }: { date: Date }) => {
+    const { tradeCount, closedCount, netPL, isToday } = getDaySummary(date);
+    if (tradeCount === 0 && !isToday) return null;
+
+    return (
+      <div className="mt-1 flex flex-col items-center gap-0.5 text-[10px] md:text-xs">
+        {isToday && <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />}
+        {tradeCount > 0 && (
+          <>
+            {closedCount > 0 ? (
               <div
-                key={idx}
-                className={`md:w-15 h-4 w-12 max-[500px]:w-2 max-[500px]:h-2 rounded-md transition duration-200 ${getColor(
-                  event.status
-                )} ${getHoverColor(event.status)}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedDate(new Date(event.dateBought));
-                  setEditingTrade(event);
-                  setIsModalOpen(true);
-                }}
-                onMouseEnter={(e) => e.stopPropagation()}
+                className={`font-semibold ${
+                  netPL >= 0 ? "text-green-500" : "text-red-500"
+                }`}
               >
-                <span className="max-[500px]:hidden">{event.symbol}</span>
+                {netPL >= 0 ? "+" : "−"}${Math.abs(netPL).toFixed(2)}
               </div>
-            )
-          )}
-        </div>
-      );
-    }
-    return null;
+            ) : (
+              <div className="font-semibold text-orange-400">Open</div>
+            )}
+            <div className="text-white/40 text-[9px] md:text-[10px]">
+              {tradeCount} {tradeCount === 1 ? "trade" : "trades"}
+            </div>
+          </>
+        )}
+      </div>
+    );
+  };
+
+  const renderTileClassName = ({ date }: { date: Date }) => {
+    const { closedCount, netPL, hasOpen } = getDaySummary(date);
+    if (closedCount > 0) return netPL >= 0 ? "day-win" : "day-loss";
+    if (hasOpen) return "day-open";
+    return "";
   };
 
   return (
@@ -288,6 +282,7 @@ function Page() {
                 value={value}
                 onChange={(date) => handleDateClick(date)}
                 tileContent={renderTileContent}
+                tileClassName={renderTileClassName}
                 className="custom-calendar_full-view"
               />
             ) : (

@@ -16,6 +16,13 @@ interface AnimatedCalendarProps {
     date: Date;
     view: string;
   }) => React.ReactNode;
+  tileClassName?: ({
+    date,
+    view,
+  }: {
+    date: Date;
+    view: string;
+  }) => string | null | undefined;
   className?: string;
 }
 
@@ -23,6 +30,7 @@ export default function AnimatedCalendar({
   value,
   onChange,
   tileContent,
+  tileClassName,
   className = "custom-calendar_full-view",
 }: AnimatedCalendarProps) {
   const calendarRef = useRef<HTMLDivElement>(null);
@@ -79,6 +87,7 @@ export default function AnimatedCalendar({
         onChange={(val) => onChange(val as Date)}
         value={value}
         tileContent={tileContent}
+        tileClassName={tileClassName}
         formatShortWeekday={(_, date) => format(date, "EEE")}
         formatMonthYear={(_, date) => format(date, "LLLL yyyy")}
         next2Label={null}
