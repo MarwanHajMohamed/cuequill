@@ -223,7 +223,35 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                           ></i>
                         </td>
                         <td className="px-2 md:px-4 py-1 whitespace-nowrap w-full">
-                          {trade.symbol}
+                          {(() => {
+                            const qs = new URLSearchParams({
+                              symbol: trade.symbol,
+                            });
+                            if (trade.dateBought)
+                              qs.set(
+                                "entry",
+                                new Date(trade.dateBought).toISOString()
+                              );
+                            if (trade.dateClosed)
+                              qs.set(
+                                "exit",
+                                new Date(trade.dateClosed).toISOString()
+                              );
+                            if (
+                              trade.profitLoss !== undefined &&
+                              trade.profitLoss !== null
+                            )
+                              qs.set("pl", String(trade.profitLoss));
+                            return (
+                              <a
+                                href={`/charts?${qs.toString()}`}
+                                className="hover:underline hover:text-white"
+                                title="Open chart at trade time"
+                              >
+                                {trade.symbol}
+                              </a>
+                            );
+                          })()}
                         </td>
                         <td
                           className={`px-2 md:px-4 py-1 whitespace-nowrap w-full ${

@@ -113,7 +113,7 @@ export const fetchProfit = async (
     const data = await res.json();
 
     const totalProfit = data.reduce(
-      (acc: number, trade: Trade) => acc + trade.profitLoss!,
+      (acc: number, trade: Trade) => acc + (trade.profitLoss ?? 0),
       0
     );
 

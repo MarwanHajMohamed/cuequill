@@ -19,31 +19,62 @@ export default function Statistics({
   status: string;
 }) {
   // DATA STATS
-  const biggestWin = data.reduce((max: Trade, trade: Trade) => {
-    return trade.profitLoss! > max.profitLoss! ? trade : max;
-  });
+  const closedData = data.filter((t) => t.status !== "OPEN");
+  const closedFilteredData = filteredData.filter((t) => t.status !== "OPEN");
 
-  const biggestLoss = data.reduce((max: Trade, trade: Trade) => {
-    return max.profitLoss! > trade.profitLoss! ? trade : max;
-  });
+  const biggestWin = closedData.length
+    ? closedData.reduce((max: Trade, trade: Trade) => {
+        return (trade.profitLoss ?? 0) > (max.profitLoss ?? 0) ? trade : max;
+      })
+    : null;
+
+  const biggestLoss = closedData.length
+    ? closedData.reduce((max: Trade, trade: Trade) => {
+        return (max.profitLoss ?? 0) > (trade.profitLoss ?? 0) ? trade : max;
+      })
+    : null;
 
   const total = data.length;
   const wins = data.filter((trade) => trade.status === "WIN").length;
 
   const winRate = total > 0 ? (wins / total) * 100 : 0;
 
-  const netProfit = data.reduce(
-    (acc: number, trade: Trade) => acc + trade.profitLoss!,
+  const netProfit = closedData.reduce(
+    (acc: number, trade: Trade) => acc + (trade.profitLoss ?? 0),
     0
   );
+
+  const calcLongestWinStreak = (trades: Trade[]): number => {
+    const sorted = [...trades]
+      .filter((t) => t.status !== "OPEN")
+      .sort(
+        (a, b) =>
+          new Date(a.dateBought).getTime() - new Date(b.dateBought).getTime()
+      );
+
+    let longest = 0;
+    let current = 0;
+    for (const t of sorted) {
+      if (t.status === "WIN") {
+        current++;
+        if (current > longest) longest = current;
+      } else {
+        current = 0;
+      }
+    }
+    return longest;
+  };
+
+  const longestWinStreak = calcLongestWinStreak(data);
+  const longestFilteredWinStreak = calcLongestWinStreak(filteredData);
 
   // FILTERED DATA STATS
   const calcBiggestFilteredWin = () => {
     if (status === "Loss") return <span>-</span>;
 
-    const biggestFilteredWin = filteredData
-      .filter((trade) => trade.profitLoss! > 0)
-      .reduce((max, trade) => Math.max(max, trade.profitLoss!), 0);
+    const biggestFilteredWin = closedFilteredData
+      .filter((trade) => (trade.profitLoss ?? 0) > 0)
+      .reduce((max, trade) => Math.max(max, trade.profitLoss ?? 0), 0);
 
     if (biggestFilteredWin === null) {
       return null;
@@ -57,9 +88,9 @@ export default function Statistics({
   const calcBiggestFilteredLoss = () => {
     if (status === "Win") return <span>-</span>;
 
-    const biggestFilteredLoss = filteredData
-      .filter((trade) => trade.profitLoss! < 0)
-      .reduce((min, trade) => Math.min(min, trade.profitLoss!), 0);
+    const biggestFilteredLoss = closedFilteredData
+      .filter((trade) => (trade.profitLoss ?? 0) < 0)
+      .reduce((min, trade) => Math.min(min, trade.profitLoss ?? 0), 0);
 
     if (biggestFilteredLoss === null) {
       return null;
@@ -87,8 +118,8 @@ export default function Statistics({
   };
 
   const calcFilteredNetProfit = () => {
-    const filteredNetProfit = filteredData.reduce(
-      (acc: number, trade: Trade) => acc + trade.profitLoss!,
+    const filteredNetProfit = closedFilteredData.reduce(
+      (acc: number, trade: Trade) => acc + (trade.profitLoss ?? 0),
       0
     );
 
@@ -178,12 +209,15 @@ export default function Statistics({
     ? (monthlyWins / monthlyData.length) * 100
     : 0;
 
+  const closedMonthlyData = monthlyData.filter((t) => t.status !== "OPEN");
+
   const calcBiggestMonthlyWin = () => {
     if (status === "Loss") return <span>-</span>;
 
-    if (monthlyData.length > 0) {
-      const biggestMonthlyWin = monthlyData.reduce((max: Trade, trade: Trade) =>
-        trade.profitLoss! > max.profitLoss! ? trade : max
+    if (closedMonthlyData.length > 0) {
+      const biggestMonthlyWin = closedMonthlyData.reduce(
+        (max: Trade, trade: Trade) =>
+          (trade.profitLoss ?? 0) > (max.profitLoss ?? 0) ? trade : max
       );
       return (
         <span className="text-green-500">
@@ -196,10 +230,10 @@ export default function Statistics({
   const calcBiggestMonthlyLoss = () => {
     if (status === "Win") return <span>-</span>;
 
-    if (monthlyData.length > 0) {
-      const biggestMonthlyLoss = monthlyData.reduce(
+    if (closedMonthlyData.length > 0) {
+      const biggestMonthlyLoss = closedMonthlyData.reduce(
         (max: Trade, trade: Trade) =>
-          max.profitLoss! > trade.profitLoss! ? trade : max
+          (max.profitLoss ?? 0) > (trade.profitLoss ?? 0) ? trade : max
       );
       return (
         <span className="text-red-500">
@@ -209,8 +243,8 @@ export default function Statistics({
     }
   };
 
-  const netProfitMonthly = monthlyData.reduce(
-    (acc: number, trade: Trade) => acc + trade.profitLoss!,
+  const netProfitMonthly = closedMonthlyData.reduce(
+    (acc: number, trade: Trade) => acc + (trade.profitLoss ?? 0),
     0
   );
 
@@ -236,6 +270,16 @@ export default function Statistics({
                 <div>Biggest loss: {calcBiggestFilteredLoss()}</div>
                 <div>Win rate: {calcFilteredWinRate()}</div>
                 <div>Net profit: {calcFilteredNetProfit()}</div>
+                <div>
+                  Win streak:{" "}
+                  {longestFilteredWinStreak > 0 ? (
+                    <span className="text-green-500">
+                      {longestFilteredWinStreak}
+                    </span>
+                  ) : (
+                    <span>-</span>
+                  )}
+                </div>
               </div>
             </div>
             <div>
@@ -299,15 +343,23 @@ export default function Statistics({
               <div className="border md:p-6 border-[#282828] w-full rounded-lg md:text-base text-xs flex flex-col gap-1 md:gap-0 p-3 py-6">
                 <div>
                   Biggest win:{" "}
-                  <span className="text-green-500">
-                    ${biggestWin.profitLoss?.toFixed(2)}
-                  </span>
+                  {biggestWin ? (
+                    <span className="text-green-500">
+                      ${biggestWin.profitLoss?.toFixed(2)}
+                    </span>
+                  ) : (
+                    <span>-</span>
+                  )}
                 </div>
                 <div>
                   Biggest loss:{" "}
-                  <span className="text-red-500">
-                    ${biggestLoss.profitLoss?.toFixed(2)}
-                  </span>
+                  {biggestLoss ? (
+                    <span className="text-red-500">
+                      ${biggestLoss.profitLoss?.toFixed(2)}
+                    </span>
+                  ) : (
+                    <span>-</span>
+                  )}
                 </div>
                 <div>
                   Win rate:{" "}
@@ -322,6 +374,14 @@ export default function Statistics({
                   >
                     ${netProfit.toFixed(2)}
                   </span>
+                </div>
+                <div>
+                  Win streak:{" "}
+                  {longestWinStreak > 0 ? (
+                    <span className="text-green-500">{longestWinStreak}</span>
+                  ) : (
+                    <span>-</span>
+                  )}
                 </div>
               </div>
             </div>

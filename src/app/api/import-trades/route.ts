@@ -10,7 +10,6 @@ type CsvRow = {
   Strike: string;
   Expiry: string;
   "Put/Call": "C" | "P";
-  "Buy/Sell": "BUY" | "SELL";
   Quantity: string;
   TradePrice: string;
   DateTime: string;
@@ -19,15 +18,40 @@ type CsvRow = {
 
 type CsvRowWithQty = CsvRow & { remainingQty: number };
 
+// IBKR Flex CSV timestamps are in ET. Convert to a true UTC instant.
+function makeETDate(
+  year: number,
+  month: number,
+  day: number,
+  hour: number,
+  minute: number,
+  second: number
+): Date {
+  for (const offsetHours of [4, 5]) {
+    const candidate = new Date(
+      Date.UTC(year, month - 1, day, hour + offsetHours, minute, second)
+    );
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/New_York",
+      hour: "2-digit",
+      hour12: false,
+    }).formatToParts(candidate);
+    const etHourRaw = parseInt(parts.find((p) => p.type === "hour")!.value);
+    const etHour = etHourRaw === 24 ? 0 : etHourRaw;
+    if (etHour === hour) return candidate;
+  }
+  return new Date(Date.UTC(year, month - 1, day, hour + 4, minute, second));
+}
+
 function parseDateTime(dateStr: string) {
   const [date, time] = dateStr.split(";");
   const year = parseInt(date.substring(0, 4));
-  const month = parseInt(date.substring(4, 6)) - 1;
+  const month = parseInt(date.substring(4, 6));
   const day = parseInt(date.substring(6, 8));
   const hour = parseInt(time.substring(0, 2));
   const minute = parseInt(time.substring(2, 4));
   const second = parseInt(time.substring(4, 6));
-  return new Date(year, month, day, hour, minute, second);
+  return makeETDate(year, month, day, hour, minute, second);
 }
 
 function parseExpiry(expiryStr: string) {
@@ -78,14 +102,15 @@ export async function POST(req: Request) {
     const openQueue: CsvRowWithQty[] = [];
 
     for (const row of rows) {
-      const qty = Math.abs(parseInt(row.Quantity));
+      const signedQty = parseInt(row.Quantity);
+      const qty = Math.abs(signedQty);
 
-      if (row["Buy/Sell"] === "BUY") {
+      if (signedQty > 0) {
         openQueue.push({
           ...row,
           remainingQty: qty,
         });
-      } else if (row["Buy/Sell"] === "SELL") {
+      } else if (signedQty < 0) {
         let remainingSell = qty;
 
         while (remainingSell > 0 && openQueue.length > 0) {

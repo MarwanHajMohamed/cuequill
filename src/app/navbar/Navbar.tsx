@@ -3,9 +3,33 @@
 import { useRouter } from "next/navigation";
 import React, { useState, useRef, useEffect } from "react";
 import { signOut, useSession } from "next-auth/react";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { motion, AnimatePresence } from "framer-motion";
 import TimezoneDisplay from "@/helpers/TimezoneDisplay";
+
+const CuequillLogo = ({ className = "" }: { className?: string }) => (
+  <svg
+    viewBox="16 25 30 52" // ← change this line
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+    fill="none"
+    aria-label="Cuequill"
+  >
+    <path
+      d="M31 27.2C37 39.8 43.5 61.2 40.5 62.6C37.5 64 31 75.2 31 75.2C31 75.2 24.5 64.5 21.5 62.6C18.5 60.7 25 39.8 31 27.2Z"
+      fill="#FAFAFA"
+    />
+    <path
+      d="M31 47V75"
+      stroke="#0F172A"
+      strokeWidth="1.32"
+      strokeLinecap="round"
+    />
+    <path
+      d="M31 54.56C31.8616 54.56 32.56 53.8616 32.56 53C32.56 52.1384 31.8616 51.44 31 51.44C30.1384 51.44 29.44 52.1384 29.44 53C29.44 53.8616 30.1384 54.56 31 54.56Z"
+      fill="#0F172A"
+    />
+  </svg>
+);
 
 export default function Navbar() {
   const router = useRouter();
@@ -61,6 +85,7 @@ export default function Navbar() {
       slug: `trades/${userId}`,
     },
     { icon: "fa-solid fa-calendar-days", label: "Calendar", slug: "calendar" },
+    { icon: "fa-solid fa-chart-line", label: "Charts", slug: "charts" },
     { icon: "fa-solid fa-bullseye", label: "Goals", slug: "goals" },
     {
       icon: "fa-regular fa-circle-check",
@@ -76,9 +101,9 @@ export default function Navbar() {
   ];
 
   const navItems = [
-    { name: "fa-solid fa-house", slug: "dashboard", side: "LEFT" },
     { name: "Trades", slug: `trades/${userId}`, side: "MIDDLE" },
     { name: "Calendar", slug: "calendar", side: "MIDDLE" },
+    { name: "Charts", slug: "charts", side: "MIDDLE" },
     { name: "Goals", slug: "goals", side: "MIDDLE" },
     { name: "Affirmations", slug: "affirmations", side: "MIDDLE" },
     {
@@ -131,7 +156,7 @@ export default function Navbar() {
       const newTime = new Date(
         new Date().toLocaleString("en-US", {
           timeZone: "America/New_York",
-        })
+        }),
       );
       setCurrentTime(newTime);
     };
@@ -216,7 +241,7 @@ export default function Navbar() {
         >
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 shrink-0">
-            <span className="text-sm font-medium text-white">Menu</span>
+            <CuequillLogo className="h-7 w-auto" />
             <button
               onClick={() => setOpenSidebar(false)}
               className="text-white hover:text-white transition duration-100 p-1 px-3 rounded-md"
@@ -354,16 +379,14 @@ export default function Navbar() {
 
         {/* -------- DESKTOP NAV -------- */}
         <div className="hidden md:flex justify-between items-center w-full max-w-[1500px] mt-6 mx-10 p-4 px-5 bg-white/3 backdrop-blur-xs rounded-full border border-white/10">
-          {/* LEFT */}
-          {navItems
-            .filter((i) => i.side === "LEFT")
-            .map((item, i) => (
-              <i
-                key={i}
-                className={`${item.name} cursor-pointer`}
-                onClick={() => handleRoute(item.slug!)}
-              />
-            ))}
+          {/* LEFT — brand */}
+          <div
+            onClick={() => handleRoute("dashboard")}
+            className="cursor-pointer"
+            aria-label="Cuequill — dashboard"
+          >
+            <CuequillLogo className="h-8 w-auto" />
+          </div>
 
           {/* MIDDLE */}
           <div className="flex gap-10">

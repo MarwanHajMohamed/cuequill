@@ -5,6 +5,7 @@ import React, { useRef, useState } from "react";
 import TradesTab from "./TradesTab";
 import { useQueryClient } from "@tanstack/react-query";
 import Account from "./Account";
+import IBKRTab from "./IBKRTab";
 
 function Page() {
   const [selectedSetting, setSelectedSetting] = useState<string>("Account");
@@ -70,18 +71,22 @@ function Page() {
         />
       ),
     },
+    {
+      title: "IBKR Auto-sync",
+      content: <IBKRTab />,
+    },
   ];
 
   return (
     <div className="md:mt-[100px] mt-19 flex flex-col items-center">
-      <div className="bg-[#0e0e10] w-full rounded-sm h-[calc(100vh-77px)] md:h-[calc(100vh-105px)] overflow-scroll">
-        <div className="hidden md:flex items-center md:h-20 gap-3 md:text-2xl border-b border-white/10">
+      <div className="bg-[#0e0e10] w-full rounded-sm h-[calc(100vh-77px)] md:h-[calc(100vh-105px)] overflow-hidden flex flex-col">
+        <div className="hidden md:flex items-center md:h-20 gap-3 md:text-2xl border-b border-white/10 shrink-0">
           <i className="fa-solid fa-gear pl-6"></i>
           <div>Settings</div>
         </div>
-        <div className="flex flex-col md:flex-row">
-          {/* Left: tabs */}
-          <div className="md:border-r border-white/10 text-sm md:h-[calc(100vh-185px)] flex md:flex-col border">
+        <div className="flex flex-col md:flex-row flex-1 min-h-0">
+          {/* Left: tabs (sticky) */}
+          <div className="md:border-r border-white/10 text-sm flex md:flex-col border md:shrink-0 md:overflow-y-auto">
             {settingsTabs.map((setting, index) => (
               <div
                 className={`md:p-3 md:px-7 p-2 px-4 text-sm md:border-b border-r md:border-r-0 border-white/10 cursor-pointer hover:bg-[#19191B] ${
@@ -94,8 +99,8 @@ function Page() {
               </div>
             ))}
           </div>
-          {/* Right: content */}
-          <div className="w-full">
+          {/* Right: content (scrolls) */}
+          <div className="w-full overflow-y-auto min-h-0">
             {settingsTabs.map(
               (setting, index) =>
                 selectedSetting === setting.title && (

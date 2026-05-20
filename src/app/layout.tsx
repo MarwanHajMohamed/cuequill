@@ -15,10 +15,7 @@ const dmMono = DM_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Mind Over Market",
-  icons: {
-    icon: "/favicon.ico",
-  },
+  title: "Cuequill",
 };
 
 export default function RootLayout({

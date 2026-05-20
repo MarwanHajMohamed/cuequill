@@ -25,6 +25,8 @@ const TradeSchema = new mongoose.Schema({
 
   strategy: { type: String },
   notes: { type: String },
+
+  ibkrTradeId: { type: String, sparse: true },
 });
 
 export default mongoose.models.Trade || mongoose.model("Trade", TradeSchema);
