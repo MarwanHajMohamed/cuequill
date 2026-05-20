@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import connectDb from "@/lib/db";
 import { User } from "@/lib/models/User";
-import { syncForUser } from "../sync/route";
+import { syncForUser } from "@/lib/ibkrSync";
 
 export async function GET(req: Request) {
   const authHeader = req.headers.get("authorization");
