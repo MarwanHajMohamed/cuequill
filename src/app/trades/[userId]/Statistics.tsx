@@ -152,6 +152,45 @@ const MiniDonut = ({
   );
 };
 
+const InfoTooltip = ({ text }: { text: string }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node))
+        setOpen(false);
+    };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [open]);
+
+  return (
+    <span ref={ref} className="relative inline-flex group">
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen((o) => !o);
+        }}
+        className="cursor-pointer p-1.5 -m-1.5 leading-none"
+        aria-label="More info"
+      >
+        <i className="fa-solid fa-circle-info text-sm md:text-xs text-white/40 hover:text-white/70 transition-colors" />
+      </button>
+      <span
+        className={`pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2
+                    bg-[#16151B] border border-white/10 text-white/80 text-[11px] rounded-md px-2 py-1.5
+                    whitespace-normal w-48 z-20 leading-snug shadow-md normal-case
+                    ${open ? "block" : "hidden md:group-hover:block"}`}
+      >
+        {text}
+      </span>
+    </span>
+  );
+};
+
 const SummaryTile = ({
   label,
   info,
@@ -164,22 +203,11 @@ const SummaryTile = ({
   children: React.ReactNode;
 }) => (
   <div
-    className={`border border-[#282828] rounded-lg p-4 flex flex-col gap-2 min-w-0 ${className}`}
+    className={`border border-[#282828] rounded-lg p-2 md:p-4 flex flex-col gap-1 md:gap-2 min-w-0 ${className}`}
   >
-    <div className="text-xs text-white/50 flex items-center gap-1.5">
+    <div className="text-[10px] md:text-xs text-white/50 flex items-center gap-1.5">
       <span>{label}</span>
-      {info && (
-        <span className="relative group cursor-help">
-          <i className="fa-solid fa-circle-info text-[10px] text-white/30 hover:text-white/70 transition-colors" />
-          <span
-            className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block
-                       bg-[#16151B] border border-white/10 text-white/80 text-[11px] rounded-md px-2 py-1.5
-                       whitespace-normal w-48 z-20 leading-snug shadow-md normal-case"
-          >
-            {info}
-          </span>
-        </span>
-      )}
+      {info && <InfoTooltip text={info} />}
     </div>
     <div className="flex items-center justify-between gap-2">{children}</div>
   </div>
@@ -476,15 +504,15 @@ export default function Statistics({
 
       {/* Summary tiles — at-a-glance, all-time */}
       {anyTileVisible && (
-        <div className="flex flex-wrap justify-center gap-3 w-full mb-10">
+        <div className="flex flex-wrap justify-center gap-2 md:gap-3 w-full mb-10">
           {visibility.netPL && (
             <SummaryTile
               label="Net P&L"
               info="Total profit/loss across all closed trades."
-              className="basis-[200px] grow max-w-[280px]"
+              className="basis-[100px] md:basis-[200px] grow max-w-[280px]"
             >
               <div
-                className={`text-2xl md:text-2xl truncate ${
+                className={`text-sm md:text-2xl truncate ${
                   netProfit >= 0 ? "text-green-500" : "text-red-500"
                 }`}
               >
@@ -497,10 +525,10 @@ export default function Statistics({
             <SummaryTile
               label="Profit Factor"
               info="Gross wins ÷ gross losses. Above 1.0 = profitable; above 2.0 = strong system."
-              className="basis-[200px] grow max-w-[280px]"
+              className="basis-[100px] md:basis-[200px] grow max-w-[280px]"
             >
               <div
-                className={`text-2xl md:text-2xl truncate ${
+                className={`text-sm md:text-2xl truncate ${
                   profitFactor >= 1 ? "text-green-500" : "text-red-500"
                 }`}
               >
@@ -510,7 +538,9 @@ export default function Statistics({
                     ? profitFactor.toFixed(2)
                     : "—"}
               </div>
-              <MiniDonut greenPct={pfDonutPct} />
+              <div className="hidden md:block">
+                <MiniDonut greenPct={pfDonutPct} />
+              </div>
             </SummaryTile>
           )}
 
@@ -518,12 +548,14 @@ export default function Statistics({
             <SummaryTile
               label="Win Rate"
               info="Percentage of closed trades that ended as wins."
-              className="basis-[200px] grow max-w-[280px]"
+              className="basis-[100px] md:basis-[200px] grow max-w-[280px]"
             >
-              <div className="text-2xl md:text-2xl truncate">
+              <div className="text-sm md:text-2xl truncate">
                 {concludedCount > 0 ? `${winRatePct.toFixed(0)}%` : "—"}
               </div>
-              <MiniDonut greenPct={winRatePct} />
+              <div className="hidden md:block">
+                <MiniDonut greenPct={winRatePct} />
+              </div>
             </SummaryTile>
           )}
 
@@ -531,10 +563,10 @@ export default function Statistics({
             <SummaryTile
               label="Avg R:R"
               info="Average winner size ÷ average loser size. Above 1R means your wins are bigger than your losses on average."
-              className="basis-[200px] grow max-w-[280px]"
+              className="basis-[100px] md:basis-[200px] grow max-w-[280px]"
             >
               <div
-                className={`text-2xl md:text-2xl truncate ${
+                className={`text-sm md:text-2xl truncate ${
                   avgRR === Infinity || avgRR >= 1
                     ? "text-green-500"
                     : avgRR > 0
@@ -555,10 +587,10 @@ export default function Statistics({
             <SummaryTile
               label="Best Win Streak"
               info="Longest run of consecutive winning trades in your history (open trades are skipped, losses break the streak)."
-              className="basis-[200px] grow max-w-[280px]"
+              className="basis-[100px] md:basis-[200px] grow max-w-[280px]"
             >
               <div
-                className={`text-2xl md:text-2xl truncate ${
+                className={`text-sm md:text-2xl truncate ${
                   longestWinStreak > 0 ? "text-green-500" : ""
                 }`}
               >
