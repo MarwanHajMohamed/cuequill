@@ -3,7 +3,7 @@
 "use client";
 
 import { useRef, useState, useMemo } from "react";
-import { format, addDays, addWeeks, subWeeks } from "date-fns";
+import { format, addDays, addWeeks, subWeeks, startOfWeek } from "date-fns";
 import { Trade } from "../types/Trades";
 
 type TradeEventType = "WIN" | "LOSS" | "OPEN" | "TODAY";
@@ -55,11 +55,9 @@ export default function WeekView({
   onEventClick,
 }: WeekViewProps) {
   const weekGridRef = useRef<HTMLDivElement>(null);
-  const [weekStart, setWeekStart] = useState<Date>(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - d.getDay());
-    return d;
-  });
+  const [weekStart, setWeekStart] = useState<Date>(() =>
+    startOfWeek(new Date(), { weekStartsOn: 1 }),
+  );
 
   const tradeEvents: TradeEvent[] = useMemo(() => {
     const baseEvents: TradeEvent[] = trades
@@ -72,11 +70,11 @@ export default function WeekView({
   }, [trades]);
 
   const getWeekDays = () =>
-    Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+    Array.from({ length: 5 }, (_, i) => addDays(weekStart, i));
 
   const handleWeekChange = (dir: "prev" | "next") => {
     const grid = weekGridRef.current?.querySelector(
-      ".week-grid"
+      ".week-grid",
     ) as HTMLElement;
     if (!grid) return;
 
@@ -90,7 +88,7 @@ export default function WeekView({
       grid.style.transform = `translateX(${dir === "next" ? "50px" : "-50px"})`;
       grid.style.opacity = "0";
       setWeekStart((prev) =>
-        dir === "next" ? addWeeks(prev, 1) : subWeeks(prev, 1)
+        dir === "next" ? addWeeks(prev, 1) : subWeeks(prev, 1),
       );
 
       requestAnimationFrame(() => {
@@ -106,7 +104,7 @@ export default function WeekView({
 
   return (
     <div ref={weekGridRef}>
-      <div className="flex justify-between items-center mb-2">
+      <div className="flex justify-between items-center mb-0">
         <button
           onClick={() => handleWeekChange("prev")}
           className="px-2 py-1 rounded bg-[#242329] cursor-pointer hover:bg-[#211F29] text-sm"
@@ -115,7 +113,7 @@ export default function WeekView({
         </button>
         <div className="md:text-sm text-xs font-semibold">
           {format(weekStart, "MMM d")} –{" "}
-          {format(addDays(weekStart, 6), "MMM d, yyyy")}
+          {format(addDays(weekStart, 4), "MMM d, yyyy")}
         </div>
         <button
           onClick={() => handleWeekChange("next")}
@@ -126,14 +124,21 @@ export default function WeekView({
       </div>
 
       <div className="overflow-hidden">
-        <div className="week-grid grid grid-cols-7 rounded-lg md:p-4">
+        <div className="week-grid grid grid-cols-5 rounded-lg md:p-4">
           {getWeekDays().map((day, index) => {
             const dayStr = format(day, "yyyy-MM-dd");
             const eventsForDay = tradeEvents.filter((e) => e.date === dayStr);
+            const closedTrades = eventsForDay.filter(
+              (e) => e.status === "WIN" || e.status === "LOSS",
+            ) as Trade[];
+            const netPL = closedTrades.reduce(
+              (sum, e) => sum + (e.profitLoss ?? 0),
+              0,
+            );
             return (
               <div key={index}>
                 <div
-                  className={`p-4 rounded-lg flex items-center flex-col ${
+                  className={`py-1.5 px-2 rounded-lg flex items-center justify-center gap-1.5 ${
                     format(day, "yyyy-MM-dd") === format(value, "yyyy-MM-dd")
                       ? "bg-white/5"
                       : ""
@@ -143,10 +148,10 @@ export default function WeekView({
                   <div className="md:text-sm text-xs">{format(day, "d")}</div>
                 </div>
                 <div
-                  className="border border-[#323232] h-100 cursor-pointer"
+                  className="border border-[#323232] h-[calc(100vh-280px)] cursor-pointer flex flex-col justify-between"
                   onClick={() => onDateClick(day)}
                 >
-                  <div className="mt-1 flex flex-col items-center gap-2 mt-2">
+                  <div className="mt-2 flex flex-col items-center gap-2 px-1">
                     {eventsForDay.map((event, idx) =>
                       event.status === "TODAY" ? (
                         <div
@@ -158,7 +163,7 @@ export default function WeekView({
                           key={idx}
                           className={`flex items-center justify-center text-xs md:text-sm w-[80%] md:h-6 h-5 rounded-xl transition duration-200
                           cursor-pointer ${getColor(
-                            event.status
+                            event.status,
                           )} ${getHoverColor(event.status)}`}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -168,9 +173,20 @@ export default function WeekView({
                         >
                           {(event as Trade).symbol}
                         </div>
-                      )
+                      ),
                     )}
                   </div>
+                  {closedTrades.length > 0 && (
+                    <div
+                      className={`border-t border-[#323232] text-center py-2 text-xs md:text-sm font-semibold ${
+                        netPL >= 0
+                          ? "text-green-500 bg-green-500/15"
+                          : "text-red-500 bg-red-500/15"
+                      }`}
+                    >
+                      {netPL >= 0 ? "+" : "−"}${Math.abs(netPL).toFixed(2)}
+                    </div>
+                  )}
                 </div>
               </div>
             );

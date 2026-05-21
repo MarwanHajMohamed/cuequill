@@ -14,14 +14,6 @@ import { fetchMeetings } from "@/hooks/useFed";
 import { FedMeetingsResponse } from "@/app/types/FedMeeting";
 import AnimatedCalendar from "@/app/reusablecalendar/AnimatedCalendar";
 
-type TradeEventType = "WIN" | "LOSS" | "OPEN" | "TODAY" | "FED";
-
-type TradeEvent = {
-  date: string;
-  label?: string;
-  status: TradeEventType;
-};
-
 type FedMeetingPayload = {
   meetingDt: string;
   offsetDayCount: number;
@@ -30,30 +22,12 @@ type FedMeetingPayload = {
 const now = new Date();
 const today = now.toISOString().split("T")[0];
 
-const getColor = (status: TradeEventType) => {
-  switch (status) {
-    case "TODAY":
-      return "bg-blue-500";
-    case "WIN":
-      return "bg-green-500";
-    case "LOSS":
-      return "bg-red-600";
-    case "OPEN":
-      return "bg-orange-400";
-    case "FED":
-      return "bg-purple-500";
-    default:
-      return "";
-  }
-};
-
 export default function TradeCalendar({ userId }: { userId: string }) {
   const value = new Date();
   const queryClient = useQueryClient();
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const manualTrades: TradeEvent[] = useMemo<TradeEvent[]>(() => [], []);
-  const [fedMeetings, setFedMeetings] = useState<TradeEvent[]>([]);
+  const [fedDates, setFedDates] = useState<Set<string>>(new Set());
 
   const [simulated] = useLocalStorage<boolean>("simulated", false);
 
@@ -65,66 +39,104 @@ export default function TradeCalendar({ userId }: { userId: string }) {
     async function load() {
       try {
         const data: FedMeetingsResponse = await fetchMeetings();
-        const meetingEvents: TradeEvent[] = data.payload.map(
-          (m: FedMeetingPayload) => ({
-            date: m.meetingDt,
-            status: "FED",
-            offsetDayCount: m.offsetDayCount,
-          })
+        const dates = new Set(
+          data.payload.map((m: FedMeetingPayload) => m.meetingDt)
         );
-        setFedMeetings(meetingEvents);
+        setFedDates(dates);
       } catch (err) {
         console.error(
           err instanceof Error ? err.message : "Error fetching Fed meetings"
         );
       }
     }
-
     load();
   }, []);
 
-  const tradeEvents: TradeEvent[] = useMemo(() => {
-    const baseEvents: TradeEvent[] = trades
-      ? trades.map((trade) => ({
-          date: trade.dateBought.split("T")[0],
-          status: trade.status,
-        }))
-      : [];
-
-    return [
-      { date: today, status: "TODAY" },
-      ...baseEvents,
-      ...manualTrades,
-      ...fedMeetings,
-    ];
-  }, [trades, manualTrades, fedMeetings]);
+  const tradesByDay = useMemo(() => {
+    const map = new Map<
+      string,
+      { netPL: number; closedCount: number; hasOpen: boolean; total: number }
+    >();
+    if (!trades) return map;
+    for (const t of trades) {
+      const day = t.dateBought.split("T")[0];
+      const prev = map.get(day) ?? {
+        netPL: 0,
+        closedCount: 0,
+        hasOpen: false,
+        total: 0,
+      };
+      prev.total += 1;
+      if (t.status === "WIN" || t.status === "LOSS") {
+        prev.netPL += t.profitLoss ?? 0;
+        prev.closedCount += 1;
+      } else if (t.status === "OPEN") {
+        prev.hasOpen = true;
+      }
+      map.set(day, prev);
+    }
+    return map;
+  }, [trades]);
 
   const handleDateClick = (date: Date) => {
     setSelectedDate(date);
     setIsModalOpen(true);
   };
 
-  const renderTileContent = ({ date }: { date: Date }) => {
+  const getDaySummary = (date: Date) => {
     const dayStr = format(date, "yyyy-MM-dd");
-    const eventsForDay = tradeEvents.filter((e) => e.date === dayStr);
+    const summary = tradesByDay.get(dayStr) ?? {
+      netPL: 0,
+      closedCount: 0,
+      hasOpen: false,
+      total: 0,
+    };
+    return {
+      ...summary,
+      isToday: dayStr === today,
+      isFed: fedDates.has(dayStr),
+    };
+  };
 
-    if (eventsForDay.length > 0) {
-      return (
-        <div className="mt-1 flex gap-1 justify-center items-center">
-          {eventsForDay.map((event, idx) => (
-            <div
-              key={idx}
-              className={`md:w-2 md:h-2 w-[6px] h-[6px] rounded-full ${getColor(
-                event.status
-              )}`}
-              title={event.label}
-            />
-          ))}
-        </div>
-      );
-    }
+  const renderTileContent = ({ date }: { date: Date }) => {
+    const { total, closedCount, netPL, isToday, isFed } = getDaySummary(date);
+    if (total === 0 && !isToday && !isFed) return null;
 
-    return null;
+    return (
+      <div className="mt-1 flex flex-col items-center gap-0.5 text-[10px] md:text-xs relative">
+        {isFed && (
+          <span className="absolute -top-5 right-1 text-[8px] md:text-[9px] font-bold text-purple-400 leading-none">
+            F
+          </span>
+        )}
+        {isToday && <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />}
+        {total > 0 && (
+          <>
+            {closedCount > 0 ? (
+              <div
+                className={`font-semibold ${
+                  netPL >= 0 ? "text-green-500" : "text-red-500"
+                }`}
+              >
+                {netPL >= 0 ? "+" : "−"}${Math.abs(netPL).toFixed(2)}
+              </div>
+            ) : (
+              <div className="font-semibold text-orange-400">Open</div>
+            )}
+            <div className="text-white/40 text-[9px] md:text-[10px]">
+              {total} {total === 1 ? "trade" : "trades"}
+            </div>
+          </>
+        )}
+      </div>
+    );
+  };
+
+  const renderTileClassName = ({ date }: { date: Date }) => {
+    const { closedCount, netPL, hasOpen } = getDaySummary(date);
+    if (closedCount > 0) return netPL >= 0 ? "day-win" : "day-loss";
+    if (hasOpen) return "day-open";
+    return "";
   };
 
   if (isLoading)
@@ -133,8 +145,8 @@ export default function TradeCalendar({ userId }: { userId: string }) {
     return <div className="text-red-500 p-10">Error loading trades</div>;
 
   return (
-    <div className="flex flex-col-reverse md:flex-row items-center md:items-start justify-center py-10 px-20 w-[100%] gap-3 relative">
-      <div className="relative">
+    <div className="flex flex-col items-center py-10 px-4 md:px-10 w-full">
+      <div className="relative w-full max-w-[1100px]">
         <div className="absolute top-[-30px] right-0 flex items-center gap-2 mx-2">
           <i
             className="fa-solid fa-expand cursor-pointer transition duration-100 hover:scale-110"
@@ -144,34 +156,10 @@ export default function TradeCalendar({ userId }: { userId: string }) {
         <AnimatedCalendar
           onChange={(val) => handleDateClick(val as Date)}
           tileContent={renderTileContent}
+          tileClassName={renderTileClassName}
           className="custom-calendar"
           value={value}
         />
-      </div>
-      <div className="flex flex-col items-center md:items-start md:gap-2 gap-5">
-        <div>Key</div>
-        <div className="flex md:flex-col gap-8 md:gap-2 mb-10 text-xs md:text-base">
-          <div className="flex gap-2 items-center flex-col md:flex-row">
-            <div className="w-[15px] h-[15px] bg-blue-600 rounded-full"></div>
-            <div>Today</div>
-          </div>
-          <div className="flex gap-2 items-center flex-col md:flex-row">
-            <div className="w-[15px] h-[15px] bg-green-500 rounded-full"></div>
-            <div>Won</div>
-          </div>
-          <div className="flex gap-2 items-center flex-col md:flex-row">
-            <div className="w-[15px] h-[15px] bg-red-700 rounded-full"></div>
-            <div>Lost</div>
-          </div>
-          <div className="flex gap-2 items-center flex-col md:flex-row">
-            <div className="w-[15px] h-[15px] bg-orange-500 rounded-full"></div>
-            <div>Open</div>
-          </div>
-          <div className="flex gap-2 items-center flex-col md:flex-row">
-            <div className="w-[15px] h-[15px] bg-purple-500 rounded-full"></div>
-            <div>Fed</div>
-          </div>
-        </div>
       </div>
       {isModalOpen && selectedDate && (
         <TradeModal

@@ -3,14 +3,13 @@
 import "./custom-calendar.css";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useTrades } from "@/hooks/useTrades";
-import { format, startOfWeek, addDays, subWeeks, addWeeks } from "date-fns";
+import { format } from "date-fns";
 import { useSession } from "next-auth/react";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useMemo, useState } from "react";
 import TradeModal from "../dashboard/components/modals/TradeModal";
 import { useQueryClient } from "@tanstack/react-query";
 import { Trade } from "../types/Trades";
 import { withAuth } from "@/lib/withAuth";
-import { motion, AnimatePresence } from "framer-motion";
 import AnimatedCalendar from "../reusablecalendar/AnimatedCalendar";
 import WeekView from "./WeekView";
 
@@ -38,25 +37,7 @@ function Page() {
   const manualTrades: Trade[] = useMemo<Trade[]>(() => [], []);
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
 
-  const [keyModal, setKeyModal] = useState<boolean>(false);
-
   const { data: trades } = useTrades(userId, simulated);
-
-  const keyModalRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        keyModalRef.current &&
-        !keyModalRef.current.contains(e.target as Node)
-      ) {
-        setKeyModal(false);
-      }
-    };
-
-    if (keyModal) document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [keyModal]);
 
   const tradeEvents: TradeEvent[] = useMemo(() => {
     const baseEvents: TradeEvent[] = trades
@@ -131,12 +112,9 @@ function Page() {
     const events = tradeEvents.filter((e) => e.date === dayStr);
     const tradeEvts = events.filter((e) => e.status !== "TODAY") as Trade[];
     const closedEvts = tradeEvts.filter(
-      (e) => e.status === "WIN" || e.status === "LOSS"
+      (e) => e.status === "WIN" || e.status === "LOSS",
     );
-    const netPL = closedEvts.reduce(
-      (sum, e) => sum + (e.profitLoss ?? 0),
-      0
-    );
+    const netPL = closedEvts.reduce((sum, e) => sum + (e.profitLoss ?? 0), 0);
     const hasOpen = tradeEvts.some((e) => e.status === "OPEN");
     const isToday = events.some((e) => e.status === "TODAY");
     return {
@@ -186,71 +164,10 @@ function Page() {
 
   return (
     <>
-      <div className="flex mt-30 justify-center">
-        <div className="flex gap-10">
-          <div className="md:flex flex-col gap-2 hidden">
-            <div>Key</div>
-            <div className="flex gap-2 items-center">
-              <div className="w-4 h-4 bg-blue-600 rounded-full"></div>
-              <div>Today</div>
-            </div>
-            <div className="flex gap-2 items-center">
-              <div className="w-10 h-4 bg-green-500 rounded-full"></div>
-              <div>Won Position</div>
-            </div>
-            <div className="flex gap-2 items-center">
-              <div className="w-10 h-4 bg-red-700 rounded-full"></div>
-              <div>Lost Position</div>
-            </div>
-            <div className="flex gap-2 items-center">
-              <div className="w-10 h-4 bg-orange-500 rounded-full"></div>
-              <div>Open Position</div>
-            </div>
-          </div>
-
-          <div className="md:max-w-200 md:w-[70vw] w-[95vw]">
-            <div className="flex mb-4 justify-between md:justify-end items-center">
-              <div ref={keyModalRef} className="flex md:hidden">
-                <button
-                  className="px-2 py-1 text-sm rounded cursor-pointer transition
-                duration-100 hover:bg-[#211F29] border border-white/10"
-                  onClick={() => setKeyModal(!keyModal)}
-                >
-                  Key
-                </button>
-
-                <AnimatePresence>
-                  {keyModal && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -8 }}
-                      transition={{ duration: 0.2, ease: "easeOut" }}
-                      className="md:hidden absolute top-40 left-2 bg-[#0E0E10] border border-white/40 p-5 rounded z-3"
-                    >
-                      <div className="flex flex-col gap-2 text-sm">
-                        <div>Key</div>
-                        <div className="flex gap-2 items-center">
-                          <div className="w-4 h-4 bg-blue-600 rounded-full"></div>
-                          <div>Today</div>
-                        </div>
-                        <div className="flex gap-2 items-center">
-                          <div className="w-4 h-4 bg-green-500 rounded-full"></div>
-                          <div>Won Position</div>
-                        </div>
-                        <div className="flex gap-2 items-center">
-                          <div className="w-4 h-4 bg-red-700 rounded-full"></div>
-                          <div>Lost Position</div>
-                        </div>
-                        <div className="flex gap-2 items-center">
-                          <div className="w-4 h-4 bg-orange-500 rounded-full"></div>
-                          <div>Open Position</div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+      <div className="flex md:mt-27 mb-10 justify-center mt-23">
+        <div className="flex">
+          <div className="md:max-w-350 md:w-[90vw] w-[95vw]">
+            <div className="flex mb-4 justify-end items-center">
               <div>
                 <button
                   className={`px-2 py-1 text-sm rounded-l cursor-pointer transition

@@ -88,6 +88,7 @@ export default function AnimatedCalendar({
         value={value}
         tileContent={tileContent}
         tileClassName={tileClassName}
+        calendarType="iso8601"
         formatShortWeekday={(_, date) => format(date, "EEE")}
         formatMonthYear={(_, date) => format(date, "LLLL yyyy")}
         next2Label={null}
