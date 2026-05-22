@@ -171,11 +171,14 @@ export default function EditTradeModal({
             type="text"
             value={symbol}
             onChange={(e) => {
-              setSymbol(e.target.value);
+              setSymbol(e.target.value.toUpperCase());
               setErrorMessage("");
             }}
             placeholder="Symbol"
-            className="w-full p-2 text-base text-white bg-[#1A1A1D] rounded"
+            autoCapitalize="characters"
+            autoCorrect="off"
+            spellCheck={false}
+            className="w-full p-2 text-base text-white bg-[#1A1A1D] rounded uppercase placeholder:normal-case"
           />
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-4">
