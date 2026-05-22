@@ -19,6 +19,8 @@ type FedMeetingPayload = {
   offsetDayCount: number;
 };
 
+const FED_DATES_STORAGE_KEY = "cuequill:fed-dates";
+
 const now = new Date();
 const today = now.toISOString().split("T")[0];
 
@@ -36,13 +38,32 @@ export default function TradeCalendar({ userId }: { userId: string }) {
   const router = useRouter();
 
   useEffect(() => {
+    // Show cached dates immediately on first paint, then refresh from /api/fed
+    // (which scrapes the Federal Reserve's FOMC calendar page for every year).
+    let cached: string[] = [];
+    try {
+      const v = localStorage.getItem(FED_DATES_STORAGE_KEY);
+      if (v) cached = JSON.parse(v);
+    } catch {
+      /* ignore parse errors */
+    }
+    if (cached.length) setFedDates(new Set(cached));
+
     async function load() {
       try {
         const data: FedMeetingsResponse = await fetchMeetings();
-        const dates = new Set(
-          data.payload.map((m: FedMeetingPayload) => m.meetingDt)
+        const apiDates = data.payload.map(
+          (m: FedMeetingPayload) => m.meetingDt
         );
-        setFedDates(dates);
+        setFedDates(new Set(apiDates));
+        try {
+          localStorage.setItem(
+            FED_DATES_STORAGE_KEY,
+            JSON.stringify(apiDates)
+          );
+        } catch {
+          /* quota / availability — non-fatal */
+        }
       } catch (err) {
         console.error(
           err instanceof Error ? err.message : "Error fetching Fed meetings"

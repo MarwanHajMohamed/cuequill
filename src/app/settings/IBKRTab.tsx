@@ -77,7 +77,9 @@ export default function IBKRTab() {
 
     setSyncing(false);
     if (res.ok) {
-      setSyncStatus(`Done — ${data.inserted} trade${data.inserted !== 1 ? "s" : ""} imported`);
+      setSyncStatus(
+        `Done — ${data.inserted} trade${data.inserted !== 1 ? "s" : ""} imported`,
+      );
       setLastSync(new Date().toISOString());
       setLastInserted(data.inserted);
       setLastSkipped(data.skipped);
@@ -97,7 +99,8 @@ export default function IBKRTab() {
       </div>
 
       <div className="pt-5 text-sm md:text-base">
-        Trades are automatically imported every weekday at 10 PM UTC. You can also sync manually at any time.
+        Trades are automatically imported every weekday at 10 PM UTC. You can
+        also sync manually at any time.
       </div>
 
       {/* Setup instructions */}
@@ -106,23 +109,32 @@ export default function IBKRTab() {
         <ol className="list-decimal pl-6 space-y-1 text-white/70">
           <li>
             In IBKR Account Management go to{" "}
-            <span className="text-white">Settings &rarr; User Settings &rarr; Reporting &rarr; Flex Web Service</span>{" "}
+            <span className="text-white">
+              Settings &rarr; User Settings &rarr; Reporting &rarr; Flex Web
+              Service
+            </span>{" "}
             and generate a token.
           </li>
           <li>
-            Go to <span className="text-white">Reports &rarr; Flex Queries</span> and create a new{" "}
-            <span className="text-white">Activity Flex Query</span>.
+            Go to{" "}
+            <span className="text-white">Reports &rarr; Flex Queries</span> and
+            create a new <span className="text-white">Activity Flex Query</span>
+            .
           </li>
           <li>
-            Under <span className="text-white">Trades</span>, select: Symbol, Strike, Date/Time, Expiry, Put/Call,
-            Quantity, Buy/Sell, TradePrice, Realized P/L, TradeID.
+            Under <span className="text-white">Trades</span>, select: Symbol,
+            Strike, Date/Time, Expiry, Put/Call, Quantity, Buy/Sell, TradePrice,
+            Realized P/L, TradeID.
           </li>
           <li>
             Set <span className="text-white">Period</span> to{" "}
             <span className="text-white">Last Business Day</span> and{" "}
-            <span className="text-white">Format</span> to <span className="text-white">CSV</span>.
+            <span className="text-white">Format</span> to{" "}
+            <span className="text-white">CSV</span>.
           </li>
-          <li>Save the query and note the numeric Query ID shown next to it.</li>
+          <li>
+            Save the query and note the numeric Query ID shown next to it.
+          </li>
         </ol>
       </div>
 
@@ -131,12 +143,16 @@ export default function IBKRTab() {
         <div className="flex flex-col gap-1">
           <div className="text-sm">
             Flex Web Service Token{" "}
-            {hasToken && <span className="text-green-400 text-xs">(saved)</span>}
+            {hasToken && (
+              <span className="text-green-400 text-xs">(saved)</span>
+            )}
           </div>
           <input
             className="border border-[#262628] p-1 px-2 rounded-md hover:border-white text-sm bg-transparent"
             type="password"
-            placeholder={hasToken ? "Enter new token to replace" : "Paste token"}
+            placeholder={
+              hasToken ? "Enter new token to replace" : "Paste token"
+            }
             value={token}
             onChange={(e) => setToken(e.target.value)}
           />
@@ -160,19 +176,22 @@ export default function IBKRTab() {
           >
             Save credentials
           </button>
-          {saveStatus && <span className="text-xs text-white/60">{saveStatus}</span>}
+          {saveStatus && (
+            <span className="text-xs text-white/60">{saveStatus}</span>
+          )}
         </div>
       </div>
 
       {/* Manual sync */}
-      <div className="mt-7 flex flex-col gap-3">
+      <div className="mt-7 flex flex-col gap-3 mb-10 md:mb-3">
         <div className="font-medium text-sm md:text-base">Manual sync</div>
         {lastSync && (
           <div className="text-xs text-white/50">
             Last synced: {new Date(lastSync).toLocaleString()}
             {lastInserted !== null && (
               <>
-                {" "}— {lastInserted} imported
+                {" "}
+                — {lastInserted} imported
                 {lastSkipped ? `, ${lastSkipped} skipped` : ""}
               </>
             )}
@@ -198,7 +217,9 @@ export default function IBKRTab() {
                 ? `Wait ${cooldownLabel}`
                 : "Sync now"}
           </button>
-          {syncStatus && <span className="text-xs text-white/60">{syncStatus}</span>}
+          {syncStatus && (
+            <span className="text-xs text-white/60">{syncStatus}</span>
+          )}
         </div>
       </div>
     </div>

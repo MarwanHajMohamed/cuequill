@@ -23,7 +23,7 @@ function FormInput({ label, name, placeholder, ...props }: InputProps) {
   return (
     <div>
       {label && (
-        <label htmlFor={name} className="block md:text-sm mb-1 text-[10px]">
+        <label htmlFor={name} className="block text-sm mb-1">
           {label}
         </label>
       )}
@@ -32,7 +32,7 @@ function FormInput({ label, name, placeholder, ...props }: InputProps) {
         name={name}
         placeholder={placeholder}
         {...props}
-        className={`w-full p-2 text-white bg-[#1A1A1D] rounded ${
+        className={`w-full p-2 text-base text-white bg-[#1A1A1D] rounded ${
           props.className || ""
         }`}
       />
@@ -125,7 +125,7 @@ export default function EditTradeModal({
   return (
     <>
       <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
-        <div className="relative flex flex-col gap-4 bg-[#0F0F17] md:p-6 p-3 rounded-xl w-[90%] max-w-lg text-white max-h-[90vh] overflow-scroll text-xs md:text-base">
+        <div className="relative flex flex-col gap-3 md:gap-4 bg-[#0F0F17] md:p-6 p-3 rounded-xl w-[90%] max-w-lg text-white max-h-[90vh] overflow-scroll text-sm md:text-base">
           <div
             className={`absolute top-[-40px] left-0 w-[100%] border-1 border-red-500/50 text-red-500 text-center p-1 rounded bg-red-700/10 ${
               errorMessage === "" ? "hidden" : "shake"
@@ -175,10 +175,10 @@ export default function EditTradeModal({
               setErrorMessage("");
             }}
             placeholder="Symbol"
-            className="w-full p-2 text-white bg-[#1A1A1D] rounded"
+            className="w-full p-2 text-base text-white bg-[#1A1A1D] rounded"
           />
 
-          <div className="grid md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-4">
             <div>
               <FormInput
                 label="Contract Price"
@@ -205,7 +205,7 @@ export default function EditTradeModal({
                 }}
               />
             </div>
-            <div>
+            <div className="col-span-2 md:col-span-1">
               <FormInput
                 label="Strike"
                 name="strike"
@@ -219,7 +219,7 @@ export default function EditTradeModal({
               />
             </div>
           </div>
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-2 md:gap-4">
             <div>
               <FormInput
                 label="Date Bought"
@@ -253,7 +253,7 @@ export default function EditTradeModal({
               setStrategy(e.target.value as StrategyList);
               setErrorMessage("");
             }}
-            className="w-full p-2 bg-[#2b2b2f] text-white rounded"
+            className="w-full p-2 text-base bg-[#2b2b2f] text-white rounded"
           >
             {strategies.map((strategy, index) => {
               return (
@@ -270,7 +270,7 @@ export default function EditTradeModal({
               setStatus(e.target.value as TradeEventType);
               setErrorMessage("");
             }}
-            className="w-full p-2 bg-[#2b2b2f] text-white rounded"
+            className="w-full p-2 text-base bg-[#2b2b2f] text-white rounded"
           >
             <option value="OPEN">Open</option>
             <option value="WIN">Win</option>
@@ -279,9 +279,12 @@ export default function EditTradeModal({
 
           {(status === "WIN" || status === "LOSS") && (
             <>
-              <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-2 md:gap-4">
                 <div>
-                  <label htmlFor="closingContractPrice" className="text-sm">
+                  <label
+                    htmlFor="closingContractPrice"
+                    className="block text-sm mb-1"
+                  >
                     Closing Contract
                   </label>
                   <input
@@ -297,7 +300,7 @@ export default function EditTradeModal({
                       setErrorMessage("");
                     }}
                     placeholder="Closing Contract"
-                    className="w-full p-2 text-white bg-[#1A1A1D] rounded"
+                    className="w-full p-2 text-base text-white bg-[#1A1A1D] rounded"
                   />
                 </div>
                 <div>
@@ -323,7 +326,7 @@ export default function EditTradeModal({
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Notes"
-            className="w-full p-2 text-white bg-[#1A1A1D] rounded"
+            className="w-full p-2 text-base text-white bg-[#1A1A1D] rounded"
           />
 
           <div className="flex gap-2 items-center">
