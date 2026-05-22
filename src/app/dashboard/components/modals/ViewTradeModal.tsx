@@ -1,6 +1,7 @@
 "use client";
 
 import { Trade } from "@/app/types/Trades";
+import { useScrollLock } from "@/hooks/useScrollLock";
 import { format } from "date-fns";
 import React, { useEffect } from "react";
 
@@ -15,6 +16,8 @@ export default function ViewTradeModal({
   initialTrade,
   onEdit,
 }: TradeModalProps) {
+  useScrollLock();
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {

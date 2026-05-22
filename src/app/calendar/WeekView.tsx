@@ -61,29 +61,111 @@ const WeekView = forwardRef<WeekViewHandle, WeekViewProps>(function WeekView(
   ref,
 ) {
   const weekGridRef = useRef<HTMLDivElement>(null);
-  const touchStart = useRef<{ x: number; y: number } | null>(null);
+  const touchStart = useRef<{
+    x: number;
+    y: number;
+    mode: "idle" | "horizontal" | "vertical";
+  } | null>(null);
   const [weekStart, setWeekStart] = useState<Date>(() =>
     startOfWeek(new Date(), { weekStartsOn: 1 }),
   );
 
+  const getGridEl = () =>
+    (weekGridRef.current?.querySelector(".week-grid") as HTMLElement | null) ??
+    null;
+
+  // Finger-following swipe: drag the week grid in real time, then either snap
+  // back (small swipe) or slide off and switch week (large swipe).
   const handleTouchStart = (e: React.TouchEvent) => {
     if (e.touches.length !== 1) return;
     touchStart.current = {
       x: e.touches[0].clientX,
       y: e.touches[0].clientY,
+      mode: "idle",
     };
+    const grid = getGridEl();
+    if (grid) grid.style.transition = "none";
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    const start = touchStart.current;
+    if (!start) return;
+    const dx = e.touches[0].clientX - start.x;
+    const dy = e.touches[0].clientY - start.y;
+
+    if (start.mode === "idle") {
+      if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) {
+        start.mode = "vertical";
+        return;
+      }
+      if (Math.abs(dx) > 10) {
+        start.mode = "horizontal";
+      }
+    }
+
+    if (start.mode === "horizontal") {
+      const grid = getGridEl();
+      if (grid) {
+        const tx = dx - (dx > 0 ? 10 : -10);
+        grid.style.transform = `translateX(${tx}px)`;
+      }
+    }
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
     const start = touchStart.current;
     touchStart.current = null;
     if (!start) return;
+    const grid = getGridEl();
+    if (!grid) return;
+
+    if (start.mode !== "horizontal") {
+      grid.style.transition = "transform 0.18s ease";
+      grid.style.transform = "";
+      return;
+    }
 
     const dx = e.changedTouches[0].clientX - start.x;
-    const dy = e.changedTouches[0].clientY - start.y;
+    const width = grid.getBoundingClientRect().width || 1;
+    const threshold = Math.min(80, width * 0.25);
 
-    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.4) return;
-    handleWeekChange(dx < 0 ? "next" : "prev");
+    if (Math.abs(dx) > threshold) {
+      commitSwipe(dx < 0 ? "next" : "prev");
+    } else {
+      grid.style.transition = "transform 0.18s ease";
+      grid.style.transform = "translateX(0)";
+    }
+  };
+
+  const commitSwipe = (dir: "next" | "prev") => {
+    const grid = getGridEl();
+    if (!grid) return;
+    const width = grid.getBoundingClientRect().width || 1;
+    const target =
+      dir === "next" ? addWeeks(weekStart, 1) : subWeeks(weekStart, 1);
+
+    grid.style.pointerEvents = "none";
+    grid.style.transition = "transform 0.18s ease, opacity 0.18s ease";
+    grid.style.transform = `translateX(${dir === "next" ? -width : width}px)`;
+    grid.style.opacity = "0";
+
+    setTimeout(() => {
+      grid.style.transition = "none";
+      grid.style.transform = `translateX(${dir === "next" ? width : -width}px)`;
+      grid.style.opacity = "0";
+      setWeekStart(target);
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const after = getGridEl();
+          if (!after) return;
+          after.style.transition = "transform 0.18s ease, opacity 0.18s ease";
+          after.style.transform = "translateX(0)";
+          after.style.opacity = "1";
+          after.style.pointerEvents = "";
+        });
+      });
+    }, 180);
   };
 
   const tradeEvents: TradeEvent[] = useMemo(() => {
@@ -149,6 +231,7 @@ const WeekView = forwardRef<WeekViewHandle, WeekViewProps>(function WeekView(
       ref={weekGridRef}
       style={{ touchAction: "pan-y" }}
       onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
       <div className="flex justify-between items-center mb-0 gap-2">

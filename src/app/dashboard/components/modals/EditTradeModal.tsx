@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { TradeEventType, StrategyList, Trade } from "@/app/types/Trades";
 import { useSession } from "next-auth/react";
 import { useToast } from "@/hooks/useToast";
+import { useScrollLock } from "@/hooks/useScrollLock";
 import { handleSave } from "./helpers";
 
 type TradeModalProps = {
@@ -93,6 +94,8 @@ export default function EditTradeModal({
   const [delModal, setDelModal] = useState<boolean>(false);
 
   const toast = useToast();
+
+  useScrollLock();
 
   const strategies: StrategyList[] = [
     "Moving Average 40",
