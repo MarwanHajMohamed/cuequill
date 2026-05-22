@@ -2,9 +2,17 @@
 
 "use client";
 
-import { useRef, useState, useMemo } from "react";
+import {
+  forwardRef,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { format, addDays, addWeeks, subWeeks, startOfWeek } from "date-fns";
 import { Trade } from "../types/Trades";
+
+export type WeekViewHandle = { goToToday: () => void };
 
 type TradeEventType = "WIN" | "LOSS" | "OPEN" | "TODAY";
 
@@ -48,16 +56,35 @@ interface WeekViewProps {
   onEventClick: (event: Trade) => void;
 }
 
-export default function WeekView({
-  value,
-  trades,
-  onDateClick,
-  onEventClick,
-}: WeekViewProps) {
+const WeekView = forwardRef<WeekViewHandle, WeekViewProps>(function WeekView(
+  { value, trades, onDateClick, onEventClick },
+  ref,
+) {
   const weekGridRef = useRef<HTMLDivElement>(null);
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
   const [weekStart, setWeekStart] = useState<Date>(() =>
     startOfWeek(new Date(), { weekStartsOn: 1 }),
   );
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length !== 1) return;
+    touchStart.current = {
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY,
+    };
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const start = touchStart.current;
+    touchStart.current = null;
+    if (!start) return;
+
+    const dx = e.changedTouches[0].clientX - start.x;
+    const dy = e.changedTouches[0].clientY - start.y;
+
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.4) return;
+    handleWeekChange(dx < 0 ? "next" : "prev");
+  };
 
   const tradeEvents: TradeEvent[] = useMemo(() => {
     const baseEvents: TradeEvent[] = trades
@@ -72,11 +99,14 @@ export default function WeekView({
   const getWeekDays = () =>
     Array.from({ length: 5 }, (_, i) => addDays(weekStart, i));
 
-  const handleWeekChange = (dir: "prev" | "next") => {
+  const animateWeekChange = (dir: "prev" | "next", target: Date) => {
     const grid = weekGridRef.current?.querySelector(
       ".week-grid",
     ) as HTMLElement;
-    if (!grid) return;
+    if (!grid) {
+      setWeekStart(target);
+      return;
+    }
 
     grid.style.pointerEvents = "none";
     grid.style.transition = "transform 0.22s ease, opacity 0.22s ease";
@@ -87,9 +117,7 @@ export default function WeekView({
       grid.style.transition = "none";
       grid.style.transform = `translateX(${dir === "next" ? "50px" : "-50px"})`;
       grid.style.opacity = "0";
-      setWeekStart((prev) =>
-        dir === "next" ? addWeeks(prev, 1) : subWeeks(prev, 1),
-      );
+      setWeekStart(target);
 
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
@@ -102,9 +130,28 @@ export default function WeekView({
     }, 220);
   };
 
+  const handleWeekChange = (dir: "prev" | "next") => {
+    const target =
+      dir === "next" ? addWeeks(weekStart, 1) : subWeeks(weekStart, 1);
+    animateWeekChange(dir, target);
+  };
+
+  const goToToday = () => {
+    const todayWeek = startOfWeek(new Date(), { weekStartsOn: 1 });
+    if (todayWeek.getTime() === weekStart.getTime()) return;
+    animateWeekChange(todayWeek > weekStart ? "next" : "prev", todayWeek);
+  };
+
+  useImperativeHandle(ref, () => ({ goToToday }));
+
   return (
-    <div ref={weekGridRef}>
-      <div className="flex justify-between items-center mb-0">
+    <div
+      ref={weekGridRef}
+      style={{ touchAction: "pan-y" }}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      <div className="flex justify-between items-center mb-0 gap-2">
         <button
           onClick={() => handleWeekChange("prev")}
           className="px-2 py-1 rounded bg-[#242329] cursor-pointer hover:bg-[#211F29] text-sm"
@@ -195,4 +242,6 @@ export default function WeekView({
       </div>
     </div>
   );
-}
+});
+
+export default WeekView;

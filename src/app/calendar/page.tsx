@@ -5,7 +5,7 @@ import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useTrades } from "@/hooks/useTrades";
 import { format } from "date-fns";
 import { useSession } from "next-auth/react";
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import TradeModal from "../dashboard/components/modals/TradeModal";
 import { useQueryClient } from "@tanstack/react-query";
 import { Trade } from "../types/Trades";
@@ -33,6 +33,11 @@ function Page() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [view, setView] = useState<"month" | "week">("month");
+
+  // Shared ref — either AnimatedCalendar or WeekView is mounted at a time
+  // and both expose a goToToday() via useImperativeHandle.
+  const calRef = useRef<{ goToToday: () => void } | null>(null);
+  const goToToday = () => calRef.current?.goToToday();
 
   const manualTrades: Trade[] = useMemo<Trade[]>(() => [], []);
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
@@ -167,7 +172,13 @@ function Page() {
       <div className="flex md:mt-27 mb-10 justify-center mt-23">
         <div className="flex">
           <div className="md:max-w-350 md:w-[90vw] w-[95vw]">
-            <div className="flex mb-4 justify-end items-center">
+            <div className="flex mb-4 justify-end items-center gap-2">
+              <button
+                onClick={goToToday}
+                className="px-2 py-1 text-sm rounded border border-white/10 cursor-pointer transition duration-100 hover:bg-white/5 text-white/70 hover:text-white"
+              >
+                Today
+              </button>
               <div>
                 <button
                   className={`px-2 py-1 text-sm rounded-l cursor-pointer transition
@@ -196,14 +207,17 @@ function Page() {
 
             {view === "month" ? (
               <AnimatedCalendar
+                ref={calRef}
                 value={value}
                 onChange={(date) => handleDateClick(date)}
                 tileContent={renderTileContent}
                 tileClassName={renderTileClassName}
                 className="custom-calendar_full-view"
+                showTodayButton={false}
               />
             ) : (
               <WeekView
+                ref={calRef}
                 value={value}
                 trades={trades}
                 onDateClick={(date) => handleDateClick(date)}
