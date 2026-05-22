@@ -99,6 +99,46 @@ export default function TradeCalendar({ userId }: { userId: string }) {
     return map;
   }, [trades]);
 
+  // Per-month aggregation (keyed "yyyy-MM") for the year drill-up view.
+  const tradesByMonth = useMemo(() => {
+    const map = new Map<
+      string,
+      { netPL: number; closedCount: number; hasOpen: boolean; total: number }
+    >();
+    if (!trades) return map;
+    for (const t of trades) {
+      const d = new Date(t.dateBought);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const prev = map.get(key) ?? {
+        netPL: 0,
+        closedCount: 0,
+        hasOpen: false,
+        total: 0,
+      };
+      prev.total += 1;
+      if (t.status === "WIN" || t.status === "LOSS") {
+        prev.netPL += t.profitLoss ?? 0;
+        prev.closedCount += 1;
+      } else if (t.status === "OPEN") {
+        prev.hasOpen = true;
+      }
+      map.set(key, prev);
+    }
+    return map;
+  }, [trades]);
+
+  const getMonthSummary = (date: Date) => {
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+    return (
+      tradesByMonth.get(key) ?? {
+        netPL: 0,
+        closedCount: 0,
+        hasOpen: false,
+        total: 0,
+      }
+    );
+  };
+
   const handleDateClick = (date: Date) => {
     setSelectedDate(date);
     setIsModalOpen(true);
@@ -119,7 +159,37 @@ export default function TradeCalendar({ userId }: { userId: string }) {
     };
   };
 
-  const renderTileContent = ({ date }: { date: Date }) => {
+  const renderTileContent = ({
+    date,
+    view,
+  }: {
+    date: Date;
+    view: string;
+  }) => {
+    // Year drill-up view: each tile is a month — show monthly P/L + count.
+    if (view === "year") {
+      const { total, closedCount, netPL } = getMonthSummary(date);
+      if (total === 0) return null;
+      return (
+        <div className="mt-1 flex flex-col items-center gap-0.5 text-[10px] md:text-xs">
+          {closedCount > 0 ? (
+            <div
+              className={`font-semibold ${
+                netPL >= 0 ? "text-green-500" : "text-red-500"
+              }`}
+            >
+              {netPL >= 0 ? "+" : "−"}${Math.abs(netPL).toFixed(2)}
+            </div>
+          ) : (
+            <div className="font-semibold text-orange-400">Open</div>
+          )}
+          <div className="text-white/40 text-[9px] md:text-[10px]">
+            {total} {total === 1 ? "trade" : "trades"}
+          </div>
+        </div>
+      );
+    }
+
     const { total, closedCount, netPL, isToday, isFed } = getDaySummary(date);
     if (total === 0 && !isToday && !isFed) return null;
 
@@ -153,7 +223,19 @@ export default function TradeCalendar({ userId }: { userId: string }) {
     );
   };
 
-  const renderTileClassName = ({ date }: { date: Date }) => {
+  const renderTileClassName = ({
+    date,
+    view,
+  }: {
+    date: Date;
+    view: string;
+  }) => {
+    if (view === "year") {
+      const { closedCount, netPL, hasOpen } = getMonthSummary(date);
+      if (closedCount > 0) return netPL >= 0 ? "day-win" : "day-loss";
+      if (hasOpen) return "day-open";
+      return "";
+    }
     const { closedCount, netPL, hasOpen } = getDaySummary(date);
     if (closedCount > 0) return netPL >= 0 ? "day-win" : "day-loss";
     if (hasOpen) return "day-open";
