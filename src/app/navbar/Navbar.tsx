@@ -8,7 +8,7 @@ import TimezoneDisplay from "@/helpers/TimezoneDisplay";
 
 const CuequillLogo = ({ className = "" }: { className?: string }) => (
   <svg
-    viewBox="16 25 30 52" // ← change this line
+    viewBox="16 25 30 52"
     xmlns="http://www.w3.org/2000/svg"
     className={className}
     fill="none"
@@ -38,8 +38,6 @@ export default function Navbar() {
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const guideDropdownRef = useRef<HTMLDivElement>(null);
-
-  // const [simulated] = useLocalStorage<boolean>("simulated", false);
 
   const [open, setOpen] = useState(false);
   const [dropdown, setDropdown] = useState(false);

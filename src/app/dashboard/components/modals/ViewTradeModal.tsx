@@ -32,7 +32,7 @@ export default function ViewTradeModal({
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
       <div className="relative flex flex-col bg-[#0F0F17] p-6 rounded-xl w-[90%] max-w-md text-white">
         <div className="flex flex-col gap-2">
           <div className="flex flex-col gap-2">

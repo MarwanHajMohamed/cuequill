@@ -1,11 +1,13 @@
 "use client";
 
 import "./custom-calendar.css";
+import { useFedDates } from "@/hooks/useFedDates";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useTrades } from "@/hooks/useTrades";
 import { format } from "date-fns";
 import { useSession } from "next-auth/react";
 import React, { useMemo, useRef, useState } from "react";
+import DayTradesModal from "../dashboard/components/modals/DayTradesModal";
 import TradeModal from "../dashboard/components/modals/TradeModal";
 import { useQueryClient } from "@tanstack/react-query";
 import { Trade } from "../types/Trades";
@@ -32,6 +34,7 @@ function Page() {
   const value = new Date();
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [dayListOpen, setDayListOpen] = useState(false);
   const [view, setView] = useState<"month" | "week">("month");
 
   // Shared ref — either AnimatedCalendar or WeekView is mounted at a time
@@ -43,6 +46,7 @@ function Page() {
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
 
   const { data: trades } = useTrades(userId, simulated);
+  const fedDates = useFedDates();
 
   const tradeEvents: TradeEvent[] = useMemo(() => {
     const baseEvents: TradeEvent[] = trades
@@ -72,8 +76,22 @@ function Page() {
 
   const handleDateClick = (date: Date) => {
     setSelectedDate(date);
-    setIsModalOpen(true);
+    const dayStr = format(date, "yyyy-MM-dd");
+    const dayTrades =
+      trades?.filter((t) => t.dateBought.split("T")[0] === dayStr) ?? [];
+    if (dayTrades.length > 0) {
+      setDayListOpen(true);
+    } else {
+      setEditingTrade(null);
+      setIsModalOpen(true);
+    }
   };
+
+  const tradesForSelectedDay = useMemo(() => {
+    if (!selectedDate || !trades) return [];
+    const dayStr = format(selectedDate, "yyyy-MM-dd");
+    return trades.filter((t) => t.dateBought.split("T")[0] === dayStr);
+  }, [selectedDate, trades]);
 
   const handleSaveTrade = async (trade: Trade) => {
     if (trade._id) {
@@ -128,6 +146,7 @@ function Page() {
       netPL,
       hasOpen,
       isToday,
+      isFed: fedDates.has(dayStr),
     };
   };
 
@@ -162,31 +181,39 @@ function Page() {
       );
     }
 
-    const { tradeCount, closedCount, netPL, isToday } = getDaySummary(date);
-    if (tradeCount === 0 && !isToday) return null;
+    const { tradeCount, closedCount, netPL, isToday, isFed } =
+      getDaySummary(date);
+    if (tradeCount === 0 && !isToday && !isFed) return null;
 
     return (
-      <div className="mt-1 flex flex-col items-center gap-0.5 text-[10px] md:text-xs">
-        {isToday && <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />}
-        {tradeCount > 0 && (
-          <>
-            {closedCount > 0 ? (
-              <div
-                className={`font-semibold ${
-                  netPL >= 0 ? "text-green-500" : "text-red-500"
-                }`}
-              >
-                {netPL >= 0 ? "+" : "−"}${Math.abs(netPL).toFixed(2)}
-              </div>
-            ) : (
-              <div className="font-semibold text-orange-400">Open</div>
-            )}
-            <div className="text-white/40 text-[9px] md:text-[10px]">
-              {tradeCount} {tradeCount === 1 ? "trade" : "trades"}
-            </div>
-          </>
+      <>
+        {isFed && (
+          <span className="absolute bottom-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 text-[8px] md:text-[9px] font-semibold uppercase tracking-wide leading-none">
+            Fed
+          </span>
         )}
-      </div>
+        <div className="mt-1 flex flex-col items-center gap-0.5 text-[10px] md:text-xs">
+          {isToday && <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />}
+          {tradeCount > 0 && (
+            <>
+              {closedCount > 0 ? (
+                <div
+                  className={`font-semibold ${
+                    netPL >= 0 ? "text-green-500" : "text-red-500"
+                  }`}
+                >
+                  {netPL >= 0 ? "+" : "−"}${Math.abs(netPL).toFixed(2)}
+                </div>
+              ) : (
+                <div className="font-semibold text-orange-400">Open</div>
+              )}
+              <div className="text-white/40 text-[9px] md:text-[10px]">
+                {tradeCount} {tradeCount === 1 ? "trade" : "trades"}
+              </div>
+            </>
+          )}
+        </div>
+      </>
     );
   };
 
@@ -313,6 +340,24 @@ function Page() {
           </div>
         </div>
       </div>
+
+      {dayListOpen && selectedDate && (
+        <DayTradesModal
+          date={selectedDate}
+          trades={tradesForSelectedDay}
+          onClose={() => setDayListOpen(false)}
+          onAddTrade={() => {
+            setDayListOpen(false);
+            setEditingTrade(null);
+            setIsModalOpen(true);
+          }}
+          onTradeClick={(trade) => {
+            setDayListOpen(false);
+            setEditingTrade(trade);
+            setIsModalOpen(true);
+          }}
+        />
+      )}
 
       {isModalOpen && selectedDate && (
         <TradeModal

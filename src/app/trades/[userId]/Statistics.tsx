@@ -2,9 +2,11 @@
 
 import Bar from "@/app/dashboard/components/charts/Bar";
 import Pie from "@/app/dashboard/components/charts/Pie";
+import { TAG_KIND_BY_LABEL } from "@/app/data/tradeTags";
 import { Trade } from "@/app/types/Trades";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import EquityCurve from "./EquityCurve";
 
 type StatsVisibility = {
   netPL: boolean;
@@ -12,6 +14,8 @@ type StatsVisibility = {
   winRate: boolean;
   avgRR: boolean;
   winStreak: boolean;
+  equityCurve: boolean;
+  tagStats: boolean;
   filteredStats: boolean;
   totalStats: boolean;
   monthlyStats: boolean;
@@ -23,6 +27,8 @@ const DEFAULT_VISIBILITY: StatsVisibility = {
   winRate: true,
   avgRR: true,
   winStreak: true,
+  equityCurve: true,
+  tagStats: true,
   filteredStats: true,
   totalStats: true,
   monthlyStats: true,
@@ -37,6 +43,8 @@ const TILE_OPTIONS: Array<{ key: keyof StatsVisibility; label: string }> = [
 ];
 
 const SECTION_OPTIONS: Array<{ key: keyof StatsVisibility; label: string }> = [
+  { key: "equityCurve", label: "Equity Curve" },
+  { key: "tagStats", label: "Performance by Tag" },
   { key: "filteredStats", label: "Filtered Stats" },
   { key: "totalStats", label: "Total Stats" },
   { key: "monthlyStats", label: "Monthly Stats" },
@@ -314,6 +322,48 @@ export default function Statistics({
     visibility.winRate ||
     visibility.avgRR ||
     visibility.winStreak;
+
+  // Performance by tag — for every tag that's been used at least once across
+  // closed trades, compute trade count, total P/L, average P/L, and win rate.
+  type TagStat = {
+    label: string;
+    count: number;
+    totalPL: number;
+    avgPL: number;
+    winRate: number;
+    kind: "mistake" | "good" | "other";
+  };
+  const tagStats: TagStat[] = useMemo(() => {
+    const closed = data.filter(
+      (t) => t.status === "WIN" || t.status === "LOSS",
+    );
+    const byTag = new Map<
+      string,
+      { count: number; totalPL: number; wins: number }
+    >();
+    for (const t of closed) {
+      for (const tag of t.tags ?? []) {
+        const prev = byTag.get(tag) ?? { count: 0, totalPL: 0, wins: 0 };
+        prev.count += 1;
+        prev.totalPL += t.profitLoss ?? 0;
+        if (t.status === "WIN") prev.wins += 1;
+        byTag.set(tag, prev);
+      }
+    }
+    return Array.from(byTag.entries())
+      .map(([label, v]) => ({
+        label,
+        count: v.count,
+        totalPL: v.totalPL,
+        avgPL: v.count > 0 ? v.totalPL / v.count : 0,
+        winRate: v.count > 0 ? (v.wins / v.count) * 100 : 0,
+        kind: (TAG_KIND_BY_LABEL[label] ?? "other") as
+          | "mistake"
+          | "good"
+          | "other",
+      }))
+      .sort((a, b) => b.count - a.count);
+  }, [data]);
 
   // FILTERED DATA STATS
   const calcBiggestFilteredWin = () => {
@@ -598,6 +648,77 @@ export default function Statistics({
               </div>
             </SummaryTile>
           )}
+        </div>
+      )}
+
+      {/* Equity curve */}
+      {visibility.equityCurve && (
+        <div className="w-full mb-10">
+          <EquityCurve trades={data} />
+        </div>
+      )}
+
+      {/* Performance by tag */}
+      {visibility.tagStats && tagStats.length > 0 && (
+        <div className="w-full mb-10 border border-[#282828] rounded-lg p-4 md:p-6">
+          <div className="text-sm font-semibold mb-4">Performance by tag</div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[480px]">
+              <thead>
+                <tr className="text-[10px] uppercase tracking-wider text-white/40">
+                  <th className="text-left py-2 pr-3 font-normal">Tag</th>
+                  <th className="text-right py-2 px-3 font-normal">Trades</th>
+                  <th className="text-right py-2 px-3 font-normal">Win rate</th>
+                  <th className="text-right py-2 px-3 font-normal">Avg P/L</th>
+                  <th className="text-right py-2 pl-3 font-normal">Total P/L</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tagStats.map((s) => (
+                  <tr
+                    key={s.label}
+                    className="border-t border-white/5 hover:bg-white/5 transition"
+                  >
+                    <td className="py-2 pr-3">
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-xs border ${
+                          s.kind === "mistake"
+                            ? "bg-red-500/15 border-red-500/40 text-red-300"
+                            : s.kind === "good"
+                              ? "bg-green-500/15 border-green-500/40 text-green-300"
+                              : "border-white/15 text-white/70"
+                        }`}
+                      >
+                        {s.label}
+                      </span>
+                    </td>
+                    <td className="text-right py-2 px-3 text-white/70">
+                      {s.count}
+                    </td>
+                    <td className="text-right py-2 px-3 text-white/70">
+                      {s.winRate.toFixed(0)}%
+                    </td>
+                    <td
+                      className={`text-right py-2 px-3 font-medium ${
+                        s.avgPL >= 0 ? "text-green-500" : "text-red-500"
+                      }`}
+                    >
+                      {s.avgPL >= 0 ? "+" : "−"}$
+                      {Math.abs(s.avgPL).toFixed(2)}
+                    </td>
+                    <td
+                      className={`text-right py-2 pl-3 font-medium ${
+                        s.totalPL >= 0 ? "text-green-500" : "text-red-500"
+                      }`}
+                    >
+                      {s.totalPL >= 0 ? "+" : "−"}$
+                      {Math.abs(s.totalPL).toFixed(2)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

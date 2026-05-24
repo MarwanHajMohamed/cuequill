@@ -54,6 +54,7 @@ export const handleSave = (
   strategy: StrategyList,
   dateClosed: string,
   notes: string,
+  tags: string[],
   simulated: boolean,
   toast: (message: string) => void,
   onSave: (trade: Trade) => void,
@@ -103,6 +104,7 @@ export const handleSave = (
       status === "WIN" || status === "LOSS" ? closingContractPrice : null,
     profitLoss: status === "WIN" || status === "LOSS" ? profitLoss : null,
     notes,
+    tags,
     simulated,
     favourite: false,
   };

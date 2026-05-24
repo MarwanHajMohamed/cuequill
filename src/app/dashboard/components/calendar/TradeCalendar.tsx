@@ -1,25 +1,19 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { format } from "date-fns";
 import "react-calendar/dist/Calendar.css";
 import "./calendar-custom.css";
-import TradeModal from "../modals/EditTradeModal";
+import DayTradesModal from "../modals/DayTradesModal";
+import TradeModal from "../modals/TradeModal";
+import { Trade } from "@/app/types/Trades";
 import { useTrades } from "@/hooks/useTrades";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useRouter } from "next/navigation";
 import { handleSaveTrade } from "@/handlers/tradeHandlers";
-import { fetchMeetings } from "@/hooks/useFed";
-import { FedMeetingsResponse } from "@/app/types/FedMeeting";
+import { useFedDates } from "@/hooks/useFedDates";
 import AnimatedCalendar from "@/app/reusablecalendar/AnimatedCalendar";
-
-type FedMeetingPayload = {
-  meetingDt: string;
-  offsetDayCount: number;
-};
-
-const FED_DATES_STORAGE_KEY = "cuequill:fed-dates";
 
 const now = new Date();
 const today = now.toISOString().split("T")[0];
@@ -29,49 +23,15 @@ export default function TradeCalendar({ userId }: { userId: string }) {
   const queryClient = useQueryClient();
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [fedDates, setFedDates] = useState<Set<string>>(new Set());
+  const [dayListOpen, setDayListOpen] = useState(false);
+  const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
+  const fedDates = useFedDates();
 
   const [simulated] = useLocalStorage<boolean>("simulated", false);
 
   const { data: trades, isLoading, isError } = useTrades(userId, simulated);
 
   const router = useRouter();
-
-  useEffect(() => {
-    // Show cached dates immediately on first paint, then refresh from /api/fed
-    // (which scrapes the Federal Reserve's FOMC calendar page for every year).
-    let cached: string[] = [];
-    try {
-      const v = localStorage.getItem(FED_DATES_STORAGE_KEY);
-      if (v) cached = JSON.parse(v);
-    } catch {
-      /* ignore parse errors */
-    }
-    if (cached.length) setFedDates(new Set(cached));
-
-    async function load() {
-      try {
-        const data: FedMeetingsResponse = await fetchMeetings();
-        const apiDates = data.payload.map(
-          (m: FedMeetingPayload) => m.meetingDt
-        );
-        setFedDates(new Set(apiDates));
-        try {
-          localStorage.setItem(
-            FED_DATES_STORAGE_KEY,
-            JSON.stringify(apiDates)
-          );
-        } catch {
-          /* quota / availability — non-fatal */
-        }
-      } catch (err) {
-        console.error(
-          err instanceof Error ? err.message : "Error fetching Fed meetings"
-        );
-      }
-    }
-    load();
-  }, []);
 
   const tradesByDay = useMemo(() => {
     const map = new Map<
@@ -141,8 +101,22 @@ export default function TradeCalendar({ userId }: { userId: string }) {
 
   const handleDateClick = (date: Date) => {
     setSelectedDate(date);
-    setIsModalOpen(true);
+    const dayStr = format(date, "yyyy-MM-dd");
+    const dayTrades =
+      trades?.filter((t) => t.dateBought.split("T")[0] === dayStr) ?? [];
+    if (dayTrades.length > 0) {
+      setDayListOpen(true);
+    } else {
+      setEditingTrade(null);
+      setIsModalOpen(true);
+    }
   };
+
+  const tradesForSelectedDay = useMemo(() => {
+    if (!selectedDate || !trades) return [];
+    const dayStr = format(selectedDate, "yyyy-MM-dd");
+    return trades.filter((t) => t.dateBought.split("T")[0] === dayStr);
+  }, [selectedDate, trades]);
 
   const getDaySummary = (date: Date) => {
     const dayStr = format(date, "yyyy-MM-dd");
@@ -194,32 +168,34 @@ export default function TradeCalendar({ userId }: { userId: string }) {
     if (total === 0 && !isToday && !isFed) return null;
 
     return (
-      <div className="mt-1 flex flex-col items-center gap-0.5 text-[10px] md:text-xs relative">
+      <>
         {isFed && (
-          <span className="absolute -top-5 right-1 text-[8px] md:text-[9px] font-bold text-purple-400 leading-none">
-            F
+          <span className="absolute bottom-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 text-[8px] md:text-[9px] font-semibold uppercase tracking-wide leading-none">
+            Fed
           </span>
         )}
-        {isToday && <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />}
-        {total > 0 && (
-          <>
-            {closedCount > 0 ? (
-              <div
-                className={`font-semibold ${
-                  netPL >= 0 ? "text-green-500" : "text-red-500"
-                }`}
-              >
-                {netPL >= 0 ? "+" : "−"}${Math.abs(netPL).toFixed(2)}
+        <div className="mt-1 flex flex-col items-center gap-0.5 text-[10px] md:text-xs">
+          {isToday && <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />}
+          {total > 0 && (
+            <>
+              {closedCount > 0 ? (
+                <div
+                  className={`font-semibold ${
+                    netPL >= 0 ? "text-green-500" : "text-red-500"
+                  }`}
+                >
+                  {netPL >= 0 ? "+" : "−"}${Math.abs(netPL).toFixed(2)}
+                </div>
+              ) : (
+                <div className="font-semibold text-orange-400">Open</div>
+              )}
+              <div className="text-white/40 text-[9px] md:text-[10px]">
+                {total} {total === 1 ? "trade" : "trades"}
               </div>
-            ) : (
-              <div className="font-semibold text-orange-400">Open</div>
-            )}
-            <div className="text-white/40 text-[9px] md:text-[10px]">
-              {total} {total === 1 ? "trade" : "trades"}
-            </div>
-          </>
-        )}
-      </div>
+            </>
+          )}
+        </div>
+      </>
     );
   };
 
@@ -264,13 +240,38 @@ export default function TradeCalendar({ userId }: { userId: string }) {
           value={value}
         />
       </div>
+      {dayListOpen && selectedDate && (
+        <DayTradesModal
+          date={selectedDate}
+          trades={tradesForSelectedDay}
+          onClose={() => setDayListOpen(false)}
+          onAddTrade={() => {
+            setDayListOpen(false);
+            setEditingTrade(null);
+            setIsModalOpen(true);
+          }}
+          onTradeClick={(trade) => {
+            setDayListOpen(false);
+            setEditingTrade(trade);
+            setIsModalOpen(true);
+          }}
+        />
+      )}
       {isModalOpen && selectedDate && (
         <TradeModal
-          date={selectedDate}
-          onClose={() => setIsModalOpen(false)}
+          date={
+            editingTrade?.dateBought
+              ? new Date(editingTrade.dateBought)
+              : selectedDate
+          }
+          onClose={() => {
+            setIsModalOpen(false);
+            setEditingTrade(null);
+          }}
           onSave={(e) =>
             handleSaveTrade(e, userId, setIsModalOpen, queryClient)
           }
+          initialTrade={editingTrade ?? undefined}
         />
       )}
     </div>

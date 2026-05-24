@@ -25,6 +25,7 @@ const TradeSchema = new mongoose.Schema({
 
   strategy: { type: String },
   notes: { type: String },
+  tags: { type: [String], default: [] },
 
   ibkrTradeId: { type: String, sparse: true },
 });

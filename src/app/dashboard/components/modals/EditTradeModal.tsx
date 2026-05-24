@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { TradeEventType, StrategyList, Trade } from "@/app/types/Trades";
+import { TRADE_TAG_OPTIONS } from "@/app/data/tradeTags";
 import { useSession } from "next-auth/react";
 import { useToast } from "@/hooks/useToast";
 import { useScrollLock } from "@/hooks/useScrollLock";
@@ -87,6 +88,13 @@ export default function EditTradeModal({
     initialTrade?.option ?? null
   );
   const [notes, setNotes] = useState<string>(initialTrade?.notes ?? "");
+  const [tags, setTags] = useState<string[]>(initialTrade?.tags ?? []);
+
+  const toggleTag = (label: string) => {
+    setTags((prev) =>
+      prev.includes(label) ? prev.filter((t) => t !== label) : [...prev, label]
+    );
+  };
   const [simulated, setSimulated] = useState<boolean>(
     initialTrade?.simulated || false
   );
@@ -127,7 +135,7 @@ export default function EditTradeModal({
 
   return (
     <>
-      <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
+      <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
         <div className="relative flex flex-col gap-3 md:gap-4 bg-[#0F0F17] md:p-6 p-3 rounded-xl w-[90%] max-w-lg text-white max-h-[90vh] overflow-scroll text-sm md:text-base">
           <div
             className={`absolute top-[-40px] left-0 w-[100%] border-1 border-red-500/50 text-red-500 text-center p-1 rounded bg-red-700/10 ${
@@ -335,6 +343,33 @@ export default function EditTradeModal({
             className="w-full p-2 text-base text-white bg-[#1A1A1D] rounded"
           />
 
+          <div>
+            <label className="block text-sm mb-1.5">Tags</label>
+            <div className="flex flex-wrap gap-1.5">
+              {TRADE_TAG_OPTIONS.map(({ label, kind }) => {
+                const selected = tags.includes(label);
+                const selectedClasses =
+                  kind === "mistake"
+                    ? "bg-red-500/20 border-red-500/50 text-red-300"
+                    : "bg-green-500/20 border-green-500/50 text-green-300";
+                return (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => toggleTag(label)}
+                    className={`px-2.5 py-1 rounded-full text-xs border transition cursor-pointer ${
+                      selected
+                        ? selectedClasses
+                        : "border-white/15 text-white/60 hover:bg-white/5"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           <div className="flex gap-2 items-center">
             <input
               type="checkbox"
@@ -385,6 +420,7 @@ export default function EditTradeModal({
                     strategy,
                     dateClosed,
                     notes,
+                    tags,
                     simulated,
                     toast,
                     onSave,

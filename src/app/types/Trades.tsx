@@ -32,6 +32,7 @@ export interface Trade {
   closingContractPrice?: number | null;
   profitLoss?: number | null;
   notes?: string;
+  tags?: string[];
   simulated: boolean;
   favourite: boolean;
 }

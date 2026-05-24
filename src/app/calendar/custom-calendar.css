@@ -6,6 +6,7 @@
 }
 
 .react-calendar.custom-calendar_full-view .react-calendar__tile {
+  position: relative;
   background: transparent;
   color: white;
   padding: 5px 0;
