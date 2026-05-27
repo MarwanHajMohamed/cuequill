@@ -107,3 +107,11 @@
     font-size: 12px;
   }
 }
+
+/* Hide neighboring-month days but keep the grid cell so day-of-week
+   alignment is preserved. */
+.react-calendar.custom-calendar
+  .react-calendar__month-view__days__day--neighboringMonth {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}

@@ -9,9 +9,19 @@
   position: relative;
   background: transparent;
   color: white;
-  padding: 5px 0;
+  padding: 0;
   border-radius: 5px;
   transition: 100ms ease-in-out;
+}
+
+/* Date number - anchored top-left of each tile */
+.react-calendar.custom-calendar_full-view .react-calendar__tile abbr {
+  position: absolute;
+  top: 8px;
+  left: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.95);
 }
 
 .react-calendar.custom-calendar_full-view
@@ -58,7 +68,7 @@
   margin: 0;
   display: grid !important;
   grid-template-columns: repeat(5, 1fr) !important;
-  grid-auto-rows: minmax(100px, 1fr) !important;
+  grid-auto-rows: minmax(110px, 1fr) !important;
 }
 
 .react-calendar.custom-calendar_full-view
@@ -72,6 +82,12 @@
 .react-calendar.custom-calendar_full-view
   .react-calendar__month-view__weekdays__weekday--weekend {
   display: none !important;
+}
+
+.react-calendar.custom-calendar_full-view
+  .react-calendar__month-view__days__day--neighboringMonth {
+  visibility: hidden !important;
+  pointer-events: none !important;
 }
 
 .react-calendar__tile {
@@ -95,14 +111,13 @@
   overflow: hidden;
 }
 
-/* or on the month view wrapper */
 .custom-calendar_full-view .react-calendar__month-view {
   overflow: hidden;
 }
 
 /* Per-day P/L background tints */
 .react-calendar.custom-calendar_full-view .react-calendar__tile.day-win {
-  background-color: rgba(22, 163, 74, 0.18);
+  background-color: rgba(22, 163, 74, 0.25);
 }
 .react-calendar.custom-calendar_full-view .react-calendar__tile.day-win:hover,
 .react-calendar.custom-calendar_full-view .react-calendar__tile.day-win:focus {
@@ -110,7 +125,7 @@
 }
 
 .react-calendar.custom-calendar_full-view .react-calendar__tile.day-loss {
-  background-color: rgba(220, 38, 38, 0.18);
+  background-color: rgba(220, 38, 38, 0.25);
 }
 .react-calendar.custom-calendar_full-view .react-calendar__tile.day-loss:hover,
 .react-calendar.custom-calendar_full-view .react-calendar__tile.day-loss:focus {

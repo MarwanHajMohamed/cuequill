@@ -8,6 +8,10 @@ import {
 } from "@/app/charts/chartTime";
 
 const yahooFinance = new YahooFinance();
+const ALPACA_KEY_ID = process.env.ALPACA_API_KEY_ID;
+const ALPACA_SECRET = process.env.ALPACA_API_SECRET_KEY;
+const ALPACA_MAX_DAYS = 2000;
+const YAHOO_MAX_DAYS = 59;
 
 type Bar = {
   time: number;
@@ -16,6 +20,15 @@ type Bar = {
   low: number;
   close: number;
   volume: number;
+};
+
+type Quote = {
+  date: Date;
+  open: number | null;
+  high: number | null;
+  low: number | null;
+  close: number | null;
+  volume: number | null;
 };
 
 function bucketKey(et: ReturnType<typeof etComponents>): {
@@ -39,10 +52,91 @@ function bucketKey(et: ReturnType<typeof etComponents>): {
   };
 }
 
+async function fetchYahoo(
+  symbol: string,
+  period1: Date,
+  period2: Date,
+  days: number
+): Promise<Quote[]> {
+  const result = await yahooFinance.chart(symbol, {
+    period1,
+    period2,
+    interval: days <= 7 ? "1m" : "5m",
+  });
+  return result.quotes ?? [];
+}
+
+type AlpacaBar = {
+  t: string;
+  o: number;
+  h: number;
+  l: number;
+  c: number;
+  v: number;
+};
+
+async function fetchAlpaca(
+  symbol: string,
+  period1: Date,
+  period2: Date
+): Promise<Quote[]> {
+  const out: Quote[] = [];
+  let pageToken: string | null = null;
+  const start = period1.toISOString();
+  const end = period2.toISOString();
+  for (let safety = 0; safety < 50; safety++) {
+    const params = new URLSearchParams({
+      symbols: symbol,
+      timeframe: "5Min",
+      start,
+      end,
+      limit: "10000",
+      adjustment: "raw",
+      feed: "iex",
+      sort: "asc",
+    });
+    if (pageToken) params.set("page_token", pageToken);
+    const url = `https://data.alpaca.markets/v2/stocks/bars?${params.toString()}`;
+    const res = await fetch(url, {
+      headers: {
+        "APCA-API-KEY-ID": ALPACA_KEY_ID!,
+        "APCA-API-SECRET-KEY": ALPACA_SECRET!,
+      },
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Alpaca ${res.status}: ${text.slice(0, 200)}`);
+    }
+    const data: {
+      bars?: Record<string, AlpacaBar[]>;
+      next_page_token?: string | null;
+    } = await res.json();
+    const bars = data.bars?.[symbol] ?? [];
+    for (const b of bars) {
+      out.push({
+        date: new Date(b.t),
+        open: b.o,
+        high: b.h,
+        low: b.l,
+        close: b.c,
+        volume: b.v,
+      });
+    }
+    if (!data.next_page_token) break;
+    pageToken = data.next_page_token;
+  }
+  return out;
+}
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const symbol = (searchParams.get("symbol") || "").trim().toUpperCase();
-  const days = Math.min(59, Math.max(1, parseInt(searchParams.get("days") || "59")));
+  const useAlpaca = !!(ALPACA_KEY_ID && ALPACA_SECRET);
+  const maxDays = useAlpaca ? ALPACA_MAX_DAYS : YAHOO_MAX_DAYS;
+  const days = Math.min(
+    maxDays,
+    Math.max(1, parseInt(searchParams.get("days") || String(maxDays)))
+  );
 
   if (!symbol) {
     return NextResponse.json({ error: "Missing symbol" }, { status: 400 });
@@ -51,22 +145,11 @@ export async function GET(req: Request) {
   const period2 = new Date();
   const period1 = new Date(period2.getTime() - days * 24 * 60 * 60 * 1000);
 
-  let quotes: Array<{
-    date: Date;
-    open: number | null;
-    high: number | null;
-    low: number | null;
-    close: number | null;
-    volume: number | null;
-  }>;
-
+  let quotes: Quote[];
   try {
-    const result = await yahooFinance.chart(symbol, {
-      period1,
-      period2,
-      interval: days <= 7 ? "1m" : "5m",
-    });
-    quotes = result.quotes ?? [];
+    quotes = useAlpaca
+      ? await fetchAlpaca(symbol, period1, period2)
+      : await fetchYahoo(symbol, period1, period2, days);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json(
@@ -107,5 +190,9 @@ export async function GET(req: Request) {
   }
 
   const bars = Array.from(buckets.values()).sort((a, b) => a.time - b.time);
-  return NextResponse.json({ symbol, bars });
+  return NextResponse.json({
+    symbol,
+    bars,
+    source: useAlpaca ? "alpaca" : "yahoo",
+  });
 }

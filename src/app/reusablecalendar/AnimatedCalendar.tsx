@@ -2,7 +2,13 @@
 
 "use client";
 
-import { forwardRef, useImperativeHandle, useRef, useState } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
 import Calendar, { OnArgs } from "react-calendar";
 import { format } from "date-fns";
 
@@ -30,6 +36,13 @@ interface AnimatedCalendarProps {
   className?: string;
   /** Render the built-in Today button inside the calendar. Defaults to true. */
   showTodayButton?: boolean;
+  /**
+   * Whether to show days that spill in from the previous/next month to fill
+   * the calendar grid. Defaults to true (react-calendar's default).
+   */
+  showNeighboringMonth?: boolean;
+  /** Fires whenever the displayed month changes (first of that month). */
+  onMonthChange?: (date: Date) => void;
 }
 
 const AnimatedCalendar = forwardRef<
@@ -43,6 +56,8 @@ const AnimatedCalendar = forwardRef<
     tileClassName,
     className = "custom-calendar_full-view",
     showTodayButton = true,
+    showNeighboringMonth = true,
+    onMonthChange,
   },
   ref
 ) {
@@ -53,6 +68,13 @@ const AnimatedCalendar = forwardRef<
     mode: "idle" | "horizontal" | "vertical";
   } | null>(null);
   const [activeStartDate, setActiveStartDate] = useState<Date>(new Date());
+
+  // Notify the parent of every month change (including initial mount).
+  useEffect(() => {
+    onMonthChange?.(
+      new Date(activeStartDate.getFullYear(), activeStartDate.getMonth(), 1),
+    );
+  }, [activeStartDate, onMonthChange]);
 
   const getDaysEl = () =>
     (calendarRef.current?.querySelector(
@@ -260,6 +282,7 @@ const AnimatedCalendar = forwardRef<
         formatMonthYear={(_, date) => format(date, "LLLL yyyy")}
         next2Label={null}
         prev2Label={null}
+        showNeighboringMonth={showNeighboringMonth}
         activeStartDate={activeStartDate}
         onActiveStartDateChange={handleActiveStartDateChange}
         className={className}
