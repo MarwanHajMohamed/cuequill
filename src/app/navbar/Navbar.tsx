@@ -84,7 +84,7 @@ export default function Navbar() {
     },
     { icon: "fa-solid fa-calendar-days", label: "Calendar", slug: "calendar" },
     { icon: "fa-solid fa-chart-line", label: "Charts", slug: "charts" },
-    { icon: "fa-solid fa-bullseye", label: "Goals", slug: "goals" },
+    { icon: "fa-solid fa-newspaper", label: "News", slug: "news" },
     {
       icon: "fa-regular fa-circle-check",
       label: "Affirmations",
@@ -102,7 +102,7 @@ export default function Navbar() {
     { name: "Trades", slug: `trades/${userId}`, side: "MIDDLE" },
     { name: "Calendar", slug: "calendar", side: "MIDDLE" },
     { name: "Charts", slug: "charts", side: "MIDDLE" },
-    { name: "Goals", slug: "goals", side: "MIDDLE" },
+    { name: "News", slug: "news", side: "MIDDLE" },
     { name: "Affirmations", slug: "affirmations", side: "MIDDLE" },
     {
       name: "Guide",

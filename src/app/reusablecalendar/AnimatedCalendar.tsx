@@ -256,7 +256,7 @@ const AnimatedCalendar = forwardRef<
   return (
     <div
       ref={calendarRef}
-      className="overflow-hidden"
+      className="overflow-hidden h-full flex flex-col"
       style={{ touchAction: "pan-y" }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}

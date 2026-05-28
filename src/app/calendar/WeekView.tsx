@@ -230,16 +230,18 @@ const WeekView = forwardRef<WeekViewHandle, WeekViewProps>(function WeekView(
     <div
       ref={weekGridRef}
       style={{ touchAction: "pan-y" }}
+      className="md:h-auto h-full flex flex-col"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      <div className="flex justify-between items-center mb-0 gap-2">
+      <div className="flex justify-between items-center mb-0 gap-2 shrink-0 h-9">
         <button
           onClick={() => handleWeekChange("prev")}
-          className="px-2 py-1 rounded bg-[#242329] cursor-pointer hover:bg-[#211F29] text-sm"
+          aria-label="Previous week"
+          className="px-3 py-1 rounded bg-transparent cursor-pointer hover:bg-[#161616] text-lg leading-none text-white/80"
         >
-          &lt;
+          ‹
         </button>
         <div className="md:text-sm text-xs font-semibold">
           {format(weekStart, "MMM d")} –{" "}
@@ -247,14 +249,15 @@ const WeekView = forwardRef<WeekViewHandle, WeekViewProps>(function WeekView(
         </div>
         <button
           onClick={() => handleWeekChange("next")}
-          className="px-2 py-1 rounded bg-[#242329] cursor-pointer hover:bg-[#211F29] text-sm"
+          aria-label="Next week"
+          className="px-3 py-1 rounded bg-transparent cursor-pointer hover:bg-[#161616] text-lg leading-none text-white/80"
         >
-          &gt;
+          ›
         </button>
       </div>
 
-      <div className="overflow-hidden">
-        <div className="week-grid grid grid-cols-5 rounded-lg md:p-4">
+      <div className="overflow-hidden md:flex-initial flex-1 min-h-0 flex flex-col">
+        <div className="week-grid grid grid-cols-5 rounded-lg md:p-4 md:h-auto h-full md:items-start items-stretch">
           {getWeekDays().map((day, index) => {
             const dayStr = format(day, "yyyy-MM-dd");
             const eventsForDay = tradeEvents.filter((e) => e.date === dayStr);
@@ -266,9 +269,9 @@ const WeekView = forwardRef<WeekViewHandle, WeekViewProps>(function WeekView(
               0,
             );
             return (
-              <div key={index}>
+              <div key={index} className="md:h-auto h-full flex flex-col">
                 <div
-                  className={`py-1.5 px-2 rounded-lg flex items-center justify-center gap-1.5 ${
+                  className={`py-1.5 px-2 rounded-lg flex items-center justify-center gap-1.5 shrink-0 ${
                     format(day, "yyyy-MM-dd") === format(value, "yyyy-MM-dd")
                       ? "bg-white/5"
                       : ""
@@ -278,7 +281,7 @@ const WeekView = forwardRef<WeekViewHandle, WeekViewProps>(function WeekView(
                   <div className="md:text-sm text-xs">{format(day, "d")}</div>
                 </div>
                 <div
-                  className="border border-[#323232] h-[calc(100vh-280px)] cursor-pointer flex flex-col justify-between"
+                  className="border border-[#323232] md:h-[calc(100vh-280px)] flex-1 md:flex-initial min-h-0 cursor-pointer flex flex-col justify-between"
                   onClick={() => onDateClick(day)}
                 >
                   <div className="mt-2 flex flex-col items-center gap-2 px-1">

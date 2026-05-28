@@ -337,52 +337,52 @@ function Page() {
         {isToday && (
           <span className="absolute top-2 right-1 w-1.5 h-1.5 rounded-full bg-blue-400" />
         )}
-        {/* Bottom-left: P/L + trade count */}
+        {/* Bottom-left: P/L, trade count, then W/L bars underneath */}
         {tradeCount > 0 && (
-          <div className="absolute bottom-2 left-2 flex flex-col items-start gap-0.5 text-[10px] md:text-xs">
+          <div className="absolute bottom-1.5 left-1.5 right-1.5 flex flex-col items-start gap-1 text-[10px] md:text-xs">
             {closedCount > 0 ? (
               <div
-                className={`font-semibold ${
+                className={`font-semibold leading-tight ${
                   netPL >= 0 ? "text-green-500" : "text-red-500"
                 }`}
               >
                 {netPL >= 0 ? "+" : "−"}${Math.abs(netPL).toFixed(2)}
               </div>
             ) : (
-              <div className="font-semibold text-orange-400">Open</div>
-            )}
-            <div className="text-white/40 text-[9px] md:text-[10px]">
-              {tradeCount} {tradeCount === 1 ? "trade" : "trades"}
-            </div>
-          </div>
-        )}
-        {/* Bottom-right: W/L mini bars — fixed total width, segment width
-            proportional to its count (2 wins = 2× as wide as 1 loss). */}
-        {(winCount > 0 || lossCount > 0) && (
-          <div
-            className="absolute bottom-2 right-2 flex items-end gap-1"
-            style={{ width: 56 }}
-          >
-            {lossCount > 0 && (
-              <div
-                className="flex flex-col items-center gap-0.5"
-                style={{ flex: lossCount }}
-              >
-                <div className="w-full h-2 bg-red-500 rounded-sm" />
-                <div className="text-[10px] md:text-xs text-red-400 leading-none">
-                  {lossCount}
-                </div>
+              <div className="font-semibold text-orange-400 leading-tight">
+                Open
               </div>
             )}
-            {winCount > 0 && (
+            <div className="text-white/40 text-[9px] md:text-[10px] leading-tight">
+              {tradeCount} {tradeCount === 1 ? "trade" : "trades"}
+            </div>
+            {(winCount > 0 || lossCount > 0) && (
               <div
-                className="flex flex-col items-center gap-0.5"
-                style={{ flex: winCount }}
+                className="flex items-center gap-1 mt-0.5 w-full mb-1"
+                style={{ maxWidth: 64 }}
               >
-                <div className="w-full h-2 bg-green-500 rounded-sm" />
-                <div className="text-[10px] md:text-xs text-green-400 leading-none">
-                  {winCount}
-                </div>
+                {lossCount > 0 && (
+                  <div
+                    className="flex items-center gap-0.5"
+                    style={{ flex: lossCount }}
+                  >
+                    <div className="flex-1 h-1.5 md:h-2 bg-red-500 rounded-sm min-w-0" />
+                    <div className="text-[9px] md:text-[10px] text-red-400 leading-none">
+                      {lossCount}
+                    </div>
+                  </div>
+                )}
+                {winCount > 0 && (
+                  <div
+                    className="flex items-center gap-0.5"
+                    style={{ flex: winCount }}
+                  >
+                    <div className="flex-1 h-1.5 md:h-2 bg-green-500 rounded-sm min-w-0" />
+                    <div className="text-[9px] md:text-[10px] text-green-400 leading-none">
+                      {winCount}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -452,15 +452,16 @@ function Page() {
 
   return (
     <>
-      <div className="flex md:mt-27 mb-10 justify-center mt-23">
-        <div className="flex">
-          <div className="md:max-w-350 md:w-[90vw] w-[95vw]">
-            {/* Button row: always visible on mobile; on desktop, only shown
-                in week view (in month view the buttons live in the sidebar
-                above the Week 1 card). */}
+      <div className="flex md:mt-27 md:mb-10 justify-center mt-19 md:h-auto h-[calc(100dvh-76px)] md:w-auto w-full">
+        <div className="flex md:h-auto h-full md:w-auto w-full">
+          <div className="md:max-w-350 md:w-[90vw] w-full md:h-auto h-full flex flex-col mx-auto">
+            {/* Button row: shown on mobile in WEEK view, and on desktop only
+                in week view. In mobile month view, buttons float over the
+                calendar (see floating block below). In desktop month view
+                they live in the sidebar above the Week 1 card. */}
             <div
               className={`flex mb-4 justify-end items-center gap-2 ${
-                view === "month" ? "md:hidden" : ""
+                view === "month" ? "hidden" : "md:flex hidden"
               }`}
             >
               <button
@@ -496,8 +497,35 @@ function Page() {
             </div>
 
             {view === "month" ? (
-              <div className="flex gap-3 items-stretch">
-                <div ref={calendarColRef} className="flex-1 min-w-0">
+              <div className="flex gap-3 items-stretch md:flex-initial flex-1 md:h-auto min-h-0">
+                <div
+                  ref={calendarColRef}
+                  className="flex-1 min-w-0 relative md:h-auto h-full"
+                >
+                  {/* Floating button group — mobile month view only.
+                      Top-left, next to the prev-month arrow. */}
+                  <div className="md:hidden absolute top-1 left-10 z-20 flex items-center gap-1.5">
+                    <button
+                      onClick={goToToday}
+                      className="px-2 py-1 text-xs rounded border border-white/10 hover:bg-white/5 text-white/70 hover:text-white"
+                    >
+                      Today
+                    </button>
+                    <div className="flex">
+                      <button
+                        className="px-2 py-1 text-xs rounded-l border border-white/10 border-r-0 bg-[#16151C]"
+                        onClick={() => setView("month")}
+                      >
+                        M
+                      </button>
+                      <button
+                        className="px-2 py-1 text-xs rounded-r border border-white/10 border-l-0 bg-[#242329]"
+                        onClick={() => setView("week")}
+                      >
+                        W
+                      </button>
+                    </div>
+                  </div>
                   <AnimatedCalendar
                     ref={calRef}
                     value={value}
@@ -565,17 +593,43 @@ function Page() {
                 </div>
               </div>
             ) : (
-              <WeekView
-                ref={calRef}
-                value={value}
-                trades={trades}
-                onDateClick={(date) => handleDateClick(date)}
-                onEventClick={(event) => {
-                  setSelectedDate(new Date(event.dateBought));
-                  setEditingTrade(event);
-                  setIsModalOpen(true);
-                }}
-              />
+              <div className="relative md:h-auto h-full">
+                {/* Floating button group — mobile week view only.
+                    Top-left, next to the prev-week arrow. */}
+                <div className="md:hidden absolute top-1 left-10 z-20 flex items-center gap-1.5">
+                  <button
+                    onClick={goToToday}
+                    className="px-2 py-1 text-xs rounded border border-white/10 hover:bg-white/5 text-white/70 hover:text-white"
+                  >
+                    Today
+                  </button>
+                  <div className="flex">
+                    <button
+                      className="px-2 py-1 text-xs rounded-l border border-white/10 border-r-0 bg-[#242329]"
+                      onClick={() => setView("month")}
+                    >
+                      M
+                    </button>
+                    <button
+                      className="px-2 py-1 text-xs rounded-r border border-white/10 border-l-0 bg-[#16151C]"
+                      onClick={() => setView("week")}
+                    >
+                      W
+                    </button>
+                  </div>
+                </div>
+                <WeekView
+                  ref={calRef}
+                  value={value}
+                  trades={trades}
+                  onDateClick={(date) => handleDateClick(date)}
+                  onEventClick={(event) => {
+                    setSelectedDate(new Date(event.dateBought));
+                    setEditingTrade(event);
+                    setIsModalOpen(true);
+                  }}
+                />
+              </div>
             )}
           </div>
         </div>
