@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { format } from "date-fns";
 import { Trade } from "@/app/types/Trades";
 import { useScrollLock } from "@/hooks/useScrollLock";
+import { tradeNetPL } from "@/lib/helpers/tradeNet";
 
 type Props = {
   date: Date;
@@ -33,7 +34,7 @@ export default function DayTradesModal({
   const closed = trades.filter(
     (t) => t.status === "WIN" || t.status === "LOSS"
   );
-  const netPL = closed.reduce((sum, t) => sum + (t.profitLoss ?? 0), 0);
+  const netPL = closed.reduce((sum, t) => sum + tradeNetPL(t), 0);
   const showNet = closed.length > 0;
 
   return (
@@ -79,7 +80,7 @@ export default function DayTradesModal({
         {/* Trade list */}
         <div className="flex flex-col gap-2">
           {trades.map((t, i) => {
-            const pl = t.profitLoss ?? 0;
+            const pl = tradeNetPL(t);
             const isClosed = t.status === "WIN" || t.status === "LOSS";
             return (
               <button

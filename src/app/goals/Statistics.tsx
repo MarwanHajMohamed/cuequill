@@ -32,7 +32,10 @@ export default function Statistics({ goals }: { goals: Goal[] }) {
   }, [userId, simulated]);
 
   const monthsTrades = trades?.filter((trade) => {
-    const tradeDate = new Date(trade.dateBought);
+    const isClosed = trade.status === "WIN" || trade.status === "LOSS";
+    const dateStr =
+      isClosed && trade.dateClosed ? trade.dateClosed : trade.dateBought;
+    const tradeDate = new Date(dateStr);
     const now = new Date();
 
     return (

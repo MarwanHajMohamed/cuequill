@@ -1,5 +1,6 @@
 import { Goal } from "../types/Goal";
 import { Trade } from "../types/Trades";
+import { tradeNetPL } from "@/lib/helpers/tradeNet";
 
 export const handleAddGoal = async (
   goal: string,
@@ -113,7 +114,7 @@ export const fetchProfit = async (
     const data = await res.json();
 
     const totalProfit = data.reduce(
-      (acc: number, trade: Trade) => acc + (trade.profitLoss ?? 0),
+      (acc: number, trade: Trade) => acc + tradeNetPL(trade),
       0
     );
 

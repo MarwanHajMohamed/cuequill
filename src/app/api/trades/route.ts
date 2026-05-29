@@ -29,7 +29,24 @@ export async function GET(req: NextRequest) {
       const startDate = new Date(y, m, 1);
       const endDate = new Date(y, m + 1, 0, 23, 59, 59);
 
-      query.dateBought = { $gte: startDate, $lte: endDate };
+      // Closed trades attribute to their EXIT month (matches broker P/L
+      // accounting). Open trades attribute to their ENTRY month. Closed
+      // trades with no dateClosed fall back to dateBought.
+      query.$or = [
+        {
+          status: { $in: ["WIN", "LOSS"] },
+          dateClosed: { $gte: startDate, $lte: endDate },
+        },
+        {
+          status: { $in: ["WIN", "LOSS"] },
+          $or: [{ dateClosed: { $exists: false } }, { dateClosed: null }],
+          dateBought: { $gte: startDate, $lte: endDate },
+        },
+        {
+          status: "OPEN",
+          dateBought: { $gte: startDate, $lte: endDate },
+        },
+      ];
     }
 
     const trades = await Trade.find(query).sort({ dateBought: -1 });

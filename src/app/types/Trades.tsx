@@ -31,6 +31,9 @@ export interface Trade {
   strategy: StrategyList;
   closingContractPrice?: number | null;
   profitLoss?: number | null;
+  // Total commission/fees for the trade (entry + exit legs, in USD).
+  // Subtracted from profitLoss when displaying net P/L.
+  fees?: number | null;
   notes?: string;
   tags?: string[];
   simulated: boolean;

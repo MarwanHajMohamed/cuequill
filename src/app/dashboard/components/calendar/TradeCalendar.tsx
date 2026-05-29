@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { handleSaveTrade } from "@/handlers/tradeHandlers";
 import { useFedDates } from "@/hooks/useFedDates";
 import AnimatedCalendar from "@/app/reusablecalendar/AnimatedCalendar";
+import { tradeNetPL } from "@/lib/helpers/tradeNet";
 
 const now = new Date();
 const today = now.toISOString().split("T")[0];
@@ -33,6 +34,15 @@ export default function TradeCalendar({ userId }: { userId: string }) {
 
   const router = useRouter();
 
+  // Closed trades count under their EXIT date (matches broker P/L
+  // attribution). Open trades stay under their entry date.
+  const bucketDateFor = (t: Trade) => {
+    const isClosed = t.status === "WIN" || t.status === "LOSS";
+    return isClosed && t.dateClosed
+      ? t.dateClosed.split("T")[0]
+      : t.dateBought.split("T")[0];
+  };
+
   const tradesByDay = useMemo(() => {
     const map = new Map<
       string,
@@ -40,7 +50,7 @@ export default function TradeCalendar({ userId }: { userId: string }) {
     >();
     if (!trades) return map;
     for (const t of trades) {
-      const day = t.dateBought.split("T")[0];
+      const day = bucketDateFor(t);
       const prev = map.get(day) ?? {
         netPL: 0,
         closedCount: 0,
@@ -49,7 +59,7 @@ export default function TradeCalendar({ userId }: { userId: string }) {
       };
       prev.total += 1;
       if (t.status === "WIN" || t.status === "LOSS") {
-        prev.netPL += t.profitLoss ?? 0;
+        prev.netPL += tradeNetPL(t);
         prev.closedCount += 1;
       } else if (t.status === "OPEN") {
         prev.hasOpen = true;
@@ -67,7 +77,10 @@ export default function TradeCalendar({ userId }: { userId: string }) {
     >();
     if (!trades) return map;
     for (const t of trades) {
-      const d = new Date(t.dateBought);
+      const isClosed = t.status === "WIN" || t.status === "LOSS";
+      const dateStr =
+        isClosed && t.dateClosed ? t.dateClosed : t.dateBought;
+      const d = new Date(dateStr);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
       const prev = map.get(key) ?? {
         netPL: 0,
@@ -76,8 +89,8 @@ export default function TradeCalendar({ userId }: { userId: string }) {
         total: 0,
       };
       prev.total += 1;
-      if (t.status === "WIN" || t.status === "LOSS") {
-        prev.netPL += t.profitLoss ?? 0;
+      if (isClosed) {
+        prev.netPL += tradeNetPL(t);
         prev.closedCount += 1;
       } else if (t.status === "OPEN") {
         prev.hasOpen = true;
@@ -103,7 +116,7 @@ export default function TradeCalendar({ userId }: { userId: string }) {
     setSelectedDate(date);
     const dayStr = format(date, "yyyy-MM-dd");
     const dayTrades =
-      trades?.filter((t) => t.dateBought.split("T")[0] === dayStr) ?? [];
+      trades?.filter((t) => bucketDateFor(t) === dayStr) ?? [];
     if (dayTrades.length > 0) {
       setDayListOpen(true);
     } else {
@@ -115,7 +128,7 @@ export default function TradeCalendar({ userId }: { userId: string }) {
   const tradesForSelectedDay = useMemo(() => {
     if (!selectedDate || !trades) return [];
     const dayStr = format(selectedDate, "yyyy-MM-dd");
-    return trades.filter((t) => t.dateBought.split("T")[0] === dayStr);
+    return trades.filter((t) => bucketDateFor(t) === dayStr);
   }, [selectedDate, trades]);
 
   const getDaySummary = (date: Date) => {

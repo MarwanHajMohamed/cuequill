@@ -7,6 +7,7 @@ import { Trade } from "@/app/types/Trades";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import EquityCurve from "./EquityCurve";
+import { tradeNetPL } from "@/lib/helpers/tradeNet";
 
 type StatsVisibility = {
   netPL: boolean;
@@ -240,13 +241,13 @@ export default function Statistics({
 
   const biggestWin = closedData.length
     ? closedData.reduce((max: Trade, trade: Trade) => {
-        return (trade.profitLoss ?? 0) > (max.profitLoss ?? 0) ? trade : max;
+        return tradeNetPL(trade) > tradeNetPL(max) ? trade : max;
       })
     : null;
 
   const biggestLoss = closedData.length
     ? closedData.reduce((max: Trade, trade: Trade) => {
-        return (max.profitLoss ?? 0) > (trade.profitLoss ?? 0) ? trade : max;
+        return tradeNetPL(max) > tradeNetPL(trade) ? trade : max;
       })
     : null;
 
@@ -256,16 +257,19 @@ export default function Statistics({
   const winRate = total > 0 ? (wins / total) * 100 : 0;
 
   const netProfit = closedData.reduce(
-    (acc: number, trade: Trade) => acc + (trade.profitLoss ?? 0),
+    (acc: number, trade: Trade) => acc + tradeNetPL(trade),
     0,
   );
 
   const calcLongestWinStreak = (trades: Trade[]): number => {
+    // Streaks reflect the chronological order trades were realized, so
+    // sort by exit date (dateClosed), falling back to entry date if not set.
     const sorted = [...trades]
       .filter((t) => t.status !== "OPEN")
       .sort(
         (a, b) =>
-          new Date(a.dateBought).getTime() - new Date(b.dateBought).getTime(),
+          new Date(a.dateClosed || a.dateBought).getTime() -
+          new Date(b.dateClosed || b.dateBought).getTime(),
       );
 
     let longest = 0;
@@ -284,14 +288,14 @@ export default function Statistics({
   const longestWinStreak = calcLongestWinStreak(data);
   const longestFilteredWinStreak = calcLongestWinStreak(filteredData);
 
-  // SUMMARY-TILE METRICS (all-time)
+  // SUMMARY-TILE METRICS (all-time). Uses NET P/L (gross minus fees).
   const grossWins = closedData
-    .filter((t) => (t.profitLoss ?? 0) > 0)
-    .reduce((sum, t) => sum + (t.profitLoss ?? 0), 0);
+    .filter((t) => tradeNetPL(t) > 0)
+    .reduce((sum, t) => sum + tradeNetPL(t), 0);
 
   const grossLosses = closedData
-    .filter((t) => (t.profitLoss ?? 0) < 0)
-    .reduce((sum, t) => sum + Math.abs(t.profitLoss ?? 0), 0);
+    .filter((t) => tradeNetPL(t) < 0)
+    .reduce((sum, t) => sum + Math.abs(tradeNetPL(t)), 0);
 
   const profitFactor =
     grossLosses > 0 ? grossWins / grossLosses : grossWins > 0 ? Infinity : 0;
@@ -345,7 +349,7 @@ export default function Statistics({
       for (const tag of t.tags ?? []) {
         const prev = byTag.get(tag) ?? { count: 0, totalPL: 0, wins: 0 };
         prev.count += 1;
-        prev.totalPL += t.profitLoss ?? 0;
+        prev.totalPL += tradeNetPL(t);
         if (t.status === "WIN") prev.wins += 1;
         byTag.set(tag, prev);
       }
@@ -370,8 +374,8 @@ export default function Statistics({
     if (status === "Loss") return <span>-</span>;
 
     const biggestFilteredWin = closedFilteredData
-      .filter((trade) => (trade.profitLoss ?? 0) > 0)
-      .reduce((max, trade) => Math.max(max, trade.profitLoss ?? 0), 0);
+      .filter((trade) => tradeNetPL(trade) > 0)
+      .reduce((max, trade) => Math.max(max, tradeNetPL(trade)), 0);
 
     if (biggestFilteredWin === null) {
       return null;
@@ -386,8 +390,8 @@ export default function Statistics({
     if (status === "Win") return <span>-</span>;
 
     const biggestFilteredLoss = closedFilteredData
-      .filter((trade) => (trade.profitLoss ?? 0) < 0)
-      .reduce((min, trade) => Math.min(min, trade.profitLoss ?? 0), 0);
+      .filter((trade) => tradeNetPL(trade) < 0)
+      .reduce((min, trade) => Math.min(min, tradeNetPL(trade)), 0);
 
     if (biggestFilteredLoss === null) {
       return null;
@@ -416,7 +420,7 @@ export default function Statistics({
 
   const calcFilteredNetProfit = () => {
     const filteredNetProfit = closedFilteredData.reduce(
-      (acc: number, trade: Trade) => acc + (trade.profitLoss ?? 0),
+      (acc: number, trade: Trade) => acc + tradeNetPL(trade),
       0,
     );
 
@@ -493,8 +497,13 @@ export default function Statistics({
   const currentMonth = months[date.monthIndex];
   const { year } = date;
 
+  // Closed trades attribute to the month they were EXITED (matches broker
+  // P/L accounting); open trades stay on their entry month.
   const monthlyData = filteredData.filter((trade) => {
-    const tradeDate = new Date(trade.dateBought);
+    const isClosed = trade.status === "WIN" || trade.status === "LOSS";
+    const dateStr =
+      isClosed && trade.dateClosed ? trade.dateClosed : trade.dateBought;
+    const tradeDate = new Date(dateStr);
     return (
       tradeDate.getMonth() === date.monthIndex &&
       tradeDate.getFullYear() === date.year
@@ -514,11 +523,11 @@ export default function Statistics({
     if (closedMonthlyData.length > 0) {
       const biggestMonthlyWin = closedMonthlyData.reduce(
         (max: Trade, trade: Trade) =>
-          (trade.profitLoss ?? 0) > (max.profitLoss ?? 0) ? trade : max,
+          tradeNetPL(trade) > tradeNetPL(max) ? trade : max,
       );
       return (
         <span className="text-green-500">
-          ${biggestMonthlyWin.profitLoss?.toFixed(2)}
+          ${tradeNetPL(biggestMonthlyWin).toFixed(2)}
         </span>
       );
     }
@@ -530,18 +539,18 @@ export default function Statistics({
     if (closedMonthlyData.length > 0) {
       const biggestMonthlyLoss = closedMonthlyData.reduce(
         (max: Trade, trade: Trade) =>
-          (max.profitLoss ?? 0) > (trade.profitLoss ?? 0) ? trade : max,
+          tradeNetPL(max) > tradeNetPL(trade) ? trade : max,
       );
       return (
         <span className="text-red-500">
-          ${biggestMonthlyLoss.profitLoss?.toFixed(2)}
+          ${tradeNetPL(biggestMonthlyLoss).toFixed(2)}
         </span>
       );
     }
   };
 
   const netProfitMonthly = closedMonthlyData.reduce(
-    (acc: number, trade: Trade) => acc + (trade.profitLoss ?? 0),
+    (acc: number, trade: Trade) => acc + tradeNetPL(trade),
     0,
   );
 

@@ -69,7 +69,10 @@ export default function PreviousMonths({ userId }: { userId: string }) {
   }, [selectedMonth, selectedYear, userId, simulated]);
 
   const chosenMonthTrades = trades?.filter((trade) => {
-    const tradeDate = new Date(trade.dateBought);
+    const isClosed = trade.status === "WIN" || trade.status === "LOSS";
+    const dateStr =
+      isClosed && trade.dateClosed ? trade.dateClosed : trade.dateBought;
+    const tradeDate = new Date(dateStr);
 
     return (
       tradeDate.getMonth() === selectedMonth &&

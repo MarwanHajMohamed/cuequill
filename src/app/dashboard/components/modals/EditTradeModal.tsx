@@ -84,6 +84,7 @@ export default function EditTradeModal({
   const [closingContractPrice, setClosingContractPrice] = useState<
     number | null
   >(initialTrade?.closingContractPrice ?? null);
+  const [fees, setFees] = useState<number | null>(initialTrade?.fees ?? null);
   const [selectedOption, setSelectedOption] = useState<"CALL" | "PUT" | null>(
     initialTrade?.option ?? null
   );
@@ -135,10 +136,10 @@ export default function EditTradeModal({
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-        <div className="relative flex flex-col gap-3 md:gap-4 bg-[#0F0F17] md:p-6 p-3 rounded-xl w-[90%] max-w-lg text-white max-h-[90vh] overflow-scroll text-sm md:text-base">
+      <div className="fixed inset-0 bg-black/70 flex md:items-center md:justify-center items-stretch justify-stretch z-50">
+        <div className="relative flex flex-col gap-3 md:gap-4 bg-[#0F0F17] md:p-6 p-4 pt-5 md:rounded-xl md:w-[90%] md:max-w-lg w-full text-white md:max-h-[90vh] h-full md:h-auto overflow-y-auto text-sm md:text-base">
           <div
-            className={`absolute top-[-40px] left-0 w-[100%] border-1 border-red-500/50 text-red-500 text-center p-1 rounded bg-red-700/10 ${
+            className={`md:absolute md:top-[-40px] md:left-0 md:w-[100%] border border-red-500/50 text-red-500 text-center p-1 rounded bg-red-700/10 ${
               errorMessage === "" ? "hidden" : "shake"
             }`}
           >
@@ -332,6 +333,24 @@ export default function EditTradeModal({
                   />
                 </div>
               </div>
+              <div>
+                <label htmlFor="fees" className="block text-sm mb-1">
+                  Fees / Commissions{" "}
+                  <span className="text-white/40 text-xs">(optional)</span>
+                </label>
+                <input
+                  name="fees"
+                  type="number"
+                  step="0.01"
+                  value={isNaN(fees!) ? "" : fees ?? ""}
+                  onChange={(e) => {
+                    const v = parseFloat(e.target.value);
+                    setFees(isNaN(v) ? null : v);
+                  }}
+                  placeholder="Total round-trip fees (e.g. 2.10)"
+                  className="w-full p-2 text-base text-white bg-[#1A1A1D] rounded"
+                />
+              </div>
             </>
           )}
 
@@ -424,7 +443,8 @@ export default function EditTradeModal({
                     simulated,
                     toast,
                     onSave,
-                    initialTrade!
+                    initialTrade!,
+                    fees
                   )
                 }
                 className="px-4 py-2 bg-blue-600 transition duration-100 rounded hover:bg-blue-700 cursor-pointer"

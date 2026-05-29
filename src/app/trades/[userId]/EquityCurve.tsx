@@ -1,6 +1,7 @@
 "use client";
 
 import { Trade } from "@/app/types/Trades";
+import { tradeNetPL } from "@/lib/helpers/tradeNet";
 import { format } from "date-fns";
 import {
   Area,
@@ -42,7 +43,7 @@ export default function EquityCurve({ trades }: { trades: Trade[] }) {
   let peak = 0;
   let maxDrawdown = 0;
   const data: Point[] = closed.map((t) => {
-    cum += t.profitLoss ?? 0;
+    cum += tradeNetPL(t);
     if (cum > peak) peak = cum;
     const drawdown = cum - peak;
     if (drawdown < maxDrawdown) maxDrawdown = drawdown;

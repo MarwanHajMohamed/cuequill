@@ -21,6 +21,7 @@ import { Trade } from "../types/Trades";
 import { withAuth } from "@/lib/withAuth";
 import AnimatedCalendar from "../reusablecalendar/AnimatedCalendar";
 import WeekView from "./WeekView";
+import { tradeNetPL } from "@/lib/helpers/tradeNet";
 
 type TradeEvent =
   | Trade
@@ -136,37 +137,58 @@ function Page() {
     };
   }, [view, displayedMonth, trades]);
 
+  // Bucket each trade on its EXIT (dateClosed) for WIN/LOSS, and on its
+  // ENTRY (dateBought) for OPEN. This matches broker P/L attribution: a
+  // trade is realized on the day it closes, not the day it opens, so trades
+  // that span a month boundary land in the close month.
   const tradeEvents: TradeEvent[] = useMemo(() => {
     const baseEvents: TradeEvent[] = trades
-      ? trades.map((trade) => ({
-          _id: trade._id,
-          date: trade.dateBought.split("T")[0],
-          status: trade.status,
-          symbol: trade.symbol,
-          contractPrice: trade.contractPrice,
-          dateBought: trade.dateBought,
-          dateClosed: trade.dateClosed,
-          expiryDate: trade.expiryDate,
-          option: trade.option,
-          qty: trade.qty,
-          simulated: trade.simulated,
-          strategy: trade.strategy,
-          strike: trade.strike,
-          closingContractPrice: trade.closingContractPrice,
-          notes: trade.notes,
-          profitLoss: trade.profitLoss,
-          favourite: trade.favourite,
-        }))
+      ? trades.map((trade) => {
+          const isClosed =
+            trade.status === "WIN" || trade.status === "LOSS";
+          const bucketDate =
+            isClosed && trade.dateClosed
+              ? trade.dateClosed.split("T")[0]
+              : trade.dateBought.split("T")[0];
+          return {
+            _id: trade._id,
+            date: bucketDate,
+            status: trade.status,
+            symbol: trade.symbol,
+            contractPrice: trade.contractPrice,
+            dateBought: trade.dateBought,
+            dateClosed: trade.dateClosed,
+            expiryDate: trade.expiryDate,
+            option: trade.option,
+            qty: trade.qty,
+            simulated: trade.simulated,
+            strategy: trade.strategy,
+            strike: trade.strike,
+            closingContractPrice: trade.closingContractPrice,
+            notes: trade.notes,
+            profitLoss: trade.profitLoss,
+            favourite: trade.favourite,
+          };
+        })
       : [];
 
     return [{ date: today, status: "TODAY" }, ...baseEvents, ...manualTrades];
   }, [trades, manualTrades]);
 
+  // A trade belongs on a given day if it's open and was entered that day,
+  // or if it's closed and was exited that day.
+  const bucketDateFor = (t: Trade) => {
+    const isClosed = t.status === "WIN" || t.status === "LOSS";
+    return isClosed && t.dateClosed
+      ? t.dateClosed.split("T")[0]
+      : t.dateBought.split("T")[0];
+  };
+
   const handleDateClick = (date: Date) => {
     setSelectedDate(date);
     const dayStr = format(date, "yyyy-MM-dd");
     const dayTrades =
-      trades?.filter((t) => t.dateBought.split("T")[0] === dayStr) ?? [];
+      trades?.filter((t) => bucketDateFor(t) === dayStr) ?? [];
     if (dayTrades.length > 0) {
       setDayListOpen(true);
     } else {
@@ -178,7 +200,7 @@ function Page() {
   const tradesForSelectedDay = useMemo(() => {
     if (!selectedDate || !trades) return [];
     const dayStr = format(selectedDate, "yyyy-MM-dd");
-    return trades.filter((t) => t.dateBought.split("T")[0] === dayStr);
+    return trades.filter((t) => bucketDateFor(t) === dayStr);
   }, [selectedDate, trades]);
 
   // Per-week summaries for the displayed month — used by the sidebar.
@@ -205,7 +227,11 @@ function Page() {
       const weekEndStr = format(weekEnd, "yyyy-MM-dd");
 
       const inWeek = (trades ?? []).filter((t) => {
-        const dayStr = t.dateBought.split("T")[0];
+        const isClosed = t.status === "WIN" || t.status === "LOSS";
+        const dayStr =
+          isClosed && t.dateClosed
+            ? t.dateClosed.split("T")[0]
+            : t.dateBought.split("T")[0];
         return (
           dayStr >= weekStartStr &&
           dayStr <= weekEndStr &&
@@ -216,8 +242,15 @@ function Page() {
       const closed = inWeek.filter(
         (t) => t.status === "WIN" || t.status === "LOSS",
       );
-      const netPL = closed.reduce((sum, t) => sum + (t.profitLoss ?? 0), 0);
-      const days = new Set(inWeek.map((t) => t.dateBought.split("T")[0]));
+      const netPL = closed.reduce((sum, t) => sum + tradeNetPL(t), 0);
+      const days = new Set(
+        inWeek.map((t) => {
+          const isClosed = t.status === "WIN" || t.status === "LOSS";
+          return isClosed && t.dateClosed
+            ? t.dateClosed.split("T")[0]
+            : t.dateBought.split("T")[0];
+        }),
+      );
       buckets.push({
         weekNum,
         tradeCount: inWeek.length,
@@ -276,7 +309,7 @@ function Page() {
     const closedEvts = tradeEvts.filter(
       (e) => e.status === "WIN" || e.status === "LOSS",
     );
-    const netPL = closedEvts.reduce((sum, e) => sum + (e.profitLoss ?? 0), 0);
+    const netPL = closedEvts.reduce((sum, e) => sum + tradeNetPL(e), 0);
     const hasOpen = tradeEvts.some((e) => e.status === "OPEN");
     const isToday = events.some((e) => e.status === "TODAY");
     return {
@@ -418,7 +451,12 @@ function Page() {
     >();
     if (!trades) return map;
     for (const t of trades) {
-      const d = new Date(t.dateBought);
+      const isClosed = t.status === "WIN" || t.status === "LOSS";
+      // Closed trades count under the month they were exited; open trades
+      // under the month they were entered.
+      const dateStr =
+        isClosed && t.dateClosed ? t.dateClosed : t.dateBought;
+      const d = new Date(dateStr);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
       const prev = map.get(key) ?? {
         netPL: 0,
@@ -427,8 +465,8 @@ function Page() {
         total: 0,
       };
       prev.total += 1;
-      if (t.status === "WIN" || t.status === "LOSS") {
-        prev.netPL += t.profitLoss ?? 0;
+      if (isClosed) {
+        prev.netPL += tradeNetPL(t);
         prev.closedCount += 1;
       } else if (t.status === "OPEN") {
         prev.hasOpen = true;

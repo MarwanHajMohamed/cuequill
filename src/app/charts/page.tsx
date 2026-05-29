@@ -13,6 +13,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useTrades } from "@/hooks/useTrades";
 import { Trade } from "@/app/types/Trades";
 import { TAG_KIND_BY_LABEL } from "@/app/data/tradeTags";
+import { tradeNetPL } from "@/lib/helpers/tradeNet";
 
 type Bar = {
   time: number;
@@ -258,7 +259,7 @@ function TradeList({
         {trades.length} trade{trades.length === 1 ? "" : "s"} on {symbol}
       </div>
       {trades.map((t) => {
-        const pl = t.profitLoss ?? 0;
+        const pl = tradeNetPL(t);
         const date = t.dateBought
           ? new Date(t.dateBought).toLocaleDateString(undefined, {
               month: "short",
@@ -315,7 +316,7 @@ function TradeDetails({
   trade: Trade;
   onBack: () => void;
 }) {
-  const pl = trade.profitLoss ?? 0;
+  const pl = tradeNetPL(trade);
   const isWin = trade.status === "WIN";
   const isLoss = trade.status === "LOSS";
   const entry = trade.dateBought ? new Date(trade.dateBought) : null;

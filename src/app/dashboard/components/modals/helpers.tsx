@@ -58,7 +58,8 @@ export const handleSave = (
   simulated: boolean,
   toast: (message: string) => void,
   onSave: (trade: Trade) => void,
-  initialTrade: Partial<Trade> | null
+  initialTrade: Partial<Trade> | null,
+  fees?: number | null
 ) => {
   const error: string = validate(
     selectedOption,
@@ -103,6 +104,7 @@ export const handleSave = (
     closingContractPrice:
       status === "WIN" || status === "LOSS" ? closingContractPrice : null,
     profitLoss: status === "WIN" || status === "LOSS" ? profitLoss : null,
+    fees: status === "WIN" || status === "LOSS" ? fees ?? null : null,
     notes,
     tags,
     simulated,

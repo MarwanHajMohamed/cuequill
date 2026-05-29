@@ -8,6 +8,9 @@ const TradeSchema = new mongoose.Schema({
 
   status: { type: String, enum: ["OPEN", "WIN", "LOSS"], default: "OPEN" },
   profitLoss: { type: Number },
+  // Total commissions/fees (entry + exit), in USD. Subtracted from
+  // profitLoss to compute net P/L.
+  fees: { type: Number, default: 0 },
 
   contractPrice: { type: Number, required: true },
   qty: { type: Number, required: true },

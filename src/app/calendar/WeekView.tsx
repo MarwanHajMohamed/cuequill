@@ -11,6 +11,7 @@ import {
 } from "react";
 import { format, addDays, addWeeks, subWeeks, startOfWeek } from "date-fns";
 import { Trade } from "../types/Trades";
+import { tradeNetPL } from "@/lib/helpers/tradeNet";
 
 export type WeekViewHandle = { goToToday: () => void };
 
@@ -170,10 +171,18 @@ const WeekView = forwardRef<WeekViewHandle, WeekViewProps>(function WeekView(
 
   const tradeEvents: TradeEvent[] = useMemo(() => {
     const baseEvents: TradeEvent[] = trades
-      ? trades.map((trade) => ({
-          ...trade,
-          date: trade.dateBought.split("T")[0],
-        }))
+      ? trades.map((trade) => {
+          const isClosed =
+            trade.status === "WIN" || trade.status === "LOSS";
+          const bucketDate =
+            isClosed && trade.dateClosed
+              ? trade.dateClosed.split("T")[0]
+              : trade.dateBought.split("T")[0];
+          return {
+            ...trade,
+            date: bucketDate,
+          };
+        })
       : [];
     return [{ date: today, status: "TODAY" }, ...baseEvents];
   }, [trades]);
@@ -265,7 +274,7 @@ const WeekView = forwardRef<WeekViewHandle, WeekViewProps>(function WeekView(
               (e) => e.status === "WIN" || e.status === "LOSS",
             ) as Trade[];
             const netPL = closedTrades.reduce(
-              (sum, e) => sum + (e.profitLoss ?? 0),
+              (sum, e) => sum + tradeNetPL(e),
               0,
             );
             return (
