@@ -41,7 +41,37 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [currentPage, setCurrentPage] = useState<number>(1);
+  const [syncing, setSyncing] = useState<boolean>(false);
   const tradesPerPage = 15;
+
+  const handleSync = async () => {
+    if (syncing) return;
+    setSyncing(true);
+    try {
+      const res = await fetch("/api/ibkr/sync", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        toast(`Sync failed: ${data.error ?? "Unknown error"}`);
+        return;
+      }
+      const inserted = data.inserted ?? 0;
+      const skipped = data.skipped ?? 0;
+      if (inserted === 0) {
+        toast(`Already up to date — no new trades${skipped ? ` (${skipped} skipped)` : ""}`);
+      } else {
+        toast(
+          `Imported ${inserted} new trade${inserted === 1 ? "" : "s"}${skipped ? ` (${skipped} skipped)` : ""}`,
+        );
+        await queryClient.invalidateQueries({ queryKey: ["trades", userId] });
+      }
+    } catch (err) {
+      toast(
+        `Sync failed: ${err instanceof Error ? err.message : "Unknown error"}`,
+      );
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -395,19 +425,42 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
           </div>
           {filteredTrades?.length !== 0 && (
             <div className="flex md:justify-between gap-2 md:mt-5 w-full max-w-[1500px]">
-              <button
-                className="md:text-xs border border-green-500 bg-green-500/20 justify-center md:p-2 rounded-lg 
+              <div className="flex gap-2">
+                <button
+                  className="md:text-xs border border-green-500 bg-green-500/20 justify-center md:p-2 rounded-lg
                       flex gap-2 items-center cursor-pointer
                       transition duration-100 hover:bg-green-500/50 w-8 h-8 md:w-auto text-lg"
-                onClick={() => {
-                  setEditingTrade(null);
-                  setIsModalOpen(true);
-                }}
-              >
-                + <span className="md:flex hidden">Add new trade</span>
-              </button>
+                  onClick={() => {
+                    setEditingTrade(null);
+                    setIsModalOpen(true);
+                  }}
+                >
+                  + <span className="md:flex hidden">Add new trade</span>
+                </button>
+                <button
+                  className={`md:text-xs border border-blue-500 bg-blue-500/20 justify-center md:p-2 rounded-lg
+                      flex gap-2 items-center
+                      transition duration-100 w-8 h-8 md:w-auto text-sm md:text-xs ${
+                        syncing
+                          ? "cursor-not-allowed opacity-60"
+                          : "cursor-pointer hover:bg-blue-500/50"
+                      }`}
+                  onClick={handleSync}
+                  disabled={syncing}
+                  title="Import any new trades from IBKR"
+                >
+                  <i
+                    className={`fa-solid fa-rotate ${
+                      syncing ? "animate-spin" : ""
+                    }`}
+                  ></i>
+                  <span className="md:flex hidden">
+                    {syncing ? "Syncing..." : "Sync from IBKR"}
+                  </span>
+                </button>
+              </div>
               <button
-                className="text-xs border border-red-500 bg-red-500/20 justify-center md:p-2 rounded-lg 
+                className="text-xs border border-red-500 bg-red-500/20 justify-center md:p-2 rounded-lg
                       flex gap-2 items-center cursor-pointer
                       transition duration-100 hover:bg-red-500/50 w-8 h-8 md:w-auto text-lg"
                 onClick={() => setDelAllModal(true)}

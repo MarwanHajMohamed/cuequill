@@ -110,16 +110,16 @@ export default function IBKRTab() {
           <li>
             In IBKR Account Management go to{" "}
             <span className="text-white">
-              Settings &rarr; User Settings &rarr; Reporting &rarr; Flex Web
-              Service
+              Performance & Reports &rsaquo; Flex Queries &rsaquo; Flex Web
+              Service Configuration <i className="fa-solid fa-gear"></i>
             </span>{" "}
             and generate a token.
           </li>
           <li>
             Go to{" "}
-            <span className="text-white">Reports &rarr; Flex Queries</span> and
-            create a new <span className="text-white">Activity Flex Query</span>
-            .
+            <span className="text-white">Reports &rsaquo; Flex Queries</span>{" "}
+            and create a new{" "}
+            <span className="text-white">Activity Flex Query</span>.
           </li>
           <li>
             Under <span className="text-white">Trades</span>, select: Symbol,

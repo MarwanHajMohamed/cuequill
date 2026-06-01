@@ -15,6 +15,7 @@ import { handleSaveTrade } from "@/handlers/tradeHandlers";
 import { useFedDates } from "@/hooks/useFedDates";
 import AnimatedCalendar from "@/app/reusablecalendar/AnimatedCalendar";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
+import { AnimatePresence } from "framer-motion";
 
 const now = new Date();
 const today = now.toISOString().split("T")[0];
@@ -270,23 +271,26 @@ export default function TradeCalendar({ userId }: { userId: string }) {
           }}
         />
       )}
-      {isModalOpen && selectedDate && (
-        <TradeModal
-          date={
-            editingTrade?.dateBought
-              ? new Date(editingTrade.dateBought)
-              : selectedDate
-          }
-          onClose={() => {
-            setIsModalOpen(false);
-            setEditingTrade(null);
-          }}
-          onSave={(e) =>
-            handleSaveTrade(e, userId, setIsModalOpen, queryClient)
-          }
-          initialTrade={editingTrade ?? undefined}
-        />
-      )}
+      <AnimatePresence>
+        {isModalOpen && selectedDate && (
+          <TradeModal
+            key="trade-modal"
+            date={
+              editingTrade?.dateBought
+                ? new Date(editingTrade.dateBought)
+                : selectedDate
+            }
+            onClose={() => {
+              setIsModalOpen(false);
+              setEditingTrade(null);
+            }}
+            onSave={(e) =>
+              handleSaveTrade(e, userId, setIsModalOpen, queryClient)
+            }
+            initialTrade={editingTrade ?? undefined}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

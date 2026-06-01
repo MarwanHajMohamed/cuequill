@@ -194,7 +194,6 @@ export const strategies: Strategy[] = [
         type: "text",
         content: "20MA doesn't have to be over 40MA, but it does help.",
       },
-      { type: "text", content: "Normal fall & hard fall charts:" },
       { type: "image", src: NFHF1.src, alt: "Normal Fall Hard Fall chart" },
       { type: "image", src: NFHF2.src, alt: "Normal Fall Hard Fall chart 2" },
     ],

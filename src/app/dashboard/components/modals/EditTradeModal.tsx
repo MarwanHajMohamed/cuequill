@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { TradeEventType, StrategyList, Trade } from "@/app/types/Trades";
 import { TRADE_TAG_OPTIONS } from "@/app/data/tradeTags";
@@ -136,8 +137,20 @@ export default function EditTradeModal({
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/70 flex md:items-center md:justify-center items-stretch justify-stretch z-50">
-        <div className="relative flex flex-col gap-3 md:gap-4 bg-[#0F0F17] md:p-6 p-4 pt-5 md:rounded-xl md:w-[90%] md:max-w-lg w-full text-white md:max-h-[90vh] h-full md:h-auto overflow-y-auto text-sm md:text-base">
+      <motion.div
+        className="fixed inset-0 bg-black/70 flex md:items-center md:justify-center items-stretch justify-stretch z-50"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.18 }}
+      >
+        <motion.div
+          className="relative flex flex-col gap-3 md:gap-4 bg-[#0F0F17] md:p-6 p-4 pt-5 md:rounded-xl md:w-[90%] md:max-w-lg w-full text-white md:max-h-[90vh] h-full md:h-auto overflow-y-auto text-sm md:text-base"
+          initial={{ opacity: 0, scale: 0.96, y: 16 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.96, y: 16 }}
+          transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
+        >
           <div
             className={`md:absolute md:top-[-40px] md:left-0 md:w-[100%] border border-red-500/50 text-red-500 text-center p-1 rounded bg-red-700/10 ${
               errorMessage === "" ? "hidden" : "shake"
@@ -453,8 +466,8 @@ export default function EditTradeModal({
               </button>
             </div>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
       {onDelete && initialTrade?._id && delModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-51">
           <div className="flex flex-col gap-4 bg-[#0F0F17] items-center p-6 rounded-xl w-[90%] max-w-lg text-white">

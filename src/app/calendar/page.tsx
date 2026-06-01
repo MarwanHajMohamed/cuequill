@@ -22,6 +22,7 @@ import { withAuth } from "@/lib/withAuth";
 import AnimatedCalendar from "../reusablecalendar/AnimatedCalendar";
 import WeekView from "./WeekView";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
+import { AnimatePresence } from "framer-motion";
 
 type TradeEvent =
   | Trade
@@ -691,22 +692,25 @@ function Page() {
         />
       )}
 
-      {isModalOpen && selectedDate && (
-        <TradeModal
-          date={
-            editingTrade?.dateBought
-              ? new Date(editingTrade.dateBought)
-              : selectedDate
-          }
-          onClose={() => {
-            setIsModalOpen(false);
-            setEditingTrade(null);
-          }}
-          onSave={handleSaveTrade}
-          initialTrade={editingTrade ?? undefined}
-          onDelete={handleDeleteTrade}
-        />
-      )}
+      <AnimatePresence>
+        {isModalOpen && selectedDate && (
+          <TradeModal
+            key="trade-modal"
+            date={
+              editingTrade?.dateBought
+                ? new Date(editingTrade.dateBought)
+                : selectedDate
+            }
+            onClose={() => {
+              setIsModalOpen(false);
+              setEditingTrade(null);
+            }}
+            onSave={handleSaveTrade}
+            initialTrade={editingTrade ?? undefined}
+            onDelete={handleDeleteTrade}
+          />
+        )}
+      </AnimatePresence>
     </>
   );
 }
