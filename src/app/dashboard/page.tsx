@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import Time from "./components/landing/Time";
 import TradeCalendar from "./components/calendar/TradeCalendar";
 import TradeStrategies from "./components/lists/TradeStrategies";
-import TradeCharts from "./components/charts/TradeCharts";
+import DashboardStats from "./components/stats/DashboardStats";
 import { withAuth } from "@/lib/withAuth";
 import { useSession } from "next-auth/react";
 
@@ -22,7 +22,7 @@ function Page() {
         <TradeStrategies userId={userId} />
       </div>
       <div className="w-[100%] flex flex-col items-center">
-        <TradeCharts userId={userId} />
+        <DashboardStats userId={userId} />
         {/* <Portfolio userId={userId} /> */}
       </div>
     </div>
