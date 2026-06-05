@@ -170,7 +170,11 @@ const MiniDonut = ({
 const InfoTooltip = ({ text }: { text: string }) => {
   const [open, setOpen] = useState(false);
   const [hovered, setHovered] = useState(false);
-  const [shift, setShift] = useState(0);
+  const [coords, setCoords] = useState<{
+    left: number;
+    top: number;
+    placed: boolean;
+  }>({ left: 0, top: 0, placed: false });
   const ref = useRef<HTMLSpanElement>(null);
   const tipRef = useRef<HTMLSpanElement>(null);
   const visible = open || hovered;
@@ -186,52 +190,47 @@ const InfoTooltip = ({ text }: { text: string }) => {
     return () => document.removeEventListener("mousedown", onClick);
   }, [open]);
 
-  // Reset shift whenever the tooltip is hidden so the next show starts
-  // from a clean centered position — measurement below will re-derive it.
-  useEffect(() => {
-    if (!visible) setShift(0);
-  }, [visible]);
-
-  // useLayoutEffect runs synchronously after DOM mutations but BEFORE the
-  // browser paints. By measuring + setting shift here, React re-renders
-  // with the corrected transform and the user only ever sees the clamped
-  // position — no flash of overflow.
+  // Position with `position: fixed` against the viewport so the tooltip
+  // can never push the page width — even when the anchor icon is at the
+  // right edge of the screen. Clamps left to keep at least 8px between
+  // the tooltip and each viewport edge.
   useLayoutEffect(() => {
-    if (!visible) return;
-    const measure = () => {
-      const node = tipRef.current;
-      if (!node) return;
-      // Force the un-shifted baseline so the measurement is honest.
-      node.style.transform = "translateX(-50%)";
-      const rect = node.getBoundingClientRect();
-      // Element is display:none until visible flips — bail if we get the
-      // zero-rect.
-      if (rect.width === 0 && rect.height === 0) return;
+    if (!visible) {
+      setCoords((c) => (c.placed ? { left: 0, top: 0, placed: false } : c));
+      return;
+    }
+    const update = () => {
+      const iconNode = ref.current;
+      const tipNode = tipRef.current;
+      if (!iconNode || !tipNode) return;
+      const iconRect = iconNode.getBoundingClientRect();
+      const tipRect = tipNode.getBoundingClientRect();
       const margin = 8;
-      let s = 0;
-      if (rect.left < margin) s = Math.round(margin - rect.left);
-      else if (rect.right > window.innerWidth - margin)
-        s = Math.round(window.innerWidth - margin - rect.right);
-      setShift(s);
+      // Use clientWidth so the scrollbar isn't counted; falls back to
+      // window.innerWidth on older browsers.
+      const viewportW =
+        document.documentElement.clientWidth || window.innerWidth;
+
+      // Default: center the tooltip on the icon, then clamp into viewport.
+      let left =
+        iconRect.left + iconRect.width / 2 - tipRect.width / 2;
+      if (left < margin) left = margin;
+      const maxLeft = viewportW - margin - tipRect.width;
+      if (left > maxLeft) left = maxLeft;
+
+      // Place above the icon with an 8px gap.
+      const top = iconRect.top - tipRect.height - 8;
+
+      setCoords({ left, top, placed: true });
     };
-    measure();
-    window.addEventListener("resize", measure);
-    window.addEventListener("scroll", measure, true);
+    update();
+    window.addEventListener("resize", update);
+    window.addEventListener("scroll", update, true);
     return () => {
-      window.removeEventListener("resize", measure);
-      window.removeEventListener("scroll", measure, true);
+      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", update, true);
     };
   }, [visible]);
-
-  // Build a calc() expression that's safe across browsers — explicit sign
-  // (some engines don't accept `calc(-50% + -94px)` even though it's
-  // valid CSS).
-  const transform =
-    shift === 0
-      ? "translateX(-50%)"
-      : shift > 0
-      ? `translateX(calc(-50% + ${shift}px))`
-      : `translateX(calc(-50% - ${Math.abs(shift)}px))`;
 
   return (
     <span
@@ -251,16 +250,20 @@ const InfoTooltip = ({ text }: { text: string }) => {
       >
         <i className="fa-solid fa-circle-info text-sm md:text-xs text-white/40 hover:text-white/70 transition-colors" />
       </button>
+      {/* Always rendered so we can measure it; visibility is gated on
+          `coords.placed` so the user never sees a frame at (0, 0). */}
       <span
         ref={tipRef}
         style={{
-          transform,
+          position: "fixed",
+          left: coords.left,
+          top: coords.top,
           maxWidth: "min(12rem, calc(100vw - 16px))",
+          visibility: visible && coords.placed ? "visible" : "hidden",
+          pointerEvents: "none",
         }}
-        className={`pointer-events-none absolute bottom-full left-1/2 mb-2
-                    bg-[#16151B] border border-white/10 text-white/80 text-[11px] rounded-md px-2 py-1.5
-                    whitespace-normal w-48 z-20 leading-snug shadow-md normal-case
-                    ${visible ? "block" : "hidden"}`}
+        className="bg-[#16151B] border border-white/10 text-white/80 text-[11px] rounded-md px-2 py-1.5
+                   whitespace-normal w-48 z-50 leading-snug shadow-md normal-case"
       >
         {text}
       </span>
