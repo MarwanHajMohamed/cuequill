@@ -407,7 +407,6 @@ export default function EditTradeModal({
                   className="px-3 py-2 text-sm rounded-md border border-red-500/40 text-red-400 hover:bg-red-500/10 transition cursor-pointer flex items-center gap-1.5"
                 >
                   <i className="fa-solid fa-trash-can text-xs"></i>
-                  Delete
                 </button>
               )}
             </div>
@@ -449,7 +448,7 @@ export default function EditTradeModal({
                 className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 rounded-md transition cursor-pointer flex items-center gap-1.5"
               >
                 <i className="fa-solid fa-floppy-disk text-xs"></i>
-                {isEditing ? "Save changes" : "Create trade"}
+                {isEditing ? "Save" : "Create trade"}
               </button>
             </div>
           </div>
@@ -476,8 +475,7 @@ export default function EditTradeModal({
           >
             <i className="fa-solid fa-triangle-exclamation text-red-500 text-2xl"></i>
             <div className="text-center text-sm">
-              Are you sure you want to delete this trade? This cannot be
-              undone.
+              Are you sure you want to delete this trade? This cannot be undone.
             </div>
             <div className="flex gap-2 w-full">
               <button
@@ -518,7 +516,7 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <div className={`flex flex-col gap-1 ${className}`}>
+    <div className={`flex flex-col gap-1 min-w-0 ${className}`}>
       <div className="flex items-center justify-between gap-2">
         <label className="text-[10px] uppercase tracking-wider text-white/40">
           {label}
@@ -551,7 +549,7 @@ function NumberInput({
         onChange(isNaN(v) ? null : v);
       }}
       placeholder={placeholder}
-      className="w-full p-2 text-base text-white bg-[#1A1A1D] rounded border border-white/10 focus:border-white/30 focus:outline-none placeholder:text-white/30"
+      className="w-full min-w-0 p-2 text-base text-white bg-[#1A1A1D] rounded border border-white/10 focus:border-white/30 focus:outline-none placeholder:text-white/30"
     />
   );
 }
@@ -574,7 +572,10 @@ function DateInput({
       min={min}
       max={max}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full p-2 text-base text-white bg-[#1A1A1D] rounded border border-white/10 focus:border-white/30 focus:outline-none"
+      // `min-w-0` overrides iOS Safari's intrinsic min-width on date
+      // inputs (otherwise the picker swallows grid gaps on narrow
+      // screens); `appearance-none` strips the inset shadow.
+      className="w-full min-w-0 p-2 text-base text-white bg-[#1A1A1D] rounded border border-white/10 focus:border-white/30 focus:outline-none appearance-none"
     />
   );
 }
