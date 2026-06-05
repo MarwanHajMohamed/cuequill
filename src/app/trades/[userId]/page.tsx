@@ -501,6 +501,8 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
               filteredData={filteredTrades!}
               option={option}
               strategy={strategy}
+              symbol={symbol}
+              isFavourite={isFavourite}
             />
           )}
         </div>
