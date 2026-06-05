@@ -532,12 +532,15 @@ export default function Statistics({
       })
     : null;
 
-  const total = data.length;
-  const wins = data.filter((trade) => trade.status === "WIN").length;
+  // Top summary tiles follow the active filters so the headline KPIs
+  // match the Filter Insights table. The Filter Insights section itself
+  // still shows the all-time baseline separately for delta comparison.
+  const total = filteredData.length;
+  const wins = filteredData.filter((trade) => trade.status === "WIN").length;
 
   const winRate = total > 0 ? (wins / total) * 100 : 0;
 
-  const netProfit = closedData.reduce(
+  const netProfit = closedFilteredData.reduce(
     (acc: number, trade: Trade) => acc + tradeNetPL(trade),
     0,
   );
@@ -566,23 +569,29 @@ export default function Statistics({
     return longest;
   };
 
-  const longestWinStreak = calcLongestWinStreak(data);
+  const longestWinStreak = calcLongestWinStreak(filteredData);
   const longestFilteredWinStreak = calcLongestWinStreak(filteredData);
 
-  // SUMMARY-TILE METRICS (all-time). Uses NET P/L (gross minus fees).
-  const grossWins = closedData
+  // SUMMARY-TILE METRICS. Computed against the FILTERED dataset so the
+  // headline tiles narrow with the page's Filters component. NET P/L
+  // (gross minus fees) is used throughout.
+  const grossWins = closedFilteredData
     .filter((t) => tradeNetPL(t) > 0)
     .reduce((sum, t) => sum + tradeNetPL(t), 0);
 
-  const grossLosses = closedData
+  const grossLosses = closedFilteredData
     .filter((t) => tradeNetPL(t) < 0)
     .reduce((sum, t) => sum + Math.abs(tradeNetPL(t)), 0);
 
   const profitFactor =
     grossLosses > 0 ? grossWins / grossLosses : grossWins > 0 ? Infinity : 0;
 
-  const winCount = closedData.filter((t) => t.status === "WIN").length;
-  const lossCount = closedData.filter((t) => t.status === "LOSS").length;
+  const winCount = closedFilteredData.filter(
+    (t) => t.status === "WIN",
+  ).length;
+  const lossCount = closedFilteredData.filter(
+    (t) => t.status === "LOSS",
+  ).length;
   const concludedCount = winCount + lossCount;
   const winRatePct = concludedCount > 0 ? (winCount / concludedCount) * 100 : 0;
 
@@ -869,9 +878,25 @@ export default function Statistics({
   const currentMonth = months[date.monthIndex];
   const { year } = date;
 
+  // Statistics-per-month browses by month independently of the page's
+  // date-range filter — otherwise picking MTD/WTD would empty out every
+  // other month. Other filters (status, strategy, symbol, option,
+  // favourite) still apply so the breakdown stays meaningful.
+  const dataIgnoringDateRange = useMemo(() => {
+    return data.filter((trade) => {
+      if (status === "Win" && trade.status !== "WIN") return false;
+      if (status === "Loss" && trade.status !== "LOSS") return false;
+      if (strategy !== "All" && trade.strategy !== strategy) return false;
+      if (symbol !== "All" && trade.symbol !== symbol) return false;
+      if (option !== "All" && trade.option !== option) return false;
+      if (isFavourite && trade.favourite === false) return false;
+      return true;
+    });
+  }, [data, status, strategy, symbol, option, isFavourite]);
+
   // Closed trades attribute to the month they were EXITED (matches broker
   // P/L accounting); open trades stay on their entry month.
-  const monthlyData = filteredData.filter((trade) => {
+  const monthlyData = dataIgnoringDateRange.filter((trade) => {
     const isClosed = trade.status === "WIN" || trade.status === "LOSS";
     const dateStr =
       isClosed && trade.dateClosed ? trade.dateClosed : trade.dateBought;

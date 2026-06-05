@@ -83,8 +83,7 @@ export default function Navbar() {
       slug: `trades/${userId}`,
     },
     { icon: "fa-solid fa-calendar-days", label: "Calendar", slug: "calendar" },
-    { icon: "fa-solid fa-chart-line", label: "Charts", slug: "charts" },
-    { icon: "fa-solid fa-newspaper", label: "News", slug: "news" },
+    { icon: "fa-solid fa-bullseye", label: "Goals", slug: "goals" },
     {
       icon: "fa-regular fa-circle-check",
       label: "Affirmations",
@@ -101,8 +100,7 @@ export default function Navbar() {
   const navItems = [
     { name: "Trades", slug: `trades/${userId}`, side: "MIDDLE" },
     { name: "Calendar", slug: "calendar", side: "MIDDLE" },
-    { name: "Charts", slug: "charts", side: "MIDDLE" },
-    { name: "News", slug: "news", side: "MIDDLE" },
+    { name: "Goals", slug: "goals", side: "MIDDLE" },
     { name: "Affirmations", slug: "affirmations", side: "MIDDLE" },
     {
       name: "Guide",

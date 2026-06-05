@@ -18,31 +18,6 @@ type TradeModalProps = {
   onDelete?: (_id: string) => void;
 };
 
-type InputProps = React.InputHTMLAttributes<HTMLInputElement> & {
-  label?: string;
-};
-
-function FormInput({ label, name, placeholder, ...props }: InputProps) {
-  return (
-    <div>
-      {label && (
-        <label htmlFor={name} className="block text-sm mb-1">
-          {label}
-        </label>
-      )}
-      <input
-        id={name}
-        name={name}
-        placeholder={placeholder}
-        {...props}
-        className={`w-full p-2 text-base text-white bg-[#1A1A1D] rounded ${
-          props.className || ""
-        }`}
-      />
-    </div>
-  );
-}
-
 export default function EditTradeModal({
   date,
   onClose,
@@ -55,56 +30,53 @@ export default function EditTradeModal({
 
   const [symbol, setSymbol] = useState<string>(initialTrade?.symbol ?? "");
   const [contractPrice, setContractPrice] = useState<number | null>(
-    initialTrade?.contractPrice ?? null
+    initialTrade?.contractPrice ?? null,
   );
   const [qty, setQty] = useState<number | null>(initialTrade?.qty ?? null);
   const [strike, setStrike] = useState<number | null>(
-    initialTrade?.strike ?? null
+    initialTrade?.strike ?? null,
   );
   const [dateBought, setDateBought] = useState<string>(
     initialTrade?.dateBought
       ? format(new Date(initialTrade.dateBought), "yyyy-MM-dd")
-      : format(date, "yyyy-MM-dd")
+      : format(date, "yyyy-MM-dd"),
   );
   const [expiryDate, setExpiryDate] = useState<string>(
     initialTrade?.expiryDate
       ? format(new Date(initialTrade.expiryDate), "yyyy-MM-dd")
-      : format(date, "yyyy-MM-dd")
+      : format(date, "yyyy-MM-dd"),
   );
   const [dateClosed, setDateClosed] = useState<string>(
     initialTrade?.dateClosed
       ? format(new Date(initialTrade.dateClosed), "yyyy-MM-dd")
-      : format(date, "yyyy-MM-dd")
+      : format(date, "yyyy-MM-dd"),
   );
   const [status, setStatus] = useState<TradeEventType>(
-    initialTrade?.status ?? "OPEN"
+    initialTrade?.status ?? "OPEN",
   );
   const [strategy, setStrategy] = useState<StrategyList>(
-    initialTrade?.strategy ?? "Moving Average 40"
+    initialTrade?.strategy ?? "Moving Average 40",
   );
   const [closingContractPrice, setClosingContractPrice] = useState<
     number | null
   >(initialTrade?.closingContractPrice ?? null);
   const [fees, setFees] = useState<number | null>(initialTrade?.fees ?? null);
   const [selectedOption, setSelectedOption] = useState<"CALL" | "PUT" | null>(
-    initialTrade?.option ?? null
+    initialTrade?.option ?? null,
   );
   const [notes, setNotes] = useState<string>(initialTrade?.notes ?? "");
   const [tags, setTags] = useState<string[]>(initialTrade?.tags ?? []);
-
-  const toggleTag = (label: string) => {
+  const toggleTag = (label: string) =>
     setTags((prev) =>
-      prev.includes(label) ? prev.filter((t) => t !== label) : [...prev, label]
+      prev.includes(label) ? prev.filter((t) => t !== label) : [...prev, label],
     );
-  };
   const [simulated, setSimulated] = useState<boolean>(
-    initialTrade?.simulated || false
+    initialTrade?.simulated || false,
   );
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [delModal, setDelModal] = useState<boolean>(false);
 
   const toast = useToast();
-
   useScrollLock();
 
   const strategies: StrategyList[] = [
@@ -123,318 +95,332 @@ export default function EditTradeModal({
   ];
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onClose();
-      }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
     };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
+
+  const isCall = selectedOption === "CALL";
+  const isPut = selectedOption === "PUT";
+  const isClosed = status === "WIN" || status === "LOSS";
+  const isEditing = !!initialTrade?._id;
+
+  const heroGradient = isCall
+    ? "bg-gradient-to-br from-green-500/15 via-transparent to-transparent"
+    : isPut
+      ? "bg-gradient-to-br from-red-500/15 via-transparent to-transparent"
+      : "bg-gradient-to-br from-white/5 via-transparent to-transparent";
 
   return (
     <>
       <motion.div
-        className="fixed inset-0 bg-black/70 flex md:items-center md:justify-center items-stretch justify-stretch z-50"
+        className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-3 md:p-0"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.18 }}
+        onClick={onClose}
       >
         <motion.div
-          className="relative flex flex-col gap-3 md:gap-4 bg-[#0F0F17] md:p-6 p-4 pt-5 md:rounded-xl md:w-[90%] md:max-w-lg w-full text-white md:max-h-[90vh] h-full md:h-auto overflow-y-auto text-sm md:text-base"
+          onClick={(e) => e.stopPropagation()}
+          className="relative flex flex-col bg-[#0F0F17] border border-white/10 rounded-2xl md:w-[90%] md:max-w-lg w-full max-h-full md:max-h-[90vh] overflow-hidden"
           initial={{ opacity: 0, scale: 0.96, y: 16 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: 16 }}
           transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
         >
+          {/* ── Hero header (fixed) ── */}
           <div
-            className={`md:absolute md:top-[-40px] md:left-0 md:w-[100%] border border-red-500/50 text-red-500 text-center p-1 rounded bg-red-700/10 ${
-              errorMessage === "" ? "hidden" : "shake"
-            }`}
+            className={`relative shrink-0 px-5 md:px-6 pt-5 md:pt-6 pb-5 md:pb-6 border-b border-white/5 ${heroGradient}`}
           >
-            {errorMessage}
-          </div>
-          <div className="flex gap-4">
             <button
-              onClick={() => {
-                setSelectedOption("CALL");
-                setErrorMessage("");
-              }}
-              className={`w-1/2 cursor-pointer border rounded py-1 transition duration-100 ease-in-out
-          ${
-            selectedOption === "CALL"
-              ? "bg-green-700 text-white border-green-700"
-              : "text-green-500 border-green-500 hover:bg-green-700/30"
-          }
-        `}
+              onClick={onClose}
+              aria-label="Close"
+              type="button"
+              className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full text-white/40 hover:text-white hover:bg-white/5 transition cursor-pointer"
             >
-              CALL
+              <i className="fa-solid fa-xmark text-base"></i>
             </button>
 
-            <button
-              onClick={() => {
-                setSelectedOption("PUT");
-                setErrorMessage("");
-              }}
-              className={`w-1/2 cursor-pointer border rounded py-1 transition duration-100 ease-in-out
-          ${
-            selectedOption === "PUT"
-              ? "bg-red-700 text-white border-red-700"
-              : "text-red-500 border-red-500 hover:bg-red-700/30"
-          }
-        `}
-            >
-              PUT
-            </button>
-          </div>
-
-          <input
-            type="text"
-            value={symbol}
-            onChange={(e) => {
-              setSymbol(e.target.value.toUpperCase());
-              setErrorMessage("");
-            }}
-            placeholder="Symbol"
-            autoCapitalize="characters"
-            autoCorrect="off"
-            spellCheck={false}
-            className="w-full p-2 text-base text-white bg-[#1A1A1D] rounded uppercase placeholder:normal-case"
-          />
-
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-4">
-            <div>
-              <FormInput
-                label="Contract Price"
-                name="contractPrice"
-                placeholder="Contract"
-                type="number"
-                value={isNaN(contractPrice!) ? "" : contractPrice ?? ""}
-                onChange={(e) => {
-                  setContractPrice(parseFloat(e.target.value));
-                  setErrorMessage("");
-                }}
-              />
+            <div className="text-[10px] uppercase tracking-wider text-white/40 mb-1">
+              {isEditing ? "Edit trade" : "New trade"}
             </div>
-            <div>
-              <FormInput
-                label="Qty"
-                name="qty"
-                placeholder="Qty"
-                type="number"
-                value={isNaN(qty!) ? "" : qty ?? ""}
-                onChange={(e) => {
-                  setQty(parseFloat(e.target.value));
-                  setErrorMessage("");
-                }}
-              />
+            <div className="text-xl md:text-2xl font-bold tracking-tight">
+              {symbol || "—"}
             </div>
-            <div className="col-span-2 md:col-span-1">
-              <FormInput
-                label="Strike"
-                name="strike"
-                placeholder="Strike"
-                type="number"
-                value={isNaN(strike!) ? "" : strike ?? ""}
-                onChange={(e) => {
-                  setStrike(parseFloat(e.target.value));
-                  setErrorMessage("");
-                }}
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-2 md:gap-4">
-            <div>
-              <FormInput
-                label="Date Bought"
-                name="dateBought"
-                type="date"
-                value={dateBought ?? ""}
-                onChange={(e) => {
-                  setDateBought(e.target.value);
-                  setErrorMessage("");
-                }}
-              />
-            </div>
-            <div>
-              <FormInput
-                label="Expiry Date"
-                name="expiryDate"
-                type="date"
-                value={expiryDate ?? ""}
-                onChange={(e) => {
-                  setExpiryDate(e.target.value);
-                  setErrorMessage("");
-                }}
-                min={dateBought}
-              />
-            </div>
-          </div>
 
-          <select
-            value={strategy}
-            onChange={(e) => {
-              setStrategy(e.target.value as StrategyList);
-              setErrorMessage("");
-            }}
-            className="w-full p-2 text-base bg-[#2b2b2f] text-white rounded"
-          >
-            {strategies.map((strategy, index) => {
-              return (
-                <option value={strategy} key={index}>
-                  {strategy}
-                </option>
-              );
-            })}
-          </select>
-
-          <select
-            value={status}
-            onChange={(e) => {
-              setStatus(e.target.value as TradeEventType);
-              setErrorMessage("");
-            }}
-            className="w-full p-2 text-base bg-[#2b2b2f] text-white rounded"
-          >
-            <option value="OPEN">Open</option>
-            <option value="WIN">Win</option>
-            <option value="LOSS">Loss</option>
-          </select>
-
-          {(status === "WIN" || status === "LOSS") && (
-            <>
-              <div className="grid grid-cols-2 gap-2 md:gap-4">
-                <div>
-                  <label
-                    htmlFor="closingContractPrice"
-                    className="block text-sm mb-1"
-                  >
-                    Closing Contract
-                  </label>
-                  <input
-                    name="closingContractPrice"
-                    type="number"
-                    value={
-                      isNaN(closingContractPrice!)
-                        ? ""
-                        : closingContractPrice ?? ""
-                    }
-                    onChange={(e) => {
-                      setClosingContractPrice(parseFloat(e.target.value));
-                      setErrorMessage("");
-                    }}
-                    placeholder="Closing Contract"
-                    className="w-full p-2 text-base text-white bg-[#1A1A1D] rounded"
-                  />
-                </div>
-                <div>
-                  <FormInput
-                    label="Date Closed"
-                    name="expiryDate"
-                    type="date"
-                    value={dateClosed ?? ""}
-                    onChange={(e) => {
-                      setDateClosed(e.target.value);
-                      setErrorMessage("");
-                    }}
-                    min={dateBought}
-                    max={expiryDate}
-                  />
-                </div>
-              </div>
-              <div>
-                <label htmlFor="fees" className="block text-sm mb-1">
-                  Fees / Commissions{" "}
-                  <span className="text-white/40 text-xs">(optional)</span>
-                </label>
-                <input
-                  name="fees"
-                  type="number"
-                  step="0.01"
-                  value={isNaN(fees!) ? "" : fees ?? ""}
-                  onChange={(e) => {
-                    const v = parseFloat(e.target.value);
-                    setFees(isNaN(v) ? null : v);
-                  }}
-                  placeholder="Total round-trip fees (e.g. 2.10)"
-                  className="w-full p-2 text-base text-white bg-[#1A1A1D] rounded"
-                />
-              </div>
-            </>
-          )}
-
-          <input
-            type="text"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Notes"
-            className="w-full p-2 text-base text-white bg-[#1A1A1D] rounded"
-          />
-
-          <div>
-            <label className="block text-sm mb-1.5">Tags</label>
-            <div className="flex flex-wrap gap-1.5">
-              {TRADE_TAG_OPTIONS.map(({ label, kind }) => {
-                const selected = tags.includes(label);
-                const selectedClasses =
-                  kind === "mistake"
-                    ? "bg-red-500/20 border-red-500/50 text-red-300"
-                    : "bg-green-500/20 border-green-500/50 text-green-300";
-                return (
-                  <button
-                    key={label}
-                    type="button"
-                    onClick={() => toggleTag(label)}
-                    className={`px-2.5 py-1 rounded-full text-xs border transition cursor-pointer ${
-                      selected
-                        ? selectedClasses
-                        : "border-white/15 text-white/60 hover:bg-white/5"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="flex gap-2 items-center">
-            <input
-              type="checkbox"
-              checked={simulated}
-              onChange={(e) => setSimulated(e.target.checked)}
-              className="
-              appearance-none h-5 w-5 rounded border border-gray-400 checked:bg-red-500/60 checked:border-red-500 
-            "
-              id="simulated"
-            />
-            <label htmlFor="simulated">Simulated</label>
-          </div>
-
-          <div
-            className={`flex justify-between ${!initialTrade && "justify-end"}`}
-          >
-            {onDelete && initialTrade?._id && (
+            {/* Direction toggle */}
+            <div className="mt-4 grid grid-cols-2 gap-2">
               <button
-                className="px-4 py-2 bg-red-700 transition duration-100 ease-in-out rounded hover:bg-red-800 cursor-pointer"
-                onClick={() => setDelModal(true)}
+                type="button"
+                onClick={() => {
+                  setSelectedOption("CALL");
+                  setErrorMessage("");
+                }}
+                className={`px-3 py-2 rounded-lg border text-sm font-semibold transition cursor-pointer ${
+                  isCall
+                    ? "bg-green-500/25 border-green-500 text-green-400"
+                    : "border-white/10 text-white/60 hover:bg-white/5"
+                }`}
               >
-                Delete
+                <i className="fa-solid fa-arrow-trend-up mr-1.5 text-xs"></i>
+                CALL
               </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedOption("PUT");
+                  setErrorMessage("");
+                }}
+                className={`px-3 py-2 rounded-lg border text-sm font-semibold transition cursor-pointer ${
+                  isPut
+                    ? "bg-red-500/25 border-red-500 text-red-400"
+                    : "border-white/10 text-white/60 hover:bg-white/5"
+                }`}
+              >
+                <i className="fa-solid fa-arrow-trend-down mr-1.5 text-xs"></i>
+                PUT
+              </button>
+            </div>
+
+            {errorMessage && (
+              <div className="mt-3 border border-red-500/50 text-red-400 text-center text-xs py-1.5 rounded-md bg-red-500/10 shake">
+                {errorMessage}
+              </div>
+            )}
+          </div>
+
+          {/* ── Body (scrollable, takes remaining space) ── */}
+          <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-5 px-5 md:px-6 py-5 md:py-6">
+            {/* Symbol */}
+            <Field label="Symbol">
+              <input
+                type="text"
+                value={symbol}
+                onChange={(e) => {
+                  setSymbol(e.target.value.toUpperCase());
+                  setErrorMessage("");
+                }}
+                placeholder="e.g. SPY"
+                autoCapitalize="characters"
+                autoCorrect="off"
+                spellCheck={false}
+                className="w-full p-2 text-base text-white bg-[#1A1A1D] rounded border border-white/10 focus:border-white/30 focus:outline-none uppercase placeholder:normal-case placeholder:text-white/30"
+              />
+            </Field>
+
+            {/* Contract / Qty / Strike */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              <Field label="Contract">
+                <NumberInput
+                  value={contractPrice}
+                  onChange={(v) => {
+                    setContractPrice(v);
+                    setErrorMessage("");
+                  }}
+                  placeholder="0.00"
+                />
+              </Field>
+              <Field label="Qty">
+                <NumberInput
+                  value={qty}
+                  onChange={(v) => {
+                    setQty(v);
+                    setErrorMessage("");
+                  }}
+                  placeholder="1"
+                />
+              </Field>
+              <Field label="Strike" className="col-span-2 md:col-span-1">
+                <NumberInput
+                  value={strike}
+                  onChange={(v) => {
+                    setStrike(v);
+                    setErrorMessage("");
+                  }}
+                  placeholder="0"
+                />
+              </Field>
+            </div>
+
+            {/* Dates */}
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Date Bought">
+                <DateInput
+                  value={dateBought}
+                  onChange={(v) => {
+                    setDateBought(v);
+                    setErrorMessage("");
+                  }}
+                />
+              </Field>
+              <Field label="Expiry">
+                <DateInput
+                  value={expiryDate}
+                  min={dateBought}
+                  onChange={(v) => {
+                    setExpiryDate(v);
+                    setErrorMessage("");
+                  }}
+                />
+              </Field>
+            </div>
+
+            {/* Strategy / Status */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <Field label="Strategy">
+                <select
+                  value={strategy}
+                  onChange={(e) => {
+                    setStrategy(e.target.value as StrategyList);
+                    setErrorMessage("");
+                  }}
+                  className="w-full p-2 text-base bg-[#1A1A1D] text-white rounded border border-white/10 focus:border-white/30 focus:outline-none cursor-pointer"
+                >
+                  {strategies.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Status">
+                <select
+                  value={status}
+                  onChange={(e) => {
+                    setStatus(e.target.value as TradeEventType);
+                    setErrorMessage("");
+                  }}
+                  className="w-full p-2 text-base bg-[#1A1A1D] text-white rounded border border-white/10 focus:border-white/30 focus:outline-none cursor-pointer"
+                >
+                  <option value="OPEN">Open</option>
+                  <option value="WIN">Win</option>
+                  <option value="LOSS">Loss</option>
+                </select>
+              </Field>
+            </div>
+
+            {/* Closing block — only when WIN/LOSS */}
+            {isClosed && (
+              <div className="flex flex-col gap-3 p-3 md:p-4 border border-white/10 rounded-lg bg-white/3">
+                <div className="text-[10px] uppercase tracking-wider text-white/40">
+                  Closing details
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Closing Contract">
+                    <NumberInput
+                      value={closingContractPrice}
+                      onChange={(v) => {
+                        setClosingContractPrice(v);
+                        setErrorMessage("");
+                      }}
+                      placeholder="0.00"
+                    />
+                  </Field>
+                  <Field label="Date Closed">
+                    <DateInput
+                      value={dateClosed}
+                      min={dateBought}
+                      max={expiryDate}
+                      onChange={(v) => {
+                        setDateClosed(v);
+                        setErrorMessage("");
+                      }}
+                    />
+                  </Field>
+                </div>
+                <Field
+                  label="Fees / Commissions"
+                  hint="Optional · total round-trip"
+                >
+                  <NumberInput
+                    value={fees}
+                    onChange={(v) => setFees(v)}
+                    placeholder="e.g. 2.10"
+                    step="0.01"
+                  />
+                </Field>
+              </div>
             )}
 
+            {/* Tags */}
+            <Field label="Tags" hint={`${tags.length} selected`}>
+              <div className="flex flex-wrap gap-1.5">
+                {TRADE_TAG_OPTIONS.map(({ label, kind }) => {
+                  const selected = tags.includes(label);
+                  const selectedClasses =
+                    kind === "mistake"
+                      ? "bg-red-500/15 border-red-500/50 text-red-400"
+                      : "bg-green-500/15 border-green-500/50 text-green-400";
+                  return (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() => toggleTag(label)}
+                      className={`px-2.5 py-1 rounded-full text-xs border transition cursor-pointer ${
+                        selected
+                          ? selectedClasses
+                          : "border-white/10 text-white/60 hover:bg-white/5"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </Field>
+
+            {/* Notes */}
+            <Field label="Notes" hint="Optional">
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="What did you see? What did you learn?"
+                rows={3}
+                className="w-full p-2 text-sm text-white bg-[#1A1A1D] rounded border border-white/10 focus:border-white/30 focus:outline-none resize-none"
+              />
+            </Field>
+
+            {/* Simulated */}
+            <label className="flex items-center gap-2 cursor-pointer group select-none w-fit">
+              <input
+                type="checkbox"
+                checked={simulated}
+                onChange={(e) => setSimulated(e.target.checked)}
+                className="w-4 h-4 accent-orange-500 cursor-pointer"
+              />
+              <span className="text-sm text-white/70 group-hover:text-white transition">
+                Mark as simulated
+              </span>
+            </label>
+          </div>
+
+          {/* ── Footer (fixed at bottom of card) ── */}
+          <div className="shrink-0 px-5 md:px-6 py-3 md:py-4 flex items-center justify-between gap-2 border-t border-white/5 bg-[#0F0F17]">
+            <div>
+              {onDelete && initialTrade?._id && (
+                <button
+                  type="button"
+                  onClick={() => setDelModal(true)}
+                  className="px-3 py-2 text-sm rounded-md border border-red-500/40 text-red-400 hover:bg-red-500/10 transition cursor-pointer flex items-center gap-1.5"
+                >
+                  <i className="fa-solid fa-trash-can text-xs"></i>
+                  Delete
+                </button>
+              )}
+            </div>
             <div className="flex gap-2">
               <button
+                type="button"
                 onClick={onClose}
-                className="px-4 py-2 bg-[#16151C] transition duration-100 ease-in-out rounded hover:bg-[#121217] cursor-pointer"
+                className="px-4 py-2 text-sm bg-[#16151C] border border-white/10 rounded-md hover:bg-white/5 transition cursor-pointer"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={() =>
                   handleSave(
                     setErrorMessage,
@@ -457,41 +443,138 @@ export default function EditTradeModal({
                     toast,
                     onSave,
                     initialTrade!,
-                    fees
+                    fees,
                   )
                 }
-                className="px-4 py-2 bg-blue-600 transition duration-100 rounded hover:bg-blue-700 cursor-pointer"
+                className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 rounded-md transition cursor-pointer flex items-center gap-1.5"
               >
-                Save
+                <i className="fa-solid fa-floppy-disk text-xs"></i>
+                {isEditing ? "Save changes" : "Create trade"}
               </button>
             </div>
           </div>
         </motion.div>
       </motion.div>
+
+      {/* Delete confirmation */}
       {onDelete && initialTrade?._id && delModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-51">
-          <div className="flex flex-col gap-4 bg-[#0F0F17] items-center p-6 rounded-xl w-[90%] max-w-lg text-white">
-            <div>Are you sure you want to delete this trade?</div>
-            <div className="flex gap-3">
+        <motion.div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] px-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15 }}
+          onClick={() => setDelModal(false)}
+        >
+          <motion.div
+            onClick={(e) => e.stopPropagation()}
+            className="flex flex-col gap-4 bg-[#0F0F17] border border-white/10 items-center p-6 rounded-2xl w-full max-w-sm text-white"
+            initial={{ scale: 0.96, y: 16 }}
+            animate={{ scale: 1, y: 0 }}
+            exit={{ scale: 0.96, y: 16 }}
+            transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
+          >
+            <i className="fa-solid fa-triangle-exclamation text-red-500 text-2xl"></i>
+            <div className="text-center text-sm">
+              Are you sure you want to delete this trade? This cannot be
+              undone.
+            </div>
+            <div className="flex gap-2 w-full">
               <button
-                className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700 cursor-pointer"
+                type="button"
+                className="flex-1 px-4 py-2 text-sm bg-[#16151C] border border-white/10 rounded-md hover:bg-white/5 transition cursor-pointer"
                 onClick={() => setDelModal(false)}
               >
-                No
+                Cancel
               </button>
               <button
-                className="px-4 py-2 bg-[#16151C] transition duration-200 ease-in-out rounded hover:bg-gray-700 cursor-pointer"
+                type="button"
+                className="flex-1 px-4 py-2 text-sm bg-red-600 hover:bg-red-700 rounded-md transition cursor-pointer"
                 onClick={() => {
                   onDelete(initialTrade._id!);
                   toast(`Trade deleted successfully!`);
                 }}
               >
-                Yes
+                Delete
               </button>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
     </>
+  );
+}
+
+// ─── Form primitives ───────────────────────────────────────────────────
+function Field({
+  label,
+  hint,
+  className = "",
+  children,
+}: {
+  label: string;
+  hint?: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={`flex flex-col gap-1 ${className}`}>
+      <div className="flex items-center justify-between gap-2">
+        <label className="text-[10px] uppercase tracking-wider text-white/40">
+          {label}
+        </label>
+        {hint && <span className="text-[10px] text-white/30">{hint}</span>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function NumberInput({
+  value,
+  onChange,
+  placeholder,
+  step,
+}: {
+  value: number | null;
+  onChange: (v: number | null) => void;
+  placeholder?: string;
+  step?: string;
+}) {
+  return (
+    <input
+      type="number"
+      step={step}
+      value={value == null || isNaN(value) ? "" : value}
+      onChange={(e) => {
+        const v = parseFloat(e.target.value);
+        onChange(isNaN(v) ? null : v);
+      }}
+      placeholder={placeholder}
+      className="w-full p-2 text-base text-white bg-[#1A1A1D] rounded border border-white/10 focus:border-white/30 focus:outline-none placeholder:text-white/30"
+    />
+  );
+}
+
+function DateInput({
+  value,
+  onChange,
+  min,
+  max,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  min?: string;
+  max?: string;
+}) {
+  return (
+    <input
+      type="date"
+      value={value}
+      min={min}
+      max={max}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full p-2 text-base text-white bg-[#1A1A1D] rounded border border-white/10 focus:border-white/30 focus:outline-none"
+    />
   );
 }

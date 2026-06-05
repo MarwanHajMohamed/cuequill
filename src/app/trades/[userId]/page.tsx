@@ -1,6 +1,6 @@
 "use client";
 
-import TradeModal from "@/app/dashboard/components/modals/EditTradeModal";
+import TradeModal from "@/app/dashboard/components/modals/TradeModal";
 import { StrategyList, Trade } from "@/app/types/Trades";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useTrades } from "@/hooks/useTrades";
@@ -42,6 +42,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
   const [endDate, setEndDate] = useState<string>("");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [syncing, setSyncing] = useState<boolean>(false);
+  const [isFiltersOpen, setIsFiltersOpen] = useState<boolean>(false);
   const tradesPerPage = 15;
 
   const handleSync = async () => {
@@ -57,7 +58,9 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
       const inserted = data.inserted ?? 0;
       const skipped = data.skipped ?? 0;
       if (inserted === 0) {
-        toast(`Already up to date — no new trades${skipped ? ` (${skipped} skipped)` : ""}`);
+        toast(
+          `Already up to date — no new trades${skipped ? ` (${skipped} skipped)` : ""}`,
+        );
       } else {
         toast(
           `Imported ${inserted} new trade${inserted === 1 ? "" : "s"}${skipped ? ` (${skipped} skipped)` : ""}`,
@@ -160,11 +163,19 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
       // Filter by favourite
       if (isFavourite === true && trade.favourite === false) return false;
 
-      const tradeDate = new Date(trade.dateBought);
+      // Date range matches on the trade's EXIT date for closed trades
+      // and ENTRY date for open ones — same convention used by the
+      // calendar, monthly stats, and P/L attribution. This keeps WTD /
+      // MTD / YTD totals consistent across every section of the page.
+      const isClosed = trade.status === "WIN" || trade.status === "LOSS";
+      const tradeDateStr =
+        isClosed && trade.dateClosed ? trade.dateClosed : trade.dateBought;
+      const tradeDate = new Date(tradeDateStr);
       const from = startDate ? new Date(startDate) : null;
-      const to = endDate ? new Date(endDate) : null;
+      // Use inclusive end-of-day for `to` so a trade closed at 3:55pm on
+      // the end date isn't excluded by midnight comparison.
+      const to = endDate ? new Date(endDate + "T23:59:59") : null;
 
-      // Filter by start date and end date (inclusive)
       if (from && tradeDate < from) return false;
       if (to && tradeDate > to) return false;
 
@@ -176,7 +187,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
   const indexOfFirstTrade = indexOfLastTrade - tradesPerPage;
   const currentTrades = filteredTrades?.slice(
     indexOfFirstTrade,
-    indexOfLastTrade
+    indexOfLastTrade,
   );
 
   const totalPages = Math.ceil((filteredTrades?.length || 0) / tradesPerPage);
@@ -197,314 +208,304 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
           </button>
         </div>
       ) : (
-        <div className="md:p-10 pt-5 mt-0 w-full flex flex-col items-center p-5">
-          <Filters
-            filter={filter}
-            setFilter={setFilter}
-            strategy={strategy}
-            setStrategy={setStrategy}
-            strategies={strategies}
-            symbol={symbol}
-            setSymbol={setSymbol}
-            option={option}
-            setOption={setOption}
-            symbols={symbols}
-            isFavourite={isFavourite}
-            setIsFavourite={setIsFavourite}
-            startDate={startDate}
-            setStartDate={setStartDate}
-            endDate={endDate}
-            setEndDate={setEndDate}
-          />
-          <div className="w-full max-w-[1500px] overflow-x-auto max-[1130px]:mt-0 mt-5 md:h-126 h-110">
-            {filteredTrades?.length === 0 ? (
-              <div className="text-center">No trades found</div>
-            ) : (
-              <>
-                <table className="border-collapse table-auto min-w-full">
-                  <thead>
-                    <tr>
-                      {headings.map((h) => (
-                        <th
-                          key={h}
-                          className="px-2 md:px-4 py-1 whitespace-nowrap w-full text-[#5B5B5B] md:text-xs text-[10px] text-left"
-                        >
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {currentTrades?.map((trade, index) => (
-                      <tr key={index} className="text-xs md:text-base">
-                        <td className="flex gap-2 py-1">
-                          <FavouriteButton
-                            tradeId={trade._id!}
-                            userId={userId}
-                            isFavourite={trade.favourite}
-                            queryClient={queryClient}
-                          />
-                          <i
-                            className="fa-regular fa-pen-to-square cursor-pointer text-white/30 transition duration-100 hover:text-white/100 text-sm md:text-xl"
-                            onClick={() => {
-                              setEditingTrade(trade);
-                              setIsModalOpen(true);
-                            }}
-                          ></i>
-                        </td>
-                        <td className="px-2 md:px-4 py-1 whitespace-nowrap w-full">
-                          {(() => {
-                            const qs = new URLSearchParams({
-                              symbol: trade.symbol,
-                            });
-                            if (trade.dateBought)
-                              qs.set(
-                                "entry",
-                                new Date(trade.dateBought).toISOString()
-                              );
-                            if (trade.dateClosed)
-                              qs.set(
-                                "exit",
-                                new Date(trade.dateClosed).toISOString()
-                              );
-                            if (
-                              trade.profitLoss !== undefined &&
-                              trade.profitLoss !== null
-                            )
-                              qs.set("pl", String(trade.profitLoss));
-                            return (
-                              <a
-                                href={`/charts?${qs.toString()}`}
-                                className="hover:underline hover:text-white"
-                                title="Open chart at trade time"
-                              >
-                                {trade.symbol}
-                              </a>
-                            );
-                          })()}
-                        </td>
-                        <td
-                          className={`px-2 md:px-4 py-1 whitespace-nowrap w-full ${
-                            trade.option === "CALL"
-                              ? "text-green-500"
-                              : "text-red-500"
-                          }`}
-                        >
-                          {trade.option.slice(0, 1) +
-                            trade.option
-                              .slice(1, trade.option.length)
-                              .toLowerCase()}
-                        </td>
-                        <td
-                          className={`px-2 md:px-4 py-1 whitespace-nowrap w-full ${
-                            trade.status === "OPEN"
-                              ? "text-blue-500"
-                              : trade.status === "WIN"
-                              ? "text-green-500"
-                              : "text-red-500"
-                          }`}
-                        >
-                          {trade.status.slice(0, 1) +
-                            trade.status
-                              .slice(1, trade.status.length)
-                              .toLowerCase()}
-                        </td>
-                        <td
-                          className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
-                        >
-                          {trade.status === "OPEN" ? (
-                            "-"
-                          ) : (
-                            <span
-                              className={
-                                trade.status === "WIN"
-                                  ? "text-green-500"
-                                  : "text-red-500"
-                              }
-                            >
-                              ${trade.profitLoss?.toFixed(2)}
-                            </span>
-                          )}
-                        </td>
-                        <td
-                          className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
-                        >
-                          {trade.status === "OPEN" ? (
-                            "-"
-                          ) : (
-                            <span
-                              className={
-                                Number(
-                                  calcChange(
-                                    Number(trade.closingContractPrice),
-                                    Number(trade.contractPrice)
-                                  )
-                                ) > 0
-                                  ? "text-green-500"
-                                  : "text-red-500"
-                              }
-                            >
-                              {calcChange(
-                                Number(trade.closingContractPrice),
-                                Number(trade.contractPrice)
-                              )}
-                              %
-                            </span>
-                          )}
-                        </td>
-                        <td
-                          className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
-                        >
-                          {trade.contractPrice}
-                        </td>
-                        <td
-                          className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
-                        >
-                          {trade.qty}
-                        </td>
-                        <td
-                          className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
-                        >
-                          {trade.strike}
-                        </td>
-                        <td
-                          className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
-                        >
-                          {new Date(trade.dateBought).toLocaleDateString(
-                            "en-GB"
-                          )}
-                        </td>
-                        <td
-                          className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
-                        >
-                          {new Date(trade.expiryDate).toLocaleDateString(
-                            "en-GB"
-                          )}
-                        </td>
-                        <td
-                          className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
-                        >
-                          {trade.closingContractPrice === null
-                            ? "-"
-                            : trade.closingContractPrice}
-                        </td>
-                        <td
-                          className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
-                        >
-                          {trade.strategy}
-                        </td>
-                        <td
-                          className={`px-2 md:px-4 py-1 whitespace-nowrap w-full text-center`}
-                        >
-                          {trade.notes !== "" ? (
-                            <i
-                              className="fa-solid fa-book-open cursor-pointer text-white/70 transition duration-100 hover:text-white/100 text-lg"
-                              onClick={() => {
-                                setIsNotesOpen(true);
-                                setEditingTrade(trade);
-                                setNotes(trade.notes || "");
-                              }}
-                            ></i>
-                          ) : (
-                            <i
-                              className="fa-solid fa-book cursor-pointer text-white/20 transition duration-100 hover:text-white/100 text-lg"
-                              onClick={() => {
-                                setIsNotesOpen(true);
-                                setEditingTrade(trade);
-                                setNotes(trade.notes || "");
-                              }}
-                            ></i>
-                          )}
-                        </td>
+        <div className="w-full flex justify-center mt-19 md:mt-[100px]">
+          <div
+            className={`w-full max-w-[1500px] flex flex-col items-stretch px-5 md:px-10 pb-5 md:pb-10 transition-[padding] duration-300 ease-out ${
+              isFiltersOpen ? "md:pl-[300px]" : ""
+            }`}
+          >
+            <Filters
+              filter={filter}
+              setFilter={setFilter}
+              strategy={strategy}
+              setStrategy={setStrategy}
+              strategies={strategies}
+              symbol={symbol}
+              setSymbol={setSymbol}
+              option={option}
+              setOption={setOption}
+              symbols={symbols}
+              isFavourite={isFavourite}
+              setIsFavourite={setIsFavourite}
+              startDate={startDate}
+              setStartDate={setStartDate}
+              endDate={endDate}
+              setEndDate={setEndDate}
+              isOpen={isFiltersOpen}
+              setIsOpen={setIsFiltersOpen}
+            />
+            <div className="w-full max-w-[1500px] overflow-x-auto max-[1130px]:mt-0 mt-5 md:h-126 h-110">
+              {filteredTrades?.length === 0 ? (
+                <div className="text-center">No trades found</div>
+              ) : (
+                <>
+                  <table className="border-collapse table-auto min-w-full">
+                    <thead>
+                      <tr>
+                        {headings.map((h) => (
+                          <th
+                            key={h}
+                            className="px-2 md:px-4 py-1 whitespace-nowrap w-full text-[#5B5B5B] md:text-xs text-[10px] text-left"
+                          >
+                            {h}
+                          </th>
+                        ))}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </>
-            )}
-          </div>
-          {filteredTrades?.length !== 0 && (
-            <div className="flex md:justify-between gap-2 md:mt-5 w-full max-w-[1500px]">
-              <div className="flex gap-2">
-                <button
-                  className="md:text-xs border border-green-500 bg-green-500/20 justify-center md:p-2 rounded-lg
+                    </thead>
+                    <tbody>
+                      {currentTrades?.map((trade, index) => (
+                        <tr key={index} className="text-xs md:text-base">
+                          <td className="flex gap-2 py-1">
+                            <FavouriteButton
+                              tradeId={trade._id!}
+                              userId={userId}
+                              isFavourite={trade.favourite}
+                              queryClient={queryClient}
+                            />
+                            <i
+                              className="fa-regular fa-pen-to-square cursor-pointer text-white/30 transition duration-100 hover:text-white/100 text-sm md:text-xl"
+                              onClick={() => {
+                                setEditingTrade(trade);
+                                setIsModalOpen(true);
+                              }}
+                            ></i>
+                          </td>
+                          <td className="px-2 md:px-4 py-1 whitespace-nowrap w-full">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingTrade(trade);
+                                setIsModalOpen(true);
+                              }}
+                              className="hover:underline hover:text-white cursor-pointer"
+                              title="View trade summary"
+                            >
+                              {trade.symbol}
+                            </button>
+                          </td>
+                          <td
+                            className={`px-2 md:px-4 py-1 whitespace-nowrap w-full ${
+                              trade.option === "CALL"
+                                ? "text-green-500"
+                                : "text-red-500"
+                            }`}
+                          >
+                            {trade.option.slice(0, 1) +
+                              trade.option
+                                .slice(1, trade.option.length)
+                                .toLowerCase()}
+                          </td>
+                          <td
+                            className={`px-2 md:px-4 py-1 whitespace-nowrap w-full ${
+                              trade.status === "OPEN"
+                                ? "text-blue-500"
+                                : trade.status === "WIN"
+                                  ? "text-green-500"
+                                  : "text-red-500"
+                            }`}
+                          >
+                            {trade.status.slice(0, 1) +
+                              trade.status
+                                .slice(1, trade.status.length)
+                                .toLowerCase()}
+                          </td>
+                          <td
+                            className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
+                          >
+                            {trade.status === "OPEN" ? (
+                              "-"
+                            ) : (
+                              <span
+                                className={
+                                  trade.status === "WIN"
+                                    ? "text-green-500"
+                                    : "text-red-500"
+                                }
+                              >
+                                ${trade.profitLoss?.toFixed(2)}
+                              </span>
+                            )}
+                          </td>
+                          <td
+                            className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
+                          >
+                            {trade.status === "OPEN" ? (
+                              "-"
+                            ) : (
+                              <span
+                                className={
+                                  Number(
+                                    calcChange(
+                                      Number(trade.closingContractPrice),
+                                      Number(trade.contractPrice),
+                                    ),
+                                  ) > 0
+                                    ? "text-green-500"
+                                    : "text-red-500"
+                                }
+                              >
+                                {calcChange(
+                                  Number(trade.closingContractPrice),
+                                  Number(trade.contractPrice),
+                                )}
+                                %
+                              </span>
+                            )}
+                          </td>
+                          <td
+                            className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
+                          >
+                            {trade.contractPrice}
+                          </td>
+                          <td
+                            className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
+                          >
+                            {trade.qty}
+                          </td>
+                          <td
+                            className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
+                          >
+                            {trade.strike}
+                          </td>
+                          <td
+                            className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
+                          >
+                            {new Date(trade.dateBought).toLocaleDateString(
+                              "en-GB",
+                            )}
+                          </td>
+                          <td
+                            className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
+                          >
+                            {new Date(trade.expiryDate).toLocaleDateString(
+                              "en-GB",
+                            )}
+                          </td>
+                          <td
+                            className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
+                          >
+                            {trade.closingContractPrice === null
+                              ? "-"
+                              : trade.closingContractPrice}
+                          </td>
+                          <td
+                            className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
+                          >
+                            {trade.strategy}
+                          </td>
+                          <td
+                            className={`px-2 md:px-4 py-1 whitespace-nowrap w-full text-center`}
+                          >
+                            {trade.notes !== "" ? (
+                              <i
+                                className="fa-solid fa-book-open cursor-pointer text-white/70 transition duration-100 hover:text-white/100 text-lg"
+                                onClick={() => {
+                                  setIsNotesOpen(true);
+                                  setEditingTrade(trade);
+                                  setNotes(trade.notes || "");
+                                }}
+                              ></i>
+                            ) : (
+                              <i
+                                className="fa-solid fa-book cursor-pointer text-white/20 transition duration-100 hover:text-white/100 text-lg"
+                                onClick={() => {
+                                  setIsNotesOpen(true);
+                                  setEditingTrade(trade);
+                                  setNotes(trade.notes || "");
+                                }}
+                              ></i>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </>
+              )}
+            </div>
+            {filteredTrades?.length !== 0 && (
+              <div className="flex md:justify-between gap-2 md:mt-5 w-full max-w-[1500px]">
+                <div className="flex gap-2">
+                  <button
+                    className="md:text-xs border border-green-500 bg-green-500/20 justify-center md:p-2 rounded-lg
                       flex gap-2 items-center cursor-pointer
                       transition duration-100 hover:bg-green-500/50 w-8 h-8 md:w-auto text-lg"
-                  onClick={() => {
-                    setEditingTrade(null);
-                    setIsModalOpen(true);
-                  }}
-                >
-                  + <span className="md:flex hidden">Add new trade</span>
-                </button>
-                <button
-                  className={`md:text-xs border border-blue-500 bg-blue-500/20 justify-center md:p-2 rounded-lg
+                    onClick={() => {
+                      setEditingTrade(null);
+                      setIsModalOpen(true);
+                    }}
+                  >
+                    + <span className="md:flex hidden">Add new trade</span>
+                  </button>
+                  <button
+                    className={`md:text-xs border border-blue-500 bg-blue-500/20 justify-center md:p-2 rounded-lg
                       flex gap-2 items-center
                       transition duration-100 w-8 h-8 md:w-auto text-sm md:text-xs ${
                         syncing
                           ? "cursor-not-allowed opacity-60"
                           : "cursor-pointer hover:bg-blue-500/50"
                       }`}
-                  onClick={handleSync}
-                  disabled={syncing}
-                  title="Import any new trades from IBKR"
-                >
-                  <i
-                    className={`fa-solid fa-rotate ${
-                      syncing ? "animate-spin" : ""
-                    }`}
-                  ></i>
-                  <span className="md:flex hidden">
-                    {syncing ? "Syncing..." : "Sync from IBKR"}
-                  </span>
-                </button>
-              </div>
-              <button
-                className="text-xs border border-red-500 bg-red-500/20 justify-center md:p-2 rounded-lg
+                    onClick={handleSync}
+                    disabled={syncing}
+                    title="Import any new trades from IBKR"
+                  >
+                    <i
+                      className={`fa-solid fa-rotate ${
+                        syncing ? "animate-spin" : ""
+                      }`}
+                    ></i>
+                    <span className="md:flex hidden">
+                      {syncing ? "Syncing..." : "Sync from IBKR"}
+                    </span>
+                  </button>
+                </div>
+                <button
+                  className="text-xs border border-red-500 bg-red-500/20 justify-center md:p-2 rounded-lg
                       flex gap-2 items-center cursor-pointer
                       transition duration-100 hover:bg-red-500/50 w-8 h-8 md:w-auto text-lg"
-                onClick={() => setDelAllModal(true)}
-              >
-                <i className="fa-solid fa-trash-can"></i>
-                <span className="md:flex hidden">Delete all trades</span>
-              </button>
-            </div>
-          )}
-          {
-            <div className="flex justify-center items-center gap-2 mt-5">
-              <button
-                className="px-3 py-1 rounded bg-gray-700 text-white cursor-pointer disabled:opacity-30 disabled:cursor-default"
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage((prev) => prev - 1)}
-              >
-                &lt;
-              </button>
+                  onClick={() => setDelAllModal(true)}
+                >
+                  <i className="fa-solid fa-trash-can"></i>
+                  <span className="md:flex hidden">Delete all trades</span>
+                </button>
+              </div>
+            )}
+            {
+              <div className="flex justify-center items-center gap-2 mt-5">
+                <button
+                  className="px-3 py-1 rounded bg-gray-700 text-white cursor-pointer disabled:opacity-30 disabled:cursor-default"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((prev) => prev - 1)}
+                >
+                  &lt;
+                </button>
 
-              <span className="text-sm text-gray-400">
-                Page {currentPage} of {totalPages}
-              </span>
+                <span className="text-sm text-gray-400">
+                  Page {currentPage} of {totalPages}
+                </span>
 
-              <button
-                className="px-3 py-1 rounded bg-gray-700 text-white cursor-pointer disabled:opacity-30"
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage((prev) => prev + 1)}
-              >
-                &gt;
-              </button>
-            </div>
-          }
+                <button
+                  className="px-3 py-1 rounded bg-gray-700 text-white cursor-pointer disabled:opacity-30"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage((prev) => prev + 1)}
+                >
+                  &gt;
+                </button>
+              </div>
+            }
 
-          {filteredTrades?.length !== 0 && (
-            <Statistics
-              data={trades!}
-              status={filter}
-              filteredData={filteredTrades!}
-              option={option}
-              strategy={strategy}
-              symbol={symbol}
-              isFavourite={isFavourite}
-            />
-          )}
+            {filteredTrades?.length !== 0 && (
+              <Statistics
+                data={trades!}
+                status={filter}
+                filteredData={filteredTrades!}
+                option={option}
+                strategy={strategy}
+                symbol={symbol}
+                isFavourite={isFavourite}
+              />
+            )}
+          </div>
         </div>
       )}
 
@@ -523,7 +524,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
               userId,
               setIsModalOpen,
               queryClient,
-              setEditingTrade
+              setEditingTrade,
             )
           }
           initialTrade={editingTrade ?? undefined}
@@ -533,7 +534,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
               userId,
               setIsModalOpen,
               setEditingTrade,
-              queryClient
+              queryClient,
             )
           }
         />
@@ -570,7 +571,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                     simulated,
                     setDelAllModal,
                     toast,
-                    queryClient
+                    queryClient,
                   )
                 }
               >

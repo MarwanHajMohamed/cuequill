@@ -3,8 +3,9 @@
 import React, { useEffect, useState } from "react";
 import Time from "./components/landing/Time";
 import TradeCalendar from "./components/calendar/TradeCalendar";
-import TradeStrategies from "./components/lists/TradeStrategies";
 import DashboardStats from "./components/stats/DashboardStats";
+import DashboardGoals from "./components/stats/DashboardGoals";
+import DashboardActivity from "./components/stats/DashboardActivity";
 import { withAuth } from "@/lib/withAuth";
 import { useSession } from "next-auth/react";
 
@@ -19,9 +20,10 @@ function Page() {
       <Time />
       <div className="bg-[#0F0F17] w-[100%] flex flex-col items-center">
         <TradeCalendar userId={userId} />
-        <TradeStrategies userId={userId} />
       </div>
-      <div className="w-[100%] flex flex-col items-center">
+      <div className="w-[100%] flex flex-col items-center gap-8 md:gap-12 py-8 md:py-12">
+        <DashboardActivity userId={userId} />
+        <DashboardGoals userId={userId} />
         <DashboardStats userId={userId} />
         {/* <Portfolio userId={userId} /> */}
       </div>
