@@ -37,7 +37,6 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
   const [symbol, setSymbol] = useState<string>("All");
   const [filter, setFilter] = useState<"All" | "Win" | "Loss">("All");
   const [option, setOption] = useState<"All" | "CALL" | "PUT">("All");
-  const [isFavourite, setIsFavourite] = useState<boolean>(false);
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -165,9 +164,6 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
       // Filter by option
       if (option !== "All" && trade.option !== option) return false;
 
-      // Filter by favourite
-      if (isFavourite === true && trade.favourite === false) return false;
-
       // Date range matches on the trade's EXIT date for closed trades
       // and ENTRY date for open ones — same convention used by the
       // calendar, monthly stats, and P/L attribution. This keeps WTD /
@@ -265,8 +261,6 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
               option={option}
               setOption={setOption}
               symbols={symbols}
-              isFavourite={isFavourite}
-              setIsFavourite={setIsFavourite}
               startDate={startDate}
               setStartDate={setStartDate}
               endDate={endDate}
@@ -563,7 +557,6 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                 option={option}
                 strategy={strategy}
                 symbol={symbol}
-                isFavourite={isFavourite}
               />
             )}
           </div>

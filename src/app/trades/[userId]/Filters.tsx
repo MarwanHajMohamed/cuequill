@@ -13,8 +13,6 @@ export default function Filters({
   option,
   setOption,
   symbols,
-  isFavourite,
-  setIsFavourite,
   startDate,
   setStartDate,
   endDate,
@@ -32,8 +30,6 @@ export default function Filters({
   option: "All" | "CALL" | "PUT";
   setOption: React.Dispatch<React.SetStateAction<"All" | "CALL" | "PUT">>;
   symbols: string[];
-  isFavourite: boolean;
-  setIsFavourite: React.Dispatch<React.SetStateAction<boolean>>;
   startDate: string;
   setStartDate: React.Dispatch<React.SetStateAction<string>>;
   endDate: string;
@@ -50,7 +46,6 @@ export default function Filters({
     symbol !== symbols[0],
     option !== "All",
     !!startDate || !!endDate,
-    isFavourite,
   ].filter(Boolean).length;
 
   const FilterContent = () => (
@@ -172,25 +167,6 @@ export default function Filters({
           variant="stacked"
         />
       </div>
-
-      <div className="h-[1px] bg-white/10" />
-
-      {/* FAVOURITES */}
-      <div
-        className="flex gap-2 items-center cursor-pointer group"
-        onClick={() => setIsFavourite(!isFavourite)}
-      >
-        <i
-          className={`fa-${isFavourite ? "solid" : "regular"} fa-star text-sm ${
-            isFavourite
-              ? "text-yellow-300"
-              : "text-white/30 group-hover:text-white/70"
-          } transition duration-100`}
-        />
-        <div className="text-sm text-white/70 group-hover:text-white transition duration-100">
-          Favourites only
-        </div>
-      </div>
     </div>
   );
 
@@ -269,7 +245,6 @@ export default function Filters({
                 setOption("All");
                 setStartDate("");
                 setEndDate("");
-                setIsFavourite(false);
               }}
               className="w-full py-2 text-xs text-white/60 border border-white/15 rounded-lg hover:text-white hover:border-white/30 transition duration-150 cursor-pointer"
             >
