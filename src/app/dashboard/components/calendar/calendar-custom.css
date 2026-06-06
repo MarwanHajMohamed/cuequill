@@ -1,7 +1,14 @@
+/* Dashboard mini-calendar — visual language tuned to match the other
+   dashboard cards (border #282828, rounded-lg, transparent fills with
+   subtle hovers). */
+
 .react-calendar {
   background-color: transparent;
-  border: 1px solid #323232;
-  border-radius: 6px;
+  border: none;
+  border-radius: 0;
+  font-family: inherit;
+  width: 100% !important;
+  max-width: none !important;
 }
 
 .react-calendar.custom-calendar {
@@ -9,109 +16,146 @@
   max-width: none !important;
 }
 
+/* Navigation row */
+.react-calendar .react-calendar__navigation {
+  height: 36px;
+  margin-bottom: 8px;
+}
+.react-calendar .react-calendar__navigation button {
+  color: white;
+  background: transparent;
+  border-radius: 6px;
+  transition: 100ms ease-in-out;
+  font-weight: 500;
+}
+.react-calendar .react-calendar__navigation__label {
+  font-size: 13px;
+  letter-spacing: 0.01em;
+  flex-grow: 1;
+}
+.react-calendar .react-calendar__navigation__arrow {
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.6);
+  min-width: 32px;
+}
+.react-calendar .react-calendar__navigation button:enabled:hover,
+.react-calendar .react-calendar__navigation button:enabled:focus {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  color: white;
+}
 .react-calendar .react-calendar__navigation button:focus {
   background-color: transparent !important;
 }
 
+/* Weekday labels (Mon Tue Wed ...) */
+.react-calendar .react-calendar__month-view__weekdays {
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 4px;
+}
+.react-calendar .react-calendar__month-view__weekdays abbr {
+  text-decoration: none !important;
+  border-bottom: none;
+  cursor: default;
+}
+.react-calendar__month-view__weekdays {
+  text-decoration: none !important;
+}
+
+/* Day tiles */
 .react-calendar__tile {
   position: relative;
   background: transparent;
   color: white;
-  height: 90px;
-  padding: 5px 0;
-  border-radius: 5px;
-  transition: 100ms ease-in-out;
+  height: 84px;
+  padding: 6px 0 4px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  transition: background-color 120ms ease, border-color 120ms ease;
+  font-size: 12px;
+  font-weight: 500;
+}
+.react-calendar__tile:enabled:hover,
+.react-calendar__tile:enabled:focus {
+  background-color: rgba(255, 255, 255, 0.05) !important;
 }
 
+/* "Today" — subtle ring instead of an opaque fill so the day number reads */
 .react-calendar__tile--now {
-  background-color: #201d1d;
+  background-color: rgba(59, 130, 246, 0.08);
+  border-color: rgba(59, 130, 246, 0.35);
 }
 
-.react-calendar__tile:hover,
-.react-calendar__navigation__label:hover,
-.react-calendar__navigation__arrow:hover {
-  background-color: #161616 !important;
+.react-calendar__tile:focus {
+  outline: none;
 }
 
-/* Hide weekends, force a 5-column grid */
+/* Five-column grid (Mon-Fri); weekends hidden */
 .react-calendar .react-calendar__month-view__days,
 .react-calendar .react-calendar__month-view__weekdays {
   display: grid !important;
   grid-template-columns: repeat(5, 1fr) !important;
+  gap: 4px;
 }
 .react-calendar .react-calendar__month-view__days__day--weekend,
 .react-calendar .react-calendar__month-view__weekdays__weekday--weekend {
   display: none !important;
 }
 
-/* Per-day P/L background tints */
+/* Per-day P/L background tints — slightly muted so the dashboard reads
+   calm rather than alarmed. */
 .react-calendar .react-calendar__tile.day-win {
-  background-color: rgba(22, 163, 74, 0.18);
+  background-color: rgba(34, 197, 94, 0.12);
 }
 .react-calendar .react-calendar__tile.day-win:hover,
 .react-calendar .react-calendar__tile.day-win:focus {
-  background-color: rgba(22, 163, 74, 0.32) !important;
+  background-color: rgba(34, 197, 94, 0.22) !important;
 }
 
 .react-calendar .react-calendar__tile.day-loss {
-  background-color: rgba(220, 38, 38, 0.18);
+  background-color: rgba(239, 68, 68, 0.12);
 }
 .react-calendar .react-calendar__tile.day-loss:hover,
 .react-calendar .react-calendar__tile.day-loss:focus {
-  background-color: rgba(220, 38, 38, 0.32) !important;
+  background-color: rgba(239, 68, 68, 0.22) !important;
 }
 
 .react-calendar .react-calendar__tile.day-open {
-  background-color: rgba(249, 115, 22, 0.16);
+  background-color: rgba(249, 115, 22, 0.10);
 }
 .react-calendar .react-calendar__tile.day-open:hover,
 .react-calendar .react-calendar__tile.day-open:focus {
-  background-color: rgba(249, 115, 22, 0.28) !important;
-}
-
-.react-calendar__navigation__arrow.react-calendar__navigation__next-button:hover {
-  border-radius: 0 15px 0 0;
-}
-
-.react-calendar__navigation__arrow.react-calendar__navigation__prev-button:hover {
-  border-radius: 15px 0 0 0;
-}
-
-.react-calendar__tile:focus {
-  background-color: var(--background) !important;
-}
-
-.react-calendar__month-view__weekdays {
-  text-decoration: none !important;
+  background-color: rgba(249, 115, 22, 0.20) !important;
 }
 
 .react-calendar * {
   text-decoration: none;
 }
 
-@media (max-width: 768px) {
-  .react-calendar {
-    width: auto;
-    min-width: 300px;
-  }
-
-  .react-calendar__tile {
-    font-size: 10px;
-  }
-
-  .react-calendar__month-view__weekdays {
-    font-size: 10px;
-  }
-
-  .react-calendar__navigation {
-    font-size: 12px;
-  }
-}
-
-/* Hide neighboring-month days but keep the grid cell so day-of-week
-   alignment is preserved. */
+/* Neighboring-month cells stay in the layout but visually fade so the
+   active month stands out. */
 .react-calendar.custom-calendar
   .react-calendar__month-view__days__day--neighboringMonth {
-  visibility: hidden !important;
-  pointer-events: none !important;
+  opacity: 0.25;
+  pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .react-calendar__tile {
+    height: 60px;
+    font-size: 10px;
+    padding-top: 4px;
+  }
+  .react-calendar .react-calendar__navigation__label {
+    font-size: 12px;
+  }
+  .react-calendar .react-calendar__month-view__weekdays {
+    font-size: 9px;
+  }
+  .react-calendar .react-calendar__month-view__days,
+  .react-calendar .react-calendar__month-view__weekdays {
+    gap: 3px;
+  }
 }

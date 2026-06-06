@@ -22,9 +22,7 @@ import ViewTradeModal from "../modals/ViewTradeModal";
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 function daysBetween(a: Date, b: Date) {
-  return Math.round(
-    (b.setHours(0, 0, 0, 0) - a.setHours(0, 0, 0, 0)) / DAY_MS,
-  );
+  return Math.round((b.setHours(0, 0, 0, 0) - a.setHours(0, 0, 0, 0)) / DAY_MS);
 }
 
 function relativeTime(iso: string) {
@@ -77,16 +75,8 @@ export default function DashboardActivity({ userId }: { userId: string }) {
   return (
     <div className="w-full max-w-[1100px] mx-auto px-5 md:px-10 flex flex-col gap-4 md:gap-6">
       <div className="flex flex-col md:flex-row gap-4 md:gap-6">
-        <OpenPositions
-          trades={open}
-          userId={userId}
-          onSelect={setSelected}
-        />
-        <RecentCloses
-          trades={recent}
-          userId={userId}
-          onSelect={setSelected}
-        />
+        <OpenPositions trades={open} userId={userId} onSelect={setSelected} />
+        <RecentCloses trades={recent} userId={userId} onSelect={setSelected} />
       </div>
       <AnimatePresence>
         {selected && (
@@ -126,7 +116,7 @@ function OpenPositions({
           href={`/trades/${userId}`}
           className="text-xs text-white/50 hover:text-white transition"
         >
-          All trades →
+          All trades <i className="fa-solid fa-chevron-right"></i>
         </Link>
       </div>
 
@@ -143,8 +133,7 @@ function OpenPositions({
             const daysToExpiry = expiry
               ? daysBetween(new Date(), new Date(expiry))
               : null;
-            const expirySoon =
-              daysToExpiry !== null && daysToExpiry <= 3;
+            const expirySoon = daysToExpiry !== null && daysToExpiry <= 3;
             return (
               <li key={t._id}>
                 <button
@@ -216,7 +205,7 @@ function RecentCloses({
           href={`/trades/${userId}`}
           className="text-xs text-white/50 hover:text-white transition"
         >
-          All trades →
+          All trades <i className="fa-solid fa-chevron-right"></i>
         </Link>
       </div>
 

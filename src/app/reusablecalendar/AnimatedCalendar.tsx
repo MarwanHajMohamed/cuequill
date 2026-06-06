@@ -43,6 +43,11 @@ interface AnimatedCalendarProps {
   showNeighboringMonth?: boolean;
   /** Fires whenever the displayed month changes (first of that month). */
   onMonthChange?: (date: Date) => void;
+  /**
+   * Fires whenever the user drills up to year/decade or back down to
+   * month view. Values: "month" | "year" | "decade" | "century".
+   */
+  onViewChange?: (view: string) => void;
 }
 
 const AnimatedCalendar = forwardRef<
@@ -58,6 +63,7 @@ const AnimatedCalendar = forwardRef<
     showTodayButton = true,
     showNeighboringMonth = true,
     onMonthChange,
+    onViewChange,
   },
   ref
 ) {
@@ -211,7 +217,13 @@ const AnimatedCalendar = forwardRef<
   const handleActiveStartDateChange = ({
     action,
     activeStartDate: newDate,
+    view,
   }: OnArgs) => {
+    // Surface drill-up / drill-down so the parent can hide views that
+    // only make sense for the day grid (e.g. week-summary sidebar).
+    if (action === "drillUp" || action === "drillDown") {
+      onViewChange?.(view);
+    }
     if (!newDate) return;
 
     // No animation for drillDown/drillUp/onChange — just update the date
@@ -285,6 +297,7 @@ const AnimatedCalendar = forwardRef<
         showNeighboringMonth={showNeighboringMonth}
         activeStartDate={activeStartDate}
         onActiveStartDateChange={handleActiveStartDateChange}
+        onViewChange={({ view }) => onViewChange?.(view)}
         className={className}
       />
     </div>

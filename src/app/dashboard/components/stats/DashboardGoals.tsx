@@ -69,7 +69,7 @@ export default function DashboardGoals({ userId }: { userId: string }) {
           className="text-xs text-white/60 hover:text-white flex items-center gap-1 transition"
         >
           View all
-          <i className="fa-solid fa-arrow-right text-[10px]"></i>
+          <i className="fa-solid fa-chevron-right"></i>
         </Link>
       </div>
 

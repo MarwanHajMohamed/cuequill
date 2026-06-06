@@ -91,6 +91,10 @@ function Page() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [dayListOpen, setDayListOpen] = useState(false);
   const [view, setView] = useState<"month" | "week">("month");
+  // react-calendar internal view ("month" = day grid, "year" = month
+  // grid, "decade" = year grid). The week-summaries sidebar is only
+  // meaningful for the day grid.
+  const [calView, setCalView] = useState<string>("month");
 
   // Shared ref — either AnimatedCalendar or WeekView is mounted at a time
   // and both expose a goToToday() via useImperativeHandle.
@@ -103,6 +107,7 @@ function Page() {
 
   const calendarColRef = useRef<HTMLDivElement>(null);
   const [sidebarOffset, setSidebarOffset] = useState(0);
+  const [sidebarRows, setSidebarRows] = useState<string>("");
 
   const manualTrades: Trade[] = useMemo<Trade[]>(() => [], []);
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
@@ -126,11 +131,19 @@ function Page() {
       const colRect = calendarColRef.current.getBoundingClientRect();
       const daysRect = days.getBoundingClientRect();
       setSidebarOffset(Math.max(0, daysRect.top - colRect.top));
+      // Mirror the day grid's actual row heights so each week card lines
+      // up with its calendar row even when content stretches a row past
+      // the 110px min.
+      setSidebarRows(getComputedStyle(days).gridTemplateRows);
     };
 
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(calendarColRef.current!);
+    const days = calendarColRef.current?.querySelector(
+      ".react-calendar__month-view__days",
+    );
+    if (days) ro.observe(days);
     window.addEventListener("resize", measure);
     return () => {
       ro.disconnect();
@@ -574,13 +587,21 @@ function Page() {
                     className="custom-calendar_full-view"
                     showTodayButton={false}
                     onMonthChange={setDisplayedMonth}
+                    onViewChange={setCalView}
                   />
                 </div>
                 {/* Sidebar: header area (Today + Month/Week buttons) sized
                     to match the calendar's nav+weekday height, then a grid
                     of week cards using the same row spec as the calendar's
-                    day grid so each card lines up with its week row. */}
-                <div className="hidden md:flex w-44 shrink-0 flex-col">
+                    day grid so each card lines up with its week row.
+                    Hidden when the user drills up to year/decade view —
+                    weekly summaries are meaningless when no day grid is
+                    showing. */}
+                <div
+                  className={`w-44 shrink-0 flex-col ${
+                    calView === "month" ? "hidden md:flex" : "hidden"
+                  }`}
+                >
                   <div
                     className="flex justify-end items-end gap-2 pb-2"
                     style={{ height: sidebarOffset, minHeight: 40 }}
@@ -615,8 +636,9 @@ function Page() {
                   <div
                     className="grid"
                     style={{
-                      gridAutoRows: "minmax(110px, 1fr)",
-                      rowGap: 0,
+                      gridTemplateRows:
+                        sidebarRows || "repeat(6, minmax(110px, 1fr))",
+                      rowGap: 4,
                     }}
                   >
                     {weekSummaries.map((w) => (

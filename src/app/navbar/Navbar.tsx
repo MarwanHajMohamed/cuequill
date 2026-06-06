@@ -1,7 +1,14 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import React, { useState, useRef, useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import Link from "next/link";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useLayoutEffect,
+  useTransition,
+} from "react";
 import { signOut, useSession } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 import TimezoneDisplay from "@/helpers/TimezoneDisplay";
@@ -33,11 +40,36 @@ const CuequillLogo = ({ className = "" }: { className?: string }) => (
 
 export default function Navbar() {
   const router = useRouter();
+  const pathname = usePathname() ?? "";
+  // Optimistic path: updates immediately on click so the active-route
+  // pill slides before the next page actually mounts.
+  const [pendingPath, setPendingPath] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
+  const activePath = pendingPath ?? pathname;
   const { data: session } = useSession();
   const userId = session?.user?.id;
+  const userFullName = session?.user
+    ? `${session.user.firstname ?? ""} ${session.user.surname ?? ""}`.trim()
+    : "";
+  const userInitial =
+    userFullName[0]?.toUpperCase() ??
+    session?.user?.email?.[0]?.toUpperCase() ??
+    "U";
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const guideDropdownRef = useRef<HTMLDivElement>(null);
+  // Persistent pill: one element whose position/width is animated via
+  // refs rather than framer's layoutId. layoutId measures via
+  // getBoundingClientRect across renders, which misreads the
+  // "from" position when the document scroll resets to top during a
+  // route change inside a fixed parent — making the pill fly up from
+  // below the viewport. Direct measurement avoids that entirely.
+  // The pill spans the whole desktop bar so it can slide between the
+  // brand on the left and the nav items in the middle.
+  const desktopBarRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef<Record<string, HTMLElement | null>>({});
+  const [pill, setPill] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  const [pillReady, setPillReady] = useState(false);
 
   const [open, setOpen] = useState(false);
   const [dropdown, setDropdown] = useState(false);
@@ -63,14 +95,39 @@ export default function Navbar() {
 
   /* ---------------- HELPERS ---------------- */
 
-  const handleRoute = (slug: string) => {
-    if (slug) router.push(`/${slug}`);
+  // Build the href Next.js will navigate to. "/" is dashboard; bare
+  // slugs get a leading slash.
+  const hrefFor = (slug: string) => (slug === "/" ? "/dashboard" : `/${slug}`);
+
+  const navigate = (slug: string) => {
+    const href = hrefFor(slug);
+    // Update the optimistic active path synchronously so the pill
+    // animates the moment the click registers.
+    setPendingPath(href);
+    startTransition(() => {
+      router.push(href);
+    });
   };
 
+  // Clear the optimistic path once the real pathname catches up.
+  useEffect(() => {
+    if (pendingPath && pathname === pendingPath) setPendingPath(null);
+  }, [pathname, pendingPath]);
+
+  const handleRoute = (slug: string) => navigate(slug);
+
   const handleNavClick = (slug: string) => {
-    handleRoute(slug);
+    navigate(slug);
     setOpenSidebar(false);
     setOpenGuide(false);
+  };
+
+  // Active-route detection. Slugs may include a userId segment (e.g.
+  // `trades/abc123`); compare against the first path segment.
+  const isActive = (slug: string) => {
+    const base = slug.split("/")[0];
+    if (!base) return activePath === "/" || activePath === "/dashboard";
+    return activePath === `/${base}` || activePath.startsWith(`/${base}/`);
   };
 
   /* ---------------- DATA ---------------- */
@@ -98,18 +155,13 @@ export default function Navbar() {
   ];
 
   const navItems = [
-    { name: "Trades", slug: `trades/${userId}`, side: "MIDDLE" },
-    { name: "Calendar", slug: "calendar", side: "MIDDLE" },
-    { name: "Goals", slug: "goals", side: "MIDDLE" },
-    { name: "Affirmations", slug: "affirmations", side: "MIDDLE" },
-    {
-      name: "Guide",
-      side: "MIDDLE",
-      isDropdown: true,
-      dropdown: guideItems,
-    },
-    { name: "fa-solid fa-user", side: "RIGHT" },
+    { name: "Trades", slug: `trades/${userId}` },
+    { name: "Calendar", slug: "calendar" },
+    { name: "Goals", slug: "goals" },
+    { name: "Affirmations", slug: "affirmations" },
   ];
+
+  const guideActive = guideItems.some((g) => isActive(g.slug));
 
   /* ---------------- EFFECTS ---------------- */
 
@@ -142,6 +194,42 @@ export default function Navbar() {
       document.body.style.overflow = "";
     };
   }, [openSidebar]);
+
+  // Which key in itemRefs is currently active? Computed from activePath
+  // so the measurement effect re-runs as soon as a click optimistically
+  // updates pendingPath.
+  const activeKey = (() => {
+    if (isActive("/")) return "__brand__";
+    const hit = navItems.find((n) => isActive(n.slug));
+    if (hit) return hit.slug;
+    if (guideActive) return "__guide__";
+    return null;
+  })();
+
+  useLayoutEffect(() => {
+    const measure = () => {
+      if (!desktopBarRef.current || !activeKey) return;
+      const el = itemRefs.current[activeKey];
+      if (!el) return;
+      const parent = desktopBarRef.current.getBoundingClientRect();
+      const rect = el.getBoundingClientRect();
+      setPill({
+        x: rect.left - parent.left,
+        y: rect.top - parent.top,
+        w: rect.width,
+        h: rect.height,
+      });
+      setPillReady(true);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    if (desktopBarRef.current) ro.observe(desktopBarRef.current);
+    window.addEventListener("resize", measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [activeKey]);
 
   /* ---------------- TIME ---------------- */
 
@@ -180,26 +268,6 @@ export default function Navbar() {
     (hours > 9 || (hours === 9 && minutes >= 30)) &&
     hours < 16;
 
-  /* ---------------- COMPONENTS ---------------- */
-
-  const SidebarItem = ({
-    icon,
-    label,
-    slug,
-  }: {
-    icon: string;
-    label: string;
-    slug: string;
-  }) => (
-    <div
-      onClick={() => handleNavClick(slug)}
-      className="flex items-center gap-5 p-3 rounded-lg cursor-pointer font-bold text-base"
-    >
-      <i className={icon}></i>
-      <div>{label}</div>
-    </div>
-  );
-
   /* ---------------- UI ---------------- */
 
   return (
@@ -231,62 +299,108 @@ export default function Navbar() {
 
         {/* Sidebar */}
         <div
-          className={`md:hidden fixed top-0 left-0 h-full w-[250px] bg-[#111113] border-r border-white/10 z-50 flex flex-col shadow-2xl transition-transform duration-300 ease-in-out ${
+          className={`md:hidden fixed top-0 left-0 h-full w-[270px] bg-gradient-to-b from-[#141418] to-[#0E0E10] border-r border-white/10 z-50 flex flex-col shadow-2xl transition-transform duration-300 ease-out ${
             openSidebar ? "translate-x-0" : "-translate-x-full"
           }`}
         >
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 shrink-0">
-            <CuequillLogo className="h-7 w-auto" />
+            <div className="flex items-center gap-2.5">
+              <CuequillLogo className="h-7 w-auto" />
+              <span className="text-[15px] font-semibold tracking-tight">
+                Cuequill
+              </span>
+            </div>
             <button
               onClick={() => setOpenSidebar(false)}
-              className="text-white hover:text-white transition duration-100 p-1 px-3 rounded-md"
+              className="text-white/70 hover:text-white transition duration-100 w-8 h-8 flex items-center justify-center rounded-md hover:bg-white/5"
             >
               <i className="fa-solid fa-xmark text-base" />
             </button>
           </div>
 
           {/* Body */}
-          <div className="flex flex-col justify-between h-full px-5 py-5 text-sm overflow-y-auto">
-            <div className="flex flex-col gap-3">
-              {sidebarItems.map((item, i) => (
-                <SidebarItem key={i} {...item} />
-              ))}
+          <div className="flex flex-col justify-between h-full px-3 py-5 text-sm overflow-y-auto">
+            <div className="flex flex-col gap-1">
+              {sidebarItems.map((item, i) => {
+                const active = isActive(item.slug);
+                return (
+                  <Link
+                    key={i}
+                    href={hrefFor(item.slug)}
+                    prefetch
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleNavClick(item.slug);
+                    }}
+                    className={`relative flex items-center gap-4 px-3 py-2.5 rounded-lg cursor-pointer font-medium text-[14px] transition ${
+                      active
+                        ? "bg-white/8 text-white"
+                        : "text-white/70 hover:bg-white/5 hover:text-white"
+                    }`}
+                  >
+                    {active && (
+                      <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-teal-400" />
+                    )}
+                    <i
+                      className={`${item.icon} w-4 text-center ${active ? "text-teal-400" : ""}`}
+                    ></i>
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
 
               {/* Guide */}
               <div>
                 <div
                   onClick={() => setOpenGuide((p) => !p)}
-                  className="flex justify-between p-3 rounded-lg cursor-pointer items-center font-bold text-base"
+                  className={`flex justify-between px-3 py-2.5 rounded-lg cursor-pointer items-center font-medium text-[14px] transition ${
+                    guideActive
+                      ? "bg-white/8 text-white"
+                      : "text-white/70 hover:bg-white/5 hover:text-white"
+                  }`}
                 >
-                  <div className="flex items-center gap-5">
-                    <i className="fa-solid fa-book"></i>
+                  <div className="flex items-center gap-4">
+                    <i
+                      className={`fa-solid fa-book w-4 text-center ${guideActive ? "text-teal-400" : ""}`}
+                    ></i>
                     <span>Guide</span>
                   </div>
-                  <span
-                    className={`transition ${openGuide ? "rotate-180" : ""}`}
-                  >
-                    <i className="fa-solid fa-chevron-down"></i>
-                  </span>
+                  <i
+                    className={`fa-solid fa-chevron-down text-[10px] transition ${openGuide ? "rotate-180" : ""}`}
+                  />
                 </div>
 
                 <AnimatePresence>
                   {openGuide && (
                     <motion.div
-                      initial={{ height: 0 }}
-                      animate={{ height: "auto" }}
-                      exit={{ height: 0 }}
-                      className="overflow-hidden ml-4 mt-2 gap-2 flex flex-col"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden ml-9 mt-1 flex flex-col"
                     >
-                      {guideItems.map((item, i) => (
-                        <div
-                          key={i}
-                          onClick={() => handleNavClick(item.slug)}
-                          className="cursor-pointer py-1 border-b border-[#323232]"
-                        >
-                          {item.label}
-                        </div>
-                      ))}
+                      {guideItems.map((item, i) => {
+                        const sub = isActive(item.slug);
+                        return (
+                          <Link
+                            key={i}
+                            href={hrefFor(item.slug)}
+                            prefetch
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleNavClick(item.slug);
+                            }}
+                            className={`cursor-pointer py-1.5 text-[13px] transition ${
+                              sub
+                                ? "text-teal-400"
+                                : "text-white/60 hover:text-white"
+                            }`}
+                          >
+                            {item.label}
+                          </Link>
+                        );
+                      })}
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -294,9 +408,10 @@ export default function Navbar() {
             </div>
 
             {/* Footer */}
-            <div className="flex flex-col gap-2">
-              <div>
-                <label className="inline-flex items-center cursor-pointer flex gap-2">
+            <div className="flex flex-col gap-3">
+              <div className="px-3 py-2 rounded-lg bg-white/5 flex items-center justify-between">
+                <span className="text-[12px] text-white/60">Simulated</span>
+                <label className="inline-flex items-center cursor-pointer">
                   <input
                     type="checkbox"
                     checked={simulated}
@@ -307,56 +422,66 @@ export default function Navbar() {
                     className="sr-only peer"
                   />
                   <div
-                    className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 
-                            peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 
-                            peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full 
-                            peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] 
-                            after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full 
-                            after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 
-                            dark:peer-checked:bg-blue-600"
+                    className="relative w-9 h-5 bg-white/10 rounded-full peer
+                      peer-checked:after:translate-x-full
+                      after:content-[''] after:absolute after:top-[2px]
+                      after:start-[2px] after:bg-white after:rounded-full
+                      after:h-4 after:w-4 after:transition-all
+                      peer-checked:bg-teal-500"
                   />
-                  <span className="text-xs md:text-sm">Simulated trading</span>
                 </label>
               </div>
-              <div className="-mx-5 px-5 py-4 border-t border-white/10">
+              <div className="-mx-3 px-3 pt-3 border-t border-white/10 flex flex-col gap-1">
                 <div
-                  className="flex items-center gap-3 p-2 px-0 cursor-pointer hover:bg-black/10 transition duration-100"
+                  className="flex items-center gap-4 px-3 py-2 rounded-lg cursor-pointer text-white/70 hover:bg-white/5 hover:text-white transition"
                   onClick={() => handleNavClick("settings")}
                 >
-                  <i className="fa-solid fa-gear"></i>
-                  <span>Settings</span>
+                  <i className="fa-solid fa-gear w-4 text-center" />
+                  <span className="text-[14px]">Settings</span>
                 </div>
                 <div
-                  className="flex items-center gap-3 p-2 px-0 cursor-pointer hover:bg-black/10 transition duration-100"
+                  className="flex items-center gap-4 px-3 py-2 rounded-lg cursor-pointer text-white/70 hover:bg-white/5 hover:text-white transition"
                   onClick={() => signOut({ callbackUrl: "/" })}
                 >
-                  <i className="fa-solid fa-right-from-bracket"></i>
-                  <span>Logout</span>
+                  <i className="fa-solid fa-right-from-bracket w-4 text-center" />
+                  <span className="text-[14px]">Logout</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* TOP BAR */}
-        <div className="md:hidden flex justify-between w-full p-5 bg-[#0E0E10] border-b border-[#232323] items-center">
-          <div className="w-full">
-            <div
-              onClick={() => setOpenSidebar(true)}
-              className="p-2 w-9 h-9 flex items-center rounded border-[#323232] cursor-pointer"
-            >
-              <i className="fa-solid fa-bars text-xl"></i>{" "}
-            </div>
-          </div>
+        {/* MOBILE TOP BAR — glass pill, matches desktop nav language. */}
+        <div className="md:hidden flex justify-between items-center w-full mx-3 mt-3 px-3 py-2 bg-white/[0.03] backdrop-blur-md rounded-full border border-white/10 shadow-[0_2px_24px_rgba(0,0,0,0.25)]">
+          <button
+            onClick={() => setOpenSidebar(true)}
+            aria-label="Open menu"
+            className="w-9 h-9 flex items-center justify-center rounded-full text-white/80 hover:bg-white/5 hover:text-white transition cursor-pointer"
+          >
+            <i className="fa-solid fa-bars text-base" />
+          </button>
 
-          <div className="text-xs text-center w-full">
-            Market:{" "}
-            <span className={marketOpen ? "text-green-500" : "text-red-500"}>
-              {marketOpen ? "Open" : "Closed"}
+          <div
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border ${
+              marketOpen
+                ? "bg-green-500/10 text-green-400 border-green-500/20"
+                : "bg-red-500/10 text-red-400 border-red-500/20"
+            }`}
+          >
+            <span className="relative flex w-1.5 h-1.5">
+              {marketOpen && (
+                <span className="absolute inset-0 rounded-full bg-green-400 animate-ping opacity-75" />
+              )}
+              <span
+                className={`relative inline-flex w-1.5 h-1.5 rounded-full ${
+                  marketOpen ? "bg-green-400" : "bg-red-400"
+                }`}
+              />
             </span>
+            <span>{marketOpen ? "Open" : "Closed"}</span>
           </div>
 
-          <div className="flex flex-col items-end text-[10px] w-full">
+          <div className="flex flex-col items-end text-[10px] leading-tight text-white/60">
             <TimezoneDisplay
               showHours={false}
               showMinutes={false}
@@ -364,9 +489,6 @@ export default function Navbar() {
               showDay
               showMonth
               showWeekDay
-              showYear
-              monthFormat="2-digit"
-              yearFormat="2-digit"
               weekDayFormat="short"
             />
             <TimezoneDisplay />
@@ -374,136 +496,242 @@ export default function Navbar() {
         </div>
 
         {/* -------- DESKTOP NAV -------- */}
-        <div className="hidden md:flex justify-between items-center w-full max-w-[1500px] mt-6 mx-10 p-4 px-5 bg-white/3 backdrop-blur-xs rounded-full border border-white/10">
+        <div
+          ref={desktopBarRef}
+          className="relative hidden md:flex justify-between items-center w-full max-w-[1500px] mt-6 mx-10 py-2 pl-3 pr-2 bg-white/[0.03] backdrop-blur-md rounded-full border border-white/10 shadow-[0_2px_24px_rgba(0,0,0,0.25)]"
+        >
+          {/* Sliding active pill — single element spanning the whole
+              desktop bar so it can move between brand, nav items, and
+              Guide. */}
+          {pill && activeKey && (
+            <motion.span
+              className="absolute rounded-full bg-white/10 border border-white/10 pointer-events-none"
+              initial={false}
+              animate={{ x: pill.x, y: pill.y, width: pill.w, height: pill.h }}
+              transition={
+                pillReady
+                  ? { type: "spring", stiffness: 380, damping: 30 }
+                  : { duration: 0 }
+              }
+              style={{ left: 0, top: 0 }}
+            />
+          )}
+
           {/* LEFT — brand */}
-          <div
-            onClick={() => handleRoute("dashboard")}
-            className="cursor-pointer"
+          <Link
+            ref={(el) => {
+              itemRefs.current["__brand__"] = el;
+            }}
+            href="/dashboard"
+            prefetch
+            onClick={(e) => {
+              e.preventDefault();
+              navigate("dashboard");
+            }}
+            className="relative cursor-pointer flex items-center gap-2 pl-2 pr-3 py-1 rounded-full hover:bg-white/5 transition"
             aria-label="Cuequill — dashboard"
           >
-            <CuequillLogo className="h-8 w-auto" />
-          </div>
+            <CuequillLogo className="relative h-7 w-auto" />
+            <span className="relative text-[14px] font-semibold tracking-tight hidden lg:inline">
+              Cuequill
+            </span>
+          </Link>
 
-          {/* MIDDLE */}
-          <div className="flex gap-10">
-            {navItems
-              .filter((i) => i.side === "MIDDLE")
-              .map((item, i) => (
-                <div
-                  ref={item.isDropdown ? guideDropdownRef : null}
-                  key={i}
-                  className="relative cursor-pointer"
-                  onClick={() => {
-                    if (item.slug) handleRoute(item.slug);
-                    if (item.isDropdown) setDropdown(!dropdown);
+          {/* MIDDLE — pill nav with sliding active indicator */}
+          <div className="relative flex items-center gap-1 text-[13.5px] font-medium">
+            {navItems.map((item) => {
+              const active = isActive(item.slug);
+              return (
+                <Link
+                  key={item.name}
+                  ref={(el) => {
+                    itemRefs.current[item.slug] = el;
                   }}
+                  href={hrefFor(item.slug)}
+                  prefetch
+                  onClick={(e) => {
+                    e.preventDefault();
+                    navigate(item.slug);
+                  }}
+                  className={`relative px-4 py-2 rounded-full cursor-pointer transition-colors ${
+                    active
+                      ? "text-white"
+                      : "text-white/60 hover:text-white"
+                  }`}
                 >
-                  {item.name}
-                  {item.isDropdown && (
-                    <i
-                      className={`fa-solid fa-chevron-down ml-1 transition duration-200 ${
-                        dropdown && "-rotate-180"
-                      }`}
-                    ></i>
-                  )}
+                  <span className="relative">{item.name}</span>
+                </Link>
+              );
+            })}
 
-                  <AnimatePresence>
-                    {item.dropdown && dropdown && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -2 }}
-                        transition={{ duration: 0.2 }}
-                        className="absolute left-0 top-8 flex flex-col bg-[#1A191D] rounded-lg 
-                        border border-[#212121] shadow-md min-w-[140px] z-50"
-                      >
-                        {item.dropdown.map((subItem, j) => (
-                          <div
-                            key={j}
-                            className="p-2 px-4 cursor-pointer hover:bg-black/10 transition duration-100"
-                            onClick={() => handleRoute(subItem.slug)}
-                          >
-                            {subItem.label}
-                          </div>
-                        ))}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              ))}
+            {/* Guide dropdown */}
+            <div
+              ref={guideDropdownRef}
+              className="relative"
+            >
+              <button
+                ref={(el) => {
+                  itemRefs.current["__guide__"] = el;
+                }}
+                onClick={() => setDropdown((d) => !d)}
+                className={`relative px-4 py-2 rounded-full cursor-pointer transition-colors flex items-center gap-1.5 ${
+                  guideActive ? "text-white" : "text-white/60 hover:text-white"
+                }`}
+              >
+                <span className="relative">Guide</span>
+                <i
+                  className={`relative fa-solid fa-chevron-down text-[9px] transition-transform duration-200 ${
+                    dropdown ? "-rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              <AnimatePresence>
+                {dropdown && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -4, scale: 0.98 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute left-0 top-[calc(100%+8px)] flex flex-col bg-[#15141A]/95 backdrop-blur-md rounded-xl border border-white/10 shadow-xl min-w-[160px] z-50 p-1"
+                  >
+                    {guideItems.map((subItem) => {
+                      const sub = isActive(subItem.slug);
+                      return (
+                        <Link
+                          key={subItem.slug}
+                          href={hrefFor(subItem.slug)}
+                          prefetch
+                          className={`px-3 py-2 text-left text-[13px] rounded-lg cursor-pointer transition ${
+                            sub
+                              ? "bg-white/8 text-white"
+                              : "text-white/70 hover:bg-white/5 hover:text-white"
+                          }`}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            navigate(subItem.slug);
+                            setDropdown(false);
+                          }}
+                        >
+                          {subItem.label}
+                        </Link>
+                      );
+                    })}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
 
-          {/* RIGHT */}
-          <div ref={dropdownRef} className="relative">
-            {navItems
-              .filter((item) => item.side === "RIGHT")
-              .map((item, i) => (
-                <i
-                  key={i}
-                  className={`${item.name} cursor-pointer transition duration-100 hover:text-teal-500`}
-                  onClick={() => setOpen((o) => !o)}
-                />
-              ))}
+          {/* RIGHT — market status + user */}
+          <div className="flex items-center gap-2">
+            {/* Market status pill */}
+            <div
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium border ${
+                marketOpen
+                  ? "bg-green-500/10 text-green-400 border-green-500/20"
+                  : "bg-red-500/10 text-red-400 border-red-500/20"
+              }`}
+              title={marketOpen ? "US market open" : "US market closed"}
+            >
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  marketOpen ? "bg-green-400 animate-pulse" : "bg-red-400"
+                }`}
+              />
+              <span className="hidden lg:inline">
+                {marketOpen ? "Open" : "Closed"}
+              </span>
+            </div>
 
-            {/* MODAL */}
-            <AnimatePresence>
-              {open && (
-                <motion.div
-                  initial={{ opacity: 0, y: -5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -2 }}
-                  transition={{ duration: 0.2 }}
-                  className="absolute -left-[220px] top-8 flex flex-col bg-[#1A191D] rounded-lg 
-                            border border-[#212121] shadow-md min-w-[240px] z-50 gap-2 py-3"
-                >
-                  <div>
-                    <div
-                      className="flex items-center gap-3 p-2 px-4 cursor-pointer hover:bg-black/10 transition duration-100"
-                      onClick={() => {
-                        handleRoute("settings");
-                        setOpen(false);
-                      }}
-                    >
-                      <i className="fa-solid fa-gear"></i>
-                      <div>Settings</div>
-                    </div>
-                    <div
-                      className="flex items-center gap-3 p-2 px-4 cursor-pointer hover:bg-black/10 transition duration-100"
-                      onClick={() => signOut({ callbackUrl: "/" })}
-                    >
-                      <i className="fa-solid fa-right-from-bracket"></i>
-                      Logout
-                    </div>
-                  </div>
-                  <hr className="mx-3 py-1 text-white/10" />
-                  <div className="px-3">
-                    <label className="inline-flex items-center cursor-pointer flex gap-2">
-                      <input
-                        type="checkbox"
-                        checked={simulated}
-                        onChange={(e) => {
-                          setSimulated(e.target.checked);
-                          window.location.reload();
+            {/* User avatar */}
+            <div ref={dropdownRef} className="relative">
+              <button
+                onClick={() => setOpen((o) => !o)}
+                className="w-9 h-9 rounded-full bg-gradient-to-br from-teal-500/80 to-emerald-600/80 border border-white/15 flex items-center justify-center text-[13px] font-semibold text-white cursor-pointer hover:brightness-110 transition"
+                aria-label="Account menu"
+              >
+                {userInitial}
+              </button>
+
+              <AnimatePresence>
+                {open && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -4, scale: 0.98 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 top-[calc(100%+8px)] flex flex-col bg-[#15141A]/95 backdrop-blur-md rounded-xl border border-white/10 shadow-xl min-w-[240px] z-50 overflow-hidden"
+                  >
+                    {/* Identity header */}
+                    {session?.user && (
+                      <div className="px-4 py-3 border-b border-white/10 flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-teal-500/80 to-emerald-600/80 border border-white/15 flex items-center justify-center text-[13px] font-semibold">
+                          {userInitial}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          {userFullName && (
+                            <div className="text-[13px] font-medium truncate">
+                              {userFullName}
+                            </div>
+                          )}
+                          {session.user.email && (
+                            <div className="text-[11px] text-white/50 truncate">
+                              {session.user.email}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="p-1">
+                      <button
+                        className="w-full flex items-center gap-3 px-3 py-2 text-left text-[13px] rounded-lg cursor-pointer text-white/80 hover:bg-white/5 hover:text-white transition"
+                        onClick={() => {
+                          handleRoute("settings");
+                          setOpen(false);
                         }}
-                        className="sr-only peer"
-                      />
-                      <div
-                        className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 
-                            peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 
-                            peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full 
-                            peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] 
-                            after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full 
-                            after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 
-                            dark:peer-checked:bg-blue-600"
-                      />
-                      <span className="text-xs md:text-sm">
+                      >
+                        <i className="fa-solid fa-gear w-4 text-center text-white/60" />
+                        <span>Settings</span>
+                      </button>
+                      <button
+                        className="w-full flex items-center gap-3 px-3 py-2 text-left text-[13px] rounded-lg cursor-pointer text-white/80 hover:bg-white/5 hover:text-white transition"
+                        onClick={() => signOut({ callbackUrl: "/" })}
+                      >
+                        <i className="fa-solid fa-right-from-bracket w-4 text-center text-white/60" />
+                        <span>Logout</span>
+                      </button>
+                    </div>
+
+                    <div className="p-3 border-t border-white/10 flex items-center justify-between">
+                      <span className="text-[12px] text-white/60">
                         Simulated trading
                       </span>
-                    </label>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                      <label className="inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={simulated}
+                          onChange={(e) => {
+                            setSimulated(e.target.checked);
+                            window.location.reload();
+                          }}
+                          className="sr-only peer"
+                        />
+                        <div
+                          className="relative w-9 h-5 bg-white/10 rounded-full peer
+                            peer-checked:after:translate-x-full
+                            after:content-[''] after:absolute after:top-[2px]
+                            after:start-[2px] after:bg-white after:rounded-full
+                            after:h-4 after:w-4 after:transition-all
+                            peer-checked:bg-teal-500"
+                        />
+                      </label>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </div>
       </div>

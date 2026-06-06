@@ -18,10 +18,8 @@ function Page() {
   return (
     <div className="flex flex-col items-center">
       <Time />
-      <div className="bg-[#0F0F17] w-[100%] flex flex-col items-center">
-        <TradeCalendar userId={userId} />
-      </div>
       <div className="w-[100%] flex flex-col items-center gap-8 md:gap-12 py-8 md:py-12">
+        <TradeCalendar userId={userId} />
         <DashboardActivity userId={userId} />
         <DashboardGoals userId={userId} />
         <DashboardStats userId={userId} />

@@ -18,6 +18,7 @@ import {
 import Filters from "./Filters";
 import Statistics from "./Statistics";
 import { FavouriteButton } from "./FavouriteButton";
+import { AnimatePresence, motion } from "framer-motion";
 
 function Page({ params }: { params: Promise<{ userId: string }> }) {
   const [simulated] = useLocalStorage<boolean>("simulated", false);
@@ -41,6 +42,12 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [currentPage, setCurrentPage] = useState<number>(1);
+  // +1 = moving forward (slide left from right), -1 = moving back.
+  const [pageDir, setPageDir] = useState<1 | -1>(1);
+  const goToPage = (next: number) => {
+    setPageDir(next > currentPage ? 1 : -1);
+    setCurrentPage(next);
+  };
   const [syncing, setSyncing] = useState<boolean>(false);
   const [isFiltersOpen, setIsFiltersOpen] = useState<boolean>(false);
   const tradesPerPage = 15;
@@ -194,16 +201,35 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
 
   return (
     <>
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 -z-10"
+        style={{
+          background:
+            "radial-gradient(50% 50% at 50% 0%, rgba(20,184,166,0.14) 0%, rgba(20,184,166,0) 75%), radial-gradient(40% 45% at 80% 5%, rgba(99,102,241,0.10) 0%, rgba(99,102,241,0) 75%)",
+        }}
+      />
+
       {!trades || trades.length === 0 ? (
-        <div className="flex flex-col gap-2 items-center h-screen justify-center">
-          <div className="text-gray-400">No trades found.</div>
+        <div className="flex flex-col gap-3 items-center h-screen justify-center">
+          <div className="text-[11px] uppercase tracking-[0.18em] text-white/40 font-medium">
+            Journal
+          </div>
+          <div className="text-2xl font-semibold tracking-tight">
+            No trades yet
+          </div>
+          <div className="text-sm text-white/55 max-w-sm text-center">
+            Log your first trade to start tracking edge, streaks, and strategy
+            performance.
+          </div>
           <button
-            className="cursor-pointer bg-blue-600 p-2 rounded-lg transition duration-100 hover:bg-blue-700"
+            className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition cursor-pointer text-sm font-medium"
             onClick={() => {
               setEditingTrade(null);
               setIsModalOpen(true);
             }}
           >
+            <i className="fa-solid fa-plus text-[11px]" />
             Add new trade
           </button>
         </div>
@@ -214,6 +240,22 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
               isFiltersOpen ? "md:pl-[300px]" : ""
             }`}
           >
+            {/* Hero */}
+            <div className="flex flex-col gap-2 mb-6">
+              <div className="text-[11px] uppercase tracking-[0.18em] text-white/40 font-medium">
+                Journal
+              </div>
+              <div className="flex items-baseline justify-between gap-4 flex-wrap">
+                <h1 className="text-3xl md:text-4xl font-semibold tracking-tight leading-[1.05]">
+                  <span className="bg-gradient-to-r from-teal-300 to-emerald-400 bg-clip-text text-transparent">
+                    Trades
+                  </span>
+                </h1>
+                <div className="text-[12px] text-white/45 tabular-nums">
+                  {filteredTrades?.length ?? 0} of {trades.length}
+                </div>
+              </div>
+            </div>
             <Filters
               filter={filter}
               setFilter={setFilter}
@@ -234,9 +276,11 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
               isOpen={isFiltersOpen}
               setIsOpen={setIsFiltersOpen}
             />
-            <div className="w-full max-w-[1500px] overflow-x-auto max-[1130px]:mt-0 mt-5 md:h-126 h-110">
+            <div className="w-full max-w-[1500px] rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md overflow-x-auto max-[1130px]:mt-0 mt-5 p-2 md:p-3">
               {filteredTrades?.length === 0 ? (
-                <div className="text-center">No trades found</div>
+                <div className="text-center text-[13px] text-white/40 py-10">
+                  No trades match the current filters.
+                </div>
               ) : (
                 <>
                   <table className="border-collapse table-auto min-w-full">
@@ -245,254 +289,294 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                         {headings.map((h) => (
                           <th
                             key={h}
-                            className="px-2 md:px-4 py-1 whitespace-nowrap w-full text-[#5B5B5B] md:text-xs text-[10px] text-left"
+                            className="px-2 md:px-4 py-2 whitespace-nowrap w-full text-white/40 md:text-[11px] text-[10px] text-left uppercase tracking-[0.12em] font-medium"
                           >
                             {h}
                           </th>
                         ))}
                       </tr>
                     </thead>
-                    <tbody>
-                      {currentTrades?.map((trade, index) => (
-                        <tr key={index} className="text-xs md:text-base">
-                          <td className="flex gap-2 py-1">
-                            <FavouriteButton
-                              tradeId={trade._id!}
-                              userId={userId}
-                              isFavourite={trade.favourite}
-                              queryClient={queryClient}
-                            />
-                            <i
-                              className="fa-regular fa-pen-to-square cursor-pointer text-white/30 transition duration-100 hover:text-white/100 text-sm md:text-xl"
-                              onClick={() => {
-                                setEditingTrade(trade);
-                                setIsModalOpen(true);
-                              }}
-                            ></i>
-                          </td>
-                          <td className="px-2 md:px-4 py-1 whitespace-nowrap w-full">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setEditingTrade(trade);
-                                setIsModalOpen(true);
-                              }}
-                              className="hover:underline hover:text-white cursor-pointer"
-                              title="View trade summary"
-                            >
-                              {trade.symbol}
-                            </button>
-                          </td>
-                          <td
-                            className={`px-2 md:px-4 py-1 whitespace-nowrap w-full ${
-                              trade.option === "CALL"
-                                ? "text-green-500"
-                                : "text-red-500"
-                            }`}
+                    <AnimatePresence
+                      mode="wait"
+                      initial={false}
+                      custom={pageDir}
+                    >
+                      <motion.tbody
+                        key={currentPage}
+                        custom={pageDir}
+                        variants={{
+                          enter: (dir: number) => ({
+                            opacity: 0,
+                            x: dir > 0 ? 24 : -24,
+                          }),
+                          center: { opacity: 1, x: 0 },
+                          exit: (dir: number) => ({
+                            opacity: 0,
+                            x: dir > 0 ? -24 : 24,
+                          }),
+                        }}
+                        initial="enter"
+                        animate="center"
+                        exit="exit"
+                        transition={{ duration: 0.15, ease: "easeOut" }}
+                      >
+                        {currentTrades?.map((trade, index) => (
+                          <tr
+                            key={index}
+                            className="text-xs md:text-[13.5px] border-t border-white/[0.06] hover:bg-white/[0.02] transition"
                           >
-                            {trade.option.slice(0, 1) +
-                              trade.option
-                                .slice(1, trade.option.length)
-                                .toLowerCase()}
-                          </td>
-                          <td
-                            className={`px-2 md:px-4 py-1 whitespace-nowrap w-full ${
-                              trade.status === "OPEN"
-                                ? "text-blue-500"
-                                : trade.status === "WIN"
+                            <td className="flex gap-2 py-1">
+                              <FavouriteButton
+                                tradeId={trade._id!}
+                                userId={userId}
+                                isFavourite={trade.favourite}
+                                queryClient={queryClient}
+                              />
+                              <i
+                                className="fa-regular fa-pen-to-square cursor-pointer text-white/30 transition duration-100 hover:text-white/100 text-sm md:text-xl"
+                                onClick={() => {
+                                  setEditingTrade(trade);
+                                  setIsModalOpen(true);
+                                }}
+                              ></i>
+                            </td>
+                            <td className="px-2 md:px-4 py-1 whitespace-nowrap w-full">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingTrade(trade);
+                                  setIsModalOpen(true);
+                                }}
+                                className="hover:underline hover:text-white cursor-pointer"
+                                title="View trade summary"
+                              >
+                                {trade.symbol}
+                              </button>
+                            </td>
+                            <td
+                              className={`px-2 md:px-4 py-1 whitespace-nowrap w-full ${
+                                trade.option === "CALL"
                                   ? "text-green-500"
                                   : "text-red-500"
-                            }`}
-                          >
-                            {trade.status.slice(0, 1) +
-                              trade.status
-                                .slice(1, trade.status.length)
-                                .toLowerCase()}
-                          </td>
-                          <td
-                            className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
-                          >
-                            {trade.status === "OPEN" ? (
-                              "-"
-                            ) : (
-                              <span
-                                className={
-                                  trade.status === "WIN"
+                              }`}
+                            >
+                              {trade.option.slice(0, 1) +
+                                trade.option
+                                  .slice(1, trade.option.length)
+                                  .toLowerCase()}
+                            </td>
+                            <td
+                              className={`px-2 md:px-4 py-1 whitespace-nowrap w-full ${
+                                trade.status === "OPEN"
+                                  ? "text-blue-500"
+                                  : trade.status === "WIN"
                                     ? "text-green-500"
                                     : "text-red-500"
-                                }
-                              >
-                                ${trade.profitLoss?.toFixed(2)}
-                              </span>
-                            )}
-                          </td>
-                          <td
-                            className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
-                          >
-                            {trade.status === "OPEN" ? (
-                              "-"
-                            ) : (
-                              <span
-                                className={
-                                  Number(
-                                    calcChange(
-                                      Number(trade.closingContractPrice),
-                                      Number(trade.contractPrice),
-                                    ),
-                                  ) > 0
-                                    ? "text-green-500"
-                                    : "text-red-500"
-                                }
-                              >
-                                {calcChange(
-                                  Number(trade.closingContractPrice),
-                                  Number(trade.contractPrice),
-                                )}
-                                %
-                              </span>
-                            )}
-                          </td>
-                          <td
-                            className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
-                          >
-                            {trade.contractPrice}
-                          </td>
-                          <td
-                            className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
-                          >
-                            {trade.qty}
-                          </td>
-                          <td
-                            className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
-                          >
-                            {trade.strike}
-                          </td>
-                          <td
-                            className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
-                          >
-                            {new Date(trade.dateBought).toLocaleDateString(
-                              "en-GB",
-                            )}
-                          </td>
-                          <td
-                            className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
-                          >
-                            {new Date(trade.expiryDate).toLocaleDateString(
-                              "en-GB",
-                            )}
-                          </td>
-                          <td
-                            className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
-                          >
-                            {trade.closingContractPrice === null
-                              ? "-"
-                              : trade.closingContractPrice}
-                          </td>
-                          <td
-                            className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
-                          >
-                            {trade.strategy}
-                          </td>
-                          <td
-                            className={`px-2 md:px-4 py-1 whitespace-nowrap w-full text-center`}
-                          >
-                            {trade.notes !== "" ? (
-                              <i
-                                className="fa-solid fa-book-open cursor-pointer text-white/70 transition duration-100 hover:text-white/100 text-lg"
-                                onClick={() => {
-                                  setIsNotesOpen(true);
-                                  setEditingTrade(trade);
-                                  setNotes(trade.notes || "");
-                                }}
-                              ></i>
-                            ) : (
-                              <i
-                                className="fa-solid fa-book cursor-pointer text-white/20 transition duration-100 hover:text-white/100 text-lg"
-                                onClick={() => {
-                                  setIsNotesOpen(true);
-                                  setEditingTrade(trade);
-                                  setNotes(trade.notes || "");
-                                }}
-                              ></i>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
+                              }`}
+                            >
+                              {trade.status.slice(0, 1) +
+                                trade.status
+                                  .slice(1, trade.status.length)
+                                  .toLowerCase()}
+                            </td>
+                            <td
+                              className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
+                            >
+                              {trade.status === "OPEN" ? (
+                                "-"
+                              ) : (
+                                <span
+                                  className={
+                                    trade.status === "WIN"
+                                      ? "text-green-500"
+                                      : "text-red-500"
+                                  }
+                                >
+                                  ${trade.profitLoss?.toFixed(2)}
+                                </span>
+                              )}
+                            </td>
+                            <td
+                              className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
+                            >
+                              {trade.status === "OPEN" ? (
+                                "-"
+                              ) : (
+                                <span
+                                  className={
+                                    Number(
+                                      calcChange(
+                                        Number(trade.closingContractPrice),
+                                        Number(trade.contractPrice),
+                                      ),
+                                    ) > 0
+                                      ? "text-green-500"
+                                      : "text-red-500"
+                                  }
+                                >
+                                  {calcChange(
+                                    Number(trade.closingContractPrice),
+                                    Number(trade.contractPrice),
+                                  )}
+                                  %
+                                </span>
+                              )}
+                            </td>
+                            <td
+                              className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
+                            >
+                              {trade.contractPrice}
+                            </td>
+                            <td
+                              className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
+                            >
+                              {trade.qty}
+                            </td>
+                            <td
+                              className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
+                            >
+                              {trade.strike}
+                            </td>
+                            <td
+                              className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
+                            >
+                              {new Date(trade.dateBought).toLocaleDateString(
+                                "en-GB",
+                              )}
+                            </td>
+                            <td
+                              className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
+                            >
+                              {new Date(trade.expiryDate).toLocaleDateString(
+                                "en-GB",
+                              )}
+                            </td>
+                            <td
+                              className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
+                            >
+                              {trade.closingContractPrice === null
+                                ? "-"
+                                : trade.closingContractPrice}
+                            </td>
+                            <td
+                              className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
+                            >
+                              {trade.strategy}
+                            </td>
+                            <td
+                              className={`px-2 md:px-4 py-1 whitespace-nowrap w-full text-center`}
+                            >
+                              {trade.notes !== "" ? (
+                                <i
+                                  className="fa-solid fa-book-open cursor-pointer text-white/70 transition duration-100 hover:text-white/100 text-lg"
+                                  onClick={() => {
+                                    setIsNotesOpen(true);
+                                    setEditingTrade(trade);
+                                    setNotes(trade.notes || "");
+                                  }}
+                                ></i>
+                              ) : (
+                                <i
+                                  className="fa-solid fa-book cursor-pointer text-white/20 transition duration-100 hover:text-white/100 text-lg"
+                                  onClick={() => {
+                                    setIsNotesOpen(true);
+                                    setEditingTrade(trade);
+                                    setNotes(trade.notes || "");
+                                  }}
+                                ></i>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </motion.tbody>
+                    </AnimatePresence>
                   </table>
                 </>
               )}
             </div>
             {filteredTrades?.length !== 0 && (
-              <div className="flex md:justify-between gap-2 md:mt-5 w-full max-w-[1500px]">
+              <div className="flex md:justify-between gap-2 mt-5 w-full max-w-[1500px]">
                 <div className="flex gap-2">
                   <button
-                    className="md:text-xs border border-green-500 bg-green-500/20 justify-center md:p-2 rounded-lg
-                      flex gap-2 items-center cursor-pointer
-                      transition duration-100 hover:bg-green-500/50 w-8 h-8 md:w-auto text-lg"
+                    className="inline-flex items-center justify-center gap-2 px-3 md:px-4 py-2 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition cursor-pointer text-[12px] md:text-[13px] font-medium w-9 h-9 md:w-auto md:h-auto"
                     onClick={() => {
                       setEditingTrade(null);
                       setIsModalOpen(true);
                     }}
                   >
-                    + <span className="md:flex hidden">Add new trade</span>
+                    <i className="fa-solid fa-plus text-[11px]" />
+                    <span className="md:inline hidden">Add trade</span>
                   </button>
                   <button
-                    className={`md:text-xs border border-blue-500 bg-blue-500/20 justify-center md:p-2 rounded-lg
-                      flex gap-2 items-center
-                      transition duration-100 w-8 h-8 md:w-auto text-sm md:text-xs ${
-                        syncing
-                          ? "cursor-not-allowed opacity-60"
-                          : "cursor-pointer hover:bg-blue-500/50"
-                      }`}
+                    className={`inline-flex items-center justify-center gap-2 px-3 md:px-4 py-2 rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-500/25 transition text-[12px] md:text-[13px] font-medium w-9 h-9 md:w-auto md:h-auto ${
+                      syncing
+                        ? "cursor-not-allowed opacity-60"
+                        : "cursor-pointer hover:bg-indigo-500/25"
+                    }`}
                     onClick={handleSync}
                     disabled={syncing}
                     title="Import any new trades from IBKR"
                   >
                     <i
-                      className={`fa-solid fa-rotate ${
+                      className={`fa-solid fa-rotate text-[11px] ${
                         syncing ? "animate-spin" : ""
                       }`}
-                    ></i>
-                    <span className="md:flex hidden">
-                      {syncing ? "Syncing..." : "Sync from IBKR"}
+                    />
+                    <span className="md:inline hidden">
+                      {syncing ? "Syncing…" : "Sync IBKR"}
                     </span>
                   </button>
                 </div>
                 <button
-                  className="text-xs border border-red-500 bg-red-500/20 justify-center md:p-2 rounded-lg
-                      flex gap-2 items-center cursor-pointer
-                      transition duration-100 hover:bg-red-500/50 w-8 h-8 md:w-auto text-lg"
+                  className="inline-flex items-center justify-center gap-2 px-3 md:px-4 py-2 rounded-full bg-red-500/10 text-red-300 border border-red-500/25 hover:bg-red-500/20 transition cursor-pointer text-[12px] md:text-[13px] font-medium w-9 h-9 md:w-auto md:h-auto"
                   onClick={() => setDelAllModal(true)}
                 >
-                  <i className="fa-solid fa-trash-can"></i>
-                  <span className="md:flex hidden">Delete all trades</span>
+                  <i className="fa-solid fa-trash-can text-[11px]" />
+                  <span className="md:inline hidden">Delete all</span>
                 </button>
               </div>
             )}
-            {
-              <div className="flex justify-center items-center gap-2 mt-5">
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-1.5 mt-5">
                 <button
-                  className="px-3 py-1 rounded bg-gray-700 text-white cursor-pointer disabled:opacity-30 disabled:cursor-default"
+                  aria-label="First page"
+                  className="w-8 h-8 rounded-full border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white transition cursor-pointer disabled:opacity-30 disabled:cursor-default flex items-center justify-center"
                   disabled={currentPage === 1}
-                  onClick={() => setCurrentPage((prev) => prev - 1)}
+                  onClick={() => goToPage(1)}
                 >
-                  &lt;
+                  <i className="fa-solid fa-angles-left text-[11px]" />
+                </button>
+                <button
+                  aria-label="Previous page"
+                  className="w-8 h-8 rounded-full border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white transition cursor-pointer disabled:opacity-30 disabled:cursor-default flex items-center justify-center"
+                  disabled={currentPage === 1}
+                  onClick={() => goToPage(currentPage - 1)}
+                >
+                  <i className="fa-solid fa-chevron-left text-[11px]" />
                 </button>
 
-                <span className="text-sm text-gray-400">
-                  Page {currentPage} of {totalPages}
+                <span className="px-3 text-[12px] text-white/55 tabular-nums">
+                  {currentPage} / {totalPages}
                 </span>
 
                 <button
-                  className="px-3 py-1 rounded bg-gray-700 text-white cursor-pointer disabled:opacity-30"
+                  aria-label="Next page"
+                  className="w-8 h-8 rounded-full border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white transition cursor-pointer disabled:opacity-30 disabled:cursor-default flex items-center justify-center"
                   disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage((prev) => prev + 1)}
+                  onClick={() => goToPage(currentPage + 1)}
                 >
-                  &gt;
+                  <i className="fa-solid fa-chevron-right text-[11px]" />
+                </button>
+                <button
+                  aria-label="Last page"
+                  className="w-8 h-8 rounded-full border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white transition cursor-pointer disabled:opacity-30 disabled:cursor-default flex items-center justify-center"
+                  disabled={currentPage === totalPages}
+                  onClick={() => goToPage(totalPages)}
+                >
+                  <i className="fa-solid fa-angles-right text-[11px]" />
                 </button>
               </div>
-            }
+            )}
 
             {filteredTrades?.length !== 0 && (
               <Statistics
@@ -550,21 +634,27 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
         />
       )}
       {delAllModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-51">
-          <div className="flex flex-col gap-4 bg-[#0F0F17] items-center p-6 rounded-xl w-[90%] max-w-lg text-white text-center">
-            <div>
-              Are you sure you want to delete all trades? This action is
-              irreversible.
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-51 p-4">
+          <div className="flex flex-col gap-5 bg-[#0F0F17] border border-white/10 items-center p-6 md:p-7 rounded-2xl w-full max-w-md text-white text-center shadow-[0_20px_80px_rgba(0,0,0,0.6)]">
+            <div className="w-12 h-12 rounded-full bg-red-500/15 border border-red-500/25 flex items-center justify-center">
+              <i className="fa-solid fa-triangle-exclamation text-red-300 text-lg" />
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-col gap-1">
+              <div className="text-lg font-semibold">Delete all trades?</div>
+              <div className="text-[13px] text-white/55 leading-relaxed">
+                This permanently removes every trade in this journal. The action
+                can&apos;t be undone.
+              </div>
+            </div>
+            <div className="flex gap-2 w-full">
               <button
-                className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700 cursor-pointer"
+                className="flex-1 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/80 hover:bg-white/[0.06] hover:text-white transition cursor-pointer text-[13px]"
                 onClick={() => setDelAllModal(false)}
               >
-                No
+                Cancel
               </button>
               <button
-                className="px-4 py-2 bg-[#16151C] transition duration-200 ease-in-out rounded hover:bg-gray-700 cursor-pointer"
+                className="flex-1 px-4 py-2 rounded-full bg-red-500/15 text-red-300 border border-red-500/25 hover:bg-red-500/25 transition cursor-pointer text-[13px] font-medium"
                 onClick={() =>
                   handleDeleteAllTrades(
                     userId,
@@ -575,7 +665,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                   )
                 }
               >
-                Yes
+                Delete
               </button>
             </div>
           </div>

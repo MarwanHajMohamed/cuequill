@@ -238,21 +238,28 @@ export default function TradeCalendar({ userId }: { userId: string }) {
     return <div className="text-red-500 p-10">Error loading trades</div>;
 
   return (
-    <div className="flex flex-col items-center py-10 px-4 md:px-10 w-full">
-      <div className="relative w-full max-w-[1100px]">
-        <div className="absolute top-[-30px] right-0 flex items-center gap-2 mx-2">
-          <i
-            className="fa-solid fa-expand cursor-pointer transition duration-100 hover:scale-110"
+    <>
+      <div className="w-full max-w-[1100px] mx-auto px-5 md:px-10 flex flex-col gap-4 md:gap-6">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="md:text-xl text-sm font-bold">Calendar</h2>
+          <button
             onClick={() => router.push("/calendar")}
-          ></i>
+            className="text-xs text-white/60 hover:text-white flex items-center gap-1 transition cursor-pointer"
+            aria-label="Open full calendar"
+          >
+            Full view
+            <i className="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+          </button>
         </div>
-        <AnimatedCalendar
-          onChange={(val) => handleDateClick(val as Date)}
-          tileContent={renderTileContent}
-          tileClassName={renderTileClassName}
-          className="custom-calendar"
-          value={value}
-        />
+        <div className="border border-[#282828] rounded-lg p-3 md:p-5 bg-[#0F0F17]">
+          <AnimatedCalendar
+            onChange={(val) => handleDateClick(val as Date)}
+            tileContent={renderTileContent}
+            tileClassName={renderTileClassName}
+            className="custom-calendar"
+            value={value}
+          />
+        </div>
       </div>
       {dayListOpen && selectedDate && (
         <DayTradesModal
@@ -291,6 +298,6 @@ export default function TradeCalendar({ userId }: { userId: string }) {
           />
         )}
       </AnimatePresence>
-    </div>
+    </>
   );
 }
