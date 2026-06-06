@@ -131,7 +131,6 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
   ];
 
   const headings = [
-    "",
     "Symbol",
     "PUT/CALL",
     "Status",
@@ -323,35 +322,14 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                         {currentTrades?.map((trade, index) => (
                           <tr
                             key={index}
-                            className="text-xs md:text-[13.5px] border-t border-white/[0.06] hover:bg-white/[0.02] transition"
+                            className="text-xs md:text-[13.5px] border-t border-white/[0.06] hover:bg-white/[0.02] transition cursor-pointer"
+                            onClick={() => {
+                              setEditingTrade(trade);
+                              setIsModalOpen(true);
+                            }}
                           >
-                            <td className="flex gap-2 py-1">
-                              <FavouriteButton
-                                tradeId={trade._id!}
-                                userId={userId}
-                                isFavourite={trade.favourite}
-                                queryClient={queryClient}
-                              />
-                              <i
-                                className="fa-regular fa-pen-to-square cursor-pointer text-white/30 transition duration-100 hover:text-white/100 text-sm md:text-xl"
-                                onClick={() => {
-                                  setEditingTrade(trade);
-                                  setIsModalOpen(true);
-                                }}
-                              ></i>
-                            </td>
                             <td className="px-2 md:px-4 py-1 whitespace-nowrap w-full">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setEditingTrade(trade);
-                                  setIsModalOpen(true);
-                                }}
-                                className="hover:underline hover:text-white cursor-pointer"
-                                title="View trade summary"
-                              >
-                                {trade.symbol}
-                              </button>
+                              {trade.symbol}
                             </td>
                             <td
                               className={`px-2 md:px-4 py-1 whitespace-nowrap w-full ${
