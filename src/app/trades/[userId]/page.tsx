@@ -17,7 +17,6 @@ import {
 } from "../../../handlers/tradeHandlers";
 import Filters from "./Filters";
 import Statistics from "./Statistics";
-import { FavouriteButton } from "./FavouriteButton";
 import { AnimatePresence, motion } from "framer-motion";
 
 function Page({ params }: { params: Promise<{ userId: string }> }) {
