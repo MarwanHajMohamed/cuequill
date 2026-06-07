@@ -504,44 +504,52 @@ function Page() {
 
   return (
     <>
-      <div className="flex md:mt-27 md:mb-10 justify-center mt-19 md:h-auto h-[calc(100dvh-76px)] md:w-auto w-full">
+      {/* Mobile height clamps the wrapper between the floating brand
+          row up top (~60px incl. mt-15) and the floating bottom tab
+          bar (88px + safe-area). md:h-auto on desktop where there's
+          no bottom nav. */}
+      <div className="flex md:mt-27 md:mb-10 justify-center mt-15 md:h-auto h-[calc(100dvh-60px-88px-env(safe-area-inset-bottom))] md:w-auto w-full">
         <div className="flex md:h-auto h-full md:w-auto w-full">
           <div className="md:max-w-350 md:w-[90vw] w-full md:h-auto h-full flex flex-col mx-auto">
-            {/* Button row: shown on mobile in WEEK view, and on desktop only
-                in week view. In mobile month view, buttons float over the
-                calendar (see floating block below). In desktop month view
-                they live in the sidebar above the Week 1 card. */}
-            <div
-              className={`flex mb-4 justify-end items-center gap-2 ${
-                view === "month" ? "hidden" : "md:flex hidden"
-              }`}
-            >
+            {/* Unified control row — Today + Month/Week toggle. Lives
+                above the calendar on both mobile and desktop. */}
+            <div className="flex items-center justify-end gap-2 px-3 md:px-0 mb-3 md:mb-4">
               <button
                 onClick={goToToday}
-                className="px-2 py-1 text-sm rounded border border-white/10 cursor-pointer transition duration-100 hover:bg-white/5 text-white/70 hover:text-white"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/75 hover:text-white transition text-[12px] font-medium cursor-pointer"
+                title="Jump to today"
               >
+                <i className="fa-regular fa-calendar text-[10px]" />
                 Today
               </button>
-              <div>
+              <div className="relative inline-flex rounded-full border border-white/10 bg-white/[0.03] p-1">
+                <span
+                  aria-hidden
+                  className={`absolute top-1 bottom-1 rounded-full bg-white/10 border border-white/15 transition-[left,width] duration-300 ease-out ${
+                    view === "month"
+                      ? "left-1 w-[calc(50%-4px)]"
+                      : "left-[calc(50%)] w-[calc(50%-4px)]"
+                  }`}
+                />
                 <button
-                  className={`px-2 py-1 text-sm rounded-l cursor-pointer transition
-                duration-100 hover:bg-[#211F29] border border-white/10 border-r-0 ${
-                  view === "month"
-                    ? "bg-[#16151C] hover:bg-[#16151C]"
-                    : "bg-[#242329]"
-                }`}
+                  type="button"
                   onClick={() => setView("month")}
+                  className={`relative px-3 py-1 rounded-full text-[12px] font-medium transition-colors cursor-pointer ${
+                    view === "month"
+                      ? "text-white"
+                      : "text-white/55 hover:text-white"
+                  }`}
                 >
                   Month
                 </button>
                 <button
-                  className={`px-2 py-1 text-sm rounded-r cursor-pointer transition
-                duration-100 hover:bg-[#211F29] border border-white/10 border-l-0 ${
-                  view === "week"
-                    ? "bg-[#16151C] hover:bg-[#16151C]"
-                    : "bg-[#242329]"
-                }`}
+                  type="button"
                   onClick={() => setView("week")}
+                  className={`relative px-3 py-1 rounded-full text-[12px] font-medium transition-colors cursor-pointer ${
+                    view === "week"
+                      ? "text-white"
+                      : "text-white/55 hover:text-white"
+                  }`}
                 >
                   Week
                 </button>
@@ -554,30 +562,6 @@ function Page() {
                   ref={calendarColRef}
                   className="flex-1 min-w-0 relative md:h-auto h-full"
                 >
-                  {/* Floating button group — mobile month view only.
-                      Top-left, next to the prev-month arrow. */}
-                  <div className="md:hidden absolute top-1 left-10 z-20 flex items-center gap-1.5">
-                    <button
-                      onClick={goToToday}
-                      className="px-2 py-1 text-xs rounded border border-white/10 hover:bg-white/5 text-white/70 hover:text-white"
-                    >
-                      Today
-                    </button>
-                    <div className="flex">
-                      <button
-                        className="px-2 py-1 text-xs rounded-l border border-white/10 border-r-0 bg-[#16151C]"
-                        onClick={() => setView("month")}
-                      >
-                        M
-                      </button>
-                      <button
-                        className="px-2 py-1 text-xs rounded-r border border-white/10 border-l-0 bg-[#242329]"
-                        onClick={() => setView("week")}
-                      >
-                        W
-                      </button>
-                    </div>
-                  </div>
                   <AnimatedCalendar
                     ref={calRef}
                     value={value}
@@ -590,49 +574,18 @@ function Page() {
                     onViewChange={setCalView}
                   />
                 </div>
-                {/* Sidebar: header area (Today + Month/Week buttons) sized
-                    to match the calendar's nav+weekday height, then a grid
-                    of week cards using the same row spec as the calendar's
-                    day grid so each card lines up with its week row.
-                    Hidden when the user drills up to year/decade view —
-                    weekly summaries are meaningless when no day grid is
-                    showing. */}
+                {/* Sidebar — empty spacer at top sized to the calendar's
+                    nav+weekday height so each week card lines up with
+                    its day-grid row. Hidden in drill-up views. */}
                 <div
                   className={`w-44 shrink-0 flex-col ${
                     calView === "month" ? "hidden md:flex" : "hidden"
                   }`}
                 >
                   <div
-                    className="flex justify-end items-end gap-2 pb-2"
                     style={{ height: sidebarOffset, minHeight: 40 }}
-                  >
-                    <button
-                      onClick={goToToday}
-                      className="shrink-0 px-2 py-1 text-sm rounded border border-white/10 cursor-pointer transition duration-100 hover:bg-white/5 text-white/70 hover:text-white"
-                    >
-                      Today
-                    </button>
-                    <div className="flex shrink-0">
-                      <button
-                        className={`px-2 py-1 text-sm rounded-l cursor-pointer transition
-                      duration-100 hover:bg-[#211F29] border border-white/10 border-r-0 ${
-                        view === "month"
-                          ? "bg-[#16151C] hover:bg-[#16151C]"
-                          : "bg-[#242329]"
-                      }`}
-                        onClick={() => setView("month")}
-                      >
-                        Month
-                      </button>
-                      <button
-                        className="px-2 py-1 text-sm rounded-r cursor-pointer transition
-                      duration-100 hover:bg-[#211F29] border border-white/10 border-l-0 bg-[#242329]"
-                        onClick={() => setView("week")}
-                      >
-                        Week
-                      </button>
-                    </div>
-                  </div>
+                    className="pb-2"
+                  />
                   <div
                     className="grid"
                     style={{
@@ -655,30 +608,6 @@ function Page() {
               </div>
             ) : (
               <div className="relative md:h-auto h-full">
-                {/* Floating button group — mobile week view only.
-                    Top-left, next to the prev-week arrow. */}
-                <div className="md:hidden absolute top-1 left-10 z-20 flex items-center gap-1.5">
-                  <button
-                    onClick={goToToday}
-                    className="px-2 py-1 text-xs rounded border border-white/10 hover:bg-white/5 text-white/70 hover:text-white"
-                  >
-                    Today
-                  </button>
-                  <div className="flex">
-                    <button
-                      className="px-2 py-1 text-xs rounded-l border border-white/10 border-r-0 bg-[#242329]"
-                      onClick={() => setView("month")}
-                    >
-                      M
-                    </button>
-                    <button
-                      className="px-2 py-1 text-xs rounded-r border border-white/10 border-l-0 bg-[#16151C]"
-                      onClick={() => setView("week")}
-                    >
-                      W
-                    </button>
-                  </div>
-                </div>
                 <WeekView
                   ref={calRef}
                   value={value}

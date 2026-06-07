@@ -69,8 +69,8 @@
   position: relative;
   background: transparent;
   color: white;
-  height: 84px;
-  padding: 6px 0 4px;
+  height: 96px;
+  padding: 6px 0 10px;
   border: 1px solid transparent;
   border-radius: 8px;
   transition: background-color 120ms ease, border-color 120ms ease;
@@ -144,9 +144,9 @@
 
 @media (max-width: 768px) {
   .react-calendar__tile {
-    height: 60px;
+    height: 72px;
     font-size: 10px;
-    padding-top: 4px;
+    padding: 4px 0 8px;
   }
   .react-calendar .react-calendar__navigation__label {
     font-size: 12px;

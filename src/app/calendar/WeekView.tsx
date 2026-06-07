@@ -22,29 +22,17 @@ type TradeEvent = Trade | { date: string; status: "TODAY" };
 const now = new Date();
 const today = now.toISOString().split("T")[0];
 
-const getColor = (status: TradeEventType) => {
-  switch (status) {
-    case "TODAY":
-      return "bg-blue-500";
-    case "WIN":
-      return "bg-green-500";
-    case "LOSS":
-      return "bg-red-600";
-    case "OPEN":
-      return "bg-orange-400";
-    default:
-      return "";
-  }
-};
-
-const getHoverColor = (status: TradeEventType) => {
+// Pill styling per status — tinted bg + matching border + text colour.
+// Matches the rest of the app's pill language (e.g. market-status pill,
+// strategy direction chip).
+const pillStyle = (status: TradeEventType) => {
   switch (status) {
     case "WIN":
-      return "hover:bg-green-600";
+      return "bg-green-500/15 text-green-300 border-green-500/30 hover:bg-green-500/25";
     case "LOSS":
-      return "hover:bg-red-700";
+      return "bg-red-500/15 text-red-300 border-red-500/30 hover:bg-red-500/25";
     case "OPEN":
-      return "hover:bg-orange-500";
+      return "bg-orange-500/15 text-orange-300 border-orange-500/30 hover:bg-orange-500/25";
     default:
       return "";
   }
@@ -235,6 +223,8 @@ const WeekView = forwardRef<WeekViewHandle, WeekViewProps>(function WeekView(
 
   useImperativeHandle(ref, () => ({ goToToday }));
 
+  const todayStr = today;
+
   return (
     <div
       ref={weekGridRef}
@@ -244,29 +234,35 @@ const WeekView = forwardRef<WeekViewHandle, WeekViewProps>(function WeekView(
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      <div className="flex justify-between items-center mb-0 gap-2 shrink-0 h-9">
+      {/* Header: prev / range / next */}
+      <div className="flex justify-between items-center gap-2 shrink-0 mb-3">
         <button
           onClick={() => handleWeekChange("prev")}
           aria-label="Previous week"
-          className="px-3 py-1 rounded bg-transparent cursor-pointer hover:bg-[#161616] text-lg leading-none text-white/80"
+          className="w-8 h-8 rounded-full border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/70 hover:text-white transition cursor-pointer flex items-center justify-center"
         >
-          ‹
+          <i className="fa-solid fa-chevron-left text-[11px]" />
         </button>
-        <div className="md:text-sm text-xs font-semibold">
-          {format(weekStart, "MMM d")} –{" "}
-          {format(addDays(weekStart, 4), "MMM d, yyyy")}
+        <div className="flex flex-col items-center">
+          <div className="text-[10px] uppercase tracking-[0.18em] text-white/40 font-medium">
+            Week of
+          </div>
+          <div className="md:text-[14px] text-[13px] font-semibold tracking-tight tabular-nums">
+            {format(weekStart, "MMM d")} –{" "}
+            {format(addDays(weekStart, 4), "MMM d, yyyy")}
+          </div>
         </div>
         <button
           onClick={() => handleWeekChange("next")}
           aria-label="Next week"
-          className="px-3 py-1 rounded bg-transparent cursor-pointer hover:bg-[#161616] text-lg leading-none text-white/80"
+          className="w-8 h-8 rounded-full border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/70 hover:text-white transition cursor-pointer flex items-center justify-center"
         >
-          ›
+          <i className="fa-solid fa-chevron-right text-[11px]" />
         </button>
       </div>
 
       <div className="overflow-hidden md:flex-initial flex-1 min-h-0 flex flex-col">
-        <div className="week-grid grid grid-cols-5 rounded-lg md:p-4 md:h-auto h-full md:items-start items-stretch">
+        <div className="week-grid grid grid-cols-5 gap-1.5 md:gap-2 md:h-auto h-full md:items-start items-stretch">
           {getWeekDays().map((day, index) => {
             const dayStr = format(day, "yyyy-MM-dd");
             const eventsForDay = tradeEvents.filter((e) => e.date === dayStr);
@@ -277,36 +273,63 @@ const WeekView = forwardRef<WeekViewHandle, WeekViewProps>(function WeekView(
               (sum, e) => sum + tradeNetPL(e),
               0,
             );
+            const isToday = dayStr === todayStr;
+            const isSelected =
+              format(day, "yyyy-MM-dd") === format(value, "yyyy-MM-dd");
             return (
-              <div key={index} className="md:h-auto h-full flex flex-col">
+              <div
+                key={index}
+                className="md:h-auto h-full flex flex-col gap-1.5"
+              >
+                {/* Day header */}
                 <div
-                  className={`py-1.5 px-2 rounded-lg flex items-center justify-center gap-1.5 shrink-0 ${
-                    format(day, "yyyy-MM-dd") === format(value, "yyyy-MM-dd")
-                      ? "bg-white/5"
-                      : ""
+                  className={`py-1.5 px-2 rounded-xl flex flex-col items-center gap-0 shrink-0 transition ${
+                    isToday
+                      ? "bg-teal-500/10 border border-teal-500/25"
+                      : isSelected
+                        ? "bg-white/[0.06] border border-white/10"
+                        : "border border-transparent"
                   }`}
                 >
-                  <div className="md:text-sm text-xs">{format(day, "EEE")}</div>
-                  <div className="md:text-sm text-xs">{format(day, "d")}</div>
+                  <div
+                    className={`text-[10px] uppercase tracking-wider font-medium ${
+                      isToday ? "text-teal-300" : "text-white/40"
+                    }`}
+                  >
+                    {format(day, "EEE")}
+                  </div>
+                  <div
+                    className={`text-[15px] font-semibold tabular-nums ${
+                      isToday ? "text-teal-200" : "text-white/90"
+                    }`}
+                  >
+                    {format(day, "d")}
+                  </div>
                 </div>
-                <div
-                  className="border border-[#323232] md:h-[calc(100vh-280px)] flex-1 md:flex-initial min-h-0 cursor-pointer flex flex-col justify-between"
+
+                {/* Day card */}
+                <button
+                  type="button"
+                  className={`rounded-xl border md:h-[calc(100vh-300px)] flex-1 md:flex-initial min-h-0 cursor-pointer flex flex-col justify-between text-left transition ${
+                    isToday
+                      ? "border-teal-500/25 bg-teal-500/[0.04] hover:bg-teal-500/[0.08]"
+                      : "border-white/10 bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/20"
+                  }`}
                   onClick={() => onDateClick(day)}
                 >
-                  <div className="mt-2 flex flex-col items-center gap-2 px-1">
+                  <div className="mt-2 flex flex-col items-stretch gap-1.5 px-1.5">
                     {eventsForDay.map((event, idx) =>
                       event.status === "TODAY" ? (
                         <div
                           key={idx}
-                          className="w-2 h-2 rounded-full bg-blue-500"
+                          className="self-center w-1.5 h-1.5 rounded-full bg-teal-400"
                         />
                       ) : (
                         <div
                           key={idx}
-                          className={`flex items-center justify-center text-xs md:text-sm w-[80%] md:h-6 h-5 rounded-xl transition duration-200
-                          cursor-pointer ${getColor(
+                          className={`flex items-center justify-center text-[10px] md:text-[11px] font-medium px-1.5 py-1 rounded-full border transition cursor-pointer truncate ${pillStyle(
                             event.status,
-                          )} ${getHoverColor(event.status)}`}
+                          )}`}
                           onClick={(e) => {
                             e.stopPropagation();
                             onEventClick(event as Trade);
@@ -320,16 +343,16 @@ const WeekView = forwardRef<WeekViewHandle, WeekViewProps>(function WeekView(
                   </div>
                   {closedTrades.length > 0 && (
                     <div
-                      className={`border-t border-[#323232] text-center py-2 text-xs md:text-sm font-semibold ${
+                      className={`mx-1.5 mb-1.5 mt-2 text-center py-1.5 rounded-lg text-[12px] md:text-[13px] font-semibold tabular-nums ${
                         netPL >= 0
-                          ? "text-green-500 bg-green-500/15"
-                          : "text-red-500 bg-red-500/15"
+                          ? "text-green-300 bg-green-500/10 border border-green-500/20"
+                          : "text-red-300 bg-red-500/10 border border-red-500/20"
                       }`}
                     >
                       {netPL >= 0 ? "+" : "−"}${Math.abs(netPL).toFixed(2)}
                     </div>
                   )}
-                </div>
+                </button>
               </div>
             );
           })}

@@ -18,6 +18,15 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* Mobile: leave room for the floating bottom-tab pill (~64px tall +
+   12px margin) plus the iOS home-indicator safe area. Desktop has no
+   bottom nav so no padding. */
+@media (max-width: 767px) {
+  body {
+    padding-bottom: calc(88px + env(safe-area-inset-bottom));
+  }
+}
+
 @layer base {
   input[type="number"]::-webkit-inner-spin-button,
   input[type="number"]::-webkit-outer-spin-button {

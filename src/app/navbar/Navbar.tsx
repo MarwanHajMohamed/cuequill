@@ -10,7 +10,13 @@ import React, {
   useTransition,
 } from "react";
 import { signOut, useSession } from "next-auth/react";
-import { motion, AnimatePresence } from "framer-motion";
+import {
+  motion,
+  AnimatePresence,
+  useMotionValue,
+  animate as motionAnimate,
+  PanInfo,
+} from "framer-motion";
 import TimezoneDisplay from "@/helpers/TimezoneDisplay";
 
 const CuequillLogo = ({ className = "" }: { className?: string }) => (
@@ -44,7 +50,9 @@ export default function Navbar() {
   // Optimistic path: updates immediately on click so the active-route
   // pill slides before the next page actually mounts.
   const [pendingPath, setPendingPath] = useState<string | null>(null);
-  const [, startTransition] = useTransition();
+  // isNavPending drives the thin top progress bar while React is busy
+  // rendering the next route.
+  const [isNavPending, startTransition] = useTransition();
   const activePath = pendingPath ?? pathname;
   const { data: session } = useSession();
   const userId = session?.user?.id;
@@ -71,10 +79,29 @@ export default function Navbar() {
   const [pill, setPill] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
   const [pillReady, setPillReady] = useState(false);
 
+  // Bottom tab bar — its own pill so the sliding indicator can move
+  // between tabs independent of the desktop bar.
+  const bottomBarRef = useRef<HTMLDivElement>(null);
+  const bottomTabRefs = useRef<Record<string, HTMLElement | null>>({});
+  const [bottomPill, setBottomPill] = useState<{ x: number; w: number } | null>(
+    null,
+  );
+  const [bottomPillReady, setBottomPillReady] = useState(false);
+  // Positions of every bottom tab — used to power the drag-snap
+  // behaviour. Keyed by tab slug; "__more__" for the More button.
+  const [tabPositions, setTabPositions] = useState<
+    Record<string, { x: number; w: number }>
+  >({});
+  // Motion values so the pill follows the finger during a drag and we
+  // can read the live position in onDragEnd to snap to the nearest tab.
+  const pillX = useMotionValue(0);
+  const pillWidth = useMotionValue(0);
+  const PILL_SPRING = { type: "spring" as const, stiffness: 380, damping: 32 };
+
   const [open, setOpen] = useState(false);
   const [dropdown, setDropdown] = useState(false);
-  const [openSidebar, setOpenSidebar] = useState(false);
-  const [openGuide, setOpenGuide] = useState(false);
+  // Mobile "More" bottom sheet replaces the old slide-in side drawer.
+  const [openMore, setOpenMore] = useState(false);
   const [simulated, setSimulated] = useState<boolean>(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("simulated") === "true";
@@ -118,8 +145,7 @@ export default function Navbar() {
 
   const handleNavClick = (slug: string) => {
     navigate(slug);
-    setOpenSidebar(false);
-    setOpenGuide(false);
+    setOpenMore(false);
   };
 
   // Active-route detection. Slugs may include a userId segment (e.g.
@@ -132,8 +158,10 @@ export default function Navbar() {
 
   /* ---------------- DATA ---------------- */
 
-  const sidebarItems = [
-    { icon: "fa-solid fa-house", label: "Dashboard", slug: "/" },
+  // Bottom navigation tabs on mobile — the four most-used routes.
+  // Everything else lives behind the "More" tab.
+  const bottomTabs = [
+    { icon: "fa-solid fa-house", label: "Home", slug: "/" },
     {
       icon: "fa-solid fa-chart-column",
       label: "Trades",
@@ -141,11 +169,19 @@ export default function Navbar() {
     },
     { icon: "fa-solid fa-calendar-days", label: "Calendar", slug: "calendar" },
     { icon: "fa-solid fa-bullseye", label: "Goals", slug: "goals" },
+  ];
+
+  // Secondary destinations shown in the bottom-sheet "More" menu.
+  const moreItems = [
     {
       icon: "fa-regular fa-circle-check",
       label: "Affirmations",
       slug: "affirmations",
     },
+    { icon: "fa-solid fa-bezier-curve", label: "Strategies", slug: "strategies" },
+    { icon: "fa-solid fa-coins", label: "Stocks & ETFs", slug: "stocks" },
+    { icon: "fa-solid fa-list-check", label: "Rules", slug: "rules" },
+    { icon: "fa-solid fa-gear", label: "Settings", slug: "settings" },
   ];
 
   const guideItems = [
@@ -184,7 +220,7 @@ export default function Navbar() {
   }, []);
 
   useEffect(() => {
-    if (openSidebar) {
+    if (openMore) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "";
@@ -193,7 +229,7 @@ export default function Navbar() {
     return () => {
       document.body.style.overflow = "";
     };
-  }, [openSidebar]);
+  }, [openMore]);
 
   // Which key in itemRefs is currently active? Computed from activePath
   // so the measurement effect re-runs as soon as a click optimistically
@@ -230,6 +266,128 @@ export default function Navbar() {
       window.removeEventListener("resize", measure);
     };
   }, [activeKey]);
+
+  // Which mobile bottom tab is currently active. The More tab claims
+  // the indicator both when the sheet is open and when you're on any
+  // route that lives inside the sheet (Affirmations/Strategies/etc.).
+  const activeBottomKey = (() => {
+    if (openMore) return "__more__";
+    const hit = bottomTabs.find((t) => isActive(t.slug));
+    if (hit) return hit.slug;
+    if (moreItems.some((m) => isActive(m.slug))) return "__more__";
+    return null;
+  })();
+
+  useLayoutEffect(() => {
+    const measure = () => {
+      if (!bottomBarRef.current) return;
+      const parent = bottomBarRef.current.getBoundingClientRect();
+      // Capture every tab's position — we need all of them to compute
+      // drag constraints and snap targets in onDragEnd.
+      const next: Record<string, { x: number; w: number }> = {};
+      Object.entries(bottomTabRefs.current).forEach(([key, el]) => {
+        if (!el) return;
+        const r = el.getBoundingClientRect();
+        if (r.width === 0) return;
+        next[key] = { x: r.left - parent.left, w: r.width };
+      });
+      if (Object.keys(next).length > 0) setTabPositions(next);
+
+      if (!activeBottomKey) return;
+      const active = next[activeBottomKey];
+      if (!active) return;
+      setBottomPill(active);
+      setBottomPillReady(true);
+    };
+    measure();
+    // Defer one more measurement to the next frame in case layout
+    // shifts after first paint (font load, hydration). Without this,
+    // a freshly-loaded page can show the pill at width 0 or not at
+    // all until the user interacts.
+    const raf = requestAnimationFrame(measure);
+    // Re-measure once webfonts / Font Awesome finish loading — they
+    // change tab widths and would otherwise leave the pill stranded.
+    if (typeof document !== "undefined" && document.fonts?.ready) {
+      document.fonts.ready.then(() => measure()).catch(() => {});
+    }
+    const ro = new ResizeObserver(measure);
+    if (bottomBarRef.current) ro.observe(bottomBarRef.current);
+    // Observing each tab catches per-icon width shifts when Font
+    // Awesome hydrates.
+    Object.values(bottomTabRefs.current).forEach((el) => {
+      if (el) ro.observe(el);
+    });
+    window.addEventListener("resize", measure);
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [activeBottomKey]);
+
+  // Mirror bottomPill state into motion values so the pill animates
+  // smoothly on tab change but is still draggable via direct
+  // motion-value updates.
+  useEffect(() => {
+    if (!bottomPill) return;
+    if (!bottomPillReady) {
+      pillX.set(bottomPill.x);
+      pillWidth.set(bottomPill.w);
+      return;
+    }
+    const a = motionAnimate(pillX, bottomPill.x, PILL_SPRING);
+    const b = motionAnimate(pillWidth, bottomPill.w, PILL_SPRING);
+    return () => {
+      a.stop();
+      b.stop();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bottomPill]);
+
+  // Drag-end: snap the pill to the closest tab and navigate there if
+  // it's different from the current one. Same tab → snap back.
+  const handlePillDragEnd = (_: unknown, info: PanInfo) => {
+    void info;
+    const allKeys = [...bottomTabs.map((t) => t.slug), "__more__"];
+    const currentX = pillX.get();
+    const currentW = pillWidth.get();
+    const center = currentX + currentW / 2;
+    let closest: string | null = null;
+    let bestDist = Infinity;
+    allKeys.forEach((key) => {
+      const pos = tabPositions[key];
+      if (!pos) return;
+      const tabCenter = pos.x + pos.w / 2;
+      const d = Math.abs(tabCenter - center);
+      if (d < bestDist) {
+        bestDist = d;
+        closest = key;
+      }
+    });
+    const target: string | null = closest;
+    if (!target) return;
+    if (target === "__more__") {
+      const pos = tabPositions["__more__"];
+      if (pos) {
+        motionAnimate(pillX, pos.x, PILL_SPRING);
+        motionAnimate(pillWidth, pos.w, PILL_SPRING);
+      }
+      setOpenMore(true);
+      return;
+    }
+    if (target !== activeBottomKey) {
+      // navigate() will update activeBottomKey → useLayoutEffect →
+      // bottomPill change → useEffect above animates the motion values
+      // to the new tab.
+      navigate(target);
+      return;
+    }
+    // Same tab — snap pill back to its anchor.
+    if (bottomPill) {
+      motionAnimate(pillX, bottomPill.x, PILL_SPRING);
+      motionAnimate(pillWidth, bottomPill.w, PILL_SPRING);
+    }
+  };
 
   /* ---------------- TIME ---------------- */
 
@@ -287,189 +445,36 @@ export default function Navbar() {
 
         {/* -------- MOBILE NAV -------- */}
 
-        {/* Backdrop */}
+        {/* "More" sheet backdrop */}
         <div
-          onClick={() => {
-            setOpenSidebar(false);
-            setOpenGuide(false);
-          }}
+          onClick={() => setOpenMore(false)}
           className={`md:hidden fixed inset-0 bg-black/70 z-40 transition-opacity duration-300 ${
-            openSidebar
+            openMore
               ? "opacity-100 pointer-events-auto"
               : "opacity-0 pointer-events-none"
           }`}
         />
 
-        {/* Sidebar */}
-        <div
-          className={`md:hidden fixed top-0 left-0 h-full w-[270px] bg-gradient-to-b from-[#141418] to-[#0E0E10] border-r border-white/10 z-50 flex flex-col shadow-2xl transition-transform duration-300 ease-out ${
-            openSidebar ? "translate-x-0" : "-translate-x-full"
-          }`}
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 shrink-0">
-            <div className="flex items-center gap-2.5">
-              <CuequillLogo className="h-7 w-auto" />
-              <span className="text-[15px] font-semibold tracking-tight">
-                Cuequill
-              </span>
-            </div>
-            <button
-              onClick={() => setOpenSidebar(false)}
-              className="text-white/70 hover:text-white transition duration-100 w-8 h-8 flex items-center justify-center rounded-md hover:bg-white/5"
-            >
-              <i className="fa-solid fa-xmark text-base" />
-            </button>
-          </div>
-
-          {/* Body */}
-          <div className="flex flex-col justify-between h-full px-3 py-5 text-sm overflow-y-auto">
-            <div className="flex flex-col gap-1">
-              {sidebarItems.map((item, i) => {
-                const active = isActive(item.slug);
-                return (
-                  <Link
-                    key={i}
-                    href={hrefFor(item.slug)}
-                    prefetch
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleNavClick(item.slug);
-                    }}
-                    className={`relative flex items-center gap-4 px-3 py-2.5 rounded-lg cursor-pointer font-medium text-[14px] transition ${
-                      active
-                        ? "bg-white/8 text-white"
-                        : "text-white/70 hover:bg-white/5 hover:text-white"
-                    }`}
-                  >
-                    {active && (
-                      <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-teal-400" />
-                    )}
-                    <i
-                      className={`${item.icon} w-4 text-center ${active ? "text-teal-400" : ""}`}
-                    ></i>
-                    <span>{item.label}</span>
-                  </Link>
-                );
-              })}
-
-              {/* Guide */}
-              <div>
-                <div
-                  onClick={() => setOpenGuide((p) => !p)}
-                  className={`flex justify-between px-3 py-2.5 rounded-lg cursor-pointer items-center font-medium text-[14px] transition ${
-                    guideActive
-                      ? "bg-white/8 text-white"
-                      : "text-white/70 hover:bg-white/5 hover:text-white"
-                  }`}
-                >
-                  <div className="flex items-center gap-4">
-                    <i
-                      className={`fa-solid fa-book w-4 text-center ${guideActive ? "text-teal-400" : ""}`}
-                    ></i>
-                    <span>Guide</span>
-                  </div>
-                  <i
-                    className={`fa-solid fa-chevron-down text-[10px] transition ${openGuide ? "rotate-180" : ""}`}
-                  />
-                </div>
-
-                <AnimatePresence>
-                  {openGuide && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="overflow-hidden ml-9 mt-1 flex flex-col"
-                    >
-                      {guideItems.map((item, i) => {
-                        const sub = isActive(item.slug);
-                        return (
-                          <Link
-                            key={i}
-                            href={hrefFor(item.slug)}
-                            prefetch
-                            onClick={(e) => {
-                              e.preventDefault();
-                              handleNavClick(item.slug);
-                            }}
-                            className={`cursor-pointer py-1.5 text-[13px] transition ${
-                              sub
-                                ? "text-teal-400"
-                                : "text-white/60 hover:text-white"
-                            }`}
-                          >
-                            {item.label}
-                          </Link>
-                        );
-                      })}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="flex flex-col gap-3">
-              <div className="px-3 py-2 rounded-lg bg-white/5 flex items-center justify-between">
-                <span className="text-[12px] text-white/60">Simulated</span>
-                <label className="inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={simulated}
-                    onChange={(e) => {
-                      setSimulated(e.target.checked);
-                      window.location.reload();
-                    }}
-                    className="sr-only peer"
-                  />
-                  <div
-                    className="relative w-9 h-5 bg-white/10 rounded-full peer
-                      peer-checked:after:translate-x-full
-                      after:content-[''] after:absolute after:top-[2px]
-                      after:start-[2px] after:bg-white after:rounded-full
-                      after:h-4 after:w-4 after:transition-all
-                      peer-checked:bg-teal-500"
-                  />
-                </label>
-              </div>
-              <div className="-mx-3 px-3 pt-3 border-t border-white/10 flex flex-col gap-1">
-                <div
-                  className="flex items-center gap-4 px-3 py-2 rounded-lg cursor-pointer text-white/70 hover:bg-white/5 hover:text-white transition"
-                  onClick={() => handleNavClick("settings")}
-                >
-                  <i className="fa-solid fa-gear w-4 text-center" />
-                  <span className="text-[14px]">Settings</span>
-                </div>
-                <div
-                  className="flex items-center gap-4 px-3 py-2 rounded-lg cursor-pointer text-white/70 hover:bg-white/5 hover:text-white transition"
-                  onClick={() => signOut({ callbackUrl: "/" })}
-                >
-                  <i className="fa-solid fa-right-from-bracket w-4 text-center" />
-                  <span className="text-[14px]">Logout</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* MOBILE TOP BAR — glass pill, matches desktop nav language.
-            Backdrop-blur omitted on mobile: it forces GPU composite of
-            everything beneath the bar on every frame, which is the main
-            cause of laggy navigation on phones. The solid #131318 reads
-            close enough at this opacity. */}
-        <div className="md:hidden flex justify-between items-center w-full mx-3 mt-3 px-3 py-2 bg-[#13131a]/95 rounded-full border border-white/10 shadow-[0_2px_24px_rgba(0,0,0,0.25)]">
-          <button
-            onClick={() => setOpenSidebar(true)}
-            aria-label="Open menu"
-            className="w-9 h-9 flex items-center justify-center rounded-full text-white/80 hover:bg-white/5 hover:text-white transition cursor-pointer"
+        {/* MOBILE TOP — no chrome. Just the brand mark on the left and
+            the market-status pill on the right, floating over the page. */}
+        <div className="md:hidden flex justify-between items-center w-full px-4 mt-3 pointer-events-none">
+          <Link
+            href="/dashboard"
+            prefetch
+            onClick={(e) => {
+              e.preventDefault();
+              navigate("dashboard");
+            }}
+            className="pointer-events-auto flex items-center gap-2"
           >
-            <i className="fa-solid fa-bars text-base" />
-          </button>
+            <CuequillLogo className="h-6 w-auto" />
+            <span className="text-[14px] font-semibold tracking-tight">
+              Cuequill
+            </span>
+          </Link>
 
           <div
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border ${
+            className={`pointer-events-auto flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border ${
               marketOpen
                 ? "bg-green-500/10 text-green-400 border-green-500/20"
                 : "bg-red-500/10 text-red-400 border-red-500/20"
@@ -487,20 +492,241 @@ export default function Navbar() {
             </span>
             <span>{marketOpen ? "Open" : "Closed"}</span>
           </div>
-
-          <div className="flex flex-col items-end text-[10px] leading-tight text-white/60">
-            <TimezoneDisplay
-              showHours={false}
-              showMinutes={false}
-              showSeconds={false}
-              showDay
-              showMonth
-              showWeekDay
-              weekDayFormat="short"
-            />
-            <TimezoneDisplay />
-          </div>
         </div>
+
+        {/* Top navigation progress bar — appears the instant a tab is
+            tapped and stays until the next route renders, so the user
+            gets immediate feedback even before the destination page
+            paints. */}
+        <AnimatePresence>
+          {isNavPending && (
+            <motion.div
+              key="nav-progress"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="absolute left-0 right-0 top-0 h-[2px] overflow-hidden pointer-events-none"
+              style={{ marginTop: "env(safe-area-inset-top)" }}
+            >
+              <motion.div
+                className="h-full w-1/3 rounded-full bg-gradient-to-r from-teal-400/0 via-teal-400 to-emerald-400/0"
+                initial={{ x: "-100%" }}
+                animate={{ x: "300%" }}
+                transition={{
+                  duration: 0.9,
+                  ease: "easeInOut",
+                  repeat: Infinity,
+                }}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* MOBILE BOTTOM TAB BAR — floating glass pill with a sliding
+            active indicator. */}
+        <nav
+          className="md:hidden fixed bottom-0 inset-x-0 z-50 flex justify-center pointer-events-none"
+          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        >
+          <div
+            ref={bottomBarRef}
+            className="pointer-events-auto relative flex items-stretch w-[calc(100%-24px)] max-w-[440px] mx-3 mb-3 px-1.5 py-1 bg-white/[0.06] backdrop-blur-xl border border-white/15 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.45)]"
+          >
+            {/* Single sliding indicator pill — measured from each tab's
+                offsetLeft / width relative to the bar. Draggable: hold
+                and slide it across to another tab and it snaps + jumps
+                you there. */}
+            {bottomPill && activeBottomKey && (
+              <motion.span
+                aria-hidden
+                className="absolute top-1 bottom-1 rounded-full bg-white/15 backdrop-blur-md border border-white/25 shadow-[0_2px_10px_rgba(0,0,0,0.25)] cursor-grab active:cursor-grabbing"
+                style={{
+                  left: 0,
+                  x: pillX,
+                  width: pillWidth,
+                  touchAction: "pan-y",
+                }}
+                drag="x"
+                dragMomentum={false}
+                dragElastic={0.06}
+                dragConstraints={{
+                  left:
+                    Object.values(tabPositions).reduce(
+                      (min, p) => Math.min(min, p.x),
+                      Infinity,
+                    ) || 0,
+                  right:
+                    Object.values(tabPositions).reduce(
+                      (max, p) => Math.max(max, p.x),
+                      0,
+                    ) || 0,
+                }}
+                onDragEnd={handlePillDragEnd}
+              />
+            )}
+
+            {bottomTabs.map((tab) => {
+              const active = isActive(tab.slug);
+              return (
+                <Link
+                  key={tab.slug}
+                  ref={(el) => {
+                    bottomTabRefs.current[tab.slug] = el;
+                  }}
+                  href={hrefFor(tab.slug)}
+                  prefetch
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleNavClick(tab.slug);
+                  }}
+                  className="relative flex flex-col items-center justify-center flex-1 py-2 cursor-pointer"
+                >
+                  <i
+                    className={`relative ${tab.icon} text-[15px] transition-colors ${
+                      active ? "text-teal-300" : "text-white/55"
+                    }`}
+                  />
+                  <span
+                    className={`relative text-[10px] mt-0.5 transition-colors ${
+                      active ? "text-teal-300" : "text-white/55"
+                    }`}
+                  >
+                    {tab.label}
+                  </span>
+                </Link>
+              );
+            })}
+
+            <button
+              type="button"
+              ref={(el) => {
+                bottomTabRefs.current["__more__"] = el;
+              }}
+              onClick={() => setOpenMore((v) => !v)}
+              className="relative flex flex-col items-center justify-center flex-1 py-2 cursor-pointer"
+            >
+              <i
+                className={`relative fa-solid fa-ellipsis text-[15px] transition-colors ${
+                  activeBottomKey === "__more__"
+                    ? "text-teal-300"
+                    : "text-white/55"
+                }`}
+              />
+              <span
+                className={`relative text-[10px] mt-0.5 transition-colors ${
+                  activeBottomKey === "__more__"
+                    ? "text-teal-300"
+                    : "text-white/55"
+                }`}
+              >
+                More
+              </span>
+            </button>
+          </div>
+        </nav>
+
+        {/* MOBILE "More" BOTTOM SHEET */}
+        <AnimatePresence>
+          {openMore && (
+            <motion.div
+              key="more-sheet"
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", stiffness: 380, damping: 36 }}
+              className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-[#13131a] border-t border-white/10 rounded-t-3xl shadow-[0_-12px_40px_rgba(0,0,0,0.5)]"
+              style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+            >
+              {/* Grab handle */}
+              <div className="flex justify-center pt-2">
+                <span className="w-10 h-1 rounded-full bg-white/20" />
+              </div>
+
+              <div className="px-4 pt-3 pb-4 flex items-center justify-between">
+                <span className="text-[11px] uppercase tracking-[0.18em] text-white/40 font-medium">
+                  More
+                </span>
+                <button
+                  aria-label="Close"
+                  onClick={() => setOpenMore(false)}
+                  className="w-8 h-8 rounded-full hover:bg-white/5 flex items-center justify-center text-white/60 hover:text-white transition"
+                >
+                  <i className="fa-solid fa-xmark text-[13px]" />
+                </button>
+              </div>
+
+              <div className="px-3 pb-3 grid grid-cols-1 gap-1">
+                {moreItems.map((item) => {
+                  const active = isActive(item.slug);
+                  return (
+                    <Link
+                      key={item.slug}
+                      href={hrefFor(item.slug)}
+                      prefetch
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleNavClick(item.slug);
+                      }}
+                      className={`flex items-center gap-4 px-4 py-3 rounded-xl transition ${
+                        active
+                          ? "bg-teal-500/10 text-white"
+                          : "text-white/80 hover:bg-white/5"
+                      }`}
+                    >
+                      <i
+                        className={`${item.icon} w-5 text-center text-[15px] ${active ? "text-teal-300" : "text-white/55"}`}
+                      />
+                      <span className="text-[14px] font-medium">
+                        {item.label}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+
+              <div className="mx-4 mb-3 p-3 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-between">
+                <div className="flex flex-col">
+                  <span className="text-[13px] text-white/85 font-medium">
+                    Simulated trading
+                  </span>
+                  <span className="text-[11px] text-white/45">
+                    Use paper-trade data
+                  </span>
+                </div>
+                <label className="inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={simulated}
+                    onChange={(e) => {
+                      setSimulated(e.target.checked);
+                      window.location.reload();
+                    }}
+                    className="sr-only peer"
+                  />
+                  <div
+                    className="relative w-10 h-5 bg-white/10 rounded-full peer
+                      peer-checked:after:translate-x-full
+                      after:content-[''] after:absolute after:top-[2px]
+                      after:start-[2px] after:bg-white after:rounded-full
+                      after:h-4 after:w-4 after:transition-all
+                      peer-checked:bg-teal-500"
+                  />
+                </label>
+              </div>
+
+              <div className="px-3 pb-4">
+                <button
+                  onClick={() => signOut({ callbackUrl: "/" })}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-red-500/10 text-red-300 border border-red-500/25 hover:bg-red-500/20 transition text-[13px] font-medium"
+                >
+                  <i className="fa-solid fa-right-from-bracket text-[12px]" />
+                  Logout
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* -------- DESKTOP NAV -------- */}
         <div

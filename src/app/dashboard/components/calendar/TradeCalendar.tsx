@@ -16,6 +16,7 @@ import { useFedDates } from "@/hooks/useFedDates";
 import AnimatedCalendar from "@/app/reusablecalendar/AnimatedCalendar";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
 import { AnimatePresence } from "framer-motion";
+import { Skeleton } from "@/components/Loaders";
 
 const now = new Date();
 const today = now.toISOString().split("T")[0];
@@ -233,9 +234,23 @@ export default function TradeCalendar({ userId }: { userId: string }) {
   };
 
   if (isLoading)
-    return <div className="text-white p-10">Loading trades...</div>;
+    return (
+      <div className="w-full max-w-[1100px] mx-auto px-5 md:px-10 flex flex-col gap-4 md:gap-6">
+        <div className="flex items-center justify-between gap-2">
+          <Skeleton className="h-5 w-24" />
+          <Skeleton className="h-3 w-16" />
+        </div>
+        <Skeleton className="h-[320px] rounded-2xl" delay={0.05} />
+      </div>
+    );
   if (isError)
-    return <div className="text-red-500 p-10">Error loading trades</div>;
+    return (
+      <div className="w-full max-w-[1100px] mx-auto px-5 md:px-10">
+        <div className="rounded-2xl border border-red-500/25 bg-red-500/[0.06] p-4 text-sm text-red-300">
+          Couldn&apos;t load calendar data.
+        </div>
+      </div>
+    );
 
   return (
     <>
@@ -251,7 +266,7 @@ export default function TradeCalendar({ userId }: { userId: string }) {
             <i className="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
           </button>
         </div>
-        <div className="border border-[#282828] rounded-lg p-3 md:p-5 bg-[#0F0F17]">
+        <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-5">
           <AnimatedCalendar
             onChange={(val) => handleDateClick(val as Date)}
             tileContent={renderTileContent}

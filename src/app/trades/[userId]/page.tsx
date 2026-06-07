@@ -18,6 +18,7 @@ import {
 import Filters from "./Filters";
 import Statistics from "./Statistics";
 import { AnimatePresence, motion } from "framer-motion";
+import { HeroSkeleton, TableSkeleton } from "@/components/Loaders";
 
 function Page({ params }: { params: Promise<{ userId: string }> }) {
   const [simulated] = useLocalStorage<boolean>("simulated", false);
@@ -96,14 +97,27 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
 
   if (isLoading)
     return (
-      <div className="flex flex-col gap-2 items-center h-screen justify-center">
-        Loading trades...
+      <div className="w-full flex justify-center mt-19 md:mt-[100px]">
+        <div className="w-full max-w-[1500px] px-5 md:px-10 pb-10">
+          <HeroSkeleton />
+          <TableSkeleton rows={10} columns={7} />
+        </div>
       </div>
     );
   if (isError)
     return (
-      <div className="text-red-500 lex flex-col gap-2 items-center h-screen justify-center">
-        Error loading trades
+      <div className="w-full flex flex-col items-center justify-center min-h-screen px-5 gap-3">
+        <div className="w-12 h-12 rounded-full bg-red-500/15 border border-red-500/25 flex items-center justify-center">
+          <i className="fa-solid fa-triangle-exclamation text-red-300 text-lg" />
+        </div>
+        <div className="text-[12px] uppercase tracking-[0.18em] text-white/40 font-medium">
+          Could not load
+        </div>
+        <div className="text-lg font-semibold">Trades unavailable</div>
+        <div className="text-sm text-white/55 max-w-sm text-center">
+          We couldn&apos;t reach the journal. Check your connection and
+          retry.
+        </div>
       </div>
     );
 
