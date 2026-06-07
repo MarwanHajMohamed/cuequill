@@ -123,18 +123,31 @@ export default function Time() {
 
   return (
     <div className="relative w-full max-w-[1500px] mt-30 px-5 md:px-10 overflow-x-clip">
-      {/* Aurora glow — full multi-color on desktop, a single smaller
-          teal blob on mobile so it doesn't dominate the viewport. */}
+      {/* Aurora glow.
+          - Mobile: a single cheap radial-gradient anchored to the
+            viewport so the gradient feathers naturally past every
+            edge (no hard line where the hero container starts). CSS
+            filter blur at ≥100px tanks mobile GPUs — radial gradients
+            are composited for free and look identical at this
+            softness.
+          - Desktop: keeps the layered blurred blobs since desktop
+            GPUs handle them comfortably and the multi-color depth is
+            worth it. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10"
+        className="pointer-events-none fixed inset-0 -z-10 md:hidden"
+        style={{
+          background:
+            "radial-gradient(50% 50% at 50% 0%, rgba(20,184,166,0.16) 0%, rgba(20,184,166,0) 75%)",
+        }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10 hidden md:block"
       >
-        {/* Mobile: one soft teal blob, sized to the hero. */}
-        <div className="md:hidden absolute -top-20 left-1/2 -translate-x-1/2 w-[420px] h-[420px] rounded-full bg-teal-500/12 blur-[100px]" />
-        {/* Desktop: full multi-color aurora. */}
-        <div className="hidden md:block absolute -top-72 -left-72 w-[900px] h-[900px] rounded-full bg-teal-500/15 blur-[180px]" />
-        <div className="hidden md:block absolute -top-64 -right-72 w-[820px] h-[820px] rounded-full bg-indigo-500/15 blur-[180px]" />
-        <div className="hidden md:block absolute top-10 left-1/2 -translate-x-1/2 w-[700px] h-[500px] rounded-full bg-fuchsia-500/[0.07] blur-[160px]" />
+        <div className="absolute -top-72 -left-72 w-[900px] h-[900px] rounded-full bg-teal-500/15 blur-[180px]" />
+        <div className="absolute -top-64 -right-72 w-[820px] h-[820px] rounded-full bg-indigo-500/15 blur-[180px]" />
+        <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[700px] h-[500px] rounded-full bg-fuchsia-500/[0.07] blur-[160px]" />
       </div>
 
       <div className="flex flex-col md:flex-row justify-between md:items-end gap-8 md:gap-12">
