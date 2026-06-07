@@ -518,9 +518,13 @@ function Page() {
           row up top (~60px incl. mt-15) and the floating bottom tab
           bar (88px + safe-area). md:h-auto on desktop where there's
           no bottom nav. */}
-      <div className="flex md:mt-27 md:mb-10 justify-center mt-15 md:h-auto h-[calc(100dvh-60px-88px-env(safe-area-inset-bottom))] md:w-auto w-full">
+      <div className="flex md:mt-24 md:mb-10 justify-center mt-15 md:h-auto h-[calc(100dvh-60px-88px-env(safe-area-inset-bottom))] md:w-auto w-full">
         <div className="flex md:h-auto h-full md:w-auto w-full">
-          <div className="md:max-w-350 md:w-[90vw] w-full md:h-auto h-full flex flex-col mx-auto">
+          {/* Width matches the desktop navbar exactly:
+              max-w-[1500px] + mx-10 (80px total horizontal margin) so
+              the calendar pill sits directly beneath the nav pill at
+              the same width. mt-22 places it ~12px under the nav. */}
+          <div className="md:max-w-[1500px] md:w-[calc(100vw-80px)] w-full md:h-auto h-full flex flex-col mx-auto">
             {/* Unified control row — Today + Month/Week toggle. Lives
                 above the calendar on both mobile and desktop. */}
             <div className="flex items-center justify-end gap-2 px-3 md:px-0 mb-3 md:mb-4">

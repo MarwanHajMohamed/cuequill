@@ -111,22 +111,26 @@ function Page() {
         }}
       />
 
-      <div className="w-full max-w-[1100px] flex flex-col gap-6 md:gap-10">
-        {/* Header */}
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div className="flex flex-col">
-            <h1 className="md:text-xl text-sm font-bold">Goals</h1>
-            <div className="text-xs text-white/50 mt-0.5">
-              {format(today, "MMMM yyyy")}
-            </div>
+      <div className="w-full max-w-[1500px] flex flex-col gap-6 md:gap-10">
+        {/* Hero — same language as the Trades page. */}
+        <div className="flex flex-col gap-2">
+          <div className="text-[11px] uppercase tracking-[0.18em] text-white/40 font-medium">
+            {format(today, "MMMM yyyy")}
           </div>
-          <button
-            onClick={() => setIsAddOpen(true)}
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[12px] font-medium cursor-pointer"
-          >
-            <i className="fa-solid fa-plus text-[10px]"></i>
-            <span>Add goal</span>
-          </button>
+          <div className="flex items-baseline justify-between gap-4 flex-wrap">
+            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight leading-[1.05]">
+              <span className="bg-gradient-to-r from-teal-300 to-emerald-400 bg-clip-text text-transparent">
+                Goals
+              </span>
+            </h1>
+            <button
+              onClick={() => setIsAddOpen(true)}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[12px] font-medium cursor-pointer"
+            >
+              <i className="fa-solid fa-plus text-[10px]" />
+              <span>Add goal</span>
+            </button>
+          </div>
         </div>
 
         {/* Month progress tiles */}

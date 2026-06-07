@@ -79,55 +79,49 @@ function Page({ params }: { params: Promise<{ slug: string }> }) {
         }}
       />
 
-      {/* Floating back link — desktop pill. */}
-      <Link
-        href="/strategies"
-        prefetch
-        aria-label="Back to strategies"
-        className="hidden md:inline-flex items-center gap-2 text-[13px] text-white/70 hover:text-white transition fixed top-25 left-6 z-30 px-3 py-1.5 rounded-full bg-white/[0.03] backdrop-blur-md border border-white/10 hover:bg-white/[0.06]"
-      >
-        <i className="fa-solid fa-chevron-left text-[10px]" />
-        <span>Strategies</span>
-      </Link>
-
-      <div className="w-full max-w-[1200px] mt-25 md:mt-30 px-5 md:px-10">
-        {/* Mobile back link */}
-        <Link
-          href="/strategies"
-          prefetch
-          className="md:hidden inline-flex items-center gap-2 text-[12px] text-white/60 hover:text-white transition mb-5"
-        >
-          <i className="fa-solid fa-chevron-left text-[10px]" />
-          <span>Strategies</span>
-        </Link>
-
-        {/* HERO */}
+      <div className="w-full max-w-[1500px] mt-25 md:mt-30 px-5 md:px-10">
+        {/* HERO — left-aligned, same hero language as the Trades page. */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: "easeOut" }}
-          className="flex flex-col items-center text-center gap-3"
+          className="flex flex-col gap-2"
         >
-          <div
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border ${directionChip}`}
-          >
-            <i className={`fa-solid ${directionIcon} text-[10px]`} />
-            <span className="uppercase tracking-wider">
-              {strategy.options} · {directionLabel}
+          <div className="flex items-center gap-2 flex-wrap">
+            <Link
+              href="/strategies"
+              prefetch
+              aria-label="Back to strategies"
+              className="inline-flex items-center justify-center w-6 h-6 rounded-full border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/70 hover:text-white transition"
+            >
+              <i className="fa-solid fa-chevron-left text-[10px]" />
+            </Link>
+            <div className="text-[11px] uppercase tracking-[0.18em] text-white/40 font-medium">
+              Setup
+            </div>
+            <span
+              className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium border ${directionChip}`}
+            >
+              <i className={`fa-solid ${directionIcon} text-[9px]`} />
+              <span className="uppercase tracking-wider">
+                {strategy.options} · {directionLabel}
+              </span>
             </span>
           </div>
-          <h1 className="text-3xl md:text-5xl font-semibold tracking-tight leading-[1.05]">
-            <span
-              className={`bg-gradient-to-r ${directionAccent} ${directionAccentTo} bg-clip-text text-transparent`}
-            >
-              {strategy.title}
-            </span>
-          </h1>
-          {timeframeText && (
-            <div className="text-[12px] text-white/45 uppercase tracking-[0.15em]">
-              {timeframeText} timeframe
-            </div>
-          )}
+          <div className="flex items-baseline justify-between gap-4 flex-wrap">
+            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight leading-[1.05]">
+              <span
+                className={`bg-gradient-to-r ${directionAccent} ${directionAccentTo} bg-clip-text text-transparent`}
+              >
+                {strategy.title}
+              </span>
+            </h1>
+            {timeframeText && (
+              <div className="text-[12px] text-white/45 uppercase tracking-[0.15em]">
+                {timeframeText} timeframe
+              </div>
+            )}
+          </div>
         </motion.div>
 
         {/* Schematic + entry blocks */}
