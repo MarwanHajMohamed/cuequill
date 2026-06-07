@@ -525,9 +525,38 @@ function Page() {
               the calendar pill sits directly beneath the nav pill at
               the same width. mt-22 places it ~12px under the nav. */}
           <div className="md:max-w-[1500px] md:w-[calc(100vw-80px)] w-full md:h-auto h-full flex flex-col mx-auto">
-            {/* Unified control row — Today + Month/Week toggle. Lives
-                above the calendar on both mobile and desktop. */}
-            <div className="flex items-center justify-end gap-2 px-3 md:px-0 mb-3 md:mb-4">
+            {/* Unified control row — month P/L on the left, Today +
+                Month/Week toggle on the right. */}
+            <div className="flex items-center justify-between gap-2 px-3 md:px-0 mb-3 md:mb-4">
+              {(() => {
+                const { netPL, closedCount } = getMonthSummary(displayedMonth);
+                const monthLabel = displayedMonth.toLocaleDateString("en-US", {
+                  month: "long",
+                  year: "numeric",
+                });
+                const positive = netPL >= 0;
+                return (
+                  <div className="flex flex-col gap-0.5">
+                    <div className="text-[10px] md:text-[11px] uppercase tracking-[0.18em] text-white/40 font-medium">
+                      {monthLabel} · Net P/L
+                    </div>
+                    <div
+                      className={`text-lg md:text-2xl font-semibold tracking-tight tabular-nums ${
+                        closedCount === 0
+                          ? "text-white/40"
+                          : positive
+                            ? "text-green-300"
+                            : "text-red-300"
+                      }`}
+                    >
+                      {closedCount === 0
+                        ? "—"
+                        : `${positive ? "+" : "−"}$${Math.abs(netPL).toFixed(2)}`}
+                    </div>
+                  </div>
+                );
+              })()}
+              <div className="flex items-center gap-2">
               <button
                 onClick={goToToday}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/75 hover:text-white transition text-[12px] font-medium cursor-pointer"
@@ -567,6 +596,7 @@ function Page() {
                 >
                   Week
                 </button>
+              </div>
               </div>
             </div>
 
