@@ -61,10 +61,18 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id;
         token.firstname = user.firstname;
         token.surname = user.surname;
+        token.email = user.email;
         token.timezone = user.timezone;
       }
-      if (trigger === "update" && session?.timezone) {
-        token.timezone = session.timezone;
+      // Profile updates from /api/user/profile flow back through
+      // session.update({ ... }) — propagate them onto the JWT so future
+      // useSession() reads see the new values.
+      if (trigger === "update" && session) {
+        if (session.timezone !== undefined) token.timezone = session.timezone;
+        if (session.firstname !== undefined)
+          token.firstname = session.firstname;
+        if (session.surname !== undefined) token.surname = session.surname;
+        if (session.email !== undefined) token.email = session.email;
       }
       return token;
     },
@@ -73,6 +81,7 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id as string;
         session.user.firstname = token.firstname as string;
         session.user.surname = token.surname as string;
+        session.user.email = token.email as string;
         session.user.timezone = token.timezone as string;
       }
       return session;

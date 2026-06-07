@@ -238,13 +238,13 @@ export default function Home() {
               <div className="flex items-center justify-center gap-3 flex-wrap">
                 <Link
                   href="/login"
-                  className="px-5 py-2.5 rounded-md bg-teal-500 hover:bg-teal-600 transition font-medium"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[14px] font-medium"
                 >
                   Sign in to get started
                 </Link>
                 <a
                   href="#features"
-                  className="px-5 py-2.5 rounded-md border border-white/15 hover:bg-white/5 transition text-sm"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[14px] font-medium"
                 >
                   See what&apos;s inside
                 </a>
@@ -397,7 +397,7 @@ export default function Home() {
           </h2>
           <Link
             href="/login"
-            className="inline-block px-6 py-3 rounded-md bg-teal-500 hover:bg-teal-600 transition font-medium"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[14px] font-medium"
           >
             Sign in to Cuequill
           </Link>

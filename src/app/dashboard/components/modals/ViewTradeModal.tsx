@@ -280,16 +280,16 @@ export default function ViewTradeModal({
         <div className="shrink-0 px-5 md:px-6 py-3 md:py-4 flex justify-end gap-2 border-t border-white/5 bg-[#0F0F17]">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm bg-[#16151C] border border-white/10 rounded-md hover:bg-white/5 transition cursor-pointer"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer"
           >
             Close
           </button>
           {onEdit && (
             <button
               onClick={onEdit}
-              className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 rounded-md transition cursor-pointer flex items-center gap-1.5"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[13px] font-medium cursor-pointer"
             >
-              <i className="fa-regular fa-pen-to-square text-xs"></i>
+              <i className="fa-regular fa-pen-to-square text-[11px]" />
               Edit
             </button>
           )}

@@ -404,9 +404,10 @@ export default function EditTradeModal({
                 <button
                   type="button"
                   onClick={() => setDelModal(true)}
-                  className="px-3 py-2 text-sm rounded-md border border-red-500/40 text-red-400 hover:bg-red-500/10 transition cursor-pointer flex items-center gap-1.5"
+                  className="inline-flex items-center justify-center gap-2 w-9 h-9 rounded-full bg-red-500/10 text-red-300 border border-red-500/25 hover:bg-red-500/20 transition cursor-pointer"
+                  aria-label="Delete trade"
                 >
-                  <i className="fa-solid fa-trash-can text-xs"></i>
+                  <i className="fa-solid fa-trash-can text-[12px]" />
                 </button>
               )}
             </div>
@@ -414,7 +415,7 @@ export default function EditTradeModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-sm bg-[#16151C] border border-white/10 rounded-md hover:bg-white/5 transition cursor-pointer"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer"
               >
                 Cancel
               </button>
@@ -445,9 +446,9 @@ export default function EditTradeModal({
                     fees,
                   )
                 }
-                className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 rounded-md transition cursor-pointer flex items-center gap-1.5"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[13px] font-medium cursor-pointer"
               >
-                <i className="fa-solid fa-floppy-disk text-xs"></i>
+                <i className="fa-solid fa-floppy-disk text-[11px]" />
                 {isEditing ? "Save" : "Create trade"}
               </button>
             </div>
@@ -480,14 +481,14 @@ export default function EditTradeModal({
             <div className="flex gap-2 w-full">
               <button
                 type="button"
-                className="flex-1 px-4 py-2 text-sm bg-[#16151C] border border-white/10 rounded-md hover:bg-white/5 transition cursor-pointer"
+                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer"
                 onClick={() => setDelModal(false)}
               >
                 Cancel
               </button>
               <button
                 type="button"
-                className="flex-1 px-4 py-2 text-sm bg-red-600 hover:bg-red-700 rounded-md transition cursor-pointer"
+                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-red-500/15 text-red-300 border border-red-500/25 hover:bg-red-500/25 transition text-[13px] font-medium cursor-pointer"
                 onClick={() => {
                   onDelete(initialTrade._id!);
                   toast(`Trade deleted successfully!`);

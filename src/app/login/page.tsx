@@ -77,17 +77,17 @@ export default function Login() {
           }}
         />
         <button
-          className={`rounded-md p-2 cursor-pointer ${
+          className={`inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full border transition text-[13px] font-medium ${
             loading
-              ? "bg-teal-500/50 disabled"
-              : "bg-teal-500 hover:bg-teal-600 transition duration-200 ease-in-out"
+              ? "bg-teal-500/10 text-teal-300/60 border-teal-500/15 cursor-not-allowed"
+              : "bg-teal-500/15 text-teal-300 border-teal-500/25 hover:bg-teal-500/25 cursor-pointer"
           }`}
           type="submit"
         >
           {loading ? (
-            <i className="fa-solid fa-circle-notch animate-spin"></i>
+            <i className="fa-solid fa-circle-notch animate-spin text-[12px]" />
           ) : (
-            <div>Sign in</div>
+            <>Sign in</>
           )}
         </button>
         <div

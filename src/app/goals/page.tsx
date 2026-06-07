@@ -112,7 +112,7 @@ function Page() {
           </div>
           <button
             onClick={() => setIsAddOpen(true)}
-            className="text-xs border border-green-500 bg-green-500/20 px-3 py-1.5 rounded-lg flex gap-1.5 items-center cursor-pointer transition duration-100 hover:bg-green-500/50"
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[12px] font-medium cursor-pointer"
           >
             <i className="fa-solid fa-plus text-[10px]"></i>
             <span>Add goal</span>
@@ -600,19 +600,20 @@ function AddGoalModal({
         <div className="flex gap-2 justify-end mt-2">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm bg-[#16151C] border border-white/10 rounded hover:bg-white/5 cursor-pointer"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer"
           >
             Cancel
           </button>
           <button
             onClick={onSave}
             disabled={!value.trim()}
-            className={`px-4 py-2 text-sm rounded transition ${
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border transition text-[13px] font-medium ${
               value.trim()
-                ? "bg-green-500/20 border border-green-500 text-white hover:bg-green-500/40 cursor-pointer"
-                : "bg-[#16151C] border border-white/10 text-white/30 cursor-not-allowed"
+                ? "bg-teal-500/15 text-teal-300 border-teal-500/25 hover:bg-teal-500/25 cursor-pointer"
+                : "bg-white/[0.02] text-white/30 border-white/10 cursor-not-allowed"
             }`}
           >
+            <i className="fa-solid fa-check text-[11px]" />
             Save goal
           </button>
         </div>

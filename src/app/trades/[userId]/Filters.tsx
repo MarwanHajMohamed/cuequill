@@ -60,18 +60,14 @@ export default function Filters({
             <button
               key={val}
               onClick={() => setFilter(val)}
-              className={`border px-3 py-1 rounded cursor-pointer transition duration-100 text-xs xl:text-sm ${
+              className={`px-3 py-1 rounded-full border cursor-pointer transition text-xs xl:text-sm font-medium ${
                 filter === val
                   ? val === "All"
-                    ? "bg-blue-600/80 border-blue-600"
+                    ? "bg-white/10 text-white border-white/15"
                     : val === "Win"
-                      ? "bg-green-600/80 border-green-600"
-                      : "bg-red-600/80 border-red-600"
-                  : val === "All"
-                    ? "bg-blue-600/10 border-blue-600 hover:bg-blue-600/60"
-                    : val === "Win"
-                      ? "bg-green-600/10 border-green-600 hover:bg-green-600/60"
-                      : "bg-red-600/10 border-red-600 hover:bg-red-600/60"
+                      ? "bg-green-500/15 text-green-300 border-green-500/30"
+                      : "bg-red-500/15 text-red-300 border-red-500/30"
+                  : "bg-white/[0.03] text-white/55 border-white/10 hover:bg-white/[0.06] hover:text-white"
               }`}
             >
               {val}
@@ -132,18 +128,14 @@ export default function Filters({
             <button
               key={val}
               onClick={() => setOption(val)}
-              className={`border px-3 py-1 text-xs xl:text-sm rounded cursor-pointer transition duration-100 ${
+              className={`px-3 py-1 text-xs xl:text-sm rounded-full border cursor-pointer transition font-medium ${
                 option === val
                   ? val === "All"
-                    ? "bg-blue-600/80 border-blue-600"
+                    ? "bg-white/10 text-white border-white/15"
                     : val === "CALL"
-                      ? "bg-green-600/80 border-green-600"
-                      : "bg-red-600/80 border-red-600"
-                  : val === "All"
-                    ? "bg-blue-600/10 border-blue-600 hover:bg-blue-600/60"
-                    : val === "CALL"
-                      ? "bg-green-600/10 border-green-600 hover:bg-green-600/60"
-                      : "bg-red-600/10 border-red-600 hover:bg-red-600/60"
+                      ? "bg-green-500/15 text-green-300 border-green-500/30"
+                      : "bg-red-500/15 text-red-300 border-red-500/30"
+                  : "bg-white/[0.03] text-white/55 border-white/10 hover:bg-white/[0.06] hover:text-white"
               }`}
             >
               {val === "CALL" ? "Call" : val === "PUT" ? "Put" : val}
@@ -184,7 +176,7 @@ export default function Filters({
       >
         <i className="fa-solid fa-sliders text-sm" />
         {activeFilterCount > 0 && (
-          <span className="min-w-5 h-5 px-1 flex items-center justify-center rounded-full bg-blue-600 text-[10px] font-semibold text-white">
+          <span className="min-w-5 h-5 px-1 flex items-center justify-center rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 text-[10px] font-semibold">
             {activeFilterCount}
           </span>
         )}
@@ -215,7 +207,7 @@ export default function Filters({
             <i className="fa-solid fa-sliders text-sm text-white/60" />
             <span className="text-sm font-medium text-white">Filters</span>
             {activeFilterCount > 0 && (
-              <span className="min-w-5 h-5 px-1 flex items-center justify-center rounded-full bg-blue-600 text-[10px] font-semibold text-white">
+              <span className="min-w-5 h-5 px-1 flex items-center justify-center rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 text-[10px] font-semibold">
                 {activeFilterCount}
               </span>
             )}

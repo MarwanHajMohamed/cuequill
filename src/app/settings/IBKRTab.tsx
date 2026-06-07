@@ -3,6 +3,9 @@ import React, { useEffect, useMemo, useState } from "react";
 
 const COOLDOWN_MS = 15 * 60 * 1000;
 
+const inputClass =
+  "w-full px-3 py-2 rounded-xl bg-white/[0.03] border border-white/10 text-[13px] text-white placeholder:text-white/40 focus:border-white/25 focus:outline-none transition";
+
 export default function IBKRTab() {
   const [token, setToken] = useState("");
   const [queryId, setQueryId] = useState("");
@@ -47,7 +50,7 @@ export default function IBKRTab() {
   }, [cooldownMsLeft]);
 
   const handleSave = async () => {
-    setSaveStatus("Saving...");
+    setSaveStatus("Saving…");
     const body: Record<string, string> = { ibkrQueryId: queryId };
     if (token) body.ibkrToken = token;
 
@@ -70,7 +73,7 @@ export default function IBKRTab() {
 
   const handleSync = async () => {
     setSyncing(true);
-    setSyncStatus("Syncing with IBKR...");
+    setSyncStatus("Syncing with IBKR…");
 
     const res = await fetch("/api/ibkr/sync", { method: "POST" });
     const data = await res.json();
@@ -92,136 +95,163 @@ export default function IBKRTab() {
   const syncDisabled = syncing || !hasToken || !queryId || cooldownActive;
 
   return (
-    <div className="md:p-7 p-5">
-      <div className="md:text-lg text-base flex items-center gap-2">
-        <i className="fa-solid fa-chevron-right"></i>
-        <div>Auto-sync from IBKR</div>
-      </div>
+    <div className="p-5 md:p-7 flex flex-col gap-6">
+      {/* Intro */}
+      <section className="flex flex-col gap-2">
+        <div className="text-[11px] uppercase tracking-[0.18em] text-teal-400/80 font-medium">
+          Auto-sync
+        </div>
+        <p className="text-[13px] md:text-[14px] text-white/70 leading-relaxed">
+          Trades import automatically every weekday at 10 PM UTC. You can also
+          trigger a sync manually below.
+        </p>
+      </section>
 
-      <div className="pt-5 text-sm md:text-base">
-        Trades are automatically imported every weekday at 10 PM UTC. You can
-        also sync manually at any time.
-      </div>
-
-      {/* Setup instructions */}
-      <div className="mt-5 md:text-base text-sm">
-        <div className="font-medium mb-2">Setup</div>
-        <ol className="list-decimal pl-6 space-y-1 text-white/70">
-          <li>
-            In IBKR Account Management go to{" "}
-            <span className="text-white">
-              Performance & Reports &rsaquo; Flex Queries &rsaquo; Flex Web
-              Service Configuration <i className="fa-solid fa-gear"></i>
-            </span>{" "}
-            and generate a token.
-          </li>
-          <li>
-            Go to{" "}
-            <span className="text-white">Reports &rsaquo; Flex Queries</span>{" "}
-            and create a new{" "}
-            <span className="text-white">Activity Flex Query</span>.
-          </li>
-          <li>
-            Under <span className="text-white">Trades</span>, select: Symbol,
-            Strike, Date/Time, Expiry, Put/Call, Quantity, Buy/Sell, TradePrice,
-            Realized P/L, TradeID.
-          </li>
-          <li>
-            Set <span className="text-white">Period</span> to{" "}
-            <span className="text-white">Last Business Day</span> and{" "}
-            <span className="text-white">Format</span> to{" "}
-            <span className="text-white">CSV</span>.
-          </li>
-          <li>
-            Save the query and note the numeric Query ID shown next to it.
-          </li>
+      {/* Setup steps */}
+      <section className="flex flex-col gap-3">
+        <div className="text-[11px] uppercase tracking-[0.18em] text-white/45 font-medium">
+          Setup
+        </div>
+        <ol className="flex flex-col gap-2.5 text-[13px] text-white/75 leading-relaxed">
+          {[
+            <>
+              In IBKR Account Management, open{" "}
+              <span className="text-white">
+                Performance &amp; Reports &rsaquo; Flex Queries &rsaquo; Flex Web
+                Service Configuration
+              </span>{" "}
+              and generate a token.
+            </>,
+            <>
+              Go to{" "}
+              <span className="text-white">Reports &rsaquo; Flex Queries</span>{" "}
+              and create a new{" "}
+              <span className="text-white">Activity Flex Query</span>.
+            </>,
+            <>
+              Under <span className="text-white">Trades</span>, select: Symbol,
+              Strike, Date/Time, Expiry, Put/Call, Quantity, Buy/Sell,
+              TradePrice, Realized P/L, TradeID.
+            </>,
+            <>
+              Set <span className="text-white">Period</span> to{" "}
+              <span className="text-white">Last Business Day</span> and{" "}
+              <span className="text-white">Format</span> to{" "}
+              <span className="text-white">CSV</span>.
+            </>,
+            <>Save the query and note the numeric Query ID shown next to it.</>,
+          ].map((step, i) => (
+            <li key={i} className="flex gap-3">
+              <span className="shrink-0 w-6 h-6 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center text-[11px] tabular-nums text-white/55 font-semibold">
+                {i + 1}
+              </span>
+              <span className="pt-0.5">{step}</span>
+            </li>
+          ))}
         </ol>
-      </div>
+      </section>
+
+      <div className="h-px bg-white/10" />
 
       {/* Credentials */}
-      <div className="mt-7 flex flex-col gap-4 max-w-sm">
-        <div className="flex flex-col gap-1">
-          <div className="text-sm">
-            Flex Web Service Token{" "}
+      <section className="flex flex-col gap-4 max-w-sm">
+        <div className="text-[11px] uppercase tracking-[0.18em] text-white/45 font-medium">
+          Credentials
+        </div>
+        <label className="flex flex-col gap-1.5">
+          <span className="text-[11px] uppercase tracking-[0.15em] text-white/45 font-medium flex items-center gap-2">
+            Flex Web Service Token
             {hasToken && (
-              <span className="text-green-400 text-xs">(saved)</span>
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-green-500/10 text-green-300 border border-green-500/25 text-[10px] tracking-normal normal-case font-medium">
+                <i className="fa-solid fa-check text-[8px]" /> saved
+              </span>
             )}
-          </div>
+          </span>
           <input
-            className="border border-[#262628] p-1 px-2 rounded-md hover:border-white text-sm bg-transparent"
+            className={inputClass}
             type="password"
-            placeholder={
-              hasToken ? "Enter new token to replace" : "Paste token"
-            }
+            placeholder={hasToken ? "Enter new token to replace" : "Paste token"}
             value={token}
             onChange={(e) => setToken(e.target.value)}
           />
-        </div>
+        </label>
 
-        <div className="flex flex-col gap-1">
-          <div className="text-sm">Query ID</div>
+        <label className="flex flex-col gap-1.5">
+          <span className="text-[11px] uppercase tracking-[0.15em] text-white/45 font-medium">
+            Query ID
+          </span>
           <input
-            className="border border-[#262628] p-1 px-2 rounded-md hover:border-white text-sm bg-transparent"
+            className={inputClass}
             type="text"
             placeholder="e.g. 123456"
             value={queryId}
             onChange={(e) => setQueryId(e.target.value)}
           />
-        </div>
+        </label>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 flex-wrap">
           <button
             onClick={handleSave}
-            className="text-xs md:text-sm p-2 px-4 bg-[#16151B] border border-white/20 rounded-xl transition duration-100 cursor-pointer hover:border-white/100"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[13px] font-medium cursor-pointer"
           >
+            <i className="fa-solid fa-floppy-disk text-[11px]" />
             Save credentials
           </button>
           {saveStatus && (
-            <span className="text-xs text-white/60">{saveStatus}</span>
+            <span className="text-[12px] text-white/60">{saveStatus}</span>
           )}
         </div>
-      </div>
+      </section>
+
+      <div className="h-px bg-white/10" />
 
       {/* Manual sync */}
-      <div className="mt-7 flex flex-col gap-3 mb-10 md:mb-3">
-        <div className="font-medium text-sm md:text-base">Manual sync</div>
+      <section className="flex flex-col gap-3">
+        <div className="text-[11px] uppercase tracking-[0.18em] text-white/45 font-medium">
+          Manual sync
+        </div>
         {lastSync && (
-          <div className="text-xs text-white/50">
-            Last synced: {new Date(lastSync).toLocaleString()}
+          <div className="text-[12px] text-white/55">
+            Last synced{" "}
+            <span className="text-white/75">
+              {new Date(lastSync).toLocaleString()}
+            </span>
             {lastInserted !== null && (
               <>
                 {" "}
-                — {lastInserted} imported
+                · {lastInserted} imported
                 {lastSkipped ? `, ${lastSkipped} skipped` : ""}
               </>
             )}
           </div>
         )}
-        <div className="text-xs text-white/40">
+        <div className="text-[11.5px] text-white/40">
           IBKR limits requests to roughly one sync every 15 minutes per query.
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 flex-wrap">
           <button
             onClick={handleSync}
             disabled={syncDisabled}
-            className={`text-xs md:text-sm p-2 px-4 border border-white/20 rounded-xl transition duration-100
-              ${
-                syncDisabled
-                  ? "text-white/30 cursor-not-allowed bg-[#16151B]"
-                  : "bg-[#182A13] cursor-pointer hover:border-white/100"
-              }`}
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border transition text-[13px] font-medium ${
+              syncDisabled
+                ? "bg-white/[0.02] text-white/30 border-white/10 cursor-not-allowed"
+                : "bg-indigo-500/15 text-indigo-300 border-indigo-500/25 hover:bg-indigo-500/25 cursor-pointer"
+            }`}
           >
+            <i
+              className={`fa-solid fa-rotate text-[11px] ${syncing ? "animate-spin" : ""}`}
+            />
             {syncing
-              ? "Syncing..."
+              ? "Syncing…"
               : cooldownActive
                 ? `Wait ${cooldownLabel}`
                 : "Sync now"}
           </button>
           {syncStatus && (
-            <span className="text-xs text-white/60">{syncStatus}</span>
+            <span className="text-[12px] text-white/60">{syncStatus}</span>
           )}
         </div>
-      </div>
+      </section>
     </div>
   );
 }
