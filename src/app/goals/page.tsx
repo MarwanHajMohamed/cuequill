@@ -101,6 +101,16 @@ function Page() {
 
   return (
     <div className="md:mt-30 mt-23 md:mx-10 mx-5 flex flex-col items-center pb-20">
+      {/* Aurora — matches the dashboard / trades / settings hue. */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 -z-10"
+        style={{
+          background:
+            "radial-gradient(50% 50% at 50% 0%, rgba(20,184,166,0.14) 0%, rgba(20,184,166,0) 75%), radial-gradient(40% 45% at 80% 5%, rgba(99,102,241,0.10) 0%, rgba(99,102,241,0) 75%)",
+        }}
+      />
+
       <div className="w-full max-w-[1100px] flex flex-col gap-6 md:gap-10">
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
@@ -285,18 +295,26 @@ function GoalRow({
 
   return (
     <li
-      className={`group flex items-center gap-3 p-2 rounded-md transition ${
-        goal.complete ? "bg-green-500/5" : "hover:bg-white/5"
+      className={`group flex items-center gap-3 p-2 rounded-lg transition ${
+        goal.complete ? "bg-teal-500/[0.06]" : "hover:bg-white/5"
       }`}
     >
-      <input
-        type="checkbox"
-        checked={goal.complete}
-        onChange={() =>
+      {/* Custom check button — matches the affirmations checkmark. */}
+      <button
+        type="button"
+        role="checkbox"
+        aria-checked={goal.complete}
+        onClick={() =>
           handleToggleComplete(goal._id, !goal.complete, setGoals)
         }
-        className="w-4 h-4 accent-green-500 cursor-pointer shrink-0"
-      />
+        className={`shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[11px] transition cursor-pointer ${
+          goal.complete
+            ? "bg-teal-500 text-white"
+            : "bg-white/5 border border-white/15 text-transparent group-hover:text-white/40 hover:!text-white/70 hover:border-white/30"
+        }`}
+      >
+        <i className="fa-solid fa-check" />
+      </button>
       {editing ? (
         <input
           type="text"

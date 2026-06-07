@@ -504,6 +504,16 @@ function Page() {
 
   return (
     <>
+      {/* Aurora — matches the dashboard / trades / settings hue. */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 -z-10"
+        style={{
+          background:
+            "radial-gradient(50% 50% at 50% 0%, rgba(20,184,166,0.14) 0%, rgba(20,184,166,0) 75%), radial-gradient(40% 45% at 80% 5%, rgba(99,102,241,0.10) 0%, rgba(99,102,241,0) 75%)",
+        }}
+      />
+
       {/* Mobile height clamps the wrapper between the floating brand
           row up top (~60px incl. mt-15) and the floating bottom tab
           bar (88px + safe-area). md:h-auto on desktop where there's

@@ -109,16 +109,23 @@ export default function DashboardGoals({ userId }: { userId: string }) {
               {goals.map((g) => (
                 <li
                   key={g._id}
-                  className={`flex items-center gap-3 p-2 rounded-md transition ${
-                    g.complete ? "bg-green-500/5" : "hover:bg-white/5"
+                  className={`group flex items-center gap-3 p-2 rounded-lg transition ${
+                    g.complete ? "bg-teal-500/[0.06]" : "hover:bg-white/5"
                   }`}
                 >
-                  <input
-                    type="checkbox"
-                    checked={g.complete}
-                    onChange={() => toggle(g)}
-                    className="w-4 h-4 accent-green-500 cursor-pointer shrink-0"
-                  />
+                  <button
+                    type="button"
+                    role="checkbox"
+                    aria-checked={g.complete}
+                    onClick={() => toggle(g)}
+                    className={`shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[11px] transition cursor-pointer ${
+                      g.complete
+                        ? "bg-teal-500 text-white"
+                        : "bg-white/5 border border-white/15 text-transparent group-hover:text-white/40 hover:!text-white/70 hover:border-white/30"
+                    }`}
+                  >
+                    <i className="fa-solid fa-check" />
+                  </button>
                   <span
                     className={`text-sm md:text-base truncate ${
                       g.complete ? "text-white/50 line-through" : "text-white"
