@@ -163,8 +163,7 @@ function Page() {
   const tradeEvents: TradeEvent[] = useMemo(() => {
     const baseEvents: TradeEvent[] = trades
       ? trades.map((trade) => {
-          const isClosed =
-            trade.status === "WIN" || trade.status === "LOSS";
+          const isClosed = trade.status === "WIN" || trade.status === "LOSS";
           const bucketDate =
             isClosed && trade.dateClosed
               ? trade.dateClosed.split("T")[0]
@@ -206,8 +205,7 @@ function Page() {
   const handleDateClick = (date: Date) => {
     setSelectedDate(date);
     const dayStr = format(date, "yyyy-MM-dd");
-    const dayTrades =
-      trades?.filter((t) => bucketDateFor(t) === dayStr) ?? [];
+    const dayTrades = trades?.filter((t) => bucketDateFor(t) === dayStr) ?? [];
     if (dayTrades.length > 0) {
       setDayListOpen(true);
     } else {
@@ -473,8 +471,7 @@ function Page() {
       const isClosed = t.status === "WIN" || t.status === "LOSS";
       // Closed trades count under the month they were exited; open trades
       // under the month they were entered.
-      const dateStr =
-        isClosed && t.dateClosed ? t.dateClosed : t.dateBought;
+      const dateStr = isClosed && t.dateClosed ? t.dateClosed : t.dateBought;
       const d = new Date(dateStr);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
       const prev = map.get(key) ?? {
@@ -569,11 +566,11 @@ function Page() {
                   ? `${format(displayedWeekStart, "MMM d")} – ${format(
                       addDays(displayedWeekStart, 4),
                       "MMM d",
-                    )} · Net P/L`
+                    )}`
                   : `${displayedMonth.toLocaleDateString("en-US", {
-                      month: "long",
+                      month: "short",
                       year: "numeric",
-                    })} · Net P/L`;
+                    })}`;
                 const positive = summary.netPL >= 0;
                 return (
                   <div className="flex flex-col gap-0.5">
@@ -597,46 +594,46 @@ function Page() {
                 );
               })()}
               <div className="flex items-center gap-2">
-              <button
-                onClick={goToToday}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/75 hover:text-white transition text-[12px] font-medium cursor-pointer"
-                title="Jump to today"
-              >
-                <i className="fa-regular fa-calendar text-[10px]" />
-                Today
-              </button>
-              <div className="relative inline-flex rounded-full border border-white/10 bg-white/[0.03] p-1">
-                <span
-                  aria-hidden
-                  className={`absolute top-1 bottom-1 rounded-full bg-white/10 border border-white/15 transition-[left,width] duration-300 ease-out ${
-                    view === "month"
-                      ? "left-1 w-[calc(50%-4px)]"
-                      : "left-[calc(50%)] w-[calc(50%-4px)]"
-                  }`}
-                />
                 <button
-                  type="button"
-                  onClick={() => setView("month")}
-                  className={`relative px-3 py-1 rounded-full text-[12px] font-medium transition-colors cursor-pointer ${
-                    view === "month"
-                      ? "text-white"
-                      : "text-white/55 hover:text-white"
-                  }`}
+                  onClick={goToToday}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/75 hover:text-white transition text-[12px] font-medium cursor-pointer"
+                  title="Jump to today"
                 >
-                  Month
+                  <i className="fa-regular fa-calendar text-[10px]" />
+                  Today
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setView("week")}
-                  className={`relative px-3 py-1 rounded-full text-[12px] font-medium transition-colors cursor-pointer ${
-                    view === "week"
-                      ? "text-white"
-                      : "text-white/55 hover:text-white"
-                  }`}
-                >
-                  Week
-                </button>
-              </div>
+                <div className="relative inline-flex rounded-full border border-white/10 bg-white/[0.03] p-1">
+                  <span
+                    aria-hidden
+                    className={`absolute top-1 bottom-1 rounded-full bg-white/10 border border-white/15 transition-[left,width] duration-300 ease-out ${
+                      view === "month"
+                        ? "left-1 w-[calc(50%-4px)]"
+                        : "left-[calc(50%)] w-[calc(50%-4px)]"
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setView("month")}
+                    className={`relative px-3 py-1 rounded-full text-[12px] font-medium transition-colors cursor-pointer ${
+                      view === "month"
+                        ? "text-white"
+                        : "text-white/55 hover:text-white"
+                    }`}
+                  >
+                    Month
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setView("week")}
+                    className={`relative px-3 py-1 rounded-full text-[12px] font-medium transition-colors cursor-pointer ${
+                      view === "week"
+                        ? "text-white"
+                        : "text-white/55 hover:text-white"
+                    }`}
+                  >
+                    Week
+                  </button>
+                </div>
               </div>
             </div>
 
