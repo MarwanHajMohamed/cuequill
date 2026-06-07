@@ -138,7 +138,7 @@ function Page({ params }: { params: Promise<{ slug: string }> }) {
           className="mt-10 grid grid-cols-1 lg:grid-cols-5 gap-5"
         >
           {/* Schematic card */}
-          <div className="lg:col-span-3 rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md p-4 md:p-5">
+          <div className="lg:col-span-3 rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5">
             <div className="flex items-center justify-between mb-3">
               <div className="text-[11px] uppercase tracking-[0.18em] text-white/40 font-medium">
                 Schematic
@@ -151,7 +151,7 @@ function Page({ params }: { params: Promise<{ slug: string }> }) {
 
           {/* Entry block card */}
           {entryBlocks.length > 0 ? (
-            <div className="lg:col-span-2 rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md p-5 md:p-6">
+            <div className="lg:col-span-2 rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-5 md:p-6">
               <div className="text-[11px] uppercase tracking-[0.18em] text-teal-400/80 font-medium mb-3">
                 Setup
               </div>
@@ -170,7 +170,7 @@ function Page({ params }: { params: Promise<{ slug: string }> }) {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.14, ease: "easeOut" }}
-            className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md p-5 md:p-7"
+            className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-5 md:p-7"
           >
             <StrategyContent blocks={restBlocks} />
           </motion.div>

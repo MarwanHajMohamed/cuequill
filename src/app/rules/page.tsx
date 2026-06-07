@@ -71,7 +71,7 @@ const Section = ({
     initial={{ opacity: 0, y: 12 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.4, ease: "easeOut" }}
-    className="rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md p-5 md:p-7"
+    className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-5 md:p-7"
   >
     <div className="text-[11px] uppercase tracking-[0.18em] text-teal-400/80 font-medium mb-2">
       {eyebrow}

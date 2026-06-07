@@ -122,7 +122,7 @@ function AffirmationsPage() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.08, ease: "easeOut" }}
-          className="mt-8 rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md p-4 md:p-5"
+          className="mt-8 rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5"
         >
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-baseline gap-2">

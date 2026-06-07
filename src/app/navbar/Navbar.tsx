@@ -290,7 +290,7 @@ export default function Navbar() {
             setOpenSidebar(false);
             setOpenGuide(false);
           }}
-          className={`md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity duration-300 ${
+          className={`md:hidden fixed inset-0 bg-black/70 z-40 transition-opacity duration-300 ${
             openSidebar
               ? "opacity-100 pointer-events-auto"
               : "opacity-0 pointer-events-none"
@@ -451,8 +451,12 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* MOBILE TOP BAR — glass pill, matches desktop nav language. */}
-        <div className="md:hidden flex justify-between items-center w-full mx-3 mt-3 px-3 py-2 bg-white/[0.03] backdrop-blur-md rounded-full border border-white/10 shadow-[0_2px_24px_rgba(0,0,0,0.25)]">
+        {/* MOBILE TOP BAR — glass pill, matches desktop nav language.
+            Backdrop-blur omitted on mobile: it forces GPU composite of
+            everything beneath the bar on every frame, which is the main
+            cause of laggy navigation on phones. The solid #131318 reads
+            close enough at this opacity. */}
+        <div className="md:hidden flex justify-between items-center w-full mx-3 mt-3 px-3 py-2 bg-[#13131a]/95 rounded-full border border-white/10 shadow-[0_2px_24px_rgba(0,0,0,0.25)]">
           <button
             onClick={() => setOpenSidebar(true)}
             aria-label="Open menu"

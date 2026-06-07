@@ -169,7 +169,7 @@ export default function Page() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.12, ease: "easeOut" }}
-          className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md overflow-hidden"
+          className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md overflow-hidden"
         >
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px]">

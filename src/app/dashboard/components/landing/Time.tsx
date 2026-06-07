@@ -173,7 +173,7 @@ export default function Time() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.06, ease: "easeOut" }}
-          className="w-full md:w-[340px] rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md p-5 shadow-[0_8px_40px_rgba(0,0,0,0.25)]"
+          className="w-full md:w-[340px] rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-5 shadow-[0_8px_40px_rgba(0,0,0,0.25)]"
         >
           {/* Top row: market status + countdown */}
           <div className="flex items-center justify-between">

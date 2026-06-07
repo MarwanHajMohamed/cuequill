@@ -268,7 +268,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
               isOpen={isFiltersOpen}
               setIsOpen={setIsFiltersOpen}
             />
-            <div className="w-full max-w-[1500px] rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md overflow-x-auto max-[1130px]:mt-0 mt-5 p-2 md:p-3">
+            <div className="w-full max-w-[1500px] rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md overflow-x-auto max-[1130px]:mt-0 mt-5 p-2 md:p-3">
               {filteredTrades?.length === 0 ? (
                 <div className="text-center text-[13px] text-white/40 py-10">
                   No trades match the current filters.
