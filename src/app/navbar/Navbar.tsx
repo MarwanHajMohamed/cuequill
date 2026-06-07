@@ -277,7 +277,10 @@ export default function Navbar() {
         <TimezoneDisplay showWeekDay showMonth showYear showDay />
       </div>
 
-      <div className="fixed top-0 left-0 right-0 z-50 flex justify-center">
+      <div
+        className="fixed top-0 left-0 right-0 z-50 flex justify-center"
+        style={{ paddingTop: "env(safe-area-inset-top)" }}
+      >
         {simulated && (
           <div className="absolute top-0 w-screen h-screen border-2 border-red-500 pointer-events-none" />
         )}
