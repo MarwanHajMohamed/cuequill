@@ -4,6 +4,7 @@
 
 import {
   forwardRef,
+  useEffect,
   useImperativeHandle,
   useMemo,
   useRef,
@@ -43,10 +44,13 @@ interface WeekViewProps {
   trades: Trade[] | undefined;
   onDateClick: (date: Date) => void;
   onEventClick: (event: Trade) => void;
+  /** Fires whenever the visible week changes — lets the parent show a
+   * week summary that follows along. */
+  onWeekChange?: (weekStart: Date) => void;
 }
 
 const WeekView = forwardRef<WeekViewHandle, WeekViewProps>(function WeekView(
-  { value, trades, onDateClick, onEventClick },
+  { value, trades, onDateClick, onEventClick, onWeekChange },
   ref,
 ) {
   const weekGridRef = useRef<HTMLDivElement>(null);
@@ -58,6 +62,12 @@ const WeekView = forwardRef<WeekViewHandle, WeekViewProps>(function WeekView(
   const [weekStart, setWeekStart] = useState<Date>(() =>
     startOfWeek(new Date(), { weekStartsOn: 1 }),
   );
+
+  // Surface the current week's start to the parent so it can render a
+  // running week summary (net P/L etc.) alongside the calendar.
+  useEffect(() => {
+    onWeekChange?.(weekStart);
+  }, [weekStart, onWeekChange]);
 
   const getGridEl = () =>
     (weekGridRef.current?.querySelector(".week-grid") as HTMLElement | null) ??

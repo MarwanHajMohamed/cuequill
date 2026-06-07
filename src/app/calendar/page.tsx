@@ -104,6 +104,11 @@ function Page() {
   // Track which month the AnimatedCalendar is showing, so the week-summary
   // sidebar can reflect the same view.
   const [displayedMonth, setDisplayedMonth] = useState<Date>(() => new Date());
+  // Mon-start of the currently visible week (week view). Updated via
+  // WeekView's onWeekChange callback so we can show a week summary.
+  const [displayedWeekStart, setDisplayedWeekStart] = useState<Date>(() =>
+    startOfWeek(new Date(), { weekStartsOn: 1 }),
+  );
 
   const calendarColRef = useRef<HTMLDivElement>(null);
   const [sidebarOffset, setSidebarOffset] = useState(0);
@@ -490,6 +495,33 @@ function Page() {
     return map;
   }, [trades]);
 
+  // Net P/L + counts for the Mon-Fri window starting at weekStart.
+  // Buckets on the same exit/entry-date rule as the rest of the page.
+  const getWeekSummary = (weekStart: Date) => {
+    const startStr = format(weekStart, "yyyy-MM-dd");
+    const endStr = format(addDays(weekStart, 4), "yyyy-MM-dd");
+    let netPL = 0;
+    let closedCount = 0;
+    let hasOpen = false;
+    let total = 0;
+    for (const t of trades ?? []) {
+      const isClosed = t.status === "WIN" || t.status === "LOSS";
+      const dayStr =
+        isClosed && t.dateClosed
+          ? t.dateClosed.split("T")[0]
+          : t.dateBought.split("T")[0];
+      if (dayStr < startStr || dayStr > endStr) continue;
+      total += 1;
+      if (isClosed) {
+        netPL += tradeNetPL(t);
+        closedCount += 1;
+      } else if (t.status === "OPEN") {
+        hasOpen = true;
+      }
+    }
+    return { netPL, closedCount, hasOpen, total };
+  };
+
   const getMonthSummary = (date: Date) => {
     const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
     return (
@@ -529,29 +561,37 @@ function Page() {
                 Month/Week toggle on the right. */}
             <div className="flex items-center justify-between gap-2 px-3 md:px-0 mb-3 md:mb-4">
               {(() => {
-                const { netPL, closedCount } = getMonthSummary(displayedMonth);
-                const monthLabel = displayedMonth.toLocaleDateString("en-US", {
-                  month: "long",
-                  year: "numeric",
-                });
-                const positive = netPL >= 0;
+                const isWeek = view === "week";
+                const summary = isWeek
+                  ? getWeekSummary(displayedWeekStart)
+                  : getMonthSummary(displayedMonth);
+                const label = isWeek
+                  ? `${format(displayedWeekStart, "MMM d")} – ${format(
+                      addDays(displayedWeekStart, 4),
+                      "MMM d",
+                    )} · Net P/L`
+                  : `${displayedMonth.toLocaleDateString("en-US", {
+                      month: "long",
+                      year: "numeric",
+                    })} · Net P/L`;
+                const positive = summary.netPL >= 0;
                 return (
                   <div className="flex flex-col gap-0.5">
                     <div className="text-[10px] md:text-[11px] uppercase tracking-[0.18em] text-white/40 font-medium">
-                      {monthLabel} · Net P/L
+                      {label}
                     </div>
                     <div
                       className={`text-lg md:text-2xl font-semibold tracking-tight tabular-nums ${
-                        closedCount === 0
+                        summary.closedCount === 0
                           ? "text-white/40"
                           : positive
                             ? "text-green-300"
                             : "text-red-300"
                       }`}
                     >
-                      {closedCount === 0
+                      {summary.closedCount === 0
                         ? "—"
-                        : `${positive ? "+" : "−"}$${Math.abs(netPL).toFixed(2)}`}
+                        : `${positive ? "+" : "−"}$${Math.abs(summary.netPL).toFixed(2)}`}
                     </div>
                   </div>
                 );
@@ -662,6 +702,7 @@ function Page() {
                     setEditingTrade(event);
                     setIsModalOpen(true);
                   }}
+                  onWeekChange={setDisplayedWeekStart}
                 />
               </div>
             )}
