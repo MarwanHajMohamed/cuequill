@@ -109,3 +109,44 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 });
+
+// ── Web Push ───────────────────────────────────────────────────────────
+// Display a notification when the server pushes one. Payload shape is
+// { title, body, url?, tag? }.
+self.addEventListener("push", (event) => {
+  let payload = {};
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch {
+    payload = { title: "Cuequill", body: event.data ? event.data.text() : "" };
+  }
+  const { title = "Cuequill", body = "", url = "/dashboard", tag } = payload;
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body,
+      tag,
+      icon: "/icon",
+      badge: "/icon",
+      data: { url },
+    }),
+  );
+});
+
+// Focus an open tab on the target URL, or open a new one.
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const target = (event.notification.data && event.notification.data.url) || "/";
+  event.waitUntil(
+    self.clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((list) => {
+        for (const client of list) {
+          const u = new URL(client.url);
+          if (u.pathname === target && "focus" in client) {
+            return client.focus();
+          }
+        }
+        if (self.clients.openWindow) return self.clients.openWindow(target);
+      }),
+  );
+});
