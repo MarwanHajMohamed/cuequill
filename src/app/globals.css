@@ -27,6 +27,19 @@ body {
   }
 }
 
+/* iOS Safari auto-zooms into any text input with a computed font-size
+   below 16px. Force every textual input to 16px on mobile so focus
+   never zooms the viewport. Desktop styling is untouched. !important
+   is required to beat Tailwind text-sm / text-xs utilities. */
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="color"]):not([type="submit"]):not([type="button"]):not([type="reset"]),
+  textarea,
+  select,
+  [contenteditable="true"] {
+    font-size: 16px !important;
+  }
+}
+
 @layer base {
   input[type="number"]::-webkit-inner-spin-button,
   input[type="number"]::-webkit-outer-spin-button {
