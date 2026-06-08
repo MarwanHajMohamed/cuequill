@@ -164,19 +164,23 @@ export default function Filters({
 
   return (
     <>
-      {/* ── Floating "open filters" pill (visible when sidebar is hidden) ── */}
+      {/* ── Floating "open filters" tab (visible when sidebar is hidden).
+            Sits as a thin drawer-pull on the left edge of the viewport,
+            half-faded at rest, full opacity on hover. Stays reachable
+            without competing for attention with the trades table. ── */}
       <button
         onClick={() => setIsPanelOpen(true)}
         aria-label="Open filters"
-        className={`cursor-pointer fixed left-5 md:left-[max(40px,calc((100vw-1580px)/2+40px))] top-1/2 -translate-y-1/2 z-40 flex items-center gap-2 bg-[#16151C]/90 backdrop-blur-sm border border-white/15 rounded-full px-3 py-2 text-xs text-white/70 hover:text-white hover:border-white/30 shadow-lg transition duration-200 ${
+        title="Filters"
+        className={`cursor-pointer fixed left-0 top-1/2 -translate-y-1/2 z-40 inline-flex items-center justify-center gap-1 w-7 h-12 rounded-r-xl bg-[#16151C]/80 border border-l-0 border-white/10 text-white/50 hover:w-8 hover:text-white hover:bg-[#16151C] hover:border-white/25 opacity-60 hover:opacity-100 shadow-md transition-all duration-200 ${
           isPanelOpen
             ? "opacity-0 pointer-events-none -translate-x-4"
-            : "opacity-100 pointer-events-auto"
+            : "pointer-events-auto"
         }`}
       >
-        <i className="fa-solid fa-sliders text-sm" />
+        <i className="fa-solid fa-sliders text-[11px]" />
         {activeFilterCount > 0 && (
-          <span className="min-w-5 h-5 px-1 flex items-center justify-center rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 text-[10px] font-semibold">
+          <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 flex items-center justify-center rounded-full bg-teal-500 text-[9px] font-semibold text-white shadow">
             {activeFilterCount}
           </span>
         )}
