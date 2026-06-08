@@ -10,19 +10,52 @@ export async function GET(req: NextRequest) {
   const userId = searchParams.get("userId");
   const month = searchParams.get("month");
   const year = searchParams.get("year");
+  const day = searchParams.get("day");
+  const period = searchParams.get("period") ?? "monthly";
 
   if (!userId) {
     return NextResponse.json({ error: "Missing userId" }, { status: 400 });
   }
 
-  // Build query
   const query: Record<string, unknown> = { userId };
 
-  // Filter by month and year if provided
-  if (month && year) {
-    const startDate = new Date(Number(year), Number(month), 1);
-    const endDate = new Date(Number(year), Number(month) + 1, 0, 23, 59, 59);
-    query.createdAt = { $gte: startDate, $lte: endDate };
+  if (period === "daily") {
+    query.period = "daily";
+    if (day !== null && month !== null && year !== null) {
+      const startDate = new Date(
+        Number(year),
+        Number(month),
+        Number(day),
+        0,
+        0,
+        0
+      );
+      const endDate = new Date(
+        Number(year),
+        Number(month),
+        Number(day),
+        23,
+        59,
+        59,
+        999
+      );
+      query.createdAt = { $gte: startDate, $lte: endDate };
+    }
+  } else {
+    // Treat missing/legacy period as monthly for backwards compatibility
+    query.$or = [{ period: "monthly" }, { period: { $exists: false } }];
+    if (month !== null && year !== null) {
+      const startDate = new Date(Number(year), Number(month), 1);
+      const endDate = new Date(
+        Number(year),
+        Number(month) + 1,
+        0,
+        23,
+        59,
+        59
+      );
+      query.createdAt = { $gte: startDate, $lte: endDate };
+    }
   }
 
   try {

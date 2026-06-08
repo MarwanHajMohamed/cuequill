@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
-import { Goal } from "../types/Goal";
+import { Goal, GoalPeriod } from "../types/Goal";
 import { useTrades } from "@/hooks/useTrades";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
@@ -31,6 +31,9 @@ const MONTHS = [
   "December",
 ];
 
+type MonthlyDate = { month: number; year: number };
+type DailyDate = { day: number; month: number; year: number };
+
 // ─── Goals page ────────────────────────────────────────────────────────
 function Page() {
   const { data: session } = useSession();
@@ -39,65 +42,101 @@ function Page() {
   const { data: trades } = useTrades(userId, simulated);
 
   const today = useMemo(() => new Date(), []);
+  const [period, setPeriod] = useLocalStorage<GoalPeriod>(
+    "goalsPeriod",
+    "monthly"
+  );
+
   const [goals, setGoals] = useState<Goal[]>([]);
-  const [availableDates, setAvailableDates] = useState<
-    { month: number; year: number }[]
-  >([]);
+  const [previousMonths, setPreviousMonths] = useState<MonthlyDate[]>([]);
+  const [previousDays, setPreviousDays] = useState<DailyDate[]>([]);
   const [loadingGoals, setLoadingGoals] = useState(true);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [newGoalText, setNewGoalText] = useState("");
 
-  // Fetch current-month goals
+  // Fetch current-period goals
   useEffect(() => {
     if (!userId) return;
     setLoadingGoals(true);
-    fetch(
-      `/api/goals?userId=${userId}&month=${today.getMonth()}&year=${today.getFullYear()}`,
-    )
+    const url =
+      period === "monthly"
+        ? `/api/goals?userId=${userId}&period=monthly&month=${today.getMonth()}&year=${today.getFullYear()}`
+        : `/api/goals?userId=${userId}&period=daily&day=${today.getDate()}&month=${today.getMonth()}&year=${today.getFullYear()}`;
+    fetch(url)
       .then((r) => r.json())
       .then((data: Goal[]) => setGoals(data))
       .finally(() => setLoadingGoals(false));
-  }, [userId, today]);
+  }, [userId, today, period]);
 
-  // Fetch dates for previous-month browser
+  // Fetch previous-period dates
   useEffect(() => {
     if (!userId) return;
-    fetch(`/api/goals/dates?userId=${userId}`)
+    fetch(`/api/goals/dates?userId=${userId}&period=${period}`)
       .then((r) => r.json())
-      .then((data: { month: number; year: number }[]) =>
-        setAvailableDates(data),
-      );
-  }, [userId]);
+      .then((data) => {
+        if (period === "monthly") setPreviousMonths(data);
+        else setPreviousDays(data);
+      });
+  }, [userId, period]);
 
-  // Current month P/L from trades
-  const monthPL = useMemo(() => {
+  // Current period P/L from trades
+  const periodPL = useMemo(() => {
     if (!trades) return 0;
-    const m = today.getMonth();
-    const y = today.getFullYear();
     return trades
       .filter((t) => t.status === "WIN" || t.status === "LOSS")
       .filter((t) => {
         const d = new Date(t.dateClosed || t.dateBought);
-        return d.getMonth() === m && d.getFullYear() === y;
+        if (period === "monthly") {
+          return (
+            d.getMonth() === today.getMonth() &&
+            d.getFullYear() === today.getFullYear()
+          );
+        }
+        return (
+          d.getDate() === today.getDate() &&
+          d.getMonth() === today.getMonth() &&
+          d.getFullYear() === today.getFullYear()
+        );
       })
       .reduce((s, t) => s + tradeNetPL(t), 0);
-  }, [trades, today]);
+  }, [trades, today, period]);
 
-  const monthTradeCount = useMemo(() => {
+  const periodTradeCount = useMemo(() => {
     if (!trades) return 0;
-    const m = today.getMonth();
-    const y = today.getFullYear();
     return trades.filter((t) => {
       const d = new Date(t.dateClosed || t.dateBought);
-      return d.getMonth() === m && d.getFullYear() === y;
+      if (period === "monthly") {
+        return (
+          d.getMonth() === today.getMonth() &&
+          d.getFullYear() === today.getFullYear()
+        );
+      }
+      return (
+        d.getDate() === today.getDate() &&
+        d.getMonth() === today.getMonth() &&
+        d.getFullYear() === today.getFullYear()
+      );
     }).length;
-  }, [trades, today]);
+  }, [trades, today, period]);
 
   const completedGoals = goals.filter((g) => g.complete).length;
   const completionPct =
     goals.length > 0 ? (completedGoals / goals.length) * 100 : 0;
 
   if (!userId) return null;
+
+  const periodLabelLong =
+    period === "monthly"
+      ? format(today, "MMMM yyyy")
+      : format(today, "EEEE, MMM d yyyy");
+
+  const periodLabelShort =
+    period === "monthly" ? format(today, "MMMM") : "Today";
+
+  const modalLabel =
+    period === "monthly"
+      ? format(today, "MMM yyyy")
+      : format(today, "MMM d, yyyy");
 
   return (
     <div className="md:mt-30 mt-23 md:mx-10 mx-5 flex flex-col items-center pb-20">
@@ -112,10 +151,10 @@ function Page() {
       />
 
       <div className="w-full max-w-[1500px] flex flex-col gap-6 md:gap-10">
-        {/* Hero — same language as the Trades page. */}
+        {/* Hero */}
         <div className="flex flex-col gap-2">
           <div className="text-[11px] uppercase tracking-[0.18em] text-white/40 font-medium">
-            {format(today, "MMMM yyyy")}
+            {periodLabelLong}
           </div>
           <div className="flex items-baseline justify-between gap-4 flex-wrap">
             <h1 className="text-3xl md:text-4xl font-semibold tracking-tight leading-[1.05]">
@@ -123,36 +162,39 @@ function Page() {
                 Goals
               </span>
             </h1>
-            <button
-              onClick={() => setIsAddOpen(true)}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[12px] font-medium cursor-pointer"
-            >
-              <i className="fa-solid fa-plus text-[10px]" />
-              <span>Add goal</span>
-            </button>
+            <div className="flex items-center gap-2 flex-wrap">
+              <PeriodToggle period={period} setPeriod={setPeriod} />
+              <button
+                onClick={() => setIsAddOpen(true)}
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[12px] font-medium cursor-pointer"
+              >
+                <i className="fa-solid fa-plus text-[10px]" />
+                <span>Add goal</span>
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Month progress tiles */}
+        {/* Progress tiles */}
         <div className="flex flex-wrap gap-2 md:gap-3">
           <ProgressTile
             label="Net P/L"
             value={
-              monthTradeCount === 0
+              periodTradeCount === 0
                 ? "—"
-                : `${monthPL >= 0 ? "+" : "−"}$${Math.abs(monthPL).toFixed(2)}`
+                : `${periodPL >= 0 ? "+" : "−"}$${Math.abs(periodPL).toFixed(2)}`
             }
             tone={
-              monthTradeCount === 0
+              periodTradeCount === 0
                 ? "neutral"
-                : monthPL >= 0
+                : periodPL >= 0
                   ? "good"
                   : "bad"
             }
           />
           <ProgressTile
-            label="Trades this month"
-            value={`${monthTradeCount}`}
+            label={period === "monthly" ? "Trades this month" : "Trades today"}
+            value={`${periodTradeCount}`}
             tone="neutral"
           />
           <ProgressTile
@@ -181,11 +223,11 @@ function Page() {
           />
         </div>
 
-        {/* Current month goals */}
+        {/* Current period goals */}
         <section className="border border-[#282828] rounded-lg p-4 md:p-6 flex flex-col gap-3">
           <div className="flex items-center justify-between gap-2">
             <h2 className="text-sm md:text-base font-semibold">
-              Goals for {format(today, "MMMM")}
+              Goals for {periodLabelShort}
             </h2>
             {goals.length > 0 && (
               <span className="text-xs text-white/40">
@@ -219,14 +261,25 @@ function Page() {
           )}
         </section>
 
-        {/* Previous months */}
-        <PreviousMonthsSection
-          userId={userId}
-          availableDates={availableDates}
-          allTrades={trades ?? []}
-          currentMonth={today.getMonth()}
-          currentYear={today.getFullYear()}
-        />
+        {/* Previous periods */}
+        {period === "monthly" ? (
+          <PreviousMonthsSection
+            userId={userId}
+            availableDates={previousMonths}
+            allTrades={trades ?? []}
+            currentMonth={today.getMonth()}
+            currentYear={today.getFullYear()}
+          />
+        ) : (
+          <PreviousDaysSection
+            userId={userId}
+            availableDates={previousDays}
+            allTrades={trades ?? []}
+            currentDay={today.getDate()}
+            currentMonth={today.getMonth()}
+            currentYear={today.getFullYear()}
+          />
+        )}
       </div>
 
       {/* Add goal modal */}
@@ -243,15 +296,45 @@ function Page() {
               handleAddGoal(
                 newGoalText,
                 userId,
+                period,
                 setNewGoalText,
                 setGoals,
-                setIsAddOpen,
+                setIsAddOpen
               )
             }
-            monthLabel={format(today, "MMM yyyy")}
+            periodLabel={modalLabel}
+            period={period}
           />
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+// ─── Period toggle ─────────────────────────────────────────────────────
+function PeriodToggle({
+  period,
+  setPeriod,
+}: {
+  period: GoalPeriod;
+  setPeriod: React.Dispatch<React.SetStateAction<GoalPeriod>>;
+}) {
+  const options: GoalPeriod[] = ["daily", "monthly"];
+  return (
+    <div className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.03] p-0.5 text-[12px] font-medium">
+      {options.map((p) => (
+        <button
+          key={p}
+          onClick={() => setPeriod(p)}
+          className={`px-3 py-1 rounded-full capitalize transition cursor-pointer ${
+            period === p
+              ? "bg-white/10 text-white"
+              : "text-white/50 hover:text-white/80"
+          }`}
+        >
+          {p}
+        </button>
+      ))}
     </div>
   );
 }
@@ -303,7 +386,6 @@ function GoalRow({
         goal.complete ? "bg-teal-500/[0.06]" : "hover:bg-white/5"
       }`}
     >
-      {/* Custom check button — matches the affirmations checkmark. */}
       <button
         type="button"
         role="checkbox"
@@ -376,12 +458,11 @@ function PreviousMonthsSection({
   currentYear,
 }: {
   userId: string;
-  availableDates: { month: number; year: number }[];
+  availableDates: MonthlyDate[];
   allTrades: import("../types/Trades").Trade[];
   currentMonth: number;
   currentYear: number;
 }) {
-  // Dedupe + exclude the current month
   const past = useMemo(() => {
     const seen = new Set<string>();
     return availableDates
@@ -451,7 +532,9 @@ function PreviousMonthCard({
   useEffect(() => {
     if (!expanded || goals !== null) return;
     setLoading(true);
-    fetch(`/api/goals?userId=${userId}&month=${month}&year=${year}`)
+    fetch(
+      `/api/goals?userId=${userId}&period=monthly&month=${month}&year=${year}`
+    )
       .then((r) => r.json())
       .then((data: Goal[]) => setGoals(data))
       .finally(() => setLoading(false));
@@ -561,19 +644,235 @@ function PreviousMonthCard({
   );
 }
 
+// ─── Previous days ─────────────────────────────────────────────────────
+function PreviousDaysSection({
+  userId,
+  availableDates,
+  allTrades,
+  currentDay,
+  currentMonth,
+  currentYear,
+}: {
+  userId: string;
+  availableDates: DailyDate[];
+  allTrades: import("../types/Trades").Trade[];
+  currentDay: number;
+  currentMonth: number;
+  currentYear: number;
+}) {
+  const past = useMemo(() => {
+    const seen = new Set<string>();
+    return availableDates
+      .filter(({ day, month, year }) => {
+        const k = `${year}-${month}-${day}`;
+        if (seen.has(k)) return false;
+        seen.add(k);
+        return !(
+          day === currentDay &&
+          month === currentMonth &&
+          year === currentYear
+        );
+      })
+      .sort(
+        (a, b) => b.year - a.year || b.month - a.month || b.day - a.day
+      );
+  }, [availableDates, currentDay, currentMonth, currentYear]);
+
+  if (past.length === 0) return null;
+
+  return (
+    <section className="flex flex-col gap-3">
+      <h2 className="md:text-xl text-sm font-bold">Previous days</h2>
+      <div className="flex flex-col gap-2">
+        {past.map(({ day, month, year }) => (
+          <PreviousDayCard
+            key={`${year}-${month}-${day}`}
+            userId={userId}
+            day={day}
+            month={month}
+            year={year}
+            allTrades={allTrades}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function PreviousDayCard({
+  userId,
+  day,
+  month,
+  year,
+  allTrades,
+}: {
+  userId: string;
+  day: number;
+  month: number;
+  year: number;
+  allTrades: import("../types/Trades").Trade[];
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const [goals, setGoals] = useState<Goal[] | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const dayPL = useMemo(() => {
+    return allTrades
+      .filter((t) => t.status === "WIN" || t.status === "LOSS")
+      .filter((t) => {
+        const d = new Date(t.dateClosed || t.dateBought);
+        return (
+          d.getDate() === day &&
+          d.getMonth() === month &&
+          d.getFullYear() === year
+        );
+      })
+      .reduce((s, t) => s + tradeNetPL(t), 0);
+  }, [allTrades, day, month, year]);
+
+  const tradeCount = useMemo(
+    () =>
+      allTrades.filter((t) => {
+        const d = new Date(t.dateClosed || t.dateBought);
+        return (
+          d.getDate() === day &&
+          d.getMonth() === month &&
+          d.getFullYear() === year
+        );
+      }).length,
+    [allTrades, day, month, year]
+  );
+
+  useEffect(() => {
+    if (!expanded || goals !== null) return;
+    setLoading(true);
+    fetch(
+      `/api/goals?userId=${userId}&period=daily&day=${day}&month=${month}&year=${year}`
+    )
+      .then((r) => r.json())
+      .then((data: Goal[]) => setGoals(data))
+      .finally(() => setLoading(false));
+  }, [expanded, userId, day, month, year, goals]);
+
+  const completed = goals?.filter((g) => g.complete).length ?? 0;
+  const completionPct =
+    goals && goals.length > 0 ? (completed / goals.length) * 100 : 0;
+
+  const dateLabel = format(new Date(year, month, day), "EEE, MMM d yyyy");
+
+  return (
+    <div className="border border-[#282828] rounded-lg overflow-hidden">
+      <button
+        onClick={() => setExpanded((e) => !e)}
+        className="w-full flex items-center justify-between gap-3 p-3 md:p-4 hover:bg-white/5 transition cursor-pointer"
+      >
+        <div className="flex items-center gap-3">
+          <i
+            className={`fa-solid fa-chevron-right text-[10px] text-white/50 transition-transform ${
+              expanded ? "rotate-90" : ""
+            }`}
+          ></i>
+          <div className="text-sm md:text-base font-semibold">{dateLabel}</div>
+        </div>
+        <div className="flex items-center gap-3 md:gap-4 text-xs md:text-sm">
+          <span className="text-white/40 hidden md:inline">
+            {tradeCount} trade{tradeCount === 1 ? "" : "s"}
+          </span>
+          <span
+            className={
+              tradeCount === 0
+                ? "text-white/40"
+                : dayPL >= 0
+                  ? "text-green-500 font-medium"
+                  : "text-red-500 font-medium"
+            }
+          >
+            {tradeCount === 0
+              ? "—"
+              : `${dayPL >= 0 ? "+" : "−"}$${Math.abs(dayPL).toFixed(2)}`}
+          </span>
+        </div>
+      </button>
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden border-t border-white/5"
+          >
+            <div className="p-3 md:p-4 flex flex-col gap-2">
+              {loading ? (
+                <div className="text-xs text-white/40">Loading…</div>
+              ) : !goals || goals.length === 0 ? (
+                <div className="text-xs text-white/40">
+                  No goals were set for this day.
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between text-xs text-white/50">
+                    <span>
+                      {completed} of {goals.length} completed
+                    </span>
+                    <span>{completionPct.toFixed(0)}%</span>
+                  </div>
+                  <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-green-500"
+                      style={{ width: `${completionPct}%` }}
+                    />
+                  </div>
+                  <ul className="flex flex-col gap-1 mt-1">
+                    {goals.map((g) => (
+                      <li
+                        key={g._id}
+                        className="flex items-center gap-2 text-sm"
+                      >
+                        <i
+                          className={`fa-solid ${
+                            g.complete
+                              ? "fa-circle-check text-green-500"
+                              : "fa-circle-xmark text-red-500"
+                          } text-xs`}
+                        ></i>
+                        <span
+                          className={
+                            g.complete
+                              ? "text-white/50 line-through"
+                              : "text-white"
+                          }
+                        >
+                          {g.goal}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 // ─── Add modal ─────────────────────────────────────────────────────────
 function AddGoalModal({
   onClose,
   value,
   setValue,
   onSave,
-  monthLabel,
+  periodLabel,
+  period,
 }: {
   onClose: () => void;
   value: string;
   setValue: (v: string) => void;
   onSave: () => void;
-  monthLabel: string;
+  periodLabel: string;
+  period: GoalPeriod;
 }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -602,7 +901,7 @@ function AddGoalModal({
       >
         <div>
           <div className="text-xs text-white/50 uppercase tracking-wide">
-            New goal · {monthLabel}
+            New {period} goal · {periodLabel}
           </div>
           <div className="text-base md:text-lg font-semibold mt-1">
             What do you want to achieve?
@@ -616,7 +915,11 @@ function AddGoalModal({
           onKeyDown={(e) => {
             if (e.key === "Enter" && value.trim()) onSave();
           }}
-          placeholder="e.g. Hit $1,000 net P/L"
+          placeholder={
+            period === "daily"
+              ? "e.g. Stick to the plan today"
+              : "e.g. Hit $1,000 net P/L"
+          }
           className="bg-[#1A1A1D] border border-white/10 focus:border-white/30 text-base text-white p-2.5 rounded-md focus:outline-none"
         />
         <div className="flex gap-2 justify-end mt-2">

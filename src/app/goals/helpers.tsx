@@ -1,10 +1,11 @@
-import { Goal } from "../types/Goal";
+import { Goal, GoalPeriod } from "../types/Goal";
 import { Trade } from "../types/Trades";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
 
 export const handleAddGoal = async (
   goal: string,
   userId: string,
+  period: GoalPeriod,
   setGoal: React.Dispatch<React.SetStateAction<string>>,
   setGoals: React.Dispatch<React.SetStateAction<Goal[]>>,
   setIsModalOpen: React.Dispatch<React.SetStateAction<boolean>>
@@ -13,6 +14,7 @@ export const handleAddGoal = async (
     goal,
     userId,
     complete: false,
+    period,
   };
 
   try {

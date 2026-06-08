@@ -9,6 +9,11 @@ const GoalSchema = new mongoose.Schema(
     },
     goal: { type: String, required: true },
     complete: { type: Boolean, required: true },
+    period: {
+      type: String,
+      enum: ["daily", "monthly"],
+      default: "monthly",
+    },
   },
   { timestamps: true }
 );
