@@ -55,16 +55,23 @@ export const handleDeleteGoal = async (
   id: string,
   setGoals: React.Dispatch<React.SetStateAction<Goal[]>>
 ) => {
+  // Optimistic delete — remove from the list right away and capture the
+  // removed item so we can restore it if the server call fails.
+  let removed: Goal | undefined;
+  setGoals((prev) => {
+    removed = prev.find((g) => g._id === id);
+    return prev.filter((g) => g._id !== id);
+  });
+
   try {
-    const res = await fetch(`/api/goals/${id}`, {
-      method: "DELETE",
-    });
-
+    const res = await fetch(`/api/goals/${id}`, { method: "DELETE" });
     if (!res.ok) throw new Error("Failed to delete goal");
-
-    setGoals((prev) => prev.filter((goal) => goal._id !== id));
   } catch (error) {
     console.error("Error deleting goal:", error);
+    if (removed) {
+      const r = removed;
+      setGoals((prev) => [r, ...prev]);
+    }
   }
 };
 
@@ -73,20 +80,24 @@ export const handleToggleComplete = async (
   newValue: boolean,
   setGoals: React.Dispatch<React.SetStateAction<Goal[]>>
 ) => {
+  // Optimistic flip — update the UI immediately, then send the patch in
+  // the background. Roll back the local change if the server rejects it.
+  setGoals((prev) =>
+    prev.map((g) => (g._id === id ? { ...g, complete: newValue } : g))
+  );
+
   try {
     const res = await fetch(`/api/goals/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ complete: newValue }),
     });
-
     if (!res.ok) throw new Error("Failed to toggle goal");
-
-    const updated = await res.json();
-
-    setGoals((prev) => prev.map((g) => (g._id === updated._id ? updated : g)));
   } catch (error) {
     console.error("Error toggling goal:", error);
+    setGoals((prev) =>
+      prev.map((g) => (g._id === id ? { ...g, complete: !newValue } : g))
+    );
   }
 };
 

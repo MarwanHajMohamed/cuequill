@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
@@ -42,36 +42,78 @@ function Page() {
     "monthly"
   );
 
-  const [goals, setGoals] = useState<Goal[]>([]);
+  // Goals are cached per-period so switching is instant after the initial
+  // fetch. `null` means "not yet fetched" — used to render a loading state.
+  const [goalsByPeriod, setGoalsByPeriod] = useState<{
+    monthly: Goal[] | null;
+    daily: Goal[] | null;
+  }>({ monthly: null, daily: null });
+
   const [previousMonths, setPreviousMonths] = useState<MonthlyDate[]>([]);
   const [previousDays, setPreviousDays] = useState<DailyDate[]>([]);
-  const [loadingGoals, setLoadingGoals] = useState(true);
 
-  // Reset goals immediately on period change so the prior period's list
-  // never flashes under the new period's label while the fetch is pending.
-  useEffect(() => {
-    if (!userId) return;
-    setLoadingGoals(true);
-    setGoals([]);
-    const url =
-      period === "monthly"
-        ? `/api/goals?userId=${userId}&period=monthly&month=${today.getMonth()}&year=${today.getFullYear()}`
-        : `/api/goals?userId=${userId}&period=daily&day=${today.getDate()}&month=${today.getMonth()}&year=${today.getFullYear()}`;
-    fetch(url)
-      .then((r) => r.json())
-      .then((data: Goal[]) => setGoals(data))
-      .finally(() => setLoadingGoals(false));
-  }, [userId, today, period]);
+  // Derived: the active period's goals plus a setter that writes back into
+  // the right cache slot. We pass this to children unchanged so the existing
+  // handlers in helpers.tsx work without modification.
+  const goals = goalsByPeriod[period] ?? [];
+  const loadingGoals = goalsByPeriod[period] === null;
 
-  useEffect(() => {
-    if (!userId) return;
-    fetch(`/api/goals/dates?userId=${userId}&period=${period}`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (period === "monthly") setPreviousMonths(data);
-        else setPreviousDays(data);
+  const setGoals = useCallback<React.Dispatch<React.SetStateAction<Goal[]>>>(
+    (updater) => {
+      setGoalsByPeriod((prev) => {
+        const current = prev[period] ?? [];
+        const next =
+          typeof updater === "function"
+            ? (updater as (g: Goal[]) => Goal[])(current)
+            : updater;
+        return { ...prev, [period]: next };
       });
-  }, [userId, period]);
+    },
+    [period]
+  );
+
+  // Fetch BOTH periods up-front. The first switch after page load is then
+  // instant because the cache already has data. The active period is
+  // fetched first so it renders sooner.
+  useEffect(() => {
+    if (!userId) return;
+    const monthlyUrl = `/api/goals?userId=${userId}&period=monthly&month=${today.getMonth()}&year=${today.getFullYear()}`;
+    const dailyUrl = `/api/goals?userId=${userId}&period=daily&day=${today.getDate()}&month=${today.getMonth()}&year=${today.getFullYear()}`;
+
+    const load = async (p: GoalPeriod, url: string) => {
+      try {
+        const r = await fetch(url);
+        const data: Goal[] = await r.json();
+        setGoalsByPeriod((prev) => ({ ...prev, [p]: data }));
+      } catch (e) {
+        console.error(`Failed to load ${p} goals`, e);
+        setGoalsByPeriod((prev) => ({ ...prev, [p]: [] }));
+      }
+    };
+
+    if (period === "monthly") {
+      load("monthly", monthlyUrl).then(() => load("daily", dailyUrl));
+    } else {
+      load("daily", dailyUrl).then(() => load("monthly", monthlyUrl));
+    }
+    // Intentionally not depending on `period` — we want this to run once
+    // per session, not on every toggle. Switching reads from cache.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, today]);
+
+  // Previous-period dates: also fetch both up-front so switching never
+  // shows an empty previous-list while a fetch is in flight.
+  useEffect(() => {
+    if (!userId) return;
+    fetch(`/api/goals/dates?userId=${userId}&period=monthly`)
+      .then((r) => r.json())
+      .then(setPreviousMonths)
+      .catch(() => setPreviousMonths([]));
+    fetch(`/api/goals/dates?userId=${userId}&period=daily`)
+      .then((r) => r.json())
+      .then(setPreviousDays)
+      .catch(() => setPreviousDays([]));
+  }, [userId]);
 
   const completedGoals = goals.filter((g) => g.complete).length;
   const completionPct =
@@ -98,8 +140,7 @@ function Page() {
       />
 
       <div className="w-full max-w-[720px] flex flex-col gap-10">
-        {/* Header — toggle is intentionally outside the animated region so
-            switching feels instant and the toggle never animates itself. */}
+        {/* Header */}
         <div className="flex flex-col gap-3">
           <div className="text-[11px] uppercase tracking-[0.18em] text-white/40 font-medium">
             {headerDate}
@@ -114,75 +155,73 @@ function Page() {
           </div>
         </div>
 
-        {/* Period content — cross-fades + slides on toggle. mode="wait"
-            avoids the new and old lists rendering on top of each other. */}
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div
-            key={period}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.16, ease: [0.32, 0.72, 0, 1] }}
-            className="flex flex-col gap-10"
-          >
-            {/* Current period */}
-            <section className="flex flex-col gap-3">
-              <div className="flex items-baseline justify-between gap-2">
-                <h2 className="text-sm font-medium text-white/80">
-                  {periodLabel}
-                </h2>
-                {goals.length > 0 && (
-                  <span className="text-xs text-white/45 tabular-nums">
-                    {completedGoals} of {goals.length} ·{" "}
-                    {completionPct.toFixed(0)}%
-                  </span>
-                )}
-              </div>
-
+        {/* Period content — light opacity fade keyed on period. No
+            AnimatePresence/mode=wait so the new content appears immediately
+            and the old one is replaced without blocking the swap. */}
+        <motion.div
+          key={period}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.14, ease: "easeOut" }}
+          className="flex flex-col gap-10"
+        >
+          {/* Current period */}
+          <section className="flex flex-col gap-3">
+            <div className="flex items-baseline justify-between gap-2">
+              <h2 className="text-sm font-medium text-white/80">
+                {periodLabel}
+              </h2>
               {goals.length > 0 && (
-                <div className="w-full h-[2px] bg-white/5 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-teal-400/70 transition-[width] duration-300"
-                    style={{ width: `${completionPct}%` }}
-                  />
-                </div>
+                <span className="text-xs text-white/45 tabular-nums">
+                  {completedGoals} of {goals.length} ·{" "}
+                  {completionPct.toFixed(0)}%
+                </span>
               )}
+            </div>
 
-              <ul className="flex flex-col mt-1">
-                <AddGoalRow
-                  userId={userId}
-                  period={period}
-                  setGoals={setGoals}
+            {goals.length > 0 && (
+              <div className="w-full h-[2px] bg-white/5 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-teal-400/70 transition-[width] duration-300"
+                  style={{ width: `${completionPct}%` }}
                 />
-                {loadingGoals && goals.length === 0 ? (
-                  <li className="text-xs text-white/40 py-3 px-2">Loading…</li>
-                ) : (
-                  goals.map((g) => (
-                    <GoalRow key={g._id} goal={g} setGoals={setGoals} />
-                  ))
-                )}
-              </ul>
-            </section>
-
-            {/* Previous periods */}
-            {period === "monthly" ? (
-              <PreviousMonthsSection
-                userId={userId}
-                availableDates={previousMonths}
-                currentMonth={today.getMonth()}
-                currentYear={today.getFullYear()}
-              />
-            ) : (
-              <PreviousDaysSection
-                userId={userId}
-                availableDates={previousDays}
-                currentDay={today.getDate()}
-                currentMonth={today.getMonth()}
-                currentYear={today.getFullYear()}
-              />
+              </div>
             )}
-          </motion.div>
-        </AnimatePresence>
+
+            <ul className="flex flex-col mt-1">
+              <AddGoalRow
+                userId={userId}
+                period={period}
+                setGoals={setGoals}
+              />
+              {loadingGoals ? (
+                <li className="text-xs text-white/40 py-3 px-2">Loading…</li>
+              ) : (
+                goals.map((g) => (
+                  <GoalRow key={g._id} goal={g} setGoals={setGoals} />
+                ))
+              )}
+            </ul>
+          </section>
+
+          {/* Previous periods */}
+          {period === "monthly" ? (
+            <PreviousMonthsSection
+              userId={userId}
+              availableDates={previousMonths}
+              currentMonth={today.getMonth()}
+              currentYear={today.getFullYear()}
+            />
+          ) : (
+            <PreviousDaysSection
+              userId={userId}
+              availableDates={previousDays}
+              currentDay={today.getDate()}
+              currentMonth={today.getMonth()}
+              currentYear={today.getFullYear()}
+            />
+          )}
+        </motion.div>
       </div>
     </div>
   );
@@ -207,8 +246,6 @@ function PeriodToggle({
             period === p ? "text-white" : "text-white/50 hover:text-white/80"
           }`}
         >
-          {/* Sliding pill background — shared layoutId animates between the
-              two options instead of fading. */}
           {period === p && (
             <motion.span
               layoutId="periodTogglePill"
@@ -276,6 +313,10 @@ function AddGoalRow({
 }
 
 // ─── Goal row ─────────────────────────────────────────────────────────
+// Plain <li> — no per-row entry/exit motion. The previous version used
+// motion.li with `layout` + initial/animate, which replayed the entry
+// animation on every list re-render and caused a visible flicker when
+// goals first loaded or the period changed.
 function GoalRow({
   goal,
   setGoals,
@@ -287,12 +328,7 @@ function GoalRow({
   const [draft, setDraft] = useState(goal.goal);
 
   return (
-    <motion.li
-      layout
-      initial={{ opacity: 0, y: -4 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, x: -8 }}
-      transition={{ duration: 0.16, ease: [0.32, 0.72, 0, 1] }}
+    <li
       className={`group flex items-center gap-3 py-2 px-2 rounded-lg transition ${
         goal.complete ? "" : "hover:bg-white/[0.03]"
       }`}
@@ -356,7 +392,7 @@ function GoalRow({
       >
         <i className="fa-solid fa-xmark" />
       </button>
-    </motion.li>
+    </li>
   );
 }
 
