@@ -385,9 +385,11 @@ function GoalRow({
           {goal.goal}
         </button>
       )}
+      {/* Always visible on touch devices (no hover state); hover-revealed
+          on md+ so the desktop list stays clean. */}
       <button
         onClick={() => handleDeleteGoal(goal._id, setGoals)}
-        className="opacity-0 group-hover:opacity-100 transition text-white/30 hover:text-red-400 text-xs p-1 cursor-pointer"
+        className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition text-white/40 hover:text-red-400 text-xs p-1 cursor-pointer"
         aria-label="Delete goal"
       >
         <i className="fa-solid fa-xmark" />
