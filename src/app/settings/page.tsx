@@ -6,7 +6,6 @@ import TradesTab from "./TradesTab";
 import { useQueryClient } from "@tanstack/react-query";
 import Account from "./Account";
 import IBKRTab from "./IBKRTab";
-import NotificationsTab from "./NotificationsTab";
 
 function Page() {
   const [selectedSetting, setSelectedSetting] = useState<string>("Account");
@@ -57,11 +56,6 @@ function Page() {
 
   const settingsTabs = [
     { title: "Account", icon: "fa-solid fa-user", content: <Account /> },
-    {
-      title: "Notifications",
-      icon: "fa-solid fa-bell",
-      content: <NotificationsTab />,
-    },
     {
       title: "Trades",
       icon: "fa-solid fa-file-import",
