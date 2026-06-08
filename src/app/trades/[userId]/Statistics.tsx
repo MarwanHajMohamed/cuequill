@@ -14,6 +14,7 @@ import React, {
 } from "react";
 import EquityCurve from "./EquityCurve";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
+import { motion, AnimatePresence } from "framer-motion";
 
 type StatsVisibility = {
   netPL: boolean;
@@ -858,8 +859,12 @@ export default function Statistics({
     monthIndex: new Date().getMonth(),
     year: new Date().getFullYear(),
   });
+  // +1 when stepping forward in time, -1 when stepping back — drives
+  // the slide direction of the month-detail panel.
+  const [monthDir, setMonthDir] = useState<1 | -1>(1);
 
   const handlePrevMonth = () => {
+    setMonthDir(-1);
     setDate((prev) => {
       const newMonth = prev.monthIndex === 0 ? 11 : prev.monthIndex - 1;
       const newYear = prev.monthIndex === 0 ? prev.year - 1 : prev.year;
@@ -868,11 +873,53 @@ export default function Statistics({
   };
 
   const handleNextMonth = () => {
+    setMonthDir(1);
     setDate((prev) => {
       const newMonth = prev.monthIndex === 11 ? 0 : prev.monthIndex + 1;
       const newYear = prev.monthIndex === 11 ? prev.year + 1 : prev.year;
       return { monthIndex: newMonth, year: newYear };
     });
+  };
+
+  // ── Mobile swipe for the monthly section ───────────────────────────
+  // Same pattern as the calendar's AnimatedCalendar / WeekView swipe:
+  // lock to horizontal once the user moves >10px on the x-axis, then
+  // fire prev/next on release if the threshold is crossed. Vertical
+  // scroll is unaffected because we set touch-action: pan-y.
+  const monthSwipe = useRef<{
+    x: number;
+    y: number;
+    mode: "idle" | "h" | "v";
+  } | null>(null);
+
+  const onMonthTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length !== 1) return;
+    monthSwipe.current = {
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY,
+      mode: "idle",
+    };
+  };
+
+  const onMonthTouchMove = (e: React.TouchEvent) => {
+    const s = monthSwipe.current;
+    if (!s) return;
+    const dx = e.touches[0].clientX - s.x;
+    const dy = e.touches[0].clientY - s.y;
+    if (s.mode === "idle") {
+      if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) s.mode = "v";
+      else if (Math.abs(dx) > 10) s.mode = "h";
+    }
+  };
+
+  const onMonthTouchEnd = (e: React.TouchEvent) => {
+    const s = monthSwipe.current;
+    monthSwipe.current = null;
+    if (!s || s.mode !== "h") return;
+    const dx = e.changedTouches[0].clientX - s.x;
+    if (Math.abs(dx) < 60) return;
+    if (dx < 0) handleNextMonth();
+    else handlePrevMonth();
   };
 
   const currentMonth = months[date.monthIndex];
@@ -1455,6 +1502,33 @@ export default function Statistics({
               </button>
             </div>
 
+            <div
+              onTouchStart={onMonthTouchStart}
+              onTouchMove={onMonthTouchMove}
+              onTouchEnd={onMonthTouchEnd}
+              style={{ touchAction: "pan-y" }}
+            >
+            <AnimatePresence mode="wait" initial={false} custom={monthDir}>
+              <motion.div
+                key={`${year}-${date.monthIndex}`}
+                custom={monthDir}
+                variants={{
+                  enter: (dir: number) => ({
+                    opacity: 0,
+                    x: dir > 0 ? 32 : -32,
+                  }),
+                  center: { opacity: 1, x: 0 },
+                  exit: (dir: number) => ({
+                    opacity: 0,
+                    x: dir > 0 ? -32 : 32,
+                  }),
+                }}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ duration: 0.22, ease: "easeOut" }}
+                className="flex flex-col gap-4 md:gap-6"
+              >
             {monthlyData.length === 0 ? (
               <div className="border border-[#282828] rounded-lg p-8 text-center text-sm text-white/40">
                 No trades for {currentMonth} {year}
@@ -1589,6 +1663,9 @@ export default function Statistics({
                 </div>
               </>
             )}
+              </motion.div>
+            </AnimatePresence>
+            </div>
           </div>
         );
       })()}

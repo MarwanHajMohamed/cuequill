@@ -95,6 +95,13 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
     };
   }, []);
 
+  // Reset back to page 1 whenever any filter changes. Without this,
+  // narrowing a list while on page 17 leaves you stranded past the end
+  // of the new results and the table looks empty.
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filter, strategy, symbol, option, startDate, endDate]);
+
   if (isLoading)
     return (
       <div className="w-full flex justify-center mt-19 md:mt-[100px]">
