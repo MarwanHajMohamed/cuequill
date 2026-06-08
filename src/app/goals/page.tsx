@@ -47,9 +47,12 @@ function Page() {
   const [previousDays, setPreviousDays] = useState<DailyDate[]>([]);
   const [loadingGoals, setLoadingGoals] = useState(true);
 
+  // Reset goals immediately on period change so the prior period's list
+  // never flashes under the new period's label while the fetch is pending.
   useEffect(() => {
     if (!userId) return;
     setLoadingGoals(true);
+    setGoals([]);
     const url =
       period === "monthly"
         ? `/api/goals?userId=${userId}&period=monthly&month=${today.getMonth()}&year=${today.getFullYear()}`
@@ -95,7 +98,8 @@ function Page() {
       />
 
       <div className="w-full max-w-[720px] flex flex-col gap-10">
-        {/* Header */}
+        {/* Header — toggle is intentionally outside the animated region so
+            switching feels instant and the toggle never animates itself. */}
         <div className="flex flex-col gap-3">
           <div className="text-[11px] uppercase tracking-[0.18em] text-white/40 font-medium">
             {headerDate}
@@ -110,62 +114,75 @@ function Page() {
           </div>
         </div>
 
-        {/* Current period */}
-        <section className="flex flex-col gap-3">
-          <div className="flex items-baseline justify-between gap-2">
-            <h2 className="text-sm font-medium text-white/80">
-              {periodLabel}
-            </h2>
-            {goals.length > 0 && (
-              <span className="text-xs text-white/45 tabular-nums">
-                {completedGoals} of {goals.length} ·{" "}
-                {completionPct.toFixed(0)}%
-              </span>
-            )}
-          </div>
+        {/* Period content — cross-fades + slides on toggle. mode="wait"
+            avoids the new and old lists rendering on top of each other. */}
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={period}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.16, ease: [0.32, 0.72, 0, 1] }}
+            className="flex flex-col gap-10"
+          >
+            {/* Current period */}
+            <section className="flex flex-col gap-3">
+              <div className="flex items-baseline justify-between gap-2">
+                <h2 className="text-sm font-medium text-white/80">
+                  {periodLabel}
+                </h2>
+                {goals.length > 0 && (
+                  <span className="text-xs text-white/45 tabular-nums">
+                    {completedGoals} of {goals.length} ·{" "}
+                    {completionPct.toFixed(0)}%
+                  </span>
+                )}
+              </div>
 
-          {goals.length > 0 && (
-            <div className="w-full h-[2px] bg-white/5 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-teal-400/70 transition-[width] duration-300"
-                style={{ width: `${completionPct}%` }}
+              {goals.length > 0 && (
+                <div className="w-full h-[2px] bg-white/5 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-teal-400/70 transition-[width] duration-300"
+                    style={{ width: `${completionPct}%` }}
+                  />
+                </div>
+              )}
+
+              <ul className="flex flex-col mt-1">
+                <AddGoalRow
+                  userId={userId}
+                  period={period}
+                  setGoals={setGoals}
+                />
+                {loadingGoals && goals.length === 0 ? (
+                  <li className="text-xs text-white/40 py-3 px-2">Loading…</li>
+                ) : (
+                  goals.map((g) => (
+                    <GoalRow key={g._id} goal={g} setGoals={setGoals} />
+                  ))
+                )}
+              </ul>
+            </section>
+
+            {/* Previous periods */}
+            {period === "monthly" ? (
+              <PreviousMonthsSection
+                userId={userId}
+                availableDates={previousMonths}
+                currentMonth={today.getMonth()}
+                currentYear={today.getFullYear()}
               />
-            </div>
-          )}
-
-          <ul className="flex flex-col mt-1">
-            <AddGoalRow
-              userId={userId}
-              period={period}
-              setGoals={setGoals}
-            />
-            {loadingGoals && goals.length === 0 ? (
-              <li className="text-xs text-white/40 py-3 px-2">Loading…</li>
             ) : (
-              goals.map((g) => (
-                <GoalRow key={g._id} goal={g} setGoals={setGoals} />
-              ))
+              <PreviousDaysSection
+                userId={userId}
+                availableDates={previousDays}
+                currentDay={today.getDate()}
+                currentMonth={today.getMonth()}
+                currentYear={today.getFullYear()}
+              />
             )}
-          </ul>
-        </section>
-
-        {/* Previous periods */}
-        {period === "monthly" ? (
-          <PreviousMonthsSection
-            userId={userId}
-            availableDates={previousMonths}
-            currentMonth={today.getMonth()}
-            currentYear={today.getFullYear()}
-          />
-        ) : (
-          <PreviousDaysSection
-            userId={userId}
-            availableDates={previousDays}
-            currentDay={today.getDate()}
-            currentMonth={today.getMonth()}
-            currentYear={today.getFullYear()}
-          />
-        )}
+          </motion.div>
+        </AnimatePresence>
       </div>
     </div>
   );
@@ -181,18 +198,25 @@ function PeriodToggle({
 }) {
   const options: GoalPeriod[] = ["daily", "monthly"];
   return (
-    <div className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.03] p-0.5 text-[12px] font-medium">
+    <div className="relative inline-flex items-center rounded-full border border-white/10 bg-white/[0.03] p-0.5 text-[12px] font-medium">
       {options.map((p) => (
         <button
           key={p}
           onClick={() => setPeriod(p)}
-          className={`px-3 py-1 rounded-full capitalize transition cursor-pointer ${
-            period === p
-              ? "bg-white/10 text-white"
-              : "text-white/50 hover:text-white/80"
+          className={`relative z-10 px-3 py-1 rounded-full capitalize transition cursor-pointer ${
+            period === p ? "text-white" : "text-white/50 hover:text-white/80"
           }`}
         >
-          {p}
+          {/* Sliding pill background — shared layoutId animates between the
+              two options instead of fading. */}
+          {period === p && (
+            <motion.span
+              layoutId="periodTogglePill"
+              className="absolute inset-0 rounded-full bg-white/10"
+              transition={{ type: "spring", stiffness: 380, damping: 32 }}
+            />
+          )}
+          <span className="relative">{p}</span>
         </button>
       ))}
     </div>
@@ -263,7 +287,12 @@ function GoalRow({
   const [draft, setDraft] = useState(goal.goal);
 
   return (
-    <li
+    <motion.li
+      layout
+      initial={{ opacity: 0, y: -4 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, x: -8 }}
+      transition={{ duration: 0.16, ease: [0.32, 0.72, 0, 1] }}
       className={`group flex items-center gap-3 py-2 px-2 rounded-lg transition ${
         goal.complete ? "" : "hover:bg-white/[0.03]"
       }`}
@@ -327,7 +356,7 @@ function GoalRow({
       >
         <i className="fa-solid fa-xmark" />
       </button>
-    </li>
+    </motion.li>
   );
 }
 
