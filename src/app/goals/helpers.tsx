@@ -6,32 +6,22 @@ export const handleAddGoal = async (
   goal: string,
   userId: string,
   period: GoalPeriod,
-  setGoal: React.Dispatch<React.SetStateAction<string>>,
-  setGoals: React.Dispatch<React.SetStateAction<Goal[]>>,
-  setIsModalOpen: React.Dispatch<React.SetStateAction<boolean>>
-) => {
-  const newGoal = {
-    goal,
-    userId,
-    complete: false,
-    period,
-  };
-
+  setGoals: React.Dispatch<React.SetStateAction<Goal[]>>
+): Promise<boolean> => {
+  const newGoal = { goal, userId, complete: false, period };
   try {
     const res = await fetch("/api/goals", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(newGoal),
     });
-
     if (!res.ok) throw new Error("Failed to create goal");
-
     const createdGoal = await res.json();
     setGoals((prev) => [createdGoal, ...prev]);
-    setGoal("");
-    setIsModalOpen(false);
+    return true;
   } catch (error) {
     console.error("Error adding goal:", error);
+    return false;
   }
 };
 
