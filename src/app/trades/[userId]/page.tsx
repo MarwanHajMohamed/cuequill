@@ -504,117 +504,142 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
               >
                 <i className="fa-solid fa-table-columns text-[13px]" />
               </button>
-              {isColumnsOpen && (
-                <>
-                  <div
-                    className="fixed inset-0 z-40"
-                    onClick={() => setIsColumnsOpen(false)}
-                  />
-                  <div className="absolute right-0 top-full mt-2 z-50 w-72 rounded-xl border border-white/10 bg-[#0F0F17] shadow-[0_20px_80px_rgba(0,0,0,0.6)] p-2">
-                    <div className="flex items-center justify-between px-2 py-1.5">
-                      <span className="text-[11px] uppercase tracking-[0.14em] text-white/40 font-medium">
-                        Columns
-                      </span>
-                      <button
-                        onClick={resetColumns}
-                        className="text-[11px] text-teal-300/80 hover:text-teal-300 transition cursor-pointer"
-                      >
-                        Reset
-                      </button>
-                    </div>
-                    <div className="mt-1 flex flex-col">
-                      {columnOrder.map((key, i) => {
-                        const visible = !hiddenSet.has(key);
-                        const lastVisible = visible && visibleColumns.length <= 1;
-                        return (
-                          <div
-                            key={key}
-                            draggable
-                            onDragStart={() => {
-                              dragKey.current = key;
-                            }}
-                            onDragOver={(e) => {
-                              e.preventDefault();
-                              setDragOverKey(key);
-                            }}
-                            onDragEnd={() => {
-                              dragKey.current = null;
-                              setDragOverKey(null);
-                            }}
-                            onDrop={(e) => {
-                              e.preventDefault();
-                              if (dragKey.current) moveColumn(dragKey.current, key);
-                              dragKey.current = null;
-                              setDragOverKey(null);
-                            }}
-                            className={`group flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-grab active:cursor-grabbing transition ${
-                              dragOverKey === key
-                                ? "bg-white/[0.07]"
-                                : "hover:bg-white/[0.04]"
-                            }`}
-                          >
-                            <i className="fa-solid fa-grip-vertical text-white/25 group-hover:text-white/40 text-[11px]" />
-                            <button
-                              onClick={() => toggleColumn(key)}
-                              disabled={lastVisible}
-                              className={`flex items-center gap-2.5 flex-1 text-left ${
-                                lastVisible ? "cursor-default" : "cursor-pointer"
+              <AnimatePresence>
+                {isColumnsOpen && (
+                  <>
+                    <motion.div
+                      key="columns-backdrop"
+                      className="fixed inset-0 z-40"
+                      onClick={() => setIsColumnsOpen(false)}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.15 }}
+                    />
+                    <motion.div
+                      key="columns-panel"
+                      className="absolute right-0 top-full mt-2 z-50 w-72 origin-top-right rounded-xl border border-white/10 bg-[#0F0F17] shadow-[0_20px_80px_rgba(0,0,0,0.6)] p-2"
+                      initial={{ opacity: 0, scale: 0.95, y: -6 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: -6 }}
+                      transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                    >
+                      <div className="flex items-center justify-between px-2 py-1.5">
+                        <span className="text-[11px] uppercase tracking-[0.14em] text-white/40 font-medium">
+                          Columns
+                        </span>
+                        <button
+                          onClick={resetColumns}
+                          className="text-[11px] text-teal-300/80 hover:text-teal-300 transition cursor-pointer"
+                        >
+                          Reset
+                        </button>
+                      </div>
+                      <div className="mt-1 flex flex-col">
+                        {columnOrder.map((key, i) => {
+                          const visible = !hiddenSet.has(key);
+                          const lastVisible =
+                            visible && visibleColumns.length <= 1;
+                          return (
+                            <motion.div
+                              key={key}
+                              layout
+                              transition={{
+                                layout: {
+                                  duration: 0.22,
+                                  ease: [0.16, 1, 0.3, 1],
+                                },
+                              }}
+                              draggable
+                              onDragStart={() => {
+                                dragKey.current = key;
+                              }}
+                              onDragOver={(e) => {
+                                e.preventDefault();
+                                setDragOverKey(key);
+                              }}
+                              onDragEnd={() => {
+                                dragKey.current = null;
+                                setDragOverKey(null);
+                              }}
+                              onDrop={(e) => {
+                                e.preventDefault();
+                                if (dragKey.current)
+                                  moveColumn(dragKey.current, key);
+                                dragKey.current = null;
+                                setDragOverKey(null);
+                              }}
+                              className={`group flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-grab active:cursor-grabbing transition-colors ${
+                                dragOverKey === key
+                                  ? "bg-white/[0.07]"
+                                  : "hover:bg-white/[0.04]"
                               }`}
-                              title={
-                                lastVisible
-                                  ? "At least one column must stay visible"
-                                  : visible
-                                    ? "Hide column"
-                                    : "Show column"
-                              }
                             >
-                              <span
-                                className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition ${
-                                  visible
-                                    ? "bg-teal-500/20 border-teal-500/40 text-teal-300"
-                                    : "border-white/15 text-transparent"
-                                }`}
-                              >
-                                <i className="fa-solid fa-check text-[9px]" />
-                              </span>
-                              <span
-                                className={`text-[13px] ${
-                                  visible ? "text-white/85" : "text-white/40"
-                                }`}
-                              >
-                                {COLUMN_LABELS[key]}
-                              </span>
-                            </button>
-                            <div className="flex items-center gap-0.5 opacity-60 group-hover:opacity-100 transition">
+                              <i className="fa-solid fa-grip-vertical text-white/25 group-hover:text-white/40 text-[11px]" />
                               <button
-                                onClick={() =>
-                                  i > 0 && moveColumn(key, columnOrder[i - 1])
+                                onClick={() => toggleColumn(key)}
+                                disabled={lastVisible}
+                                className={`flex items-center gap-2.5 flex-1 text-left ${
+                                  lastVisible
+                                    ? "cursor-default"
+                                    : "cursor-pointer"
+                                }`}
+                                title={
+                                  lastVisible
+                                    ? "At least one column must stay visible"
+                                    : visible
+                                      ? "Hide column"
+                                      : "Show column"
                                 }
-                                disabled={i === 0}
-                                aria-label="Move up"
-                                className="w-6 h-6 rounded-md flex items-center justify-center text-white/50 hover:text-white hover:bg-white/[0.06] transition cursor-pointer disabled:opacity-25 disabled:cursor-default"
                               >
-                                <i className="fa-solid fa-chevron-up text-[10px]" />
+                                <span
+                                  className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition ${
+                                    visible
+                                      ? "bg-teal-500/20 border-teal-500/40 text-teal-300"
+                                      : "border-white/15 text-transparent"
+                                  }`}
+                                >
+                                  <i className="fa-solid fa-check text-[9px]" />
+                                </span>
+                                <span
+                                  className={`text-[13px] ${
+                                    visible ? "text-white/85" : "text-white/40"
+                                  }`}
+                                >
+                                  {COLUMN_LABELS[key]}
+                                </span>
                               </button>
-                              <button
-                                onClick={() =>
-                                  i < columnOrder.length - 1 &&
-                                  moveColumn(key, columnOrder[i + 1])
-                                }
-                                disabled={i === columnOrder.length - 1}
-                                aria-label="Move down"
-                                className="w-6 h-6 rounded-md flex items-center justify-center text-white/50 hover:text-white hover:bg-white/[0.06] transition cursor-pointer disabled:opacity-25 disabled:cursor-default"
-                              >
-                                <i className="fa-solid fa-chevron-down text-[10px]" />
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </>
-              )}
+                              <div className="flex items-center gap-0.5 opacity-60 group-hover:opacity-100 transition">
+                                <button
+                                  onClick={() =>
+                                    i > 0 && moveColumn(key, columnOrder[i - 1])
+                                  }
+                                  disabled={i === 0}
+                                  aria-label="Move up"
+                                  className="w-6 h-6 rounded-md flex items-center justify-center text-white/50 hover:text-white hover:bg-white/[0.06] transition cursor-pointer disabled:opacity-25 disabled:cursor-default"
+                                >
+                                  <i className="fa-solid fa-chevron-up text-[10px]" />
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    i < columnOrder.length - 1 &&
+                                    moveColumn(key, columnOrder[i + 1])
+                                  }
+                                  disabled={i === columnOrder.length - 1}
+                                  aria-label="Move down"
+                                  className="w-6 h-6 rounded-md flex items-center justify-center text-white/50 hover:text-white hover:bg-white/[0.06] transition cursor-pointer disabled:opacity-25 disabled:cursor-default"
+                                >
+                                  <i className="fa-solid fa-chevron-down text-[10px]" />
+                                </button>
+                              </div>
+                            </motion.div>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
             </div>
             <div className="w-full max-w-[1500px] rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md overflow-x-auto max-[1130px]:mt-0 mt-3 p-2 md:p-3">
               {filteredTrades?.length === 0 ? (
