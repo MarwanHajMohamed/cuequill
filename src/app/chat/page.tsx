@@ -15,16 +15,39 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
+import { format } from "date-fns";
 import { Trade } from "@/app/types/Trades";
+import { useTrades } from "@/hooks/useTrades";
+import { tradeNetPL } from "@/lib/helpers/tradeNet";
 import ViewTradeModal from "@/app/dashboard/components/modals/ViewTradeModal";
 
 type Msg = { role: "user" | "model"; text: string; pending?: boolean };
 
-// Passed from the chat Page down into the Markdown <a> override so that
-// `trade://<id>` links can open the existing ViewTradeModal instead of
-// behaving like external URLs. Context (rather than prop drilling) keeps
+// Supplied by the chat Page so that any `trade://<id>` link the Gemini
+// reply contains can both (a) look up the trade's data from the
+// already-loaded list to render a card, and (b) open the existing
+// ViewTradeModal on click. Context (rather than prop drilling) keeps
 // the ReactMarkdown components block clean.
-const TradeOpenContext = createContext<((id: string) => void) | null>(null);
+type TradeChatCtx = {
+  openTrade: (id: string) => void;
+  findTrade: (id: string) => Trade | undefined;
+};
+const TradeChatContext = createContext<TradeChatCtx | null>(null);
+
+// react-markdown sanitizes link URLs by default and drops any scheme
+// that isn't in its safe-list (http/https/mailto/tel/etc.). Without
+// this transform, `trade://<id>` would be stripped entirely and the
+// link would render as plain text — the <a> component override would
+// never see the href and the trade cards / click handlers would
+// silently break. Allow trade:// through; mirror the safe-list for
+// everything else.
+function tradeAwareUrlTransform(url: string): string {
+  if (url.startsWith("trade://")) return url;
+  if (/^(https?|mailto|tel|ftp):/i.test(url)) return url;
+  if (url.startsWith("/") || url.startsWith("#")) return url;
+  if (!url.includes(":")) return url; // relative
+  return "";
+}
 
 const STORAGE_KEY = "cuequill:chat:v1";
 
@@ -86,23 +109,48 @@ function Page() {
   // Trade being viewed via a `trade://` link in the Gemini reply.
   const [viewingTrade, setViewingTrade] = useState<Trade | null>(null);
 
-  // Fetch a single trade by id and open the existing ViewTradeModal.
-  // Used by the Markdown <a> override below — see TradeOpenContext.
-  const openTrade = useCallback(async (id: string) => {
-    try {
-      const res = await fetch(`/api/trades/${encodeURIComponent(id)}`);
-      if (!res.ok) {
-        console.error(
-          `Failed to open trade ${id}: HTTP ${res.status}`,
-        );
+  // Pull the user's full trade list once (React Query caches it across
+  // the app) so the trade cards rendered inside chat replies can read
+  // their data straight from memory — no N+1 fetches per card.
+  const { data: trades } = useTrades(userId, false);
+
+  // Look up a trade by id from the cached list. Returns undefined when
+  // the id isn't known (rare — Gemini only sees ids that exist in this
+  // same list — but possible for simulated trades or a stale cache).
+  const findTrade = useCallback(
+    (id: string): Trade | undefined =>
+      trades?.find((t) => String(t._id) === id),
+    [trades],
+  );
+
+  // Open the ViewTradeModal for a given trade id. Prefer the cached
+  // copy; fall back to a single /api/trades/<id> GET so a card the
+  // cache doesn't have can still be opened.
+  const openTrade = useCallback(
+    async (id: string) => {
+      const cached = trades?.find((t) => String(t._id) === id);
+      if (cached) {
+        setViewingTrade(cached);
         return;
       }
-      const data = (await res.json()) as Trade;
-      setViewingTrade(data);
-    } catch (err) {
-      console.error("Failed to open trade", err);
-    }
-  }, []);
+      try {
+        const res = await fetch(`/api/trades/${encodeURIComponent(id)}`);
+        if (!res.ok) {
+          console.error(`Failed to open trade ${id}: HTTP ${res.status}`);
+          return;
+        }
+        setViewingTrade((await res.json()) as Trade);
+      } catch (err) {
+        console.error("Failed to open trade", err);
+      }
+    },
+    [trades],
+  );
+
+  const tradeChat = useMemo<TradeChatCtx>(
+    () => ({ openTrade, findTrade }),
+    [openTrade, findTrade],
+  );
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -366,10 +414,11 @@ function Page() {
   );
 
   return (
-    /* TradeOpenContext supplies `openTrade` to the Markdown <a>
-       override deep inside MarkdownText, so any `trade://<id>` link
-       Gemini renders becomes a click that opens ViewTradeModal. */
-    <TradeOpenContext.Provider value={openTrade}>
+    /* TradeChatContext supplies both findTrade() (used by TradeCard to
+       render a styled card from the cached trade data) and openTrade()
+       (used to open ViewTradeModal on click) to the Markdown <a>
+       override deep inside MarkdownText. */
+    <TradeChatContext.Provider value={tradeChat}>
     {/* The outer column is sized to EXACTLY the visible area (viewport
        minus the floating mobile nav, or full viewport on desktop)
        using `h-[…]` rather than `min-h-[…]`. That swap is load-
@@ -487,7 +536,7 @@ function Page() {
         />
       )}
     </AnimatePresence>
-    </TradeOpenContext.Provider>
+    </TradeChatContext.Provider>
   );
 }
 
@@ -568,11 +617,140 @@ function walkChildren(children: React.ReactNode): React.ReactNode {
   return children;
 }
 
+// ─── TradeCard ─────────────────────────────────────────────────────────
+//
+// Replaces a `[trade-card](trade://<id>)` Markdown link with a styled
+// card rendered from the user's authoritative trade data. The Gemini
+// reply contains only the id; everything visible on the card comes
+// from the chat page's useTrades cache so it's always accurate and
+// consistent regardless of how Gemini chose to describe the trade.
+//
+// Clicking anywhere on the card opens the existing ViewTradeModal via
+// the TradeChatContext.openTrade callback.
+
+const MONEY_FMT = (n: number) =>
+  `${n >= 0 ? "+" : "−"}$${Math.abs(n).toFixed(2)}`;
+
+function fmtDate(d: string | Date | null | undefined): string | null {
+  if (!d) return null;
+  const parsed = new Date(d);
+  return isNaN(parsed.getTime()) ? null : format(parsed, "MMM d, yyyy");
+}
+
+function TradeCard({ id }: { id: string }) {
+  const ctx = useContext(TradeChatContext);
+  const trade = ctx?.findTrade(id);
+  const onClick = () => ctx?.openTrade(id);
+
+  // Cache miss: still clickable — openTrade() falls back to a single
+  // /api/trades/<id> fetch, so the user can always view the modal.
+  if (!trade) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className="block w-full text-left rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/20 transition px-3.5 py-2.5 my-1.5 cursor-pointer"
+      >
+        <div className="flex items-center gap-2 text-xs text-white/45">
+          <i className="fa-solid fa-receipt text-[11px] text-white/30" />
+          <span>Trade · tap to view</span>
+        </div>
+      </button>
+    );
+  }
+
+  const isCall = trade.option === "CALL";
+  const isWin = trade.status === "WIN";
+  const isLoss = trade.status === "LOSS";
+  const isOpen = trade.status === "OPEN";
+
+  const netPL = tradeNetPL(trade as Trade);
+  const entryDate = fmtDate(trade.dateBought);
+  const exitDate = fmtDate(trade.dateClosed);
+
+  // Border/background tint follows the trade outcome. Keep it subtle
+  // so a column of cards stays scannable — the chip + amount carry
+  // the strong color.
+  const tone = isWin
+    ? "border-green-500/20 bg-green-500/[0.04] hover:bg-green-500/[0.08] hover:border-green-500/30"
+    : isLoss
+      ? "border-red-500/20 bg-red-500/[0.04] hover:bg-red-500/[0.08] hover:border-red-500/30"
+      : "border-orange-500/20 bg-orange-500/[0.04] hover:bg-orange-500/[0.08] hover:border-orange-500/30";
+
+  const amountColor = isOpen
+    ? "text-orange-300/90"
+    : netPL >= 0
+      ? "text-green-400"
+      : "text-red-400";
+
+  const optionChip = isCall
+    ? "bg-green-500/15 text-green-400"
+    : "bg-red-500/15 text-red-400";
+
+  const statusChip = isWin
+    ? "bg-green-500/15 text-green-400"
+    : isLoss
+      ? "bg-red-500/15 text-red-400"
+      : "bg-orange-500/15 text-orange-400";
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`block w-full text-left rounded-xl border transition px-3.5 py-2.5 my-1.5 cursor-pointer ${tone}`}
+      aria-label={`View trade ${trade.symbol} ${trade.option}`}
+    >
+      <div className="flex items-baseline gap-2 flex-wrap">
+        <span className="font-bold text-[15px] text-white">
+          {trade.symbol}
+        </span>
+        <span
+          className={`text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded ${optionChip}`}
+        >
+          {trade.option}
+        </span>
+        <span
+          className={`text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded ${statusChip}`}
+        >
+          {trade.status}
+        </span>
+        <span
+          className={`ml-auto text-[13px] font-semibold tabular-nums ${amountColor}`}
+        >
+          {isOpen ? "Open" : MONEY_FMT(netPL)}
+        </span>
+      </div>
+
+      <div className="mt-1 text-[11.5px] text-white/55 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+        <span className="tabular-nums">
+          ${trade.strike} × {trade.qty}
+        </span>
+        {entryDate && (
+          <>
+            <span className="text-white/20">·</span>
+            <span className="tabular-nums">
+              {entryDate}
+              {!isOpen && exitDate ? ` → ${exitDate}` : ""}
+            </span>
+          </>
+        )}
+      </div>
+
+      {trade.strategy && trade.strategy !== "Other" && (
+        <div className="mt-0.5 text-[11px] italic text-white/45 truncate">
+          {trade.strategy}
+        </div>
+      )}
+    </button>
+  );
+}
+
 function MarkdownText({ text }: { text: string }) {
   return (
     <div className="space-y-2 [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
+        urlTransform={tradeAwareUrlTransform}
         components={{
           p: ({ children }) => (
             <p className="leading-relaxed">{walkChildren(children)}</p>
@@ -616,25 +794,12 @@ function MarkdownText({ text }: { text: string }) {
           a: ({ href, children }) => {
             // `trade://<id>` links are emitted by Gemini for every
             // trade it mentions (see SYSTEM_PROMPT). They aren't real
-            // URLs - render as a button that opens ViewTradeModal via
-            // the context callback. Falls back to a regular external
-            // link if the context isn't wired or the scheme differs.
-            // eslint-disable-next-line react-hooks/rules-of-hooks
-            const onOpenTrade = useContext(TradeOpenContext);
-            if (href && href.startsWith("trade://") && onOpenTrade) {
+            // URLs — replace them with a full TradeCard rendered from
+            // the user's cached trade data. The link's inner text
+            // (always the literal "trade-card") is discarded.
+            if (href && href.startsWith("trade://")) {
               const id = href.slice("trade://".length).trim();
-              return (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (id) onOpenTrade(id);
-                  }}
-                  className="cursor-pointer text-teal-300 underline decoration-teal-300/40 hover:decoration-teal-300 underline-offset-2 transition"
-                >
-                  {walkChildren(children)}
-                </button>
-              );
+              if (id) return <TradeCard id={id} />;
             }
             return (
               <a

@@ -818,47 +818,53 @@ Your job:
   from this data.
 
 PRESENTING TRADES
-The "[id:…]" tag at the start of each snapshot row is an INTERNAL handle.
-You use it in TWO places only:
-  (1) as the "id" argument to the edit_trade tool, and
-  (2) inside the href of "trade://<id>" Markdown links so the chat UI can
-      make the trade tappable - the user clicks the ticker and gets the
-      full trade modal.
-NEVER print the raw id as plain text in your reply. It must only ever
-appear inside a link's href.
+When you reference one or more specific trades, render each one as a
+trade card by emitting a Markdown link of the form:
 
-When you list one or more trades, format each one as a clean, scannable
-block instead of dumping the raw snapshot line. The chat renders Markdown
-(bold, italics, lists) and automatically colors CALL green, PUT red, and
-+$/-$ amounts green/red - so lean on those.
+  [trade-card](trade://<id>)
 
-Wrap the ticker in a Markdown link whose href is "trade://<id>", using
-the id from the [id:…] tag for that exact trade. Use this shape per trade:
+on its own line. The chat UI replaces this link with a styled card
+that shows the ticker, option (CALL/PUT), status, strike × qty,
+entry → exit dates, net P/L, and strategy — all pulled from the
+authoritative trade data. You do NOT need to write any of those
+details in prose; the card renders them. Just emit the card link,
+one per trade you're showing.
 
-- [**SYMBOL**](trade://<id>) OPTION · strike × qty contracts
-  <result emoji> <entry date> → <exit date> · **net P/L** · _strategy_
+The "[id:…]" tag in the snapshot is the source for <id>. The id must
+appear ONLY inside a trade:// link's href — NEVER as plain text. The
+visible link text MUST be the literal word "trade-card" (the UI
+ignores it, but Markdown requires non-empty link text).
 
-Concretely, a losing trade should render like:
+Format rules:
+- One card per trade. Each on its own line, with a blank line above
+  and below each card so they render as separate paragraphs.
+- Do NOT wrap the cards in a Markdown list (no leading "-" or "*").
+  The cards stand on their own.
+- Do NOT write the trade's ticker, option, status, P/L, strike,
+  dates, or strategy as prose next to the card — the card already
+  shows all of that.
+- A short intro sentence BEFORE the cards and a short takeaway sentence
+  or two AFTER the cards is welcome when the user asked an analytical
+  question. Keep prose minimal between cards.
+- When you mention a ticker INLINE in flowing prose (not as a card),
+  just write the symbol as plain text. Do not use a trade:// link
+  for inline references — those would render as a card mid-sentence.
 
-- [**NVDA**](trade://507f1f77bcf86cd799439011) PUT · 197.5 × 1
-  🔴 2026-06-08 · -$36.09 · _First Red Opening Candle_
+Example:
 
-Guidelines for these blocks:
-- Lead with the ticker in bold INSIDE the trade:// link so it stays the
-  visual anchor AND becomes tappable. The id goes ONLY inside the href.
-- Use 🟢 for wins, 🔴 for losses, and ⚪️ for still-open trades.
-- Write money exactly as "+$36.09" / "-$36.09" (leading sign, no space)
-  so it gets colored. Round to 2 decimals.
-- Put the strategy in italics; omit the italic chunk entirely if there is
-  no strategy rather than writing "Other" or a dash.
-- For an open trade, show the entry date and the word "Open" in place of
-  the exit date / P/L.
-- Keep a blank line between the intro sentence and the list, and a short
-  takeaway after the list when the user asked an analytical question.
-- When you reference a trade inline (outside a block), still link the
-  ticker if you have its id: "your last [**NVDA**](trade://…) PUT lost…".
-- If you genuinely cannot find an id for a trade in the snapshot (rare),
-  fall back to plain **SYMBOL** without a link rather than fabricating one.
+Your last 3 NVDA losses:
+
+[trade-card](trade://507f1f77bcf86cd799439011)
+
+[trade-card](trade://507f1f77bcf86cd799439012)
+
+[trade-card](trade://507f1f77bcf86cd799439013)
+
+All three were on First Red Opening Candle — might be worth backing off
+that setup until you see two greens in a row.
+
+If you genuinely don't have an id for a trade you're describing (rare),
+mention it in plain text and explain that you can't link to it.
 
 STYLE & ANALYSIS
 - When the user asks for opinions, be direct and specific. Reference actual
