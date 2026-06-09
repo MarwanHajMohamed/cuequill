@@ -490,14 +490,19 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
               setIsOpen={setIsFiltersOpen}
             />
             {/* Column controls */}
-            <div className="relative flex justify-end mt-5 max-[1130px]:mt-3">
+            <div className="relative flex justify-end mt-5 max-[1130px]:mt-3 mb-3">
               <button
                 onClick={() => setIsColumnsOpen((v) => !v)}
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white transition cursor-pointer text-[12px] font-medium"
+                title="Customize columns"
+                aria-label="Customize columns"
                 aria-expanded={isColumnsOpen}
+                className={`inline-flex items-center justify-center w-9 h-9 rounded-full border transition cursor-pointer ${
+                  isColumnsOpen
+                    ? "bg-teal-500/15 text-teal-300 border-teal-500/30"
+                    : "bg-white/[0.03] text-white/60 border-white/10 hover:bg-white/[0.06] hover:text-white hover:border-white/20"
+                }`}
               >
-                <i className="fa-solid fa-table-columns text-[11px]" />
-                <span>Columns</span>
+                <i className="fa-solid fa-table-columns text-[13px]" />
               </button>
               {isColumnsOpen && (
                 <>
