@@ -1,9 +1,11 @@
 "use client";
 
 import { withAuth } from "@/lib/withAuth";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import React, {
+  createContext,
   useCallback,
+  useContext,
   useEffect,
   useMemo,
   useRef,
@@ -13,8 +15,16 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
+import { Trade } from "@/app/types/Trades";
+import ViewTradeModal from "@/app/dashboard/components/modals/ViewTradeModal";
 
 type Msg = { role: "user" | "model"; text: string; pending?: boolean };
+
+// Passed from the chat Page down into the Markdown <a> override so that
+// `trade://<id>` links can open the existing ViewTradeModal instead of
+// behaving like external URLs. Context (rather than prop drilling) keeps
+// the ReactMarkdown components block clean.
+const TradeOpenContext = createContext<((id: string) => void) | null>(null);
 
 const STORAGE_KEY = "cuequill:chat:v1";
 
@@ -73,6 +83,26 @@ function Page() {
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  // Trade being viewed via a `trade://` link in the Gemini reply.
+  const [viewingTrade, setViewingTrade] = useState<Trade | null>(null);
+
+  // Fetch a single trade by id and open the existing ViewTradeModal.
+  // Used by the Markdown <a> override below — see TradeOpenContext.
+  const openTrade = useCallback(async (id: string) => {
+    try {
+      const res = await fetch(`/api/trades/${encodeURIComponent(id)}`);
+      if (!res.ok) {
+        console.error(
+          `Failed to open trade ${id}: HTTP ${res.status}`,
+        );
+        return;
+      }
+      const data = (await res.json()) as Trade;
+      setViewingTrade(data);
+    } catch (err) {
+      console.error("Failed to open trade", err);
+    }
+  }, []);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -336,7 +366,11 @@ function Page() {
   );
 
   return (
-    /* The outer column is sized to EXACTLY the visible area (viewport
+    /* TradeOpenContext supplies `openTrade` to the Markdown <a>
+       override deep inside MarkdownText, so any `trade://<id>` link
+       Gemini renders becomes a click that opens ViewTradeModal. */
+    <TradeOpenContext.Provider value={openTrade}>
+    {/* The outer column is sized to EXACTLY the visible area (viewport
        minus the floating mobile nav, or full viewport on desktop)
        using `h-[…]` rather than `min-h-[…]`. That swap is load-
        bearing: with min-h the container could grow when messages
@@ -345,7 +379,7 @@ function Page() {
        With a fixed h, the flex chain inside (flex-1 + min-h-0 +
        overflow-y-auto on the message list) actually constrains, so
        scroll happens INSIDE the messages container and the chat area
-       stays cleanly bounded between the two navbars. */
+       stays cleanly bounded between the two navbars. */}
     <div className="w-full flex flex-col items-stretch h-[calc(100dvh-88px-env(safe-area-inset-bottom))] md:h-screen md:pb-3">
       <div
         aria-hidden
@@ -441,6 +475,19 @@ function Page() {
         </form>
       </div>
     </div>
+
+    {/* Mounted at the Provider level so it overlays the whole page,
+        independent of the chat scroll container. AnimatePresence drives
+        the modal's existing motion.div enter/exit animation. */}
+    <AnimatePresence>
+      {viewingTrade && (
+        <ViewTradeModal
+          initialTrade={viewingTrade}
+          onClose={() => setViewingTrade(null)}
+        />
+      )}
+    </AnimatePresence>
+    </TradeOpenContext.Provider>
   );
 }
 
@@ -566,16 +613,40 @@ function MarkdownText({ text }: { text: string }) {
               {walkChildren(children)}
             </h5>
           ),
-          a: ({ href, children }) => (
-            <a
-              href={href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-teal-300 underline decoration-teal-300/40 hover:decoration-teal-300"
-            >
-              {walkChildren(children)}
-            </a>
-          ),
+          a: ({ href, children }) => {
+            // `trade://<id>` links are emitted by Gemini for every
+            // trade it mentions (see SYSTEM_PROMPT). They aren't real
+            // URLs - render as a button that opens ViewTradeModal via
+            // the context callback. Falls back to a regular external
+            // link if the context isn't wired or the scheme differs.
+            // eslint-disable-next-line react-hooks/rules-of-hooks
+            const onOpenTrade = useContext(TradeOpenContext);
+            if (href && href.startsWith("trade://") && onOpenTrade) {
+              const id = href.slice("trade://".length).trim();
+              return (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (id) onOpenTrade(id);
+                  }}
+                  className="cursor-pointer text-teal-300 underline decoration-teal-300/40 hover:decoration-teal-300 underline-offset-2 transition"
+                >
+                  {walkChildren(children)}
+                </button>
+              );
+            }
+            return (
+              <a
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-teal-300 underline decoration-teal-300/40 hover:decoration-teal-300"
+              >
+                {walkChildren(children)}
+              </a>
+            );
+          },
           code: ({ className, children, ...rest }) => {
             const isBlock = (className ?? "").includes("language-");
             if (isBlock) {
