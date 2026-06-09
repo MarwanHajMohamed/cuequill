@@ -1,4 +1,7 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import mongoose from "mongoose";
 
 import connectDb from "@/lib/db";
 import Trade from "@/lib/models/Trade";
@@ -63,11 +66,16 @@ function parseExpiry(expiryStr: string) {
 }
 
 export async function POST(req: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   await connectDb();
 
   const formData = await req.formData();
   const file = formData.get("file") as File;
-  const userId = formData.get("userId") as string;
+  // Ignore any userId field on the form — always use the session id.
+  const userObjectId = new mongoose.Types.ObjectId(session.user.id);
 
   if (!file) {
     return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
@@ -118,7 +126,7 @@ export async function POST(req: Request) {
           const matchQty = Math.min(buyRow.remainingQty, remainingSell);
 
           const trade: TradeType = {
-            userID: userId,
+            userID: userObjectId.toString(),
             symbol: buyRow.Symbol.split(" ")[0],
             option: buyRow["Put/Call"] === "C" ? "CALL" : "PUT",
             strike: parseFloat(buyRow.Strike),
@@ -153,7 +161,7 @@ export async function POST(req: Request) {
 
     for (const buyRow of openQueue) {
       trades.push({
-        userID: userId,
+        userID: userObjectId.toString(),
         symbol: buyRow.Symbol,
         option: buyRow["Put/Call"] === "C" ? "CALL" : "PUT",
         strike: parseFloat(buyRow.Strike),

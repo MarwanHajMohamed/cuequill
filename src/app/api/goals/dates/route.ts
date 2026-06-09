@@ -1,21 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import mongoose from "mongoose";
 import connectDb from "@/lib/db";
 import Goal from "@/lib/models/Goal";
 
+// Returns the distinct months (or days, for the daily period) the
+// authenticated user has set goals in. Previously trusted the query
+// `userId` so a logged-in user could see another user's goal history.
 export async function GET(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   await connectDb();
 
   try {
     const { searchParams } = new URL(req.url);
-    const userId = searchParams.get("userId");
     const period = searchParams.get("period") ?? "monthly";
 
-    if (!userId) {
-      return NextResponse.json({ error: "Missing userId" }, { status: 400 });
-    }
-
-    const userObjectId = new mongoose.Types.ObjectId(userId);
+    const userObjectId = new mongoose.Types.ObjectId(session.user.id);
 
     if (period === "daily") {
       const results = await Goal.aggregate([
