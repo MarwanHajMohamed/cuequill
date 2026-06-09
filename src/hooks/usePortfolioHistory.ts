@@ -2,6 +2,7 @@ import { useTrades } from "./useTrades";
 import { useBalance } from "./useBalance";
 import { format } from "date-fns";
 import { BalanceEvent } from "@/app/types/Transactions";
+import { tradeNetPL } from "@/lib/helpers/tradeNet";
 
 export function usePortfolioHistory(userId: string) {
   const { data: transactions = [], loading: loadingTx } = useBalance(userId);
@@ -22,7 +23,9 @@ export function usePortfolioHistory(userId: string) {
     .map((t) => ({
       date: new Date(t.dateClosed ?? t.expiryDate),
       type: "TRADE",
-      amount: t.profitLoss!,
+      // Subtract commissions/fees so the running balance reflects real
+      // net equity, consistent with P/L shown elsewhere.
+      amount: tradeNetPL(t),
     }));
 
   const allEvents = [...txEvents, ...tradeEvents].sort(
