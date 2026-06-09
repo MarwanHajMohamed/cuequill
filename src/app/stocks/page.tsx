@@ -52,7 +52,7 @@ export default function Page() {
         }}
       />
 
-      {/* HERO — same language as the Trades page. */}
+      {/* HERO - same language as the Trades page. */}
       <div className="w-full max-w-[1500px] mt-30 px-5 md:px-10">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -98,7 +98,7 @@ export default function Page() {
           </div>
         </motion.div>
 
-        {/* Table card — fixed layout so columns share width evenly. */}
+        {/* Table card - fixed layout so columns share width evenly. */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}

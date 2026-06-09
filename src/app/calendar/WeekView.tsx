@@ -23,7 +23,7 @@ type TradeEvent = Trade | { date: string; status: "TODAY" };
 const now = new Date();
 const today = now.toISOString().split("T")[0];
 
-// Pill styling per status — tinted bg + matching border + text colour.
+// Pill styling per status - tinted bg + matching border + text colour.
 // Matches the rest of the app's pill language (e.g. market-status pill,
 // strategy direction chip).
 const pillStyle = (status: TradeEventType) => {
@@ -44,7 +44,7 @@ interface WeekViewProps {
   trades: Trade[] | undefined;
   onDateClick: (date: Date) => void;
   onEventClick: (event: Trade) => void;
-  /** Fires whenever the visible week changes — lets the parent show a
+  /** Fires whenever the visible week changes - lets the parent show a
    * week summary that follows along. */
   onWeekChange?: (weekStart: Date) => void;
 }

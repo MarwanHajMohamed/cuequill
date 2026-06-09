@@ -1,4 +1,4 @@
-/* Dashboard mini-calendar — visual language tuned to match the other
+/* Dashboard mini-calendar - visual language tuned to match the other
    dashboard cards (border #282828, rounded-lg, transparent fills with
    subtle hovers). */
 
@@ -82,7 +82,7 @@
   background-color: rgba(255, 255, 255, 0.05) !important;
 }
 
-/* "Today" — subtle ring instead of an opaque fill so the day number reads */
+/* "Today" - subtle ring instead of an opaque fill so the day number reads */
 .react-calendar__tile--now {
   background-color: rgba(59, 130, 246, 0.08);
   border-color: rgba(59, 130, 246, 0.35);
@@ -104,7 +104,7 @@
   display: none !important;
 }
 
-/* Per-day P/L background tints — slightly muted so the dashboard reads
+/* Per-day P/L background tints - slightly muted so the dashboard reads
    calm rather than alarmed. */
 .react-calendar .react-calendar__tile.day-win {
   background-color: rgba(34, 197, 94, 0.12);

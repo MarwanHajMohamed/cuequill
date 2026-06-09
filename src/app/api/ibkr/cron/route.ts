@@ -6,17 +6,17 @@ import { syncForUser } from "@/lib/ibkrSync";
 // IBKR's Flex Web Service generates a statement on-demand, then we poll
 // (up to ~50s) until it's ready. The default Vercel function timeout is
 // 10s on Hobby and 60s on Pro, so we explicitly raise it. 300s is the
-// Pro/Enterprise hard limit — set high to be safe.
+// Pro/Enterprise hard limit - set high to be safe.
 export const maxDuration = 300;
 // Force Node runtime (default for App Router, but explicit for cron).
 export const runtime = "nodejs";
-// Don't cache the cron response — every invocation must run fresh.
+// Don't cache the cron response - every invocation must run fresh.
 export const dynamic = "force-dynamic";
 
 function isAuthorized(req: Request): boolean {
   // Vercel cron requests are signed two ways:
-  //   1. Authorization: Bearer ${CRON_SECRET}   — when CRON_SECRET env is set
-  //   2. x-vercel-cron header                   — set automatically on cron
+  //   1. Authorization: Bearer ${CRON_SECRET}   - when CRON_SECRET env is set
+  //   2. x-vercel-cron header                   - set automatically on cron
   //      invocations and stripped from external traffic
   // Accept either so the job runs whether or not CRON_SECRET is configured.
   const auth = req.headers.get("authorization");

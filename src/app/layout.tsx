@@ -18,7 +18,7 @@ const dmMono = DM_Mono({
 export const metadata: Metadata = {
   title: "Cuequill",
   description:
-    "Discretionary US-options trading journal — strategies, calendar, and stats.",
+    "Discretionary US-options trading journal - strategies, calendar, and stats.",
   applicationName: "Cuequill",
   manifest: "/manifest.webmanifest",
   appleWebApp: {

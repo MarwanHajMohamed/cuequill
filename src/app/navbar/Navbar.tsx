@@ -70,7 +70,7 @@ export default function Navbar() {
   // refs rather than framer's layoutId. layoutId measures via
   // getBoundingClientRect across renders, which misreads the
   // "from" position when the document scroll resets to top during a
-  // route change inside a fixed parent — making the pill fly up from
+  // route change inside a fixed parent - making the pill fly up from
   // below the viewport. Direct measurement avoids that entirely.
   // The pill spans the whole desktop bar so it can slide between the
   // brand on the left and the nav items in the middle.
@@ -79,7 +79,7 @@ export default function Navbar() {
   const [pill, setPill] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
   const [pillReady, setPillReady] = useState(false);
 
-  // Bottom tab bar — its own pill so the sliding indicator can move
+  // Bottom tab bar - its own pill so the sliding indicator can move
   // between tabs independent of the desktop bar.
   const bottomBarRef = useRef<HTMLDivElement>(null);
   const bottomTabRefs = useRef<Record<string, HTMLElement | null>>({});
@@ -87,7 +87,7 @@ export default function Navbar() {
     null,
   );
   const [bottomPillReady, setBottomPillReady] = useState(false);
-  // Positions of every bottom tab — used to power the drag-snap
+  // Positions of every bottom tab - used to power the drag-snap
   // behaviour. Keyed by tab slug; "__more__" for the More button.
   const [tabPositions, setTabPositions] = useState<
     Record<string, { x: number; w: number }>
@@ -158,7 +158,7 @@ export default function Navbar() {
 
   /* ---------------- DATA ---------------- */
 
-  // Bottom navigation tabs on mobile — the four most-used routes.
+  // Bottom navigation tabs on mobile - the four most-used routes.
   // Everything else lives behind the "More" tab.
   const bottomTabs = [
     { icon: "fa-solid fa-house", label: "Home", slug: "/" },
@@ -174,6 +174,11 @@ export default function Navbar() {
   // Secondary destinations shown in the bottom-sheet "More" menu.
   const moreItems = [
     {
+      icon: "fa-solid fa-wand-magic-sparkles",
+      label: "AI assistant",
+      slug: "chat",
+    },
+    {
       icon: "fa-regular fa-circle-check",
       label: "Affirmations",
       slug: "affirmations",
@@ -185,6 +190,7 @@ export default function Navbar() {
   ];
 
   const guideItems = [
+    { label: "AI assistant", slug: "chat" },
     { label: "Strategies", slug: "strategies" },
     { label: "Stocks/ETFs", slug: "stocks" },
     { label: "Rules", slug: "rules" },
@@ -282,7 +288,7 @@ export default function Navbar() {
     const measure = () => {
       if (!bottomBarRef.current) return;
       const parent = bottomBarRef.current.getBoundingClientRect();
-      // Capture every tab's position — we need all of them to compute
+      // Capture every tab's position - we need all of them to compute
       // drag constraints and snap targets in onDragEnd.
       const next: Record<string, { x: number; w: number }> = {};
       Object.entries(bottomTabRefs.current).forEach(([key, el]) => {
@@ -305,7 +311,7 @@ export default function Navbar() {
     // a freshly-loaded page can show the pill at width 0 or not at
     // all until the user interacts.
     const raf = requestAnimationFrame(measure);
-    // Re-measure once webfonts / Font Awesome finish loading — they
+    // Re-measure once webfonts / Font Awesome finish loading - they
     // change tab widths and would otherwise leave the pill stranded.
     if (typeof document !== "undefined" && document.fonts?.ready) {
       document.fonts.ready.then(() => measure()).catch(() => {});
@@ -382,7 +388,7 @@ export default function Navbar() {
       navigate(target);
       return;
     }
-    // Same tab — snap pill back to its anchor.
+    // Same tab - snap pill back to its anchor.
     if (bottomPill) {
       motionAnimate(pillX, bottomPill.x, PILL_SPRING);
       motionAnimate(pillWidth, bottomPill.w, PILL_SPRING);
@@ -455,7 +461,7 @@ export default function Navbar() {
           }`}
         />
 
-        {/* MOBILE TOP — no chrome. Just the brand mark on the left and
+        {/* MOBILE TOP - no chrome. Just the brand mark on the left and
             the market-status pill on the right, floating over the page. */}
         <div className="md:hidden flex justify-between items-center w-full px-4 mt-3 pointer-events-none">
           <Link
@@ -494,7 +500,7 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Top navigation progress bar — appears the instant a tab is
+        {/* Top navigation progress bar - appears the instant a tab is
             tapped and stays until the next route renders, so the user
             gets immediate feedback even before the destination page
             paints. */}
@@ -523,7 +529,7 @@ export default function Navbar() {
           )}
         </AnimatePresence>
 
-        {/* MOBILE BOTTOM TAB BAR — floating glass pill with a sliding
+        {/* MOBILE BOTTOM TAB BAR - floating glass pill with a sliding
             active indicator. */}
         <nav
           className="md:hidden fixed bottom-0 inset-x-0 z-50 flex justify-center pointer-events-none"
@@ -533,7 +539,7 @@ export default function Navbar() {
             ref={bottomBarRef}
             className="pointer-events-auto relative flex items-stretch w-[calc(100%-24px)] max-w-[440px] mx-3 mb-3 px-1.5 py-1 bg-white/[0.06] backdrop-blur-xl border border-white/15 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.45)]"
           >
-            {/* Single sliding indicator pill — measured from each tab's
+            {/* Single sliding indicator pill - measured from each tab's
                 offsetLeft / width relative to the bar. Draggable: hold
                 and slide it across to another tab and it snaps + jumps
                 you there. */}
@@ -733,7 +739,7 @@ export default function Navbar() {
           ref={desktopBarRef}
           className="relative hidden md:flex justify-between items-center w-full max-w-[1500px] mt-6 mx-10 py-2 pl-3 pr-2 bg-white/[0.03] backdrop-blur-md rounded-full border border-white/10 shadow-[0_2px_24px_rgba(0,0,0,0.25)]"
         >
-          {/* Sliding active pill — single element spanning the whole
+          {/* Sliding active pill - single element spanning the whole
               desktop bar so it can move between brand, nav items, and
               Guide. */}
           {pill && activeKey && (
@@ -750,7 +756,7 @@ export default function Navbar() {
             />
           )}
 
-          {/* LEFT — brand */}
+          {/* LEFT - brand */}
           <Link
             ref={(el) => {
               itemRefs.current["__brand__"] = el;
@@ -762,7 +768,7 @@ export default function Navbar() {
               navigate("dashboard");
             }}
             className="relative cursor-pointer flex items-center gap-2 pl-2 pr-3 py-1 rounded-full hover:bg-white/5 transition"
-            aria-label="Cuequill — dashboard"
+            aria-label="Cuequill - dashboard"
           >
             <CuequillLogo className="relative h-7 w-auto" />
             <span className="relative text-[14px] font-semibold tracking-tight hidden lg:inline">
@@ -770,7 +776,7 @@ export default function Navbar() {
             </span>
           </Link>
 
-          {/* MIDDLE — pill nav with sliding active indicator */}
+          {/* MIDDLE - pill nav with sliding active indicator */}
           <div className="relative flex items-center gap-1 text-[13.5px] font-medium">
             {navItems.map((item) => {
               const active = isActive(item.slug);
@@ -856,7 +862,7 @@ export default function Navbar() {
             </div>
           </div>
 
-          {/* RIGHT — market status + user */}
+          {/* RIGHT - market status + user */}
           <div className="flex items-center gap-2">
             {/* Market status pill */}
             <div

@@ -28,14 +28,14 @@ type C = {
 };
 
 const CANDLES: C[] = [
-  // 9:30am — first green candle (sets the floor with its LOW = y=190)
+  // 9:30am - first green candle (sets the floor with its LOW = y=190)
   { x: xs(0), open: 180, close: 150, high: 145, low: 190, kind: "bullish" },
   // Morning chop ABOVE the floor
   { x: xs(1), open: 150, close: 165, high: 142, low: 170, kind: "bearish" },
   { x: xs(2), open: 165, close: 145, high: 140, low: 172, kind: "bullish" },
   { x: xs(3), open: 145, close: 162, high: 138, low: 168, kind: "bearish" },
   { x: xs(4), open: 162, close: 148, high: 144, low: 170, kind: "bullish" },
-  // 11:00am — breakdown begins
+  // 11:00am - breakdown begins
   { x: xs(5), open: 148, close: 178, high: 144, low: 184, kind: "bearish" },
   // Red breaks the floor → ENTRY
   { x: xs(6), open: 178, close: 208, high: 174, low: 214, kind: "bearish" },
@@ -46,8 +46,8 @@ const CANDLES: C[] = [
 export function GapFloorBreakSchematic() {
   const entry = CANDLES[6];
   return (
-    <StrategyChart title="Schematic — Gap Floor Break" width={420}>
-      {/* Floor line — horizontal at y=190 set by the first candle's low */}
+    <StrategyChart title="Schematic - Gap Floor Break" width={420}>
+      {/* Floor line - horizontal at y=190 set by the first candle's low */}
       <TrendLine
         x1={xs(0)}
         y1={190}

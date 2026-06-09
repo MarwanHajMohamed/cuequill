@@ -43,7 +43,7 @@ export default function DayTradesModal({
   const isToday =
     format(date, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
 
-  // Hero tint follows the day's outcome — green if profitable, red if
+  // Hero tint follows the day's outcome - green if profitable, red if
   // not, neutral if only open positions.
   const heroTint = !showNet
     ? "from-orange-500/15 via-transparent to-transparent"
@@ -111,7 +111,7 @@ export default function DayTradesModal({
             ) : (
               <div className="mt-3 text-[13px] text-white/55">
                 {opens > 0
-                  ? `${opens} open ${opens === 1 ? "position" : "positions"} — no closes yet`
+                  ? `${opens} open ${opens === 1 ? "position" : "positions"} - no closes yet`
                   : "No closed trades"}
               </div>
             )}
@@ -200,7 +200,7 @@ export default function DayTradesModal({
                           {pl >= 0 ? "+" : "−"}${Math.abs(pl).toFixed(2)}
                         </div>
                       ) : (
-                        <div className="text-white/35 text-[13px]">—</div>
+                        <div className="text-white/35 text-[13px]">-</div>
                       )}
                       <i className="fa-solid fa-chevron-right text-[10px] text-white/30 group-hover:text-white/70 group-hover:translate-x-0.5 transition" />
                     </div>

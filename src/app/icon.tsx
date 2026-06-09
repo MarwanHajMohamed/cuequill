@@ -3,7 +3,7 @@ import { ImageResponse } from "next/og";
 // 192×192 PWA icon. Next.js auto-routes this file to `/icon` and embeds
 // the appropriate <link rel="icon"> tags into every page.
 //
-// Logo sized at ~60% so the icon also reads well as a maskable variant —
+// Logo sized at ~60% so the icon also reads well as a maskable variant -
 // Android's mask crops up to 20% off every edge.
 
 export const size = { width: 192, height: 192 };

@@ -81,7 +81,7 @@ export default function IBKRTab() {
     setSyncing(false);
     if (res.ok) {
       setSyncStatus(
-        `Done — ${data.inserted} trade${data.inserted !== 1 ? "s" : ""} imported`,
+        `Done - ${data.inserted} trade${data.inserted !== 1 ? "s" : ""} imported`,
       );
       setLastSync(new Date().toISOString());
       setLastInserted(data.inserted);

@@ -96,7 +96,7 @@ function Page() {
   // meaningful for the day grid.
   const [calView, setCalView] = useState<string>("month");
 
-  // Shared ref — either AnimatedCalendar or WeekView is mounted at a time
+  // Shared ref - either AnimatedCalendar or WeekView is mounted at a time
   // and both expose a goToToday() via useImperativeHandle.
   const calRef = useRef<{ goToToday: () => void } | null>(null);
   const goToToday = () => calRef.current?.goToToday();
@@ -220,7 +220,7 @@ function Page() {
     return trades.filter((t) => bucketDateFor(t) === dayStr);
   }, [selectedDate, trades]);
 
-  // Per-week summaries for the displayed month — used by the sidebar.
+  // Per-week summaries for the displayed month - used by the sidebar.
   // Buckets trades by the date string (yyyy-MM-dd) prefix of dateBought, the
   // same way the calendar tiles do, so totals match what each day shows.
   const weekSummaries = useMemo(() => {
@@ -342,7 +342,7 @@ function Page() {
   };
 
   const renderTileContent = ({ date, view }: { date: Date; view: string }) => {
-    // Year drill-up view: each tile is a month — show monthly P/L + count.
+    // Year drill-up view: each tile is a month - show monthly P/L + count.
     if (view === "year") {
       const { total, closedCount, netPL } = getMonthSummary(date);
       if (total === 0) return null;
@@ -533,7 +533,7 @@ function Page() {
 
   return (
     <>
-      {/* Aurora — matches the dashboard / trades / settings hue. */}
+      {/* Aurora - matches the dashboard / trades / settings hue. */}
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0 -z-10"
@@ -554,7 +554,7 @@ function Page() {
               the calendar pill sits directly beneath the nav pill at
               the same width. mt-22 places it ~12px under the nav. */}
           <div className="md:max-w-[1500px] md:w-[calc(100vw-80px)] w-full md:h-auto h-full flex flex-col mx-auto">
-            {/* Unified control row — month P/L on the left, Today +
+            {/* Unified control row - month P/L on the left, Today +
                 Month/Week toggle on the right. */}
             <div className="flex items-center justify-between gap-2 px-3 md:px-0 mb-3 md:mb-4">
               {(() => {
@@ -587,7 +587,7 @@ function Page() {
                       }`}
                     >
                       {summary.closedCount === 0
-                        ? "—"
+                        ? "-"
                         : `${positive ? "+" : "−"}$${Math.abs(summary.netPL).toFixed(2)}`}
                     </div>
                   </div>
@@ -655,7 +655,7 @@ function Page() {
                     onViewChange={setCalView}
                   />
                 </div>
-                {/* Sidebar — empty spacer at top sized to the calendar's
+                {/* Sidebar - empty spacer at top sized to the calendar's
                     nav+weekday height so each week card lines up with
                     its day-grid row. Hidden in drill-up views. */}
                 <div

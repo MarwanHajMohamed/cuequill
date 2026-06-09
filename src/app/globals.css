@@ -86,7 +86,7 @@ body {
   animation: slide-in 0.3s ease-out;
 }
 
-/* Landing aurora — three drifting blurred orbs.
+/* Landing aurora - three drifting blurred orbs.
    Translations are large (200-280px) because the heavy blur on each orb
    "absorbs" small motions and makes them appear stationary. */
 @keyframes aurora-drift-1 {

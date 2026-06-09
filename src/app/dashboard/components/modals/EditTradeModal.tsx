@@ -148,7 +148,7 @@ export default function EditTradeModal({
               {isEditing ? "Edit trade" : "New trade"}
             </div>
             <div className="text-xl md:text-2xl font-bold tracking-tight">
-              {symbol || "—"}
+              {symbol || "-"}
             </div>
 
             {/* Direction toggle */}
@@ -302,7 +302,7 @@ export default function EditTradeModal({
               </Field>
             </div>
 
-            {/* Closing block — only when WIN/LOSS */}
+            {/* Closing block - only when WIN/LOSS */}
             {isClosed && (
               <div className="flex flex-col gap-3 p-3 md:p-4 border border-white/10 rounded-lg bg-white/3">
                 <div className="text-[10px] uppercase tracking-wider text-white/40">

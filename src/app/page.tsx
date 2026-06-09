@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import PageLoading from "./PageLoading";
 
-// Brand mark — same SVG as the navbar logo, inlined so the landing has no
+// Brand mark - same SVG as the navbar logo, inlined so the landing has no
 // extra component dependencies.
 const CuequillLogo = ({ className = "" }: { className?: string }) => (
   <svg
@@ -138,7 +138,7 @@ const HeroPreview = () => (
   </div>
 );
 
-// FAQ accordion — animated open/close via Framer Motion (height + opacity).
+// FAQ accordion - animated open/close via Framer Motion (height + opacity).
 const FAQItem = ({ q, a }: { q: string; a: string }) => {
   const [open, setOpen] = useState(false);
   return (
@@ -195,7 +195,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Top bar — same pill style as the signed-in navbar */}
+      {/* Top bar - same pill style as the signed-in navbar */}
       <div className="fixed top-0 left-0 right-0 z-50 flex justify-center pointer-events-none">
         <div className="pointer-events-auto flex justify-between items-center w-full max-w-[1500px] mt-6 mx-6 md:mx-10 p-4 px-5 bg-white/3 backdrop-blur-xs rounded-full border border-white/10">
           <CuequillLogo className="pl-2 h-7 w-auto" />
@@ -211,7 +211,7 @@ export default function Home() {
       {/* Hero + Why Cuequill share one aurora background */}
       <main className="flex-1">
         <div className="relative overflow-hidden">
-          {/* Moving aurora background — covers hero and Why Cuequill */}
+          {/* Moving aurora background - covers hero and Why Cuequill */}
           <div
             aria-hidden="true"
             className="absolute inset-0 overflow-hidden pointer-events-none -z-10"
@@ -232,7 +232,7 @@ export default function Home() {
               </h1>
               <p className="text-base md:text-lg text-white/60 mb-8 max-w-xl mx-auto leading-relaxed">
                 Log every trade. Replay the chart around each setup. Track
-                what&apos;s working and what isn&apos;t — without spreadsheets or
+                what&apos;s working and what isn&apos;t - without spreadsheets or
                 guesswork.
               </p>
               <div className="flex items-center justify-center gap-3 flex-wrap">
@@ -253,7 +253,7 @@ export default function Home() {
             </div>
           </section>
 
-          {/* Why Cuequill — value-prop deep dive */}
+          {/* Why Cuequill - value-prop deep dive */}
           <section className="relative px-6 py-16 md:py-24">
             <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-10 md:gap-16 items-start">
               <div>
@@ -262,20 +262,20 @@ export default function Home() {
                 </div>
                 <h2 className="text-2xl md:text-3xl font-semibold mb-4 leading-tight">
                   Most journals stop at logging. Cuequill is built for the part
-                  that actually makes you better — review.
+                  that actually makes you better - review.
                 </h2>
               </div>
               <div className="text-sm md:text-base text-white/65 leading-relaxed space-y-4">
                 <p>
                   Pull up any logged trade and you&apos;re looking at the chart
-                  around your entry and exit — with bar replay, so you can watch
+                  around your entry and exit - with bar replay, so you can watch
                   the setup unfold the way it really did, not the way you
                   remember it.
                 </p>
                 <p>
                   The stats page tells you what&apos;s actually happening, not what
                   you wish was happening. Profit factor, expectancy, average
-                  R:R, longest streak — all updated automatically from the
+                  R:R, longest streak - all updated automatically from the
                   trades you log.
                 </p>
               </div>
@@ -311,7 +311,7 @@ export default function Home() {
               <Feature
                 icon="fa-square-poll-vertical"
                 title="Stats that matter"
-                body="Net P&L, profit factor, win rate, average R:R, longest streak — the metrics that tell you whether your edge is real."
+                body="Net P&L, profit factor, win rate, average R:R, longest streak - the metrics that tell you whether your edge is real."
               />
               <Feature
                 icon="fa-tags"
@@ -372,7 +372,7 @@ export default function Home() {
               />
               <FAQItem
                 q="What broker data does it support?"
-                a="Interactive Brokers is supported natively via Flex Queries — trades sync automatically. You can also log any trade manually if you trade through a different broker."
+                a="Interactive Brokers is supported natively via Flex Queries - trades sync automatically. You can also log any trade manually if you trade through a different broker."
               />
               <FAQItem
                 q="Where does the chart data come from?"

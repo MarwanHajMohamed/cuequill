@@ -125,7 +125,7 @@ export function DateRangeControl({
   const [showCustom, setShowCustom] = useState(false);
   // Track which preset the user most recently clicked. Used to break
   // ties when two presets compute the same range (e.g. WTD and MTD on
-  // the first week of a month that started on a Monday) — without this,
+  // the first week of a month that started on a Monday) - without this,
   // the iteration order always wins and clicking MTD looks like WTD.
   const [lastClicked, setLastClicked] = useState<string | null>(null);
 

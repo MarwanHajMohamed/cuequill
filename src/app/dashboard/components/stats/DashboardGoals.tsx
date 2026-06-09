@@ -30,7 +30,7 @@ export default function DashboardGoals({ userId }: { userId: string }) {
   const completionPct = total > 0 ? (completed / total) * 100 : 0;
   const allDone = total > 0 && completed === total;
 
-  // Toggle a goal's complete state — same endpoint as the Goals page.
+  // Toggle a goal's complete state - same endpoint as the Goals page.
   const toggle = async (g: Goal) => {
     const optimistic = goals.map((x) =>
       x._id === g._id ? { ...x, complete: !g.complete } : x,

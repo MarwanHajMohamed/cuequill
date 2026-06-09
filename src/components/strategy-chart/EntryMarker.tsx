@@ -5,7 +5,7 @@ import { useStrategyPlayback } from "./StrategyChart";
 type Props = {
   /** Center x of the entry candle. */
   x: number;
-  /** y of the candle's body — arrow will be placed just below for CALL, above for PUT. */
+  /** y of the candle's body - arrow will be placed just below for CALL, above for PUT. */
   y: number;
   side: "CALL" | "PUT";
   label?: string;

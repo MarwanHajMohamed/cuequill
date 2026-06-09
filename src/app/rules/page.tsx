@@ -13,7 +13,7 @@ const timeframes: Rule[] = [
   },
   {
     title: "Skip the first 30 minutes",
-    body: "Never trade between 9:30 and 10:00 — opening candles are too volatile.",
+    body: "Never trade between 9:30 and 10:00 - opening candles are too volatile.",
   },
   {
     title: "Premarket signals sells, not buys",
@@ -21,7 +21,7 @@ const timeframes: Rule[] = [
   },
   {
     title: "PUTs at the open",
-    body: "Sell PUTs at 9:30 — price typically opens low and rallies.",
+    body: "Sell PUTs at 9:30 - price typically opens low and rallies.",
   },
   {
     title: "Last call",
@@ -52,7 +52,7 @@ const rules: Rule[] = [
   { title: "Do not exit on a loss", body: "Let the plan run, not your emotions." },
   {
     title: "No Fed days",
-    body: "Sit out FOMC and meeting dates — direction is unpredictable.",
+    body: "Sit out FOMC and meeting dates - direction is unpredictable.",
   },
 ];
 

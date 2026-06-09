@@ -192,7 +192,7 @@ const InfoTooltip = ({ text }: { text: string }) => {
   }, [open]);
 
   // Position with `position: fixed` against the viewport so the tooltip
-  // can never push the page width — even when the anchor icon is at the
+  // can never push the page width - even when the anchor icon is at the
   // right edge of the screen. Clamps left to keep at least 8px between
   // the tooltip and each viewport edge.
   useLayoutEffect(() => {
@@ -618,7 +618,7 @@ export default function Statistics({
     visibility.avgRR ||
     visibility.winStreak;
 
-  // Performance by tag — for every tag that's been used at least once across
+  // Performance by tag - for every tag that's been used at least once across
   // closed trades, compute trade count, total P/L, average P/L, and win rate.
   type TagStat = {
     label: string;
@@ -712,13 +712,13 @@ export default function Statistics({
   const totalSummary = summarize(data);
 
   // Per-category breakdowns. These operate on the FILTERED dataset so the
-  // breakdown views narrow with the page's Filters component — by Symbol,
+  // breakdown views narrow with the page's Filters component - by Symbol,
   // by Strategy, by CALL/PUT, streaks, and best/worst day all reflect the
   // currently-selected slice.
   const breakdown = (key: "strategy" | "symbol" | "option") => {
     const map = new Map<string, Trade[]>();
     for (const t of filteredData.filter((x) => x.status !== "OPEN")) {
-      const k = String(t[key] ?? "—");
+      const k = String(t[key] ?? "-");
       if (!map.has(k)) map.set(k, []);
       map.get(k)!.push(t);
     }
@@ -730,7 +730,7 @@ export default function Statistics({
   const bySymbol = breakdown("symbol");
   const byOption = breakdown("option");
 
-  // Streaks + drawdown — also follow the filter, so e.g. enabling a
+  // Streaks + drawdown - also follow the filter, so e.g. enabling a
   // "Strategy: MA40" filter shows the longest win streak within MA40 only.
   const closedByExit = [...filteredData]
     .filter((t) => t.status !== "OPEN")
@@ -779,7 +779,7 @@ export default function Statistics({
     if (cum - peak < maxDD) maxDD = cum - peak;
   }
 
-  // Best / worst trading day (by net P/L) — same filtered dataset
+  // Best / worst trading day (by net P/L) - same filtered dataset
   const dayMap = new Map<string, number>();
   for (const t of filteredData.filter((x) => x.status !== "OPEN")) {
     const d = t.dateClosed
@@ -859,7 +859,7 @@ export default function Statistics({
     monthIndex: new Date().getMonth(),
     year: new Date().getFullYear(),
   });
-  // +1 when stepping forward in time, -1 when stepping back — drives
+  // +1 when stepping forward in time, -1 when stepping back - drives
   // the slide direction of the month-detail panel.
   const [monthDir, setMonthDir] = useState<1 | -1>(1);
 
@@ -926,7 +926,7 @@ export default function Statistics({
   const { year } = date;
 
   // Statistics-per-month browses by month independently of the page's
-  // date-range filter — otherwise picking MTD/WTD would empty out every
+  // date-range filter - otherwise picking MTD/WTD would empty out every
   // other month. Other filters (status, strategy, symbol, option,
   // favourite) still apply so the breakdown stays meaningful.
   const dataIgnoringDateRange = useMemo(() => {
@@ -1005,7 +1005,7 @@ export default function Statistics({
         <CustomizeMenu visibility={visibility} setVisibility={setVisibility} />
       </div>
 
-      {/* Summary tiles — at-a-glance, all-time */}
+      {/* Summary tiles - at-a-glance, all-time */}
       {anyTileVisible && (
         <div className="flex flex-wrap justify-center gap-2 md:gap-3 w-full mb-10">
           {visibility.netPL && (
@@ -1039,7 +1039,7 @@ export default function Statistics({
                   ? "∞"
                   : profitFactor > 0
                     ? profitFactor.toFixed(2)
-                    : "—"}
+                    : "-"}
               </div>
               <div className="hidden md:block">
                 <MiniDonut greenPct={pfDonutPct} />
@@ -1054,7 +1054,7 @@ export default function Statistics({
               className="basis-[100px] md:basis-[200px] grow max-w-[280px]"
             >
               <div className="text-sm md:text-2xl truncate">
-                {concludedCount > 0 ? `${winRatePct.toFixed(0)}%` : "—"}
+                {concludedCount > 0 ? `${winRatePct.toFixed(0)}%` : "-"}
               </div>
               <div className="hidden md:block">
                 <MiniDonut greenPct={winRatePct} />
@@ -1081,7 +1081,7 @@ export default function Statistics({
                   ? "∞"
                   : avgRR > 0
                     ? `${avgRR.toFixed(2)}R`
-                    : "—"}
+                    : "-"}
               </div>
             </SummaryTile>
           )}
@@ -1097,7 +1097,7 @@ export default function Statistics({
                   longestWinStreak > 0 ? "text-green-500" : ""
                 }`}
               >
-                {longestWinStreak > 0 ? longestWinStreak : "—"}
+                {longestWinStreak > 0 ? longestWinStreak : "-"}
               </div>
             </SummaryTile>
           )}
@@ -1254,7 +1254,7 @@ export default function Statistics({
               delta={filteredSummary.avgLoss - totalSummary.avgLoss}
               deltaUnit="$"
               higherIsBetter={false}
-              info="Average net loss on the losing trades inside this filter. Smaller is better — a downward arrow is good here."
+              info="Average net loss on the losing trades inside this filter. Smaller is better - a downward arrow is good here."
             />
             <CompareCard
               label="Profit Factor"
@@ -1291,7 +1291,7 @@ export default function Statistics({
             <h3 className="md:text-xl text-sm font-bold">
               Performance Breakdown
             </h3>
-            <InfoTooltip text="A bird's-eye view of where your edge is across your entire trading history — split by direction, strategy, symbol, streaks, and best/worst day." />
+            <InfoTooltip text="A bird's-eye view of where your edge is across your entire trading history - split by direction, strategy, symbol, streaks, and best/worst day." />
           </div>
 
           {/* CALL vs PUT */}
@@ -1368,7 +1368,7 @@ export default function Statistics({
               label="Current streak"
               value={
                 curStreakKind === null
-                  ? "—"
+                  ? "-"
                   : `${curStreakKind === "WIN" ? "W" : "L"} × ${curStreakLen}`
               }
               tone={
@@ -1378,23 +1378,23 @@ export default function Statistics({
                   ? "bad"
                   : "neutral"
               }
-              info="Your active streak — how many consecutive winners or losers your most recent trades are. A long loss streak can be a tilt warning."
+              info="Your active streak - how many consecutive winners or losers your most recent trades are. A long loss streak can be a tilt warning."
             />
             <MiniStat
               label="Longest win streak"
               value={
                 longestWinStreakFiltered > 0
                   ? `${longestWinStreakFiltered}`
-                  : "—"
+                  : "-"
               }
               tone="good"
               info="Most consecutive winning trades inside the current filter. Open trades are ignored."
             />
             <MiniStat
               label="Longest loss streak"
-              value={longestLossStreak > 0 ? `${longestLossStreak}` : "—"}
+              value={longestLossStreak > 0 ? `${longestLossStreak}` : "-"}
               tone="bad"
-              info="Most consecutive losing trades. Useful for sizing — your risk per trade should survive a streak this long."
+              info="Most consecutive losing trades. Useful for sizing - your risk per trade should survive a streak this long."
             />
             <MiniStat
               label="Max drawdown"
@@ -1411,7 +1411,7 @@ export default function Statistics({
               value={
                 bestDayStr
                   ? `${formatShortDate(bestDayStr)} · +$${bestDayPL.toFixed(2)}`
-                  : "—"
+                  : "-"
               }
               tone="good"
               info="Single calendar day with the highest net P/L across all your trades closed that day."
@@ -1421,7 +1421,7 @@ export default function Statistics({
               value={
                 worstDayStr
                   ? `${formatShortDate(worstDayStr)} · −$${Math.abs(worstDayPL).toFixed(2)}`
-                  : "—"
+                  : "-"
               }
               tone="bad"
               info="Single calendar day with the largest net loss. Compare to your daily max-loss rule."
@@ -1535,7 +1535,7 @@ export default function Statistics({
               </div>
             ) : (
               <>
-                {/* Headline tiles — same flex-wrap pattern as the top
+                {/* Headline tiles - same flex-wrap pattern as the top
                     summary tiles, so a lone orphan stretches full-width. */}
                 <div className="flex flex-wrap gap-2 md:gap-3">
                   <SummaryTile
@@ -1604,7 +1604,7 @@ export default function Statistics({
                       value={
                         monthBiggestWin > 0
                           ? `+$${monthBiggestWin.toFixed(2)}`
-                          : "—"
+                          : "-"
                       }
                       tone="good"
                       info="Largest single winning trade closed this month."
@@ -1616,7 +1616,7 @@ export default function Statistics({
                       value={
                         monthBiggestLoss < 0
                           ? `−$${Math.abs(monthBiggestLoss).toFixed(2)}`
-                          : "—"
+                          : "-"
                       }
                       tone="bad"
                       info="Largest single losing trade closed this month."
@@ -1628,10 +1628,10 @@ export default function Statistics({
                       value={
                         monthBestDay > 0
                           ? `+$${monthBestDay.toFixed(2)}`
-                          : "—"
+                          : "-"
                       }
                       tone="good"
-                      info="Best single calendar day this month — sum of all trades closed that day."
+                      info="Best single calendar day this month - sum of all trades closed that day."
                     />
                   </div>
                   <div className="basis-[100px] md:basis-[200px] grow md:max-w-[280px]">
@@ -1640,7 +1640,7 @@ export default function Statistics({
                       value={
                         monthWorstDay < 0
                           ? `−$${Math.abs(monthWorstDay).toFixed(2)}`
-                          : "—"
+                          : "-"
                       }
                       tone="bad"
                       info="Worst single calendar day this month."
@@ -1652,7 +1652,7 @@ export default function Statistics({
                       value={
                         tradedDays > 0
                           ? `${tradedDays} (${greenDays} green)`
-                          : "—"
+                          : "-"
                       }
                       tone={
                         greenDays > tradedDays - greenDays ? "good" : "bad"

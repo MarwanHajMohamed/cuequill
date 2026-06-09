@@ -134,7 +134,7 @@ function Page() {
         }}
       />
 
-      {/* HERO — same language as the Trades page. */}
+      {/* HERO - same language as the Trades page. */}
       <div className="w-full max-w-[1500px] mt-30 px-5 md:px-10">
         <motion.div
           initial={{ opacity: 0, y: 12 }}

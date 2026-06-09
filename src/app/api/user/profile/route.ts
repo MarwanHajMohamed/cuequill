@@ -8,7 +8,7 @@ import bcrypt from "bcryptjs";
 // PATCH /api/user/profile
 // Updates the signed-in user's identity (firstname / surname / email)
 // and optionally their password. A password change requires the
-// current password for verification — same standard as the sign-in
+// current password for verification - same standard as the sign-in
 // flow, just reused.
 export async function PATCH(req: Request) {
   const session = await getServerSession(authOptions);

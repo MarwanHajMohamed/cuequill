@@ -227,7 +227,7 @@ export async function syncForUser(userId: string): Promise<{ inserted: number; s
   //
   // We use a counter map (multiset) so that if a user legitimately has
   // multiple trades on the same contract on the same day, only that many
-  // imports are skipped — the rest are still inserted.
+  // imports are skipped - the rest are still inserted.
   const dayPart = (d: Date | null | undefined) =>
     d ? new Date(d).toISOString().split("T")[0] : "";
   const naturalKey = (t: {

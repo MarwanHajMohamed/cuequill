@@ -55,7 +55,7 @@ export const handleDeleteGoal = async (
   id: string,
   setGoals: React.Dispatch<React.SetStateAction<Goal[]>>
 ) => {
-  // Optimistic delete — remove from the list right away and capture the
+  // Optimistic delete - remove from the list right away and capture the
   // removed item so we can restore it if the server call fails.
   let removed: Goal | undefined;
   setGoals((prev) => {
@@ -80,7 +80,7 @@ export const handleToggleComplete = async (
   newValue: boolean,
   setGoals: React.Dispatch<React.SetStateAction<Goal[]>>
 ) => {
-  // Optimistic flip — update the UI immediately, then send the patch in
+  // Optimistic flip - update the UI immediately, then send the patch in
   // the background. Roll back the local change if the server rejects it.
   setGoals((prev) =>
     prev.map((g) => (g._id === id ? { ...g, complete: newValue } : g))

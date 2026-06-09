@@ -9,7 +9,7 @@ import {
 } from "@/components/strategy-chart";
 
 /**
- * Hard Floor (CALL) — two-panel.
+ * Hard Floor (CALL) - two-panel.
  *
  *   Daily: price falls to and touches the 100MA / 200MA "hard floor".
  *   Hourly: a descending ceiling line is drawn on the fall. Post-11am a
@@ -28,7 +28,7 @@ type C = {
   kind: "bullish" | "bearish";
 };
 
-// ── Daily panel — falling reds touching the 100MA/200MA zone ──
+// ── Daily panel - falling reds touching the 100MA/200MA zone ──
 const DAILY: C[] = [
   { x: xs(0), open: 90, close: 105, high: 88, low: 110, kind: "bearish" },
   { x: xs(1), open: 105, close: 125, high: 100, low: 130, kind: "bearish" },
@@ -55,14 +55,14 @@ const MA200: Array<[number, number]> = [
   [xs(8) + 30, 232],
 ];
 
-// ── Hourly panel — descending ceiling, post-11am break ──
+// ── Hourly panel - descending ceiling, post-11am break ──
 const HOURLY: C[] = [
   { x: xs(0), open: 110, close: 130, high: 105, low: 135, kind: "bearish" },
   { x: xs(1), open: 130, close: 150, high: 125, low: 155, kind: "bearish" },
   { x: xs(2), open: 150, close: 170, high: 145, low: 175, kind: "bearish" },
   { x: xs(3), open: 170, close: 188, high: 165, low: 192, kind: "bearish" },
   { x: xs(4), open: 188, close: 200, high: 184, low: 205, kind: "bearish" },
-  // 11am — bullish reversal starts
+  // 11am - bullish reversal starts
   { x: xs(5), open: 200, close: 178, high: 172, low: 204, kind: "bullish" },
   // Break above the ceiling → ENTRY
   { x: xs(6), open: 178, close: 145, high: 140, low: 182, kind: "bullish" },
@@ -75,7 +75,7 @@ export function HardFloorSchematic() {
   const hourlyEntry = HOURLY[6];
   return (
     <div className="flex flex-col gap-3">
-      <StrategyChart title="Daily — touches 100MA / 200MA" width={450}>
+      <StrategyChart title="Daily - touches 100MA / 200MA" width={450}>
         <Zone y1={220} y2={245} kind="support" label="Hard floor" />
         <MALine period={200} points={MA200} />
         <MALine period={100} points={MA100} />
@@ -84,7 +84,7 @@ export function HardFloorSchematic() {
         ))}
         <EntryMarker x={dailyEntry.x} y={dailyEntry.close} side="CALL" />
       </StrategyChart>
-      <StrategyChart title="Hourly — break of falling ceiling after 11am" width={450}>
+      <StrategyChart title="Hourly - break of falling ceiling after 11am" width={450}>
         {/* Descending ceiling line drawn on the highs of the reds */}
         <TrendLine
           x1={xs(0)}

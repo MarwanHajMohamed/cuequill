@@ -68,7 +68,7 @@ function Page({ params }: { params: Promise<{ slug: string }> }) {
 
   return (
     <div className="w-full flex flex-col items-center min-h-screen pb-20">
-      {/* Aurora — color matches direction. */}
+      {/* Aurora - color matches direction. */}
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0 -z-10"
@@ -80,7 +80,7 @@ function Page({ params }: { params: Promise<{ slug: string }> }) {
       />
 
       <div className="w-full max-w-[1500px] mt-25 md:mt-30 px-5 md:px-10">
-        {/* HERO — left-aligned, same hero language as the Trades page. */}
+        {/* HERO - left-aligned, same hero language as the Trades page. */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}

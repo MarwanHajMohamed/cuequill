@@ -32,7 +32,7 @@ export function useFedDates() {
         try {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(apiDates));
         } catch {
-          /* quota / availability — non-fatal */
+          /* quota / availability - non-fatal */
         }
       } catch (err) {
         console.error(

@@ -1,7 +1,7 @@
 // app/api/fed/route.ts
 //
 // Scrapes the Federal Reserve's FOMC calendar page directly so we get every
-// meeting (past + future) for every year shown — including ones that already
+// meeting (past + future) for every year shown - including ones that already
 // happened. The CME /fedwatch endpoint only returned future meetings, so days
 // dropped off the calendar the moment they passed.
 //
@@ -28,7 +28,7 @@ const MONTH_TO_NUM: Record<string, number> = {
   december: 12,
 };
 
-// Cache the Fed page for 24h — meeting schedules don't change frequently.
+// Cache the Fed page for 24h - meeting schedules don't change frequently.
 export const revalidate = 86400;
 
 type FedEventType = "meeting" | "minutes";
@@ -105,7 +105,7 @@ function parseFomcEvents(html: string): FedEvent[] {
       // Meeting date (decision day = day 2 of the range).
       // Format: <div class="... fomc-meeting__month ..."><strong>January</strong></div>
       //         ... <div class="... fomc-meeting__date ...">27-28</div>
-      // Asterisks ("17-18*") mark press-conference meetings — we strip them.
+      // Asterisks ("17-18*") mark press-conference meetings - we strip them.
       // Cross-month meetings are labeled "October/November".
       const monthMatch = block.match(
         /fomc-meeting__month[^>]*><strong>([A-Za-z/]+)<\/strong>/
@@ -120,7 +120,7 @@ function parseFomcEvents(html: string): FedEvent[] {
       );
       if (meetingIso) meetings.add(meetingIso);
 
-      // Minutes release date — appears as "(Released MMMM DD, YYYY)" near the
+      // Minutes release date - appears as "(Released MMMM DD, YYYY)" near the
       // bottom of each past meeting's block. Future meetings don't have this.
       const releaseMatch = block.match(
         /\(Released\s+([A-Za-z]+)\s+(\d{1,2}),?\s+(\d{4})\)/i
@@ -175,7 +175,7 @@ function computeDecisionDate(
   let decisionMonth = startMonth;
   let decisionYear = parseInt(year, 10);
 
-  // Cross-month meeting — month label like "October/November" wins,
+  // Cross-month meeting - month label like "October/November" wins,
   // otherwise infer from a date range whose second day is smaller.
   if (months.length > 1) {
     const endMonth = MONTH_TO_NUM[months[1]];

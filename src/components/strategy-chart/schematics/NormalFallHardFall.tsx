@@ -10,9 +10,9 @@ import {
  * Schematic for "Normal Fall & Hard Fall" strategy.
  *
  * Two panels:
- *   Left  — Normal Fall: $400 → $395, shallow dip; a red wick brushes
+ *   Left  - Normal Fall: $400 → $395, shallow dip; a red wick brushes
  *           below the 40MA; bullish candle → ENTRY.
- *   Right — Hard Fall:   $400 → $390, deeper dip; a red BODY closes below
+ *   Right - Hard Fall:   $400 → $390, deeper dip; a red BODY closes below
  *           the 40MA before the bullish candle → ENTRY.
  *
  * Both panels are uptrend setups; the 40MA rises gently across each chart
@@ -72,7 +72,7 @@ const HARD: C[] = [
   { x: xs(1), open: 195, close: 178, high: 170, low: 200, kind: "bullish" },
   { x: xs(2), open: 178, close: 162, high: 156, low: 184, kind: "bullish" },
   { x: xs(3), open: 162, close: 148, high: 142, low: 168, kind: "bullish" },
-  // Hard fall — three reds, deeper drop
+  // Hard fall - three reds, deeper drop
   { x: xs(4), open: 150, close: 175, high: 146, low: 180, kind: "bearish" },
   { x: xs(5), open: 175, close: 200, high: 170, low: 205, kind: "bearish" },
   // Red body CLOSES below the 40MA (~y=200 at this x); close=218
@@ -123,13 +123,13 @@ export function NormalFallHardFallSchematic() {
   return (
     <div className="flex flex-col gap-3">
       <Panel
-        title="Normal Fall — wick brushes 40MA"
+        title="Normal Fall - wick brushes 40MA"
         candles={NORMAL}
         ma40={NORMAL_MA40}
         entryIdx={6}
       />
       <Panel
-        title="Hard Fall — body closes below 40MA"
+        title="Hard Fall - body closes below 40MA"
         candles={HARD}
         ma40={HARD_MA40}
         entryIdx={7}

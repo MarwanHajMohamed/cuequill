@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import React from "react";
 
 // Shared visual primitives so every page's loading state reads as a
-// single design — animated gradient skeletons in the brand teal/white
+// single design - animated gradient skeletons in the brand teal/white
 // palette, plus a focal-point spinner for inline use.
 
 export function Skeleton({
@@ -74,7 +74,7 @@ export function PageLoader({
   );
 }
 
-// Skeleton block for hero areas — eyebrow + title bar.
+// Skeleton block for hero areas - eyebrow + title bar.
 export function HeroSkeleton() {
   return (
     <div className="flex flex-col gap-3 mb-6">
@@ -84,7 +84,7 @@ export function HeroSkeleton() {
   );
 }
 
-// Skeleton for a table card — header row + N body rows.
+// Skeleton for a table card - header row + N body rows.
 export function TableSkeleton({
   rows = 8,
   columns = 6,

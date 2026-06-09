@@ -196,7 +196,7 @@ export default function Filters({
         }`}
       />
 
-      {/* ── Pill sidebar — persistent push on desktop, modal overlay on
+      {/* ── Pill sidebar - persistent push on desktop, modal overlay on
             mobile. Sits directly under the navbar pill. ── */}
       <aside
         className={`fixed md:top-[100px] top-19 bottom-4 md:bottom-5 left-5 md:left-[max(40px,calc((100vw-1580px)/2+40px))] w-60 max-w-[85vw] bg-[#111113] border border-white/10 rounded-3xl z-30 flex flex-col shadow-2xl transition-all duration-300 ease-out ${

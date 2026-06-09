@@ -160,7 +160,7 @@ export default function ViewTradeModal({
                 value={
                   initialTrade.closingContractPrice != null
                     ? `$${initialTrade.closingContractPrice}`
-                    : "—"
+                    : "-"
                 }
               />
             )}
@@ -176,7 +176,7 @@ export default function ViewTradeModal({
                           initialTrade.contractPrice) *
                         100
                       ).toFixed(0)}%`
-                    : "—"
+                    : "-"
                 }
                 tone={
                   initialTrade.closingContractPrice != null &&
@@ -204,21 +204,21 @@ export default function ViewTradeModal({
                 icon="fa-arrow-down-to-line"
                 color="text-green-500"
                 label="Bought"
-                value={bought ? format(bought, "EEE, MMM d yyyy") : "—"}
+                value={bought ? format(bought, "EEE, MMM d yyyy") : "-"}
               />
               {isClosed && (
                 <TimelineRow
                   icon="fa-arrow-up-from-line"
                   color="text-red-500"
                   label="Closed"
-                  value={closed ? format(closed, "EEE, MMM d yyyy") : "—"}
+                  value={closed ? format(closed, "EEE, MMM d yyyy") : "-"}
                 />
               )}
               <TimelineRow
                 icon="fa-calendar-xmark"
                 color="text-white/50"
                 label="Expiry"
-                value={expiry ? format(expiry, "EEE, MMM d yyyy") : "—"}
+                value={expiry ? format(expiry, "EEE, MMM d yyyy") : "-"}
               />
             </div>
           </div>

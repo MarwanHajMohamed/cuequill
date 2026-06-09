@@ -27,7 +27,7 @@ type C = {
   kind: "bullish" | "bearish";
 };
 
-// Descending bodies — every red lower than the last.
+// Descending bodies - every red lower than the last.
 const CANDLES: C[] = [
   { x: xs(0), open: 100, close: 130, high: 95, low: 135, kind: "bearish" },
   { x: xs(1), open: 130, close: 110, high: 105, low: 135, kind: "bullish" },
@@ -38,7 +38,7 @@ const CANDLES: C[] = [
   { x: xs(6), open: 138, close: 170, high: 135, low: 175, kind: "bearish" },
   { x: xs(7), open: 170, close: 152, high: 148, low: 175, kind: "bullish" },
   { x: xs(8), open: 152, close: 184, high: 148, low: 190, kind: "bearish" },
-  // Breakout candle — closes ABOVE the ceiling line → ENTRY
+  // Breakout candle - closes ABOVE the ceiling line → ENTRY
   { x: xs(9), open: 184, close: 130, high: 126, low: 188, kind: "bullish" },
   { x: xs(10), open: 130, close: 105, high: 100, low: 134, kind: "bullish" },
   { x: xs(11), open: 105, close: 80, high: 75, low: 110, kind: "bullish" },
@@ -63,10 +63,10 @@ const MA20: Array<[number, number]> = [
 export function BearishChannelBreakSchematic() {
   const entry = CANDLES[9];
   return (
-    <StrategyChart title="Schematic — Bearish Channel Break" width={450}>
+    <StrategyChart title="Schematic - Bearish Channel Break" width={450}>
       <MALine period={40} points={MA40} />
       <MALine period={20} points={MA20} />
-      {/* Diagonal ceiling — connects the lower highs of the reds. Drawn
+      {/* Diagonal ceiling - connects the lower highs of the reds. Drawn
           statically so it's visible the whole time as the channel forms. */}
       <TrendLine
         x1={xs(0)}

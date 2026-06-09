@@ -9,7 +9,7 @@ import {
 } from "@/components/strategy-chart";
 
 /**
- * The First Uptrend Gap (CALL) — two-panel.
+ * The First Uptrend Gap (CALL) - two-panel.
  *
  *   Daily: confirms we're in the hard-floor zone (price near 100/200MA).
  *   Hourly: first green candle after the fall + visibly LARGER volume
@@ -51,13 +51,13 @@ const D_MA200: Array<[number, number]> = [
   [xs(7) + 30, 228],
 ];
 
-// Hourly — bottoming pattern with the FIRST big-volume bullish reversal.
+// Hourly - bottoming pattern with the FIRST big-volume bullish reversal.
 const HOURLY: C[] = [
   { x: xs(0), open: 130, close: 150, high: 125, low: 155, kind: "bearish" },
   { x: xs(1), open: 150, close: 170, high: 145, low: 175, kind: "bearish" },
   { x: xs(2), open: 170, close: 190, high: 165, low: 198, kind: "bearish" },
   { x: xs(3), open: 190, close: 205, high: 184, low: 215, kind: "bearish" },
-  // Hammer / first solid green — high volume → ENTRY
+  // Hammer / first solid green - high volume → ENTRY
   { x: xs(4), open: 205, close: 175, high: 168, low: 218, kind: "bullish" },
   { x: xs(5), open: 175, close: 152, high: 146, low: 180, kind: "bullish" },
   { x: xs(6), open: 152, close: 125, high: 118, low: 156, kind: "bullish" },
@@ -83,7 +83,7 @@ export function FirstUptrendGapSchematic() {
   const hourlyEntry = HOURLY[4];
   return (
     <div className="flex flex-col gap-3">
-      <StrategyChart title="Daily — already in hard-floor zone" width={420}>
+      <StrategyChart title="Daily - already in hard-floor zone" width={420}>
         <Zone y1={222} y2={240} kind="support" label="Hard floor" />
         <MALine period={200} points={D_MA200} />
         <MALine period={100} points={D_MA100} />
@@ -92,7 +92,7 @@ export function FirstUptrendGapSchematic() {
         ))}
         <EntryMarker x={dailyEntry.x} y={dailyEntry.close} side="CALL" />
       </StrategyChart>
-      <StrategyChart title="Hourly — first green + high volume spike" width={420}>
+      <StrategyChart title="Hourly - first green + high volume spike" width={420}>
         {HOURLY.map((c) => (
           <Candle key={c.x} {...c} />
         ))}

@@ -21,7 +21,7 @@ export default function TradeModal({
   onDelete,
 }: TradeModalProps) {
   // For existing trades (those with an _id, regardless of WIN/LOSS/OPEN
-  // status) start in View mode — users see the summary first, click Edit
+  // status) start in View mode - users see the summary first, click Edit
   // to switch. New trades (no _id) open straight into the editor.
   const [editing, setEditing] = useState<boolean>(!initialTrade?._id);
 

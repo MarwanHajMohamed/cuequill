@@ -10,7 +10,7 @@ const AFFIRMATIONS = [
   "I always pay myself first.",
   "Money works hard for me and produces more and more money.",
   "Everything I do prospers and overwhelms.",
-  "I'm a multimillionaire — prosperous and wealthy.",
+  "I'm a multimillionaire - prosperous and wealthy.",
   "Everything I spend comes back to me multiplied, because I'm the source of all wealth.",
   "Every day, from every point of view, I get better and become more of a multimillionaire.",
   "Fortune comes to me. Money grows in my hand like trees grow in the fields.",
@@ -44,7 +44,7 @@ function AffirmationsPage() {
     if (state.date === today) {
       setRead(new Set(state.ids));
     } else {
-      // Stale — drop everything from a previous day.
+      // Stale - drop everything from a previous day.
       localStorage.removeItem(storageKey);
     }
     setHydrated(true);
@@ -82,7 +82,7 @@ function AffirmationsPage() {
 
   return (
     <div className="w-full flex flex-col items-center min-h-screen">
-      {/* Aurora — fixed to the viewport so the gradient feathers to
+      {/* Aurora - fixed to the viewport so the gradient feathers to
           full transparency in every direction. No container edges to
           cut against. */}
       <div
@@ -94,7 +94,7 @@ function AffirmationsPage() {
         }}
       />
 
-      {/* HERO — left-aligned, same hero language as the Trades page. */}
+      {/* HERO - left-aligned, same hero language as the Trades page. */}
       <div className="relative w-full max-w-[1500px] mt-30 px-5 md:px-10">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -116,7 +116,7 @@ function AffirmationsPage() {
             </div>
           </div>
           <p className="text-[13px] md:text-[14px] text-white/55 max-w-xl leading-relaxed mt-1">
-            Read each one out loud. Mean it. Tap to mark as read — the list
+            Read each one out loud. Mean it. Tap to mark as read - the list
             resets at midnight.
           </p>
         </motion.div>

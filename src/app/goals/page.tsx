@@ -43,7 +43,7 @@ function Page() {
   );
 
   // Goals are cached per-period so switching is instant after the initial
-  // fetch. `null` means "not yet fetched" — used to render a loading state.
+  // fetch. `null` means "not yet fetched" - used to render a loading state.
   const [goalsByPeriod, setGoalsByPeriod] = useState<{
     monthly: Goal[] | null;
     daily: Goal[] | null;
@@ -96,7 +96,7 @@ function Page() {
     } else {
       load("daily", dailyUrl).then(() => load("monthly", monthlyUrl));
     }
-    // Intentionally not depending on `period` — we want this to run once
+    // Intentionally not depending on `period` - we want this to run once
     // per session, not on every toggle. Switching reads from cache.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, today]);
@@ -155,7 +155,7 @@ function Page() {
           </div>
         </div>
 
-        {/* Period content — light opacity fade keyed on period. No
+        {/* Period content - light opacity fade keyed on period. No
             AnimatePresence/mode=wait so the new content appears immediately
             and the old one is replaced without blocking the swap. */}
         <motion.div
@@ -313,7 +313,7 @@ function AddGoalRow({
 }
 
 // ─── Goal row ─────────────────────────────────────────────────────────
-// Plain <li> — no per-row entry/exit motion. The previous version used
+// Plain <li> - no per-row entry/exit motion. The previous version used
 // motion.li with `layout` + initial/animate, which replayed the entry
 // animation on every list re-render and caused a visible flicker when
 // goals first loaded or the period changed.
@@ -539,7 +539,7 @@ function PreviousPeriodRow({
           <span className="text-sm text-white/85 truncate">{label}</span>
         </div>
         <span className="text-xs text-white/40 tabular-nums shrink-0">
-          {total === 0 ? "—" : `${completed}/${total} · ${pct.toFixed(0)}%`}
+          {total === 0 ? "-" : `${completed}/${total} · ${pct.toFixed(0)}%`}
         </span>
       </button>
       <AnimatePresence initial={false}>

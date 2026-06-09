@@ -8,7 +8,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Cuequill",
     short_name: "Cuequill",
     description:
-      "Discretionary US-options trading journal — strategies, calendar, and stats.",
+      "Discretionary US-options trading journal - strategies, calendar, and stats.",
     // Open straight to the dashboard when launched from the home screen.
     start_url: "/dashboard",
     scope: "/",

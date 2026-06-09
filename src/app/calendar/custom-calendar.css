@@ -1,4 +1,4 @@
-/* Full-month calendar — same visual language as the dashboard mini
+/* Full-month calendar - same visual language as the dashboard mini
    calendar (border-[#282828], rounded corners, transparent tiles with
    white/5 hovers, muted P/L tints) but sized for the dedicated page. */
 
@@ -8,7 +8,7 @@
   border: 1px solid #282828;
   border-radius: 12px;
   font-family: inherit;
-  /* No interior padding — the calendar's own grid + nav row sit flush
+  /* No interior padding - the calendar's own grid + nav row sit flush
      to the border so the day grid keeps its prior height budget and
      the page doesn't scroll. */
   padding: 0;
@@ -120,7 +120,7 @@
   background-color: rgba(255, 255, 255, 0.05) !important;
 }
 
-/* Per-day P/L background tints — muted to read as calm dashboard. */
+/* Per-day P/L background tints - muted to read as calm dashboard. */
 .react-calendar.custom-calendar_full-view .react-calendar__tile.day-win {
   background-color: rgba(34, 197, 94, 0.12);
 }
@@ -237,7 +237,7 @@
   font-weight: 500;
 }
 
-/* Standalone tile defaults — only used if the full-view selector
+/* Standalone tile defaults - only used if the full-view selector
    doesn't apply (e.g. embedded mini calendars). */
 .react-calendar__tile {
   background: transparent;

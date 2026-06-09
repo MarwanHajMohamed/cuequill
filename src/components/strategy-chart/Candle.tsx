@@ -11,9 +11,9 @@ type Props = {
   open: number;
   /** y at the CLOSE price. */
   close: number;
-  /** y at the HIGH price (smallest y value — top wick tip). */
+  /** y at the HIGH price (smallest y value - top wick tip). */
   high: number;
-  /** y at the LOW price (largest y value — bottom wick tip). */
+  /** y at the LOW price (largest y value - bottom wick tip). */
   low: number;
   kind?: CandleKind;
   /** Width override; defaults to 14. */

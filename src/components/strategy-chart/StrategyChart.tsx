@@ -13,7 +13,7 @@ import React, {
  *
  * Coordinate system: a 800×320 SVG viewBox (5:2 aspect). Higher y values
  * represent LOWER prices, so candle bodies are drawn with y at the top of
- * the body and grow downward — matches normal SVG coordinates. Helper
+ * the body and grow downward - matches normal SVG coordinates. Helper
  * components below all use this same coordinate space.
  *
  * Playback: a Play button animates `progressX` from 0 → CHART_WIDTH over

@@ -3,7 +3,7 @@ import React from "react";
 import { useStrategyPlayback } from "./StrategyChart";
 
 /**
- * Volume bar — drawn from `baseY` upward (toward the chart top) to
+ * Volume bar - drawn from `baseY` upward (toward the chart top) to
  * represent volume magnitude. Tinted to match its candle (green/red).
  */
 type Props = {

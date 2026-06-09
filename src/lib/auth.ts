@@ -65,7 +65,7 @@ export const authOptions: NextAuthOptions = {
         token.timezone = user.timezone;
       }
       // Profile updates from /api/user/profile flow back through
-      // session.update({ ... }) — propagate them onto the JWT so future
+      // session.update({ ... }) - propagate them onto the JWT so future
       // useSession() reads see the new values.
       if (trigger === "update" && session) {
         if (session.timezone !== undefined) token.timezone = session.timezone;

@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 
 // Registers the Cuequill service worker once the page is idle.
-// Runs only in production builds — dev mode disables SW so changes
+// Runs only in production builds - dev mode disables SW so changes
 // don't get cached and confuse you while iterating.
 export default function PWARegister() {
   useEffect(() => {
@@ -15,7 +15,7 @@ export default function PWARegister() {
       navigator.serviceWorker
         .register("/sw.js", { scope: "/" })
         .catch((err) => {
-          // Non-fatal — app still works without offline support.
+          // Non-fatal - app still works without offline support.
           console.warn("[Cuequill] SW registration failed:", err);
         });
     };

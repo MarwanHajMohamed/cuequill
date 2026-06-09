@@ -127,7 +127,7 @@ export default function Time() {
           - Mobile: a single cheap radial-gradient anchored to the
             viewport so the gradient feathers naturally past every
             edge (no hard line where the hero container starts). CSS
-            filter blur at ≥100px tanks mobile GPUs — radial gradients
+            filter blur at ≥100px tanks mobile GPUs - radial gradients
             are composited for free and look identical at this
             softness.
           - Desktop: keeps the layered blurred blobs since desktop
@@ -151,7 +151,7 @@ export default function Time() {
       </div>
 
       <div className="flex flex-col md:flex-row justify-between md:items-end gap-8 md:gap-12">
-        {/* LEFT — greeting */}
+        {/* LEFT - greeting */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -168,7 +168,7 @@ export default function Time() {
           </h1>
           <p className="text-sm md:text-[15px] text-white/55 max-w-md leading-relaxed">
             {marketOpen
-              ? "Markets are live. Stay disciplined — review your "
+              ? "Markets are live. Stay disciplined - review your "
               : "Markets are quiet. Use the time to review your "}
             <Link
               href="/affirmations"
@@ -181,7 +181,7 @@ export default function Time() {
           </p>
         </motion.div>
 
-        {/* RIGHT — status card */}
+        {/* RIGHT - status card */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}

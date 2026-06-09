@@ -27,15 +27,15 @@ type C = {
 };
 
 const CANDLES: C[] = [
-  // Premarket / prior-day reds — descending
+  // Premarket / prior-day reds - descending
   { x: xs(0), open: 90, close: 110, high: 85, low: 115, kind: "bearish" },
   { x: xs(1), open: 110, close: 130, high: 105, low: 135, kind: "bearish" },
   { x: xs(2), open: 130, close: 150, high: 125, low: 155, kind: "bearish" },
   // Gap-down open
   { x: xs(3), open: 175, close: 190, high: 170, low: 195, kind: "bearish" },
-  // 9:30am — first green candle
+  // 9:30am - first green candle
   { x: xs(4), open: 190, close: 168, high: 162, low: 194, kind: "bullish" },
-  // 10:00am — second green → ENTRY
+  // 10:00am - second green → ENTRY
   { x: xs(5), open: 168, close: 145, high: 138, low: 172, kind: "bullish" },
   // Continuation up
   { x: xs(6), open: 145, close: 122, high: 116, low: 148, kind: "bullish" },
@@ -46,8 +46,8 @@ const CANDLES: C[] = [
 export function BearishGapUptrendSchematic() {
   const entry = CANDLES[5];
   return (
-    <StrategyChart title="Schematic — Bearish Gap Uptrend" width={400}>
-      {/* Bearish channel ceiling — descending diagonal */}
+    <StrategyChart title="Schematic - Bearish Gap Uptrend" width={400}>
+      {/* Bearish channel ceiling - descending diagonal */}
       <TrendLine
         x1={xs(0)}
         y1={85}

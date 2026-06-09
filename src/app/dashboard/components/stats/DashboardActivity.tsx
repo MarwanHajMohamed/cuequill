@@ -13,9 +13,9 @@ import ViewTradeModal from "../modals/ViewTradeModal";
  * Two practical at-a-glance widgets that surface what the trader needs
  * to act on:
  *
- *   • Open Positions — what's still alive, days held, days to expiry
+ *   • Open Positions - what's still alive, days held, days to expiry
  *     (red badge if ≤3). Tap to drill into the trade on the charts page.
- *   • Recent Closes — last 5 realized trades with net P/L, strategy,
+ *   • Recent Closes - last 5 realized trades with net P/L, strategy,
  *     time ago. Quick scan of how the past week's decisions played out.
  */
 

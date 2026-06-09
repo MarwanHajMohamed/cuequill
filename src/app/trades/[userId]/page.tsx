@@ -65,7 +65,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
       const skipped = data.skipped ?? 0;
       if (inserted === 0) {
         toast(
-          `Already up to date — no new trades${skipped ? ` (${skipped} skipped)` : ""}`,
+          `Already up to date - no new trades${skipped ? ` (${skipped} skipped)` : ""}`,
         );
       } else {
         toast(
@@ -186,7 +186,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
       if (option !== "All" && trade.option !== option) return false;
 
       // Date range matches on the trade's EXIT date for closed trades
-      // and ENTRY date for open ones — same convention used by the
+      // and ENTRY date for open ones - same convention used by the
       // calendar, monthly stats, and P/L attribution. This keeps WTD /
       // MTD / YTD totals consistent across every section of the page.
       const isClosed = trade.status === "WIN" || trade.status === "LOSS";

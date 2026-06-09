@@ -38,16 +38,16 @@ const CANDLES: Array<{
   { x: x(0), open: 180, close: 150, high: 140, low: 190, kind: "bullish" },
   { x: x(1), open: 160, close: 135, high: 125, low: 170, kind: "bullish" },
   { x: x(2), open: 145, close: 120, high: 110, low: 155, kind: "bullish" },
-  // Recent fall — series of reds dropping toward the 40MA
+  // Recent fall - series of reds dropping toward the 40MA
   { x: x(3), open: 125, close: 168, high: 120, low: 175, kind: "bearish" },
   { x: x(4), open: 170, close: 195, high: 162, low: 200, kind: "bearish" },
   { x: x(5), open: 185, close: 210, high: 178, low: 215, kind: "bearish" },
   { x: x(6), open: 205, close: 226, high: 200, low: 232, kind: "bearish" },
   { x: x(7), open: 222, close: 232, high: 218, low: 240, kind: "bearish" },
-  // Touch of 40MA — wick pierces but body closes above
+  // Touch of 40MA - wick pierces but body closes above
   { x: x(8), open: 232, close: 238, high: 226, low: 248, kind: "bearish" },
   { x: x(9), open: 238, close: 240, high: 232, low: 247, kind: "bearish" },
-  // Confirmation green — ENTRY candle
+  // Confirmation green - ENTRY candle
   { x: x(10), open: 240, close: 214, high: 208, low: 244, kind: "bullish" },
   // Continuation
   { x: x(11), open: 214, close: 192, high: 186, low: 218, kind: "bullish" },
@@ -84,7 +84,7 @@ export function MovingAverage40Schematic() {
   const firstRed = CANDLES[3]; // first red of the fall
   const lastRed = CANDLES[9]; // last red before the green confirmation
   return (
-    <StrategyChart title="Schematic — Moving Average 40" width={450}>
+    <StrategyChart title="Schematic - Moving Average 40" width={450}>
       <MALine period={40} points={MA40} />
       <MALine period={20} points={MA20} />
       {CANDLES.map((c) => (

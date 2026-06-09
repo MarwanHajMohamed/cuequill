@@ -155,7 +155,7 @@ export default function TradeCalendar({ userId }: { userId: string }) {
     date: Date;
     view: string;
   }) => {
-    // Year drill-up view: each tile is a month — show monthly P/L + count.
+    // Year drill-up view: each tile is a month - show monthly P/L + count.
     if (view === "year") {
       const { total, closedCount, netPL } = getMonthSummary(date);
       if (total === 0) return null;

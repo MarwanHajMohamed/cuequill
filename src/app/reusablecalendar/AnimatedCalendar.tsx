@@ -136,7 +136,7 @@ const AnimatedCalendar = forwardRef<
     if (!days) return;
 
     if (start.mode !== "horizontal") {
-      // No follow-through happened — make sure we leave a clean state.
+      // No follow-through happened - make sure we leave a clean state.
       days.style.transition = "transform 0.18s ease";
       days.style.transform = "";
       return;
@@ -149,7 +149,7 @@ const AnimatedCalendar = forwardRef<
     if (Math.abs(dx) > threshold) {
       commitSwipe(dx < 0 ? "next" : "prev");
     } else {
-      // Cancel — snap back to 0.
+      // Cancel - snap back to 0.
       days.style.transition = "transform 0.18s ease";
       days.style.transform = "translateX(0)";
     }
@@ -226,7 +226,7 @@ const AnimatedCalendar = forwardRef<
     }
     if (!newDate) return;
 
-    // No animation for drillDown/drillUp/onChange — just update the date
+    // No animation for drillDown/drillUp/onChange - just update the date
     if (action !== "next" && action !== "prev") {
       setActiveStartDate(newDate);
       return;

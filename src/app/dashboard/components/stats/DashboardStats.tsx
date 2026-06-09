@@ -82,7 +82,7 @@ function PeriodTile({
         }`}
       >
         {summary.count === 0
-          ? "—"
+          ? "-"
           : `${positive ? "+" : "−"}$${Math.abs(summary.netPL).toFixed(2)}`}
       </div>
       <div className="text-[11px] md:text-xs text-white/50 flex flex-wrap items-center gap-x-2 gap-y-0.5">
@@ -155,7 +155,7 @@ export default function DashboardStats({ userId }: { userId: string }) {
     );
     const allTime = summarize(closed);
 
-    // Current streak — chronologically newest first.
+    // Current streak - chronologically newest first.
     const closedSorted = [...closed].sort(
       (a, b) => exitDate(b).getTime() - exitDate(a).getTime(),
     );
@@ -176,7 +176,7 @@ export default function DashboardStats({ userId }: { userId: string }) {
       { net: number; n: number }
     >();
     for (const t of closed.filter((c) => exitDate(c) >= monthStart)) {
-      const k = t.strategy ?? "—";
+      const k = t.strategy ?? "-";
       const prev = stratByMonth.get(k) ?? { net: 0, n: 0 };
       prev.net += tradeNetPL(t);
       prev.n += 1;
@@ -188,7 +188,7 @@ export default function DashboardStats({ userId }: { userId: string }) {
         topStrategy = { label, net: v.net, n: v.n };
     }
 
-    // Equity curve — last 30 closed trades, cumulative net P/L
+    // Equity curve - last 30 closed trades, cumulative net P/L
     const recentChrono = [...closed]
       .sort((a, b) => exitDate(a).getTime() - exitDate(b).getTime())
       .slice(-30);
@@ -252,7 +252,7 @@ export default function DashboardStats({ userId }: { userId: string }) {
           label="All-time Net P/L"
           value={
             s.allTime.count === 0
-              ? "—"
+              ? "-"
               : `${s.allTime.netPL >= 0 ? "+" : "−"}$${Math.abs(s.allTime.netPL).toFixed(2)}`
           }
           tone={
@@ -267,7 +267,7 @@ export default function DashboardStats({ userId }: { userId: string }) {
           label="Current streak"
           value={
             s.streakKind === null
-              ? "—"
+              ? "-"
               : `${s.streakKind === "WIN" ? "W" : "L"} × ${s.streakLen}`
           }
           tone={
@@ -280,7 +280,7 @@ export default function DashboardStats({ userId }: { userId: string }) {
         />
         <MiniTile
           label="Open positions"
-          value={s.openCount > 0 ? `${s.openCount}` : "—"}
+          value={s.openCount > 0 ? `${s.openCount}` : "-"}
           tone={s.openCount > 0 ? "neutral" : "neutral"}
         />
         <MiniTile
@@ -301,7 +301,7 @@ export default function DashboardStats({ userId }: { userId: string }) {
                 </span>
               </span>
             ) : (
-              "—"
+              "-"
             )
           }
         />
