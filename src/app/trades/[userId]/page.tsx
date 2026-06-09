@@ -6,7 +6,7 @@ import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useTrades } from "@/hooks/useTrades";
 import { withAuth } from "@/lib/withAuth";
 import { useQueryClient } from "@tanstack/react-query";
-import React, { use, useEffect, useState } from "react";
+import React, { use, useEffect, useRef, useState } from "react";
 import NotesModal from "../NotesModal";
 import { useToast } from "@/hooks/useToast";
 import {
@@ -20,6 +20,71 @@ import Statistics from "./Statistics";
 import { AnimatePresence, motion } from "framer-motion";
 import { HeroSkeleton, TableSkeleton } from "@/components/Loaders";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
+
+// Every column the trades table can render. Order here is the default;
+// users can reorder and hide columns, persisted in localStorage.
+type TradeColumnKey =
+  | "symbol"
+  | "option"
+  | "status"
+  | "netpl"
+  | "change"
+  | "contractPrice"
+  | "qty"
+  | "strike"
+  | "dateBought"
+  | "expiryDate"
+  | "closingContractPrice"
+  | "strategy"
+  | "notes";
+
+const DEFAULT_COLUMN_ORDER: TradeColumnKey[] = [
+  "symbol",
+  "option",
+  "status",
+  "netpl",
+  "change",
+  "contractPrice",
+  "qty",
+  "strike",
+  "dateBought",
+  "expiryDate",
+  "closingContractPrice",
+  "strategy",
+  "notes",
+];
+
+const COLUMN_LABELS: Record<TradeColumnKey, string> = {
+  symbol: "Symbol",
+  option: "PUT/CALL",
+  status: "Status",
+  netpl: "Net P/L",
+  change: "Change %",
+  contractPrice: "Contract Price",
+  qty: "Qty",
+  strike: "Strike",
+  dateBought: "Date Bought",
+  expiryDate: "Expiry Date",
+  closingContractPrice: "Closing Contract Price",
+  strategy: "Strategy",
+  notes: "Notes",
+};
+
+// Reconcile a stored order with the known columns: keep the saved order,
+// drop unknown keys, and append any columns added since (so a new release
+// that introduces a column doesn't leave it permanently hidden).
+function reconcileOrder(stored: TradeColumnKey[]): TradeColumnKey[] {
+  const seen = new Set<TradeColumnKey>();
+  const out: TradeColumnKey[] = [];
+  for (const k of stored) {
+    if (DEFAULT_COLUMN_ORDER.includes(k) && !seen.has(k)) {
+      out.push(k);
+      seen.add(k);
+    }
+  }
+  for (const k of DEFAULT_COLUMN_ORDER) if (!seen.has(k)) out.push(k);
+  return out;
+}
 
 function Page({ params }: { params: Promise<{ userId: string }> }) {
   const [simulated] = useLocalStorage<boolean>("simulated", false);
@@ -51,6 +116,49 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
   const [syncing, setSyncing] = useState<boolean>(false);
   const [isFiltersOpen, setIsFiltersOpen] = useState<boolean>(false);
   const tradesPerPage = 15;
+
+  // ── Column customization (order + visibility), persisted locally ──────
+  const [storedOrder, setStoredOrder] = useLocalStorage<TradeColumnKey[]>(
+    "tradeColumnOrder",
+    DEFAULT_COLUMN_ORDER,
+  );
+  const [hiddenColumns, setHiddenColumns] = useLocalStorage<TradeColumnKey[]>(
+    "tradeHiddenColumns",
+    [],
+  );
+  const [isColumnsOpen, setIsColumnsOpen] = useState<boolean>(false);
+  const dragKey = useRef<TradeColumnKey | null>(null);
+  const [dragOverKey, setDragOverKey] = useState<TradeColumnKey | null>(null);
+
+  const columnOrder = reconcileOrder(storedOrder);
+  const hiddenSet = new Set(hiddenColumns);
+  const visibleColumns = columnOrder.filter((k) => !hiddenSet.has(k));
+
+  const moveColumn = (from: TradeColumnKey, to: TradeColumnKey) => {
+    if (from === to) return;
+    const arr = [...columnOrder];
+    const fromIdx = arr.indexOf(from);
+    const toIdx = arr.indexOf(to);
+    if (fromIdx === -1 || toIdx === -1) return;
+    arr.splice(fromIdx, 1);
+    arr.splice(toIdx, 0, from);
+    setStoredOrder(arr);
+  };
+
+  const toggleColumn = (key: TradeColumnKey) => {
+    setHiddenColumns((prev) => {
+      const isHidden = prev.includes(key);
+      // Never let the user hide the final visible column - an empty table
+      // is useless and there'd be no header left to toggle from.
+      if (!isHidden && visibleColumns.length <= 1) return prev;
+      return isHidden ? prev.filter((k) => k !== key) : [...prev, key];
+    });
+  };
+
+  const resetColumns = () => {
+    setStoredOrder(DEFAULT_COLUMN_ORDER);
+    setHiddenColumns([]);
+  };
 
   const handleSync = async () => {
     if (syncing) return;
@@ -87,6 +195,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setDelAllModal(false);
+        setIsColumnsOpen(false);
       }
     };
 
@@ -150,24 +259,114 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
     ...Array.from(new Set(trades?.map((trade: Trade) => trade.symbol) || [])),
   ];
 
-  const headings = [
-    "Symbol",
-    "PUT/CALL",
-    "Status",
-    "Net P/L",
-    "Change %",
-    "Contract Price",
-    "Qty",
-    "Strike",
-    "Date Bought",
-    "Expiry Date",
-    "Closing Contract Price",
-    "Strategy",
-    "Notes",
-  ];
-
   const calcChange = (newPrice: number, oldPrice: number) => {
     return (((newPrice - oldPrice) / oldPrice) * 100).toFixed(0);
+  };
+
+  const cap = (s: string) => s.slice(0, 1) + s.slice(1).toLowerCase();
+
+  // Renders the cell content for a given column. Kept in one place so the
+  // header order and the row order stay in lockstep automatically.
+  const renderCell = (key: TradeColumnKey, trade: Trade): React.ReactNode => {
+    const isClosed = trade.status !== "OPEN";
+    switch (key) {
+      case "symbol":
+        return trade.symbol;
+      case "option":
+        return (
+          <span
+            className={
+              trade.option === "CALL" ? "text-green-500" : "text-red-500"
+            }
+          >
+            {cap(trade.option)}
+          </span>
+        );
+      case "status":
+        return (
+          <span
+            className={
+              trade.status === "OPEN"
+                ? "text-blue-500"
+                : trade.status === "WIN"
+                  ? "text-green-500"
+                  : "text-red-500"
+            }
+          >
+            {cap(trade.status)}
+          </span>
+        );
+      case "netpl":
+        return !isClosed ? (
+          "-"
+        ) : (
+          <span
+            className={
+              trade.status === "WIN" ? "text-green-500" : "text-red-500"
+            }
+          >
+            ${tradeNetPL(trade).toFixed(2)}
+          </span>
+        );
+      case "change": {
+        if (!isClosed) return "-";
+        const pct = Number(
+          calcChange(
+            Number(trade.closingContractPrice),
+            Number(trade.contractPrice),
+          ),
+        );
+        return (
+          <span className={pct > 0 ? "text-green-500" : "text-red-500"}>
+            {calcChange(
+              Number(trade.closingContractPrice),
+              Number(trade.contractPrice),
+            )}
+            %
+          </span>
+        );
+      }
+      case "contractPrice":
+        return trade.contractPrice;
+      case "qty":
+        return trade.qty;
+      case "strike":
+        return trade.strike;
+      case "dateBought":
+        return new Date(trade.dateBought).toLocaleDateString("en-GB");
+      case "expiryDate":
+        return new Date(trade.expiryDate).toLocaleDateString("en-GB");
+      case "closingContractPrice":
+        return trade.closingContractPrice === null
+          ? "-"
+          : trade.closingContractPrice;
+      case "strategy":
+        return trade.strategy;
+      case "notes":
+        return trade.notes !== "" ? (
+          <i
+            className="fa-solid fa-book-open cursor-pointer text-white/70 transition duration-100 hover:text-white/100 text-lg"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsNotesOpen(true);
+              setEditingTrade(trade);
+              setNotes(trade.notes || "");
+            }}
+          ></i>
+        ) : (
+          <i
+            className="fa-solid fa-book cursor-pointer text-white/20 transition duration-100 hover:text-white/100 text-lg"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsNotesOpen(true);
+              setEditingTrade(trade);
+              setNotes(trade.notes || "");
+            }}
+          ></i>
+        );
+      default:
+        return null;
+    }
   };
 
   const filteredTrades =
@@ -290,7 +489,129 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
               isOpen={isFiltersOpen}
               setIsOpen={setIsFiltersOpen}
             />
-            <div className="w-full max-w-[1500px] rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md overflow-x-auto max-[1130px]:mt-0 mt-5 p-2 md:p-3">
+            {/* Column controls */}
+            <div className="relative flex justify-end mt-5 max-[1130px]:mt-3">
+              <button
+                onClick={() => setIsColumnsOpen((v) => !v)}
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white transition cursor-pointer text-[12px] font-medium"
+                aria-expanded={isColumnsOpen}
+              >
+                <i className="fa-solid fa-table-columns text-[11px]" />
+                <span>Columns</span>
+              </button>
+              {isColumnsOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setIsColumnsOpen(false)}
+                  />
+                  <div className="absolute right-0 top-full mt-2 z-50 w-72 rounded-xl border border-white/10 bg-[#0F0F17] shadow-[0_20px_80px_rgba(0,0,0,0.6)] p-2">
+                    <div className="flex items-center justify-between px-2 py-1.5">
+                      <span className="text-[11px] uppercase tracking-[0.14em] text-white/40 font-medium">
+                        Columns
+                      </span>
+                      <button
+                        onClick={resetColumns}
+                        className="text-[11px] text-teal-300/80 hover:text-teal-300 transition cursor-pointer"
+                      >
+                        Reset
+                      </button>
+                    </div>
+                    <div className="mt-1 flex flex-col">
+                      {columnOrder.map((key, i) => {
+                        const visible = !hiddenSet.has(key);
+                        const lastVisible = visible && visibleColumns.length <= 1;
+                        return (
+                          <div
+                            key={key}
+                            draggable
+                            onDragStart={() => {
+                              dragKey.current = key;
+                            }}
+                            onDragOver={(e) => {
+                              e.preventDefault();
+                              setDragOverKey(key);
+                            }}
+                            onDragEnd={() => {
+                              dragKey.current = null;
+                              setDragOverKey(null);
+                            }}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              if (dragKey.current) moveColumn(dragKey.current, key);
+                              dragKey.current = null;
+                              setDragOverKey(null);
+                            }}
+                            className={`group flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-grab active:cursor-grabbing transition ${
+                              dragOverKey === key
+                                ? "bg-white/[0.07]"
+                                : "hover:bg-white/[0.04]"
+                            }`}
+                          >
+                            <i className="fa-solid fa-grip-vertical text-white/25 group-hover:text-white/40 text-[11px]" />
+                            <button
+                              onClick={() => toggleColumn(key)}
+                              disabled={lastVisible}
+                              className={`flex items-center gap-2.5 flex-1 text-left ${
+                                lastVisible ? "cursor-default" : "cursor-pointer"
+                              }`}
+                              title={
+                                lastVisible
+                                  ? "At least one column must stay visible"
+                                  : visible
+                                    ? "Hide column"
+                                    : "Show column"
+                              }
+                            >
+                              <span
+                                className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition ${
+                                  visible
+                                    ? "bg-teal-500/20 border-teal-500/40 text-teal-300"
+                                    : "border-white/15 text-transparent"
+                                }`}
+                              >
+                                <i className="fa-solid fa-check text-[9px]" />
+                              </span>
+                              <span
+                                className={`text-[13px] ${
+                                  visible ? "text-white/85" : "text-white/40"
+                                }`}
+                              >
+                                {COLUMN_LABELS[key]}
+                              </span>
+                            </button>
+                            <div className="flex items-center gap-0.5 opacity-60 group-hover:opacity-100 transition">
+                              <button
+                                onClick={() =>
+                                  i > 0 && moveColumn(key, columnOrder[i - 1])
+                                }
+                                disabled={i === 0}
+                                aria-label="Move up"
+                                className="w-6 h-6 rounded-md flex items-center justify-center text-white/50 hover:text-white hover:bg-white/[0.06] transition cursor-pointer disabled:opacity-25 disabled:cursor-default"
+                              >
+                                <i className="fa-solid fa-chevron-up text-[10px]" />
+                              </button>
+                              <button
+                                onClick={() =>
+                                  i < columnOrder.length - 1 &&
+                                  moveColumn(key, columnOrder[i + 1])
+                                }
+                                disabled={i === columnOrder.length - 1}
+                                aria-label="Move down"
+                                className="w-6 h-6 rounded-md flex items-center justify-center text-white/50 hover:text-white hover:bg-white/[0.06] transition cursor-pointer disabled:opacity-25 disabled:cursor-default"
+                              >
+                                <i className="fa-solid fa-chevron-down text-[10px]" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="w-full max-w-[1500px] rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md overflow-x-auto max-[1130px]:mt-0 mt-3 p-2 md:p-3">
               {filteredTrades?.length === 0 ? (
                 <div className="text-center text-[13px] text-white/40 py-10">
                   No trades match the current filters.
@@ -300,12 +621,12 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                   <table className="border-collapse table-auto min-w-full">
                     <thead>
                       <tr>
-                        {headings.map((h) => (
+                        {visibleColumns.map((key) => (
                           <th
-                            key={h}
+                            key={key}
                             className="px-2 md:px-4 py-2 whitespace-nowrap w-full text-white/40 md:text-[11px] text-[10px] text-left uppercase tracking-[0.12em] font-medium"
                           >
-                            {h}
+                            {COLUMN_LABELS[key]}
                           </th>
                         ))}
                       </tr>
@@ -343,142 +664,16 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                               setIsModalOpen(true);
                             }}
                           >
-                            <td className="px-2 md:px-4 py-1 whitespace-nowrap w-full">
-                              {trade.symbol}
-                            </td>
-                            <td
-                              className={`px-2 md:px-4 py-1 whitespace-nowrap w-full ${
-                                trade.option === "CALL"
-                                  ? "text-green-500"
-                                  : "text-red-500"
-                              }`}
-                            >
-                              {trade.option.slice(0, 1) +
-                                trade.option
-                                  .slice(1, trade.option.length)
-                                  .toLowerCase()}
-                            </td>
-                            <td
-                              className={`px-2 md:px-4 py-1 whitespace-nowrap w-full ${
-                                trade.status === "OPEN"
-                                  ? "text-blue-500"
-                                  : trade.status === "WIN"
-                                    ? "text-green-500"
-                                    : "text-red-500"
-                              }`}
-                            >
-                              {trade.status.slice(0, 1) +
-                                trade.status
-                                  .slice(1, trade.status.length)
-                                  .toLowerCase()}
-                            </td>
-                            <td
-                              className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
-                            >
-                              {trade.status === "OPEN" ? (
-                                "-"
-                              ) : (
-                                <span
-                                  className={
-                                    trade.status === "WIN"
-                                      ? "text-green-500"
-                                      : "text-red-500"
-                                  }
-                                >
-                                  ${tradeNetPL(trade).toFixed(2)}
-                                </span>
-                              )}
-                            </td>
-                            <td
-                              className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
-                            >
-                              {trade.status === "OPEN" ? (
-                                "-"
-                              ) : (
-                                <span
-                                  className={
-                                    Number(
-                                      calcChange(
-                                        Number(trade.closingContractPrice),
-                                        Number(trade.contractPrice),
-                                      ),
-                                    ) > 0
-                                      ? "text-green-500"
-                                      : "text-red-500"
-                                  }
-                                >
-                                  {calcChange(
-                                    Number(trade.closingContractPrice),
-                                    Number(trade.contractPrice),
-                                  )}
-                                  %
-                                </span>
-                              )}
-                            </td>
-                            <td
-                              className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
-                            >
-                              {trade.contractPrice}
-                            </td>
-                            <td
-                              className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
-                            >
-                              {trade.qty}
-                            </td>
-                            <td
-                              className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
-                            >
-                              {trade.strike}
-                            </td>
-                            <td
-                              className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
-                            >
-                              {new Date(trade.dateBought).toLocaleDateString(
-                                "en-GB",
-                              )}
-                            </td>
-                            <td
-                              className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
-                            >
-                              {new Date(trade.expiryDate).toLocaleDateString(
-                                "en-GB",
-                              )}
-                            </td>
-                            <td
-                              className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
-                            >
-                              {trade.closingContractPrice === null
-                                ? "-"
-                                : trade.closingContractPrice}
-                            </td>
-                            <td
-                              className={`px-2 md:px-4 py-1 whitespace-nowrap w-full`}
-                            >
-                              {trade.strategy}
-                            </td>
-                            <td
-                              className={`px-2 md:px-4 py-1 whitespace-nowrap w-full text-center`}
-                            >
-                              {trade.notes !== "" ? (
-                                <i
-                                  className="fa-solid fa-book-open cursor-pointer text-white/70 transition duration-100 hover:text-white/100 text-lg"
-                                  onClick={() => {
-                                    setIsNotesOpen(true);
-                                    setEditingTrade(trade);
-                                    setNotes(trade.notes || "");
-                                  }}
-                                ></i>
-                              ) : (
-                                <i
-                                  className="fa-solid fa-book cursor-pointer text-white/20 transition duration-100 hover:text-white/100 text-lg"
-                                  onClick={() => {
-                                    setIsNotesOpen(true);
-                                    setEditingTrade(trade);
-                                    setNotes(trade.notes || "");
-                                  }}
-                                ></i>
-                              )}
-                            </td>
+                            {visibleColumns.map((key) => (
+                              <td
+                                key={key}
+                                className={`px-2 md:px-4 py-1 whitespace-nowrap w-full ${
+                                  key === "notes" ? "text-center" : ""
+                                }`}
+                              >
+                                {renderCell(key, trade)}
+                              </td>
+                            ))}
                           </tr>
                         ))}
                       </motion.tbody>
