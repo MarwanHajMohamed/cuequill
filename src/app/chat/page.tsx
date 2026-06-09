@@ -331,7 +331,11 @@ function Page() {
 
       <div className="w-full max-w-[1100px] mx-auto px-5 md:px-10 mt-24 md:mt-28 flex-1 flex flex-col min-h-0">
         {empty ? (
-          <div className="flex-1 flex items-center justify-center pb-6">
+          // Mobile bottom padding clears the fixed composer (offset
+          // 88px nav + safe-area + 12px gap + ~56px form + breathing
+          // room) so the centered greeting + cards sit visually above
+          // the composer rather than behind it.
+          <div className="flex-1 flex items-center justify-center pb-[calc(88px+env(safe-area-inset-bottom)+76px)] md:pb-6">
             {Greeting}
           </div>
         ) : (
@@ -349,7 +353,9 @@ function Page() {
               className="h-full overflow-y-auto pr-1"
               style={{ minHeight: "40vh" }}
             >
-              <div className="flex flex-col gap-3 md:gap-4 pt-3 pb-4">
+              {/* Bottom padding on the inner list keeps the most-recent
+                  message scrollable above the fixed mobile composer. */}
+              <div className="flex flex-col gap-3 md:gap-4 pt-3 pb-[calc(88px+env(safe-area-inset-bottom)+76px)] md:pb-4">
                 {messages.map((m, i) => (
                   <Bubble
                     key={i}
@@ -364,12 +370,16 @@ function Page() {
           </div>
         )}
 
+        {/* Mobile: fixed above the floating bottom-nav so the composer
+            never scrolls with the chat. Backdrop-blur + opaque tint so
+            messages scrolling underneath don't show through.
+            Desktop: original in-flow layout, no special background. */}
         <form
           onSubmit={(e) => {
             e.preventDefault();
             send(input);
           }}
-          className="mt-3 flex items-end gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2"
+          className="fixed left-5 right-5 z-30 bottom-[calc(88px+env(safe-area-inset-bottom)+12px)] bg-[#0E0E10]/85 backdrop-blur-md md:static md:left-auto md:right-auto md:bottom-auto md:mt-3 md:bg-white/[0.04] md:backdrop-blur-0 flex items-end gap-2 rounded-2xl border border-white/10 px-3 py-2"
         >
           <textarea
             ref={inputRef}
