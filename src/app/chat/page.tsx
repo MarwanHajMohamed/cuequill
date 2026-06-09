@@ -336,11 +336,17 @@ function Page() {
   );
 
   return (
-    /* Mobile clamps the outer column to the viewport minus the floating
-       bottom tab bar (88px + iOS home-indicator inset) so the composer
-       stays just above the nav pill instead of being pushed off-screen
-       by the body padding. Desktop has no bottom nav -> min-h-screen. */
-    <div className="w-full flex flex-col items-stretch min-h-[calc(100dvh-88px-env(safe-area-inset-bottom))] md:min-h-screen md:pb-3">
+    /* The outer column is sized to EXACTLY the visible area (viewport
+       minus the floating mobile nav, or full viewport on desktop)
+       using `h-[…]` rather than `min-h-[…]`. That swap is load-
+       bearing: with min-h the container could grow when messages
+       overflow, the WHOLE PAGE would scroll, and chat content would
+       slide behind both the top navbar and the floating bottom-nav.
+       With a fixed h, the flex chain inside (flex-1 + min-h-0 +
+       overflow-y-auto on the message list) actually constrains, so
+       scroll happens INSIDE the messages container and the chat area
+       stays cleanly bounded between the two navbars. */
+    <div className="w-full flex flex-col items-stretch h-[calc(100dvh-88px-env(safe-area-inset-bottom))] md:h-screen md:pb-3">
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0 -z-10"
