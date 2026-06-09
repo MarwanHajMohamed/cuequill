@@ -77,6 +77,13 @@ function Page() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  // Live height of the composer (fixed-positioned on mobile). Drives
+  // the bottom padding of the messages column so the chat box ends
+  // above the composer instead of scrolling behind it. Recalculated
+  // whenever the textarea grows from 1 line up to its 6-line max.
+  const [composerH, setComposerH] = useState(0);
 
   // Word-drip plumbing - kept in refs because the producer (network
   // reader) and consumer (interval timer) both live outside React's
@@ -84,6 +91,20 @@ function Page() {
   const renderQueueRef = useRef<string[]>([]);
   const networkOpenRef = useRef(false);
   const tickerRef = useRef<number | null>(null);
+
+  // Observe the composer's rendered height so the messages column
+  // can reserve exactly that much bottom space on mobile. offsetHeight
+  // covers content + padding + border in one number, no approximation.
+  useEffect(() => {
+    const el = formRef.current;
+    if (!el) return;
+    setComposerH(el.offsetHeight);
+    const ro = new ResizeObserver(() => {
+      if (formRef.current) setComposerH(formRef.current.offsetHeight);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   // ── Persistence (best-effort, localStorage) ──────────────────────────
   useEffect(() => {
@@ -329,13 +350,20 @@ function Page() {
         }}
       />
 
-      <div className="w-full max-w-[1100px] mx-auto px-5 md:px-10 mt-24 md:mt-28 flex-1 flex flex-col min-h-0">
+      {/* The inner column reserves `--composer-pb` of bottom padding on
+          mobile so the messages column visually CLOSES above the fixed
+          composer instead of extending behind it. Desktop forces it
+          back to 0 because the composer is in-flow there. */}
+      <div
+        className="w-full max-w-[1100px] mx-auto px-5 md:px-10 mt-24 md:mt-28 flex-1 flex flex-col min-h-0 pb-[var(--composer-pb,0px)] md:pb-0"
+        style={
+          {
+            "--composer-pb": `${composerH + 24}px`,
+          } as React.CSSProperties
+        }
+      >
         {empty ? (
-          // Mobile bottom padding clears the fixed composer (offset
-          // 88px nav + safe-area + 12px gap + ~56px form + breathing
-          // room) so the centered greeting + cards sit visually above
-          // the composer rather than behind it.
-          <div className="flex-1 flex items-center justify-center pb-[calc(88px+env(safe-area-inset-bottom)+76px)] md:pb-6">
+          <div className="flex-1 flex items-center justify-center pb-6">
             {Greeting}
           </div>
         ) : (
@@ -351,11 +379,8 @@ function Page() {
             <div
               ref={scrollRef}
               className="h-full overflow-y-auto pr-1"
-              style={{ minHeight: "40vh" }}
             >
-              {/* Bottom padding on the inner list keeps the most-recent
-                  message scrollable above the fixed mobile composer. */}
-              <div className="flex flex-col gap-3 md:gap-4 pt-3 pb-[calc(88px+env(safe-area-inset-bottom)+76px)] md:pb-4">
+              <div className="flex flex-col gap-3 md:gap-4 pt-3 pb-4">
                 {messages.map((m, i) => (
                   <Bubble
                     key={i}
@@ -375,6 +400,7 @@ function Page() {
             messages scrolling underneath don't show through.
             Desktop: original in-flow layout, no special background. */}
         <form
+          ref={formRef}
           onSubmit={(e) => {
             e.preventDefault();
             send(input);
