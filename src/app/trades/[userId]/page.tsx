@@ -19,6 +19,7 @@ import Filters from "./Filters";
 import Statistics from "./Statistics";
 import { AnimatePresence, motion } from "framer-motion";
 import { HeroSkeleton, TableSkeleton } from "@/components/Loaders";
+import { tradeNetPL } from "@/lib/helpers/tradeNet";
 
 function Page({ params }: { params: Promise<{ userId: string }> }) {
   const [simulated] = useLocalStorage<boolean>("simulated", false);
@@ -153,7 +154,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
     "Symbol",
     "PUT/CALL",
     "Status",
-    "P/L",
+    "Net P/L",
     "Change %",
     "Contract Price",
     "Qty",
@@ -384,7 +385,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                                       : "text-red-500"
                                   }
                                 >
-                                  ${trade.profitLoss?.toFixed(2)}
+                                  ${tradeNetPL(trade).toFixed(2)}
                                 </span>
                               )}
                             </td>

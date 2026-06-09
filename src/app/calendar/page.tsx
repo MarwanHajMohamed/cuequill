@@ -185,6 +185,7 @@ function Page() {
             closingContractPrice: trade.closingContractPrice,
             notes: trade.notes,
             profitLoss: trade.profitLoss,
+            fees: trade.fees,
             favourite: trade.favourite,
           };
         })
