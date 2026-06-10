@@ -272,10 +272,12 @@
        (~60px incl. mt-15) and the floating bottom tab bar
        (88px + iOS home-indicator inset), minus the calendar's own
        chrome (nav row 36, nav margin 4, weekdays 28, bottom pad 8,
-       border 2) and the control row above it (~44px). */
+       border 2) and the control row above it (~44px). The top safe-area
+       inset is also subtracted because the body adds it as padding-top
+       in standalone PWA mode (status bar draws over the webview). */
     height: calc(
       100dvh - 60px - 44px - 36px - 4px - 28px - 8px - 2px - 88px -
-        env(safe-area-inset-bottom)
+        env(safe-area-inset-top) - env(safe-area-inset-bottom)
     ) !important;
     grid-auto-rows: 1fr !important;
     gap: 3px;
