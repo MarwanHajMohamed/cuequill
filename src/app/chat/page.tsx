@@ -21,6 +21,7 @@ import { useTrades } from "@/hooks/useTrades";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
 import ViewTradeModal from "@/app/dashboard/components/modals/ViewTradeModal";
 
+import { fmtMoneySignedCompact } from "@/lib/helpers/fmt";
 type Msg = { role: "user" | "model"; text: string; pending?: boolean };
 
 // Supplied by the chat Page so that any `trade://<id>` link the Gemini
@@ -382,7 +383,11 @@ function Page() {
   const Greeting = useMemo(
     () => (
       <div className="flex flex-col items-center gap-8 w-full max-w-xl mx-auto">
-        <div className="flex flex-col items-center text-center gap-1">
+        <div className="flex flex-col items-center text-center gap-2">
+          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-teal-500/10 text-teal-300 border border-teal-500/25 text-[11px] uppercase tracking-[0.15em] font-medium">
+            <i className="fa-solid fa-wand-magic-sparkles text-[10px]" />
+            QuillAI
+          </div>
           <h2 className="text-2xl md:text-3xl font-semibold tracking-tight">
             Ask anything about your trades
           </h2>
@@ -629,7 +634,7 @@ function walkChildren(children: React.ReactNode): React.ReactNode {
 // the TradeChatContext.openTrade callback.
 
 const MONEY_FMT = (n: number) =>
-  `${n >= 0 ? "+" : "−"}$${Math.abs(n).toFixed(2)}`;
+  `${fmtMoneySignedCompact(n)}`;
 
 function fmtDate(d: string | Date | null | undefined): string | null {
   if (!d) return null;

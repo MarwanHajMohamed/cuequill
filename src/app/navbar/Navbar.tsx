@@ -175,7 +175,7 @@ export default function Navbar() {
   const moreItems = [
     {
       icon: "fa-solid fa-wand-magic-sparkles",
-      label: "AI assistant",
+      label: "QuillAI",
       slug: "chat",
     },
     {
@@ -190,7 +190,7 @@ export default function Navbar() {
   ];
 
   const guideItems = [
-    { label: "AI assistant", slug: "chat" },
+    { label: "QuillAI", slug: "chat" },
     { label: "Strategies", slug: "strategies" },
     { label: "Stocks/ETFs", slug: "stocks" },
     { label: "Rules", slug: "rules" },

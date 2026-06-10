@@ -5,6 +5,7 @@ import { useTrades } from "@/hooks/useTrades";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { Trade } from "@/app/types/Trades";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
+import { fmtMoneySignedCompact } from "@/lib/helpers/fmt";
 import {
   ResponsiveContainer,
   Area,
@@ -253,7 +254,7 @@ export default function DashboardStats({ userId }: { userId: string }) {
           value={
             s.allTime.count === 0
               ? "-"
-              : `${s.allTime.netPL >= 0 ? "+" : "−"}$${Math.abs(s.allTime.netPL).toFixed(2)}`
+              : `${fmtMoneySignedCompact(s.allTime.netPL)}`
           }
           tone={
             s.allTime.count === 0
@@ -369,7 +370,7 @@ export default function DashboardStats({ userId }: { userId: string }) {
                     payload?.[0]?.payload?.date ?? ""
                   }
                   formatter={(v: number) => [
-                    `${v >= 0 ? "+" : "−"}$${Math.abs(v).toFixed(2)}`,
+                    `${fmtMoneySignedCompact(v)}`,
                     "Cumulative",
                   ]}
                 />
