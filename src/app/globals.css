@@ -20,9 +20,13 @@ body {
 
 /* Mobile: leave room for the floating bottom-tab pill (~64px tall +
    12px margin) plus the iOS home-indicator safe area. Desktop has no
-   bottom nav so no padding. */
+   bottom nav so no padding. The top inset keeps page content clear of
+   the notch when launched as a standalone PWA (black-translucent status
+   bar draws the webview under the status bar); in Safari the inset is 0
+   so layout is unchanged. */
 @media (max-width: 767px) {
   body {
+    padding-top: env(safe-area-inset-top);
     padding-bottom: calc(88px + env(safe-area-inset-bottom));
   }
 }
