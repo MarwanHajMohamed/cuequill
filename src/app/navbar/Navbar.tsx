@@ -451,15 +451,6 @@ export default function Navbar() {
 
         {/* -------- MOBILE NAV -------- */}
 
-        {/* "More" sheet backdrop */}
-        <div
-          onClick={() => setOpenMore(false)}
-          className={`md:hidden fixed inset-0 bg-black/70 z-40 transition-opacity duration-300 ${
-            openMore
-              ? "opacity-100 pointer-events-auto"
-              : "opacity-0 pointer-events-none"
-          }`}
-        />
 
         {/* MOBILE TOP - no chrome. Just the brand mark on the left and
             the market-status pill on the right, floating over the page. */}
@@ -529,210 +520,7 @@ export default function Navbar() {
           )}
         </AnimatePresence>
 
-        {/* MOBILE BOTTOM TAB BAR - floating glass pill with a sliding
-            active indicator. */}
-        <nav
-          className="md:hidden fixed bottom-0 inset-x-0 z-50 flex justify-center pointer-events-none"
-          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-        >
-          <div
-            ref={bottomBarRef}
-            className="pointer-events-auto relative flex items-stretch w-[calc(100%-24px)] max-w-[440px] mx-3 mb-3 px-1.5 py-1 bg-white/[0.06] backdrop-blur-xl border border-white/15 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.45)]"
-          >
-            {/* Single sliding indicator pill - measured from each tab's
-                offsetLeft / width relative to the bar. Draggable: hold
-                and slide it across to another tab and it snaps + jumps
-                you there. */}
-            {bottomPill && activeBottomKey && (
-              <motion.span
-                aria-hidden
-                className="absolute top-1 bottom-1 rounded-full bg-white/15 backdrop-blur-md border border-white/25 shadow-[0_2px_10px_rgba(0,0,0,0.25)] cursor-grab active:cursor-grabbing"
-                style={{
-                  left: 0,
-                  x: pillX,
-                  width: pillWidth,
-                  touchAction: "pan-y",
-                }}
-                drag="x"
-                dragMomentum={false}
-                dragElastic={0.06}
-                dragConstraints={{
-                  left:
-                    Object.values(tabPositions).reduce(
-                      (min, p) => Math.min(min, p.x),
-                      Infinity,
-                    ) || 0,
-                  right:
-                    Object.values(tabPositions).reduce(
-                      (max, p) => Math.max(max, p.x),
-                      0,
-                    ) || 0,
-                }}
-                onDragEnd={handlePillDragEnd}
-              />
-            )}
 
-            {bottomTabs.map((tab) => {
-              const active = isActive(tab.slug);
-              return (
-                <Link
-                  key={tab.slug}
-                  ref={(el) => {
-                    bottomTabRefs.current[tab.slug] = el;
-                  }}
-                  href={hrefFor(tab.slug)}
-                  prefetch
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleNavClick(tab.slug);
-                  }}
-                  className="relative flex flex-col items-center justify-center flex-1 py-2 cursor-pointer"
-                >
-                  <i
-                    className={`relative ${tab.icon} text-[15px] transition-colors ${
-                      active ? "text-teal-300" : "text-white/55"
-                    }`}
-                  />
-                  <span
-                    className={`relative text-[10px] mt-0.5 transition-colors ${
-                      active ? "text-teal-300" : "text-white/55"
-                    }`}
-                  >
-                    {tab.label}
-                  </span>
-                </Link>
-              );
-            })}
-
-            <button
-              type="button"
-              ref={(el) => {
-                bottomTabRefs.current["__more__"] = el;
-              }}
-              onClick={() => setOpenMore((v) => !v)}
-              className="relative flex flex-col items-center justify-center flex-1 py-2 cursor-pointer"
-            >
-              <i
-                className={`relative fa-solid fa-ellipsis text-[15px] transition-colors ${
-                  activeBottomKey === "__more__"
-                    ? "text-teal-300"
-                    : "text-white/55"
-                }`}
-              />
-              <span
-                className={`relative text-[10px] mt-0.5 transition-colors ${
-                  activeBottomKey === "__more__"
-                    ? "text-teal-300"
-                    : "text-white/55"
-                }`}
-              >
-                More
-              </span>
-            </button>
-          </div>
-        </nav>
-
-        {/* MOBILE "More" BOTTOM SHEET */}
-        <AnimatePresence>
-          {openMore && (
-            <motion.div
-              key="more-sheet"
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", stiffness: 380, damping: 36 }}
-              className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-[#13131a] border-t border-white/10 rounded-t-3xl shadow-[0_-12px_40px_rgba(0,0,0,0.5)]"
-              style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-            >
-              {/* Grab handle */}
-              <div className="flex justify-center pt-2">
-                <span className="w-10 h-1 rounded-full bg-white/20" />
-              </div>
-
-              <div className="px-4 pt-3 pb-4 flex items-center justify-between">
-                <span className="text-[11px] uppercase tracking-[0.18em] text-white/40 font-medium">
-                  More
-                </span>
-                <button
-                  aria-label="Close"
-                  onClick={() => setOpenMore(false)}
-                  className="w-8 h-8 rounded-full hover:bg-white/5 flex items-center justify-center text-white/60 hover:text-white transition"
-                >
-                  <i className="fa-solid fa-xmark text-[13px]" />
-                </button>
-              </div>
-
-              <div className="px-3 pb-3 grid grid-cols-1 gap-1">
-                {moreItems.map((item) => {
-                  const active = isActive(item.slug);
-                  return (
-                    <Link
-                      key={item.slug}
-                      href={hrefFor(item.slug)}
-                      prefetch
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleNavClick(item.slug);
-                      }}
-                      className={`flex items-center gap-4 px-4 py-3 rounded-xl transition ${
-                        active
-                          ? "bg-teal-500/10 text-white"
-                          : "text-white/80 hover:bg-white/5"
-                      }`}
-                    >
-                      <i
-                        className={`${item.icon} w-5 text-center text-[15px] ${active ? "text-teal-300" : "text-white/55"}`}
-                      />
-                      <span className="text-[14px] font-medium">
-                        {item.label}
-                      </span>
-                    </Link>
-                  );
-                })}
-              </div>
-
-              <div className="mx-4 mb-3 p-3 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-between">
-                <div className="flex flex-col">
-                  <span className="text-[13px] text-white/85 font-medium">
-                    Simulated trading
-                  </span>
-                  <span className="text-[11px] text-white/45">
-                    Use paper-trade data
-                  </span>
-                </div>
-                <label className="inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={simulated}
-                    onChange={(e) => {
-                      setSimulated(e.target.checked);
-                      window.location.reload();
-                    }}
-                    className="sr-only peer"
-                  />
-                  <div
-                    className="relative w-10 h-5 bg-white/10 rounded-full peer
-                      peer-checked:after:translate-x-full
-                      after:content-[''] after:absolute after:top-[2px]
-                      after:start-[2px] after:bg-white after:rounded-full
-                      after:h-4 after:w-4 after:transition-all
-                      peer-checked:bg-teal-500"
-                  />
-                </label>
-              </div>
-
-              <div className="px-3 pb-4">
-                <button
-                  onClick={() => signOut({ callbackUrl: "/" })}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-red-500/10 text-red-300 border border-red-500/25 hover:bg-red-500/20 transition text-[13px] font-medium"
-                >
-                  <i className="fa-solid fa-right-from-bracket text-[12px]" />
-                  Logout
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         {/* -------- DESKTOP NAV -------- */}
         <div
@@ -974,6 +762,226 @@ export default function Navbar() {
           </div>
         </div>
       </div>
+
+      {/* BOTTOM-ANCHORED NAV - kept OUT of the fixed top-0 container
+          above. iOS WebKit mishandles position:fixed nested inside
+          another position:fixed (the inner one scrolls away with the
+          page), so these render at the fragment root as their own
+          fixed layers pinned to the viewport bottom. */}
+        {/* "More" sheet backdrop */}
+        <div
+          onClick={() => setOpenMore(false)}
+          className={`md:hidden fixed inset-0 bg-black/70 z-40 transition-opacity duration-300 ${
+            openMore
+              ? "opacity-100 pointer-events-auto"
+              : "opacity-0 pointer-events-none"
+          }`}
+        />
+
+        {/* MOBILE BOTTOM TAB BAR - floating glass pill with a sliding
+            active indicator. */}
+        <nav
+          className="md:hidden fixed bottom-0 inset-x-0 z-50 flex justify-center pointer-events-none"
+          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        >
+          <div
+            ref={bottomBarRef}
+            className="pointer-events-auto relative flex items-stretch w-[calc(100%-24px)] max-w-[440px] mx-3 mb-3 px-1.5 py-1 bg-white/[0.06] backdrop-blur-xl border border-white/15 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.45)]"
+          >
+            {/* Single sliding indicator pill - measured from each tab's
+                offsetLeft / width relative to the bar. Draggable: hold
+                and slide it across to another tab and it snaps + jumps
+                you there. */}
+            {bottomPill && activeBottomKey && (
+              <motion.span
+                aria-hidden
+                className="absolute top-1 bottom-1 rounded-full bg-white/15 backdrop-blur-md border border-white/25 shadow-[0_2px_10px_rgba(0,0,0,0.25)] cursor-grab active:cursor-grabbing"
+                style={{
+                  left: 0,
+                  x: pillX,
+                  width: pillWidth,
+                  touchAction: "pan-y",
+                }}
+                drag="x"
+                dragMomentum={false}
+                dragElastic={0.06}
+                dragConstraints={{
+                  left:
+                    Object.values(tabPositions).reduce(
+                      (min, p) => Math.min(min, p.x),
+                      Infinity,
+                    ) || 0,
+                  right:
+                    Object.values(tabPositions).reduce(
+                      (max, p) => Math.max(max, p.x),
+                      0,
+                    ) || 0,
+                }}
+                onDragEnd={handlePillDragEnd}
+              />
+            )}
+
+            {bottomTabs.map((tab) => {
+              const active = isActive(tab.slug);
+              return (
+                <Link
+                  key={tab.slug}
+                  ref={(el) => {
+                    bottomTabRefs.current[tab.slug] = el;
+                  }}
+                  href={hrefFor(tab.slug)}
+                  prefetch
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleNavClick(tab.slug);
+                  }}
+                  className="relative flex flex-col items-center justify-center flex-1 py-2 cursor-pointer"
+                >
+                  <i
+                    className={`relative ${tab.icon} text-[15px] transition-colors ${
+                      active ? "text-teal-300" : "text-white/55"
+                    }`}
+                  />
+                  <span
+                    className={`relative text-[10px] mt-0.5 transition-colors ${
+                      active ? "text-teal-300" : "text-white/55"
+                    }`}
+                  >
+                    {tab.label}
+                  </span>
+                </Link>
+              );
+            })}
+
+            <button
+              type="button"
+              ref={(el) => {
+                bottomTabRefs.current["__more__"] = el;
+              }}
+              onClick={() => setOpenMore((v) => !v)}
+              className="relative flex flex-col items-center justify-center flex-1 py-2 cursor-pointer"
+            >
+              <i
+                className={`relative fa-solid fa-ellipsis text-[15px] transition-colors ${
+                  activeBottomKey === "__more__"
+                    ? "text-teal-300"
+                    : "text-white/55"
+                }`}
+              />
+              <span
+                className={`relative text-[10px] mt-0.5 transition-colors ${
+                  activeBottomKey === "__more__"
+                    ? "text-teal-300"
+                    : "text-white/55"
+                }`}
+              >
+                More
+              </span>
+            </button>
+          </div>
+        </nav>
+
+        {/* MOBILE "More" BOTTOM SHEET */}
+        <AnimatePresence>
+          {openMore && (
+            <motion.div
+              key="more-sheet"
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", stiffness: 380, damping: 36 }}
+              className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-[#13131a] border-t border-white/10 rounded-t-3xl shadow-[0_-12px_40px_rgba(0,0,0,0.5)]"
+              style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+            >
+              {/* Grab handle */}
+              <div className="flex justify-center pt-2">
+                <span className="w-10 h-1 rounded-full bg-white/20" />
+              </div>
+
+              <div className="px-4 pt-3 pb-4 flex items-center justify-between">
+                <span className="text-[11px] uppercase tracking-[0.18em] text-white/40 font-medium">
+                  More
+                </span>
+                <button
+                  aria-label="Close"
+                  onClick={() => setOpenMore(false)}
+                  className="w-8 h-8 rounded-full hover:bg-white/5 flex items-center justify-center text-white/60 hover:text-white transition"
+                >
+                  <i className="fa-solid fa-xmark text-[13px]" />
+                </button>
+              </div>
+
+              <div className="px-3 pb-3 grid grid-cols-1 gap-1">
+                {moreItems.map((item) => {
+                  const active = isActive(item.slug);
+                  return (
+                    <Link
+                      key={item.slug}
+                      href={hrefFor(item.slug)}
+                      prefetch
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleNavClick(item.slug);
+                      }}
+                      className={`flex items-center gap-4 px-4 py-3 rounded-xl transition ${
+                        active
+                          ? "bg-teal-500/10 text-white"
+                          : "text-white/80 hover:bg-white/5"
+                      }`}
+                    >
+                      <i
+                        className={`${item.icon} w-5 text-center text-[15px] ${active ? "text-teal-300" : "text-white/55"}`}
+                      />
+                      <span className="text-[14px] font-medium">
+                        {item.label}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+
+              <div className="mx-4 mb-3 p-3 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-between">
+                <div className="flex flex-col">
+                  <span className="text-[13px] text-white/85 font-medium">
+                    Simulated trading
+                  </span>
+                  <span className="text-[11px] text-white/45">
+                    Use paper-trade data
+                  </span>
+                </div>
+                <label className="inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={simulated}
+                    onChange={(e) => {
+                      setSimulated(e.target.checked);
+                      window.location.reload();
+                    }}
+                    className="sr-only peer"
+                  />
+                  <div
+                    className="relative w-10 h-5 bg-white/10 rounded-full peer
+                      peer-checked:after:translate-x-full
+                      after:content-[''] after:absolute after:top-[2px]
+                      after:start-[2px] after:bg-white after:rounded-full
+                      after:h-4 after:w-4 after:transition-all
+                      peer-checked:bg-teal-500"
+                  />
+                </label>
+              </div>
+
+              <div className="px-3 pb-4">
+                <button
+                  onClick={() => signOut({ callbackUrl: "/" })}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-red-500/10 text-red-300 border border-red-500/25 hover:bg-red-500/20 transition text-[13px] font-medium"
+                >
+                  <i className="fa-solid fa-right-from-bracket text-[12px]" />
+                  Logout
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
     </>
   );
 }
