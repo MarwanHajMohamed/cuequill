@@ -20,6 +20,7 @@ function Page() {
   const toast = useToast();
 
   const [sections, setSections] = useState<Section[] | null>(null);
+  const [editMode, setEditMode] = useState(false);
   const sectionsRef = useRef<Section[]>([]);
 
   useEffect(() => {
@@ -194,11 +195,29 @@ function Page() {
           </div>
         ) : (
           <>
-            <div className="mt-10 grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 items-start">
+            <div className="mt-8 md:mt-10 flex justify-end">
+              <button
+                onClick={() => setEditMode((v) => !v)}
+                className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-[12px] font-medium transition cursor-pointer ${
+                  editMode
+                    ? "bg-teal-500/15 text-teal-300 border-teal-500/30"
+                    : "bg-white/[0.03] text-white/65 border-white/10 hover:bg-white/[0.06] hover:text-white"
+                }`}
+              >
+                <i
+                  className={`fa-solid ${
+                    editMode ? "fa-check" : "fa-pen"
+                  } text-[10px]`}
+                />
+                {editMode ? "Done" : "Edit"}
+              </button>
+            </div>
+            <div className="mt-3 grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 items-start">
               <AnimatePresence initial={false}>
                 {sections.map((section, i) => (
                   <SectionCard
                     key={section.id}
+                    editMode={editMode}
                     section={section}
                     isFirst={i === 0}
                     isLast={i === sections.length - 1}
@@ -226,13 +245,15 @@ function Page() {
               </AnimatePresence>
             </div>
 
-            <button
-              onClick={addSection}
-              className="mt-4 md:mt-6 w-full flex items-center justify-center gap-2 rounded-2xl border border-dashed border-white/15 bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/25 transition py-4 text-[13px] font-medium text-white/55 hover:text-white/80 cursor-pointer"
-            >
-              <i className="fa-solid fa-plus text-[11px]" />
-              Add section
-            </button>
+            {editMode && (
+              <button
+                onClick={addSection}
+                className="mt-4 md:mt-6 w-full flex items-center justify-center gap-2 rounded-2xl border border-dashed border-white/15 bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/25 transition py-4 text-[13px] font-medium text-white/55 hover:text-white/80 cursor-pointer"
+              >
+                <i className="fa-solid fa-plus text-[11px]" />
+                Add section
+              </button>
+            )}
           </>
         )}
       </div>
@@ -242,6 +263,7 @@ function Page() {
 
 // ─── Section card ────────────────────────────────────────────────────────
 function SectionCard({
+  editMode,
   section,
   isFirst,
   isLast,
@@ -255,6 +277,7 @@ function SectionCard({
   onMoveRule,
   onMoveRuleToSection,
 }: {
+  editMode: boolean;
   section: Section;
   isFirst: boolean;
   isLast: boolean;
@@ -287,39 +310,47 @@ function SectionCard({
       className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-5 md:p-7"
     >
       <div className="flex items-center gap-2 mb-5">
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          onBlur={commitTitle}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") e.currentTarget.blur();
-            if (e.key === "Escape") {
-              setTitle(section.title);
-              e.currentTarget.blur();
-            }
-          }}
-          className="flex-1 min-w-0 bg-transparent text-2xl md:text-3xl font-semibold tracking-tight text-white focus:outline-none focus:border-b focus:border-white/20"
-        />
-        <div className="flex items-center gap-0.5 shrink-0">
-          <IconBtn
-            label="Move section up"
-            icon="fa-chevron-up"
-            disabled={isFirst}
-            onClick={() => onMove(-1)}
+        {editMode ? (
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            onBlur={commitTitle}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") e.currentTarget.blur();
+              if (e.key === "Escape") {
+                setTitle(section.title);
+                e.currentTarget.blur();
+              }
+            }}
+            className="flex-1 min-w-0 bg-transparent text-2xl md:text-3xl font-semibold tracking-tight text-white focus:outline-none focus:border-b focus:border-white/20"
           />
-          <IconBtn
-            label="Move section down"
-            icon="fa-chevron-down"
-            disabled={isLast}
-            onClick={() => onMove(1)}
-          />
-          <IconBtn
-            label="Delete section"
-            icon="fa-trash-can"
-            danger
-            onClick={onDelete}
-          />
-        </div>
+        ) : (
+          <h2 className="flex-1 min-w-0 text-2xl md:text-3xl font-semibold tracking-tight text-white">
+            {section.title}
+          </h2>
+        )}
+        {editMode && (
+          <div className="flex items-center gap-0.5 shrink-0">
+            <IconBtn
+              label="Move section up"
+              icon="fa-chevron-up"
+              disabled={isFirst}
+              onClick={() => onMove(-1)}
+            />
+            <IconBtn
+              label="Move section down"
+              icon="fa-chevron-down"
+              disabled={isLast}
+              onClick={() => onMove(1)}
+            />
+            <IconBtn
+              label="Delete section"
+              icon="fa-trash-can"
+              danger
+              onClick={onDelete}
+            />
+          </div>
+        )}
       </div>
 
       <ol className="flex flex-col gap-3 md:gap-4">
@@ -327,6 +358,7 @@ function SectionCard({
           {section.rules.map((rule, i) => (
             <RuleRow
               key={rule.id}
+              editMode={editMode}
               index={i}
               rule={rule}
               isFirst={i === 0}
@@ -339,7 +371,7 @@ function SectionCard({
             />
           ))}
         </AnimatePresence>
-        <AddRuleRow onAdd={onAddRule} />
+        {editMode && <AddRuleRow onAdd={onAddRule} />}
       </ol>
     </motion.section>
   );
@@ -347,6 +379,7 @@ function SectionCard({
 
 // ─── Rule row ──────────────────────────────────────────────────────────
 function RuleRow({
+  editMode,
   index,
   rule,
   isFirst,
@@ -357,6 +390,7 @@ function RuleRow({
   onEdit,
   onDelete,
 }: {
+  editMode: boolean;
   index: number;
   rule: Rule;
   isFirst: boolean;
@@ -403,7 +437,7 @@ function RuleRow({
       </div>
 
       <div className="flex-1 min-w-0 pt-0.5">
-        {editing ? (
+        {editing && editMode ? (
           <div className="flex flex-col gap-1.5">
             <input
               autoFocus
@@ -454,66 +488,68 @@ function RuleRow({
               )}
             </div>
 
-            {/* Controls */}
-            <div className="shrink-0 flex items-center gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition">
-              <IconBtn
-                label="Move up"
-                icon="fa-chevron-up"
-                disabled={isFirst}
-                onClick={() => onMove(-1)}
-              />
-              <IconBtn
-                label="Move down"
-                icon="fa-chevron-down"
-                disabled={isLast}
-                onClick={() => onMove(1)}
-              />
-              {otherSections.length > 0 && (
-                <div className="relative">
-                  <IconBtn
-                    label="Move to section"
-                    icon="fa-right-left"
-                    onClick={() => setMenuOpen((v) => !v)}
-                  />
-                  {menuOpen && (
-                    <>
-                      <div
-                        className="fixed inset-0 z-40"
-                        onClick={() => setMenuOpen(false)}
-                      />
-                      <div className="absolute right-0 top-full mt-1 z-50 w-48 rounded-xl border border-white/10 bg-[#0F0F17] shadow-[0_20px_80px_rgba(0,0,0,0.6)] p-1">
-                        <div className="px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-white/35 font-medium">
-                          Move to
+            {/* Controls - only in edit mode */}
+            {editMode && (
+              <div className="shrink-0 flex items-center gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition">
+                <IconBtn
+                  label="Move up"
+                  icon="fa-chevron-up"
+                  disabled={isFirst}
+                  onClick={() => onMove(-1)}
+                />
+                <IconBtn
+                  label="Move down"
+                  icon="fa-chevron-down"
+                  disabled={isLast}
+                  onClick={() => onMove(1)}
+                />
+                {otherSections.length > 0 && (
+                  <div className="relative">
+                    <IconBtn
+                      label="Move to section"
+                      icon="fa-right-left"
+                      onClick={() => setMenuOpen((v) => !v)}
+                    />
+                    {menuOpen && (
+                      <>
+                        <div
+                          className="fixed inset-0 z-40"
+                          onClick={() => setMenuOpen(false)}
+                        />
+                        <div className="absolute right-0 top-full mt-1 z-50 w-48 rounded-xl border border-white/10 bg-[#0F0F17] shadow-[0_20px_80px_rgba(0,0,0,0.6)] p-1">
+                          <div className="px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-white/35 font-medium">
+                            Move to
+                          </div>
+                          {otherSections.map((s) => (
+                            <button
+                              key={s.id}
+                              onClick={() => {
+                                onMoveTo(s.id);
+                                setMenuOpen(false);
+                              }}
+                              className="w-full text-left px-2 py-1.5 rounded-lg text-[13px] text-white/80 hover:bg-white/[0.06] hover:text-white transition cursor-pointer truncate"
+                            >
+                              {s.title}
+                            </button>
+                          ))}
                         </div>
-                        {otherSections.map((s) => (
-                          <button
-                            key={s.id}
-                            onClick={() => {
-                              onMoveTo(s.id);
-                              setMenuOpen(false);
-                            }}
-                            className="w-full text-left px-2 py-1.5 rounded-lg text-[13px] text-white/80 hover:bg-white/[0.06] hover:text-white transition cursor-pointer truncate"
-                          >
-                            {s.title}
-                          </button>
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
-              <IconBtn
-                label="Edit rule"
-                icon="fa-pen"
-                onClick={() => setEditing(true)}
-              />
-              <IconBtn
-                label="Delete rule"
-                icon="fa-xmark"
-                danger
-                onClick={onDelete}
-              />
-            </div>
+                      </>
+                    )}
+                  </div>
+                )}
+                <IconBtn
+                  label="Edit rule"
+                  icon="fa-pen"
+                  onClick={() => setEditing(true)}
+                />
+                <IconBtn
+                  label="Delete rule"
+                  icon="fa-xmark"
+                  danger
+                  onClick={onDelete}
+                />
+              </div>
+            )}
           </div>
         )}
       </div>
