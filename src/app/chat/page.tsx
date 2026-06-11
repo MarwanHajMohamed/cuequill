@@ -448,14 +448,7 @@ function Page() {
           mobile so the messages column visually CLOSES above the fixed
           composer instead of extending behind it. Desktop forces it
           back to 0 because the composer is in-flow there. */}
-      <div
-        className="w-full max-w-[1100px] mx-auto px-5 md:px-10 mt-12 md:mt-28 flex-1 flex flex-col min-h-0 pb-[var(--composer-pb,0px)] md:pb-0"
-        style={
-          {
-            "--composer-pb": `${composerH + 24}px`,
-          } as React.CSSProperties
-        }
-      >
+      <div className="w-full max-w-[1100px] mx-auto px-5 md:px-10 mt-12 md:mt-28 flex-1 flex flex-col min-h-0">
         {empty ? (
           <div className="flex-1 flex items-center justify-center pb-6">
             {Greeting}
@@ -464,7 +457,7 @@ function Page() {
           <div className="flex-1 min-h-0 relative">
             <button
               onClick={clear}
-              className="absolute -top-2 right-0 z-20 inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-white/[0.04] backdrop-blur text-white/60 hover:bg-white/[0.08] hover:text-white transition text-[12px] font-medium cursor-pointer"
+              className="absolute -top-2 left-1/2 -translate-x-1/2 z-20 inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-white/[0.04] backdrop-blur text-white/60 hover:bg-white/[0.08] hover:text-white transition text-[12px] font-medium cursor-pointer"
               aria-label="Clear conversation"
             >
               <i className="fa-regular fa-trash-can text-[10px]" />
@@ -474,7 +467,12 @@ function Page() {
               ref={scrollRef}
               className="h-full overflow-y-auto pr-1"
             >
-              <div className="flex flex-col gap-3 md:gap-4 pt-4 pb-16">
+              <div
+                className="flex flex-col gap-3 md:gap-4 pt-4 pb-[var(--msg-pb,4rem)] md:pb-4"
+                style={
+                  { "--msg-pb": `${composerH + 24}px` } as React.CSSProperties
+                }
+              >
                 {messages.map((m, i) => (
                   <Bubble
                     key={i}
@@ -548,25 +546,25 @@ function Page() {
           </button>
         </form>
 
-        {/* Mobile bottom blend - the composer is fixed on phones, so this
-            frosted band is fixed too, anchored flush to the top of the
-            composer and growing upward into the messages. That makes the
-            chat dissolve into the chat box instead of leaving a hard gap.
+        {/* Mobile bottom blend - the composer is fixed on phones and the
+            messages now scroll down behind it. This fixed frosted band sits
+            behind/below the composer (lower z) and reaches up into the
+            messages, so the chat dissolves into and beneath the chat box.
             pointer-events-none so taps fall through to the messages. */}
         {!empty && (
           <div
             aria-hidden
-            className="md:hidden pointer-events-none fixed inset-x-5 z-20"
+            className="md:hidden pointer-events-none fixed inset-x-0 z-20"
             style={{
-              bottom: `calc(74px + ${composerH}px + env(safe-area-inset-bottom))`,
-              height: 88,
+              bottom: `calc(58px + env(safe-area-inset-bottom))`,
+              height: composerH + 100,
               background:
-                "linear-gradient(to top, rgba(14,14,16,0.9) 0%, rgba(14,14,16,0.45) 45%, rgba(14,14,16,0) 100%)",
+                "linear-gradient(to top, rgba(14,14,16,0.92) 0%, rgba(14,14,16,0.5) 50%, rgba(14,14,16,0) 100%)",
               backdropFilter: "blur(12px)",
               WebkitBackdropFilter: "blur(12px)",
-              maskImage: "linear-gradient(to top, #000 70%, transparent 100%)",
+              maskImage: "linear-gradient(to top, #000 65%, transparent 100%)",
               WebkitMaskImage:
-                "linear-gradient(to top, #000 70%, transparent 100%)",
+                "linear-gradient(to top, #000 65%, transparent 100%)",
             }}
           />
         )}
