@@ -179,6 +179,11 @@ export default function Navbar() {
   // Quill AI (chat) lives in the bottom tab bar, so it's not repeated here.
   const moreItems = [
     {
+      icon: "fa-solid fa-arrow-trend-up",
+      label: "Markets",
+      slug: "markets",
+    },
+    {
       icon: "fa-regular fa-circle-check",
       label: "Affirmations",
       slug: "affirmations",
@@ -190,6 +195,7 @@ export default function Navbar() {
   ];
 
   const guideItems = [
+    { label: "Markets", slug: "markets" },
     { label: "Strategies", slug: "strategies" },
     { label: "Stocks/ETFs", slug: "stocks" },
     { label: "Rules", slug: "rules" },
