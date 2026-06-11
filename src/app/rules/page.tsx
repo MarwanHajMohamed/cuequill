@@ -173,19 +173,16 @@ function Page() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: "easeOut" }}
-          className="flex flex-col gap-3 text-center items-center"
+          className="flex flex-col gap-2"
         >
-          <div className="text-[12px] uppercase tracking-[0.18em] text-white/40 font-medium">
+          <div className="text-[11px] uppercase tracking-[0.18em] text-white/40 font-medium">
             Playbook
           </div>
-          <h1 className="text-4xl md:text-6xl font-semibold tracking-tight leading-[1.05]">
+          <h1 className="text-3xl md:text-4xl font-semibold tracking-tight leading-[1.05]">
             <span className="bg-gradient-to-r from-teal-300 to-emerald-400 bg-clip-text text-transparent">
               Rules & timeframes
             </span>
           </h1>
-          <p className="text-sm md:text-[15px] text-white/55 max-w-xl leading-relaxed">
-            The non-negotiables. Read them before you open a position.
-          </p>
         </motion.div>
 
         {/* Sections */}
