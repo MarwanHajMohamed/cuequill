@@ -449,7 +449,7 @@ function Page() {
           composer instead of extending behind it. Desktop forces it
           back to 0 because the composer is in-flow there. */}
       <div
-        className="w-full max-w-[1100px] mx-auto px-5 md:px-10 mt-24 md:mt-28 flex-1 flex flex-col min-h-0 pb-[var(--composer-pb,0px)] md:pb-0"
+        className="w-full max-w-[1100px] mx-auto px-5 md:px-10 mt-12 md:mt-28 flex-1 flex flex-col min-h-0 pb-[var(--composer-pb,0px)] md:pb-0"
         style={
           {
             "--composer-pb": `${composerH + 24}px`,
@@ -474,7 +474,7 @@ function Page() {
               ref={scrollRef}
               className="h-full overflow-y-auto pr-1"
             >
-              <div className="flex flex-col gap-3 md:gap-4 pt-4 pb-12">
+              <div className="flex flex-col gap-3 md:gap-4 pt-4 pb-16">
                 {messages.map((m, i) => (
                   <Bubble
                     key={i}
@@ -487,38 +487,23 @@ function Page() {
               </div>
             </div>
 
-            {/* Edge blends - the message view dissolves from solid
-                background, through a glass (blurred) band, to clear so it
-                melts into the navbar above and the composer below instead
-                of hard-cutting. pointer-events-none so they never block
-                scrolling or taps; the masked backdrop-blur fades the frost
-                out toward the content. */}
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-x-0 top-0 h-12 z-10"
-              style={{
-                background:
-                  "linear-gradient(to bottom, #0E0E10 0%, rgba(14,14,16,0.7) 45%, rgba(14,14,16,0) 100%)",
-                backdropFilter: "blur(3px)",
-                WebkitBackdropFilter: "blur(3px)",
-                maskImage:
-                  "linear-gradient(to bottom, #000 35%, transparent 100%)",
-                WebkitMaskImage:
-                  "linear-gradient(to bottom, #000 35%, transparent 100%)",
-              }}
-            />
+            {/* Bottom edge blend - the message view dissolves through a
+                frosted-glass band into the composer below instead of
+                hard-cutting. pointer-events-none so it never blocks
+                scrolling or taps; the mask fades the frost out toward the
+                content so only the band near the composer is glassy. */}
             <div
               aria-hidden
               className="pointer-events-none absolute inset-x-0 bottom-0 h-16 z-10"
               style={{
                 background:
-                  "linear-gradient(to top, #0E0E10 0%, rgba(14,14,16,0.7) 45%, rgba(14,14,16,0) 100%)",
-                backdropFilter: "blur(3px)",
-                WebkitBackdropFilter: "blur(3px)",
+                  "linear-gradient(to top, rgba(14,14,16,0.85) 0%, rgba(14,14,16,0.4) 45%, rgba(14,14,16,0) 100%)",
+                backdropFilter: "blur(12px)",
+                WebkitBackdropFilter: "blur(12px)",
                 maskImage:
-                  "linear-gradient(to top, #000 35%, transparent 100%)",
+                  "linear-gradient(to top, #000 55%, transparent 100%)",
                 WebkitMaskImage:
-                  "linear-gradient(to top, #000 35%, transparent 100%)",
+                  "linear-gradient(to top, #000 55%, transparent 100%)",
               }}
             />
           </div>
