@@ -487,14 +487,14 @@ function Page() {
               </div>
             </div>
 
-            {/* Bottom edge blend - the message view dissolves through a
-                frosted-glass band into the composer below instead of
-                hard-cutting. pointer-events-none so it never blocks
-                scrolling or taps; the mask fades the frost out toward the
-                content so only the band near the composer is glassy. */}
+            {/* Bottom edge blend (desktop) - the composer is in-flow here,
+                sitting right below the message view, so an absolute band at
+                the bottom of the scroll area blends straight into it. On
+                mobile the composer is fixed with a reserved gap, so a
+                separate fixed band (below) handles the blend instead. */}
             <div
               aria-hidden
-              className="pointer-events-none absolute inset-x-0 bottom-0 h-16 z-10"
+              className="hidden md:block pointer-events-none absolute inset-x-0 bottom-0 h-16 z-10"
               style={{
                 background:
                   "linear-gradient(to top, rgba(14,14,16,0.85) 0%, rgba(14,14,16,0.4) 45%, rgba(14,14,16,0) 100%)",
@@ -547,6 +547,29 @@ function Page() {
             )}
           </button>
         </form>
+
+        {/* Mobile bottom blend - the composer is fixed on phones, so this
+            frosted band is fixed too, anchored flush to the top of the
+            composer and growing upward into the messages. That makes the
+            chat dissolve into the chat box instead of leaving a hard gap.
+            pointer-events-none so taps fall through to the messages. */}
+        {!empty && (
+          <div
+            aria-hidden
+            className="md:hidden pointer-events-none fixed inset-x-5 z-20"
+            style={{
+              bottom: `calc(74px + ${composerH}px + env(safe-area-inset-bottom))`,
+              height: 88,
+              background:
+                "linear-gradient(to top, rgba(14,14,16,0.9) 0%, rgba(14,14,16,0.45) 45%, rgba(14,14,16,0) 100%)",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
+              maskImage: "linear-gradient(to top, #000 70%, transparent 100%)",
+              WebkitMaskImage:
+                "linear-gradient(to top, #000 70%, transparent 100%)",
+            }}
+          />
+        )}
       </div>
     </div>
 
