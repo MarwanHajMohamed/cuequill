@@ -67,8 +67,13 @@ const config: CapacitorConfig = {
   },
   plugins: {
     SplashScreen: {
-      launchShowDuration: 800,
-      launchAutoHide: false,
+      // Auto-hide as a safety net: the web app also calls
+      // SplashScreen.hide() from NativeBridge once interactive, but if
+      // the deployed site doesn't include that code yet (branch not
+      // deployed), waiting on it would leave the solid-color splash up
+      // forever - i.e. a permanent black screen.
+      launchShowDuration: 1200,
+      launchAutoHide: true,
       backgroundColor: "#0E0E10",
       showSpinner: false,
     },
