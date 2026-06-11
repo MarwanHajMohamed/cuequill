@@ -434,7 +434,7 @@ function Page() {
        overflow-y-auto on the message list) actually constrains, so
        scroll happens INSIDE the messages container and the chat area
        stays cleanly bounded between the two navbars. */}
-    <div className="w-full flex flex-col items-stretch h-[calc(100dvh-88px-env(safe-area-inset-bottom))] md:h-screen md:pb-3">
+    <div className="w-full flex flex-col items-stretch h-[calc(100dvh-88px-env(safe-area-inset-top)-env(safe-area-inset-bottom))] md:h-screen md:pb-3">
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0 -z-10"
@@ -499,7 +499,7 @@ function Page() {
             e.preventDefault();
             send(input);
           }}
-          className="fixed left-5 right-5 z-30 bottom-[calc(88px+env(safe-area-inset-bottom)+12px)] bg-[#0E0E10]/85 backdrop-blur-md md:static md:left-auto md:right-auto md:bottom-auto md:mt-3 md:bg-white/[0.04] md:backdrop-blur-0 flex items-end gap-2 rounded-2xl border border-white/10 px-3 py-2"
+          className="fixed left-5 right-5 z-30 bottom-[calc(74px+env(safe-area-inset-bottom))] bg-[#0E0E10]/85 backdrop-blur-md md:static md:left-auto md:right-auto md:bottom-auto md:mt-3 md:bg-white/[0.04] md:backdrop-blur-0 flex items-end gap-2 rounded-2xl border border-white/10 px-3 py-2"
         >
           <textarea
             ref={inputRef}
