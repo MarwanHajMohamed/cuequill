@@ -2,351 +2,157 @@
 
 import { withAuth } from "@/lib/withAuth";
 import { AnimatePresence, motion } from "framer-motion";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useToast } from "@/hooks/useToast";
 
-type Rule = { title: string; body?: string; sub?: string[] };
-type RuleCategory = "when" | "how";
-type CustomRule = {
-  _id: string;
-  title: string;
-  body?: string;
-  category: RuleCategory;
-};
+type Rule = { id: string; title: string; body?: string };
+type Section = { id: string; title: string; rules: Rule[] };
 
-const timeframes: Rule[] = [
-  {
-    title: "Market hours",
-    body: "Opens 9:30 AM ET, closes 4:00 PM ET. Weekends are closed.",
-  },
-  {
-    title: "Skip the first 30 minutes",
-    body: "Never trade between 9:30 and 10:00 - opening candles are too volatile.",
-  },
-  {
-    title: "Premarket signals sells, not buys",
-    body: "Use premarket to flag exits, not entries.",
-  },
-  {
-    title: "PUTs at the open",
-    body: "Sell PUTs at 9:30 - price typically opens low and rallies.",
-  },
-  {
-    title: "Last call",
-    body: "Last entry is 3:59 PM. Anything after fills at the next 9:30 open.",
-  },
-  {
-    title: "SPY / QQQ extended close",
-    body: "These trade until 4:14 PM. Closing bell at 4:15 PM.",
-  },
-];
-
-const rules: Rule[] = [
-  { title: "Start small", body: "Don't size into a setup you haven't proven." },
-  {
-    title: "10% per trade",
-    body: "Cap each entry at 10% of portfolio.",
-    sub: ["Example: $500 portfolio → $50 per trade."],
-  },
-  { title: "2–4 trades per week", body: "More than that is noise, not edge." },
-  {
-    title: "Respect the timeframes",
-    body: "If the rule window says no, the answer is no.",
-  },
-  {
-    title: "Only buy fulfilled candles",
-    body: "Wait for the candle to close. Never act on a live wick.",
-  },
-  { title: "Do not exit on a loss", body: "Let the plan run, not your emotions." },
-  {
-    title: "No Fed days",
-    body: "Sit out FOMC and meeting dates - direction is unpredictable.",
-  },
-];
-
-// ─── A single rule row (used for both defaults and custom rules) ─────────
-function RuleItem({
-  index,
-  ordered,
-  title,
-  body,
-  sub,
-  onDelete,
-}: {
-  index: number;
-  ordered: boolean;
-  title: string;
-  body?: string;
-  sub?: string[];
-  onDelete?: () => void;
-}) {
-  return (
-    <li className="group flex gap-4">
-      <div
-        className={`shrink-0 w-8 h-8 rounded-lg border flex items-center justify-center text-[12px] font-semibold tabular-nums ${
-          ordered
-            ? "bg-teal-500/10 border-teal-500/25 text-teal-300"
-            : "bg-white/5 border-white/10 text-white/60"
-        }`}
-      >
-        {ordered ? (
-          String(index + 1).padStart(2, "0")
-        ) : (
-          <i className="fa-solid fa-clock text-[11px]" />
-        )}
-      </div>
-      <div className="flex-1 pt-0.5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="text-[14px] md:text-[15px] font-medium text-white">
-            {title}
-          </div>
-          {onDelete && (
-            <button
-              onClick={onDelete}
-              aria-label="Delete rule"
-              className="shrink-0 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition text-white/40 hover:text-red-400 text-xs p-1 cursor-pointer"
-            >
-              <i className="fa-solid fa-xmark" />
-            </button>
-          )}
-        </div>
-        {body && (
-          <div className="text-[13px] md:text-[14px] text-white/55 leading-relaxed mt-0.5">
-            {body}
-          </div>
-        )}
-        {sub && (
-          <ul className="mt-2 flex flex-col gap-1">
-            {sub.map((s) => (
-              <li
-                key={s}
-                className="text-[12.5px] text-white/45 pl-3 border-l border-white/10"
-              >
-                {s}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </li>
-  );
-}
-
-// ─── Inline "add a rule" row ─────────────────────────────────────────────
-function AddRuleRow({
-  ordered,
-  placeholder,
-  onAdd,
-}: {
-  ordered: boolean;
-  placeholder: string;
-  onAdd: (title: string, body: string) => Promise<boolean>;
-}) {
-  const [title, setTitle] = useState("");
-  const [body, setBody] = useState("");
-  const [saving, setSaving] = useState(false);
-
-  const save = async () => {
-    if (!title.trim() || saving) return;
-    setSaving(true);
-    const ok = await onAdd(title.trim(), body.trim());
-    if (ok) {
-      setTitle("");
-      setBody("");
-    }
-    setSaving(false);
-  };
-
-  return (
-    <li className="flex gap-4">
-      <div
-        className={`shrink-0 w-8 h-8 rounded-lg border border-dashed flex items-center justify-center text-white/30 ${
-          ordered ? "border-teal-500/25" : "border-white/15"
-        }`}
-      >
-        <i className="fa-solid fa-plus text-[11px]" />
-      </div>
-      <div className="flex-1 pt-0.5">
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") save();
-            if (e.key === "Escape") {
-              setTitle("");
-              setBody("");
-            }
-          }}
-          placeholder={placeholder}
-          className="w-full bg-transparent text-[14px] md:text-[15px] font-medium placeholder:text-white/30 text-white focus:outline-none"
-        />
-        {title.trim() && (
-          <div className="flex items-center gap-3 mt-1">
-            <input
-              type="text"
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") save();
-                if (e.key === "Escape") {
-                  setTitle("");
-                  setBody("");
-                }
-              }}
-              placeholder="Optional detail…"
-              className="flex-1 bg-transparent text-[13px] md:text-[14px] placeholder:text-white/25 text-white/70 focus:outline-none"
-            />
-            <button
-              onClick={save}
-              disabled={saving}
-              className="shrink-0 text-xs text-teal-300 hover:text-teal-200 transition cursor-pointer disabled:opacity-50"
-            >
-              {saving ? "Saving…" : "Save"}
-            </button>
-          </div>
-        )}
-      </div>
-    </li>
-  );
-}
-
-// ─── Section ─────────────────────────────────────────────────────────────
-function Section({
-  eyebrow,
-  title,
-  ordered,
-  defaults,
-  custom,
-  canEdit,
-  addPlaceholder,
-  onAdd,
-  onDelete,
-}: {
-  eyebrow: string;
-  title: string;
-  ordered: boolean;
-  defaults: Rule[];
-  custom: CustomRule[];
-  canEdit: boolean;
-  addPlaceholder: string;
-  onAdd: (title: string, body: string) => Promise<boolean>;
-  onDelete: (id: string) => void;
-}) {
-  return (
-    <motion.section
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
-      className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-5 md:p-7"
-    >
-      <div className="text-[11px] uppercase tracking-[0.18em] text-teal-400/80 font-medium mb-2">
-        {eyebrow}
-      </div>
-      <h2 className="text-2xl md:text-3xl font-semibold tracking-tight mb-5">
-        {title}
-      </h2>
-      <ol className="flex flex-col gap-3 md:gap-4">
-        {defaults.map((r, i) => (
-          <RuleItem
-            key={`default-${r.title}`}
-            index={i}
-            ordered={ordered}
-            title={r.title}
-            body={r.body}
-            sub={r.sub}
-          />
-        ))}
-        <AnimatePresence initial={false}>
-          {custom.map((r, i) => (
-            <motion.div
-              key={r._id}
-              layout
-              initial={{ opacity: 0, y: -6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
-            >
-              <RuleItem
-                index={defaults.length + i}
-                ordered={ordered}
-                title={r.title}
-                body={r.body}
-                onDelete={() => onDelete(r._id)}
-              />
-            </motion.div>
-          ))}
-        </AnimatePresence>
-        {canEdit && (
-          <AddRuleRow
-            ordered={ordered}
-            placeholder={addPlaceholder}
-            onAdd={onAdd}
-          />
-        )}
-      </ol>
-    </motion.section>
-  );
-}
+const uid = () =>
+  typeof crypto !== "undefined" && crypto.randomUUID
+    ? crypto.randomUUID()
+    : Math.random().toString(36).slice(2);
 
 function Page() {
   const { data: session } = useSession();
   const userId = session?.user?.id;
   const toast = useToast();
-  const [custom, setCustom] = useState<CustomRule[]>([]);
+
+  const [sections, setSections] = useState<Section[] | null>(null);
+  const sectionsRef = useRef<Section[]>([]);
 
   useEffect(() => {
     if (!userId) return;
     fetch(`/api/rules?userId=${userId}`)
       .then((r) => r.json())
-      .then((data: CustomRule[]) => {
-        if (Array.isArray(data)) setCustom(data);
+      .then((d) => {
+        const s: Section[] = Array.isArray(d?.sections) ? d.sections : [];
+        sectionsRef.current = s;
+        setSections(s);
       })
-      .catch(() => {});
+      .catch(() => setSections([]));
   }, [userId]);
 
-  const addRule = async (
-    category: RuleCategory,
+  const persist = useCallback(
+    async (next: Section[]) => {
+      if (!userId) return;
+      try {
+        const res = await fetch("/api/rules", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId, sections: next }),
+        });
+        if (!res.ok) throw new Error("Request failed");
+      } catch {
+        toast("Failed to save changes");
+      }
+    },
+    [userId, toast]
+  );
+
+  // Apply a structural change optimistically, then save the whole board.
+  // sectionsRef keeps us off stale closures when changes land in quick
+  // succession.
+  const commit = useCallback(
+    (producer: (prev: Section[]) => Section[]) => {
+      const next = producer(sectionsRef.current);
+      sectionsRef.current = next;
+      setSections(next);
+      persist(next);
+    },
+    [persist]
+  );
+
+  // ── Section ops ───────────────────────────────────────────────────────
+  const addSection = () =>
+    commit((prev) => [...prev, { id: uid(), title: "New section", rules: [] }]);
+
+  const renameSection = (id: string, title: string) =>
+    commit((prev) => prev.map((s) => (s.id === id ? { ...s, title } : s)));
+
+  const deleteSection = (id: string) =>
+    commit((prev) => prev.filter((s) => s.id !== id));
+
+  const moveSection = (id: string, dir: -1 | 1) =>
+    commit((prev) => {
+      const i = prev.findIndex((s) => s.id === id);
+      const j = i + dir;
+      if (i < 0 || j < 0 || j >= prev.length) return prev;
+      const next = [...prev];
+      [next[i], next[j]] = [next[j], next[i]];
+      return next;
+    });
+
+  // ── Rule ops ──────────────────────────────────────────────────────────
+  const addRule = (sectionId: string, title: string, body: string) =>
+    commit((prev) =>
+      prev.map((s) =>
+        s.id === sectionId
+          ? { ...s, rules: [...s.rules, { id: uid(), title, body }] }
+          : s
+      )
+    );
+
+  const editRule = (
+    sectionId: string,
+    ruleId: string,
     title: string,
     body: string
-  ): Promise<boolean> => {
-    if (!userId) return false;
-    try {
-      const res = await fetch("/api/rules", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId,
-          title,
-          body: body || undefined,
-          category,
-        }),
+  ) =>
+    commit((prev) =>
+      prev.map((s) =>
+        s.id === sectionId
+          ? {
+              ...s,
+              rules: s.rules.map((r) =>
+                r.id === ruleId ? { ...r, title, body } : r
+              ),
+            }
+          : s
+      )
+    );
+
+  const deleteRule = (sectionId: string, ruleId: string) =>
+    commit((prev) =>
+      prev.map((s) =>
+        s.id === sectionId
+          ? { ...s, rules: s.rules.filter((r) => r.id !== ruleId) }
+          : s
+      )
+    );
+
+  const moveRule = (sectionId: string, ruleId: string, dir: -1 | 1) =>
+    commit((prev) =>
+      prev.map((s) => {
+        if (s.id !== sectionId) return s;
+        const i = s.rules.findIndex((r) => r.id === ruleId);
+        const j = i + dir;
+        if (i < 0 || j < 0 || j >= s.rules.length) return s;
+        const rules = [...s.rules];
+        [rules[i], rules[j]] = [rules[j], rules[i]];
+        return { ...s, rules };
+      })
+    );
+
+  const moveRuleToSection = (
+    fromId: string,
+    ruleId: string,
+    toId: string
+  ) =>
+    commit((prev) => {
+      if (fromId === toId) return prev;
+      const rule = prev
+        .find((s) => s.id === fromId)
+        ?.rules.find((r) => r.id === ruleId);
+      if (!rule) return prev;
+      return prev.map((s) => {
+        if (s.id === fromId)
+          return { ...s, rules: s.rules.filter((r) => r.id !== ruleId) };
+        if (s.id === toId) return { ...s, rules: [...s.rules, rule] };
+        return s;
       });
-      if (!res.ok) throw new Error("Request failed");
-      const created: CustomRule = await res.json();
-      setCustom((prev) => [...prev, created]);
-      return true;
-    } catch {
-      toast("Failed to add rule");
-      return false;
-    }
-  };
-
-  const deleteRule = async (id: string) => {
-    const prev = custom;
-    setCustom((c) => c.filter((r) => r._id !== id));
-    try {
-      const res = await fetch(`/api/rules/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Request failed");
-    } catch {
-      setCustom(prev); // roll back on failure
-      toast("Failed to delete rule");
-    }
-  };
-
-  const whenRules = custom.filter((r) => r.category === "when");
-  const howRules = custom.filter((r) => r.category === "how");
+    });
 
   return (
     <div className="w-full flex flex-col items-center min-h-screen pb-16">
@@ -382,32 +188,426 @@ function Page() {
         </motion.div>
 
         {/* Sections */}
-        <div className="mt-10 grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-          <Section
-            eyebrow="When"
-            title="Trading windows"
-            ordered={false}
-            defaults={timeframes}
-            custom={whenRules}
-            canEdit={!!userId}
-            addPlaceholder="Add a trading window…"
-            onAdd={(title, body) => addRule("when", title, body)}
-            onDelete={deleteRule}
+        {sections === null ? (
+          <div className="mt-10 text-center text-[13px] text-white/40">
+            Loading…
+          </div>
+        ) : (
+          <>
+            <div className="mt-10 grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 items-start">
+              <AnimatePresence initial={false}>
+                {sections.map((section, i) => (
+                  <SectionCard
+                    key={section.id}
+                    section={section}
+                    isFirst={i === 0}
+                    isLast={i === sections.length - 1}
+                    otherSections={sections
+                      .filter((s) => s.id !== section.id)
+                      .map((s) => ({ id: s.id, title: s.title }))}
+                    onRename={(title) => renameSection(section.id, title)}
+                    onDelete={() => deleteSection(section.id)}
+                    onMove={(dir) => moveSection(section.id, dir)}
+                    onAddRule={(title, body) =>
+                      addRule(section.id, title, body)
+                    }
+                    onEditRule={(ruleId, title, body) =>
+                      editRule(section.id, ruleId, title, body)
+                    }
+                    onDeleteRule={(ruleId) => deleteRule(section.id, ruleId)}
+                    onMoveRule={(ruleId, dir) =>
+                      moveRule(section.id, ruleId, dir)
+                    }
+                    onMoveRuleToSection={(ruleId, toId) =>
+                      moveRuleToSection(section.id, ruleId, toId)
+                    }
+                  />
+                ))}
+              </AnimatePresence>
+            </div>
+
+            <button
+              onClick={addSection}
+              className="mt-4 md:mt-6 w-full flex items-center justify-center gap-2 rounded-2xl border border-dashed border-white/15 bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/25 transition py-4 text-[13px] font-medium text-white/55 hover:text-white/80 cursor-pointer"
+            >
+              <i className="fa-solid fa-plus text-[11px]" />
+              Add section
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Section card ────────────────────────────────────────────────────────
+function SectionCard({
+  section,
+  isFirst,
+  isLast,
+  otherSections,
+  onRename,
+  onDelete,
+  onMove,
+  onAddRule,
+  onEditRule,
+  onDeleteRule,
+  onMoveRule,
+  onMoveRuleToSection,
+}: {
+  section: Section;
+  isFirst: boolean;
+  isLast: boolean;
+  otherSections: { id: string; title: string }[];
+  onRename: (title: string) => void;
+  onDelete: () => void;
+  onMove: (dir: -1 | 1) => void;
+  onAddRule: (title: string, body: string) => void;
+  onEditRule: (ruleId: string, title: string, body: string) => void;
+  onDeleteRule: (ruleId: string) => void;
+  onMoveRule: (ruleId: string, dir: -1 | 1) => void;
+  onMoveRuleToSection: (ruleId: string, toId: string) => void;
+}) {
+  const [title, setTitle] = useState(section.title);
+  useEffect(() => setTitle(section.title), [section.title]);
+
+  const commitTitle = () => {
+    const t = title.trim();
+    if (t && t !== section.title) onRename(t);
+    else setTitle(section.title);
+  };
+
+  return (
+    <motion.section
+      layout
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.97 }}
+      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+      className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-5 md:p-7"
+    >
+      <div className="flex items-center gap-2 mb-5">
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          onBlur={commitTitle}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") e.currentTarget.blur();
+            if (e.key === "Escape") {
+              setTitle(section.title);
+              e.currentTarget.blur();
+            }
+          }}
+          className="flex-1 min-w-0 bg-transparent text-2xl md:text-3xl font-semibold tracking-tight text-white focus:outline-none focus:border-b focus:border-white/20"
+        />
+        <div className="flex items-center gap-0.5 shrink-0">
+          <IconBtn
+            label="Move section up"
+            icon="fa-chevron-up"
+            disabled={isFirst}
+            onClick={() => onMove(-1)}
           />
-          <Section
-            eyebrow="How"
-            title="Position rules"
-            ordered
-            defaults={rules}
-            custom={howRules}
-            canEdit={!!userId}
-            addPlaceholder="Add a rule…"
-            onAdd={(title, body) => addRule("how", title, body)}
-            onDelete={deleteRule}
+          <IconBtn
+            label="Move section down"
+            icon="fa-chevron-down"
+            disabled={isLast}
+            onClick={() => onMove(1)}
+          />
+          <IconBtn
+            label="Delete section"
+            icon="fa-trash-can"
+            danger
+            onClick={onDelete}
           />
         </div>
       </div>
-    </div>
+
+      <ol className="flex flex-col gap-3 md:gap-4">
+        <AnimatePresence initial={false}>
+          {section.rules.map((rule, i) => (
+            <RuleRow
+              key={rule.id}
+              index={i}
+              rule={rule}
+              isFirst={i === 0}
+              isLast={i === section.rules.length - 1}
+              otherSections={otherSections}
+              onMove={(dir) => onMoveRule(rule.id, dir)}
+              onMoveTo={(toId) => onMoveRuleToSection(rule.id, toId)}
+              onEdit={(t, b) => onEditRule(rule.id, t, b)}
+              onDelete={() => onDeleteRule(rule.id)}
+            />
+          ))}
+        </AnimatePresence>
+        <AddRuleRow onAdd={onAddRule} />
+      </ol>
+    </motion.section>
+  );
+}
+
+// ─── Rule row ──────────────────────────────────────────────────────────
+function RuleRow({
+  index,
+  rule,
+  isFirst,
+  isLast,
+  otherSections,
+  onMove,
+  onMoveTo,
+  onEdit,
+  onDelete,
+}: {
+  index: number;
+  rule: Rule;
+  isFirst: boolean;
+  isLast: boolean;
+  otherSections: { id: string; title: string }[];
+  onMove: (dir: -1 | 1) => void;
+  onMoveTo: (toId: string) => void;
+  onEdit: (title: string, body: string) => void;
+  onDelete: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [title, setTitle] = useState(rule.title);
+  const [body, setBody] = useState(rule.body ?? "");
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setTitle(rule.title);
+    setBody(rule.body ?? "");
+  }, [rule.title, rule.body]);
+
+  const save = () => {
+    const t = title.trim();
+    if (!t) {
+      setTitle(rule.title);
+      setBody(rule.body ?? "");
+      setEditing(false);
+      return;
+    }
+    onEdit(t, body.trim());
+    setEditing(false);
+  };
+
+  return (
+    <motion.li
+      layout
+      initial={{ opacity: 0, y: -6 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, height: 0 }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
+      className="group flex gap-4"
+    >
+      <div className="shrink-0 w-8 h-8 rounded-lg border bg-teal-500/10 border-teal-500/25 text-teal-300 flex items-center justify-center text-[12px] font-semibold tabular-nums">
+        {String(index + 1).padStart(2, "0")}
+      </div>
+
+      <div className="flex-1 min-w-0 pt-0.5">
+        {editing ? (
+          <div className="flex flex-col gap-1.5">
+            <input
+              autoFocus
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") save();
+                if (e.key === "Escape") setEditing(false);
+              }}
+              placeholder="Rule"
+              className="w-full bg-transparent text-[14px] md:text-[15px] font-medium text-white border-b border-white/15 focus:outline-none focus:border-white/30 pb-0.5"
+            />
+            <input
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") save();
+                if (e.key === "Escape") setEditing(false);
+              }}
+              placeholder="Optional detail…"
+              className="w-full bg-transparent text-[13px] md:text-[14px] text-white/70 focus:outline-none"
+            />
+            <div className="flex gap-3 mt-0.5">
+              <button
+                onClick={save}
+                className="text-xs text-teal-300 hover:text-teal-200 transition cursor-pointer"
+              >
+                Save
+              </button>
+              <button
+                onClick={() => setEditing(false)}
+                className="text-xs text-white/40 hover:text-white/70 transition cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <div className="text-[14px] md:text-[15px] font-medium text-white">
+                {rule.title}
+              </div>
+              {rule.body && (
+                <div className="text-[13px] md:text-[14px] text-white/55 leading-relaxed mt-0.5">
+                  {rule.body}
+                </div>
+              )}
+            </div>
+
+            {/* Controls */}
+            <div className="shrink-0 flex items-center gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition">
+              <IconBtn
+                label="Move up"
+                icon="fa-chevron-up"
+                disabled={isFirst}
+                onClick={() => onMove(-1)}
+              />
+              <IconBtn
+                label="Move down"
+                icon="fa-chevron-down"
+                disabled={isLast}
+                onClick={() => onMove(1)}
+              />
+              {otherSections.length > 0 && (
+                <div className="relative">
+                  <IconBtn
+                    label="Move to section"
+                    icon="fa-right-left"
+                    onClick={() => setMenuOpen((v) => !v)}
+                  />
+                  {menuOpen && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setMenuOpen(false)}
+                      />
+                      <div className="absolute right-0 top-full mt-1 z-50 w-48 rounded-xl border border-white/10 bg-[#0F0F17] shadow-[0_20px_80px_rgba(0,0,0,0.6)] p-1">
+                        <div className="px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-white/35 font-medium">
+                          Move to
+                        </div>
+                        {otherSections.map((s) => (
+                          <button
+                            key={s.id}
+                            onClick={() => {
+                              onMoveTo(s.id);
+                              setMenuOpen(false);
+                            }}
+                            className="w-full text-left px-2 py-1.5 rounded-lg text-[13px] text-white/80 hover:bg-white/[0.06] hover:text-white transition cursor-pointer truncate"
+                          >
+                            {s.title}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+              <IconBtn
+                label="Edit rule"
+                icon="fa-pen"
+                onClick={() => setEditing(true)}
+              />
+              <IconBtn
+                label="Delete rule"
+                icon="fa-xmark"
+                danger
+                onClick={onDelete}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+    </motion.li>
+  );
+}
+
+// ─── Inline add-rule row ─────────────────────────────────────────────────
+function AddRuleRow({ onAdd }: { onAdd: (title: string, body: string) => void }) {
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+
+  const save = () => {
+    if (!title.trim()) return;
+    onAdd(title.trim(), body.trim());
+    setTitle("");
+    setBody("");
+  };
+
+  return (
+    <li className="flex gap-4">
+      <div className="shrink-0 w-8 h-8 rounded-lg border border-dashed border-teal-500/25 flex items-center justify-center text-white/30">
+        <i className="fa-solid fa-plus text-[11px]" />
+      </div>
+      <div className="flex-1 min-w-0 pt-0.5">
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") save();
+            if (e.key === "Escape") {
+              setTitle("");
+              setBody("");
+            }
+          }}
+          placeholder="Add a rule…"
+          className="w-full bg-transparent text-[14px] md:text-[15px] font-medium placeholder:text-white/30 text-white focus:outline-none"
+        />
+        {title.trim() && (
+          <div className="flex items-center gap-3 mt-1">
+            <input
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") save();
+                if (e.key === "Escape") {
+                  setTitle("");
+                  setBody("");
+                }
+              }}
+              placeholder="Optional detail…"
+              className="flex-1 bg-transparent text-[13px] md:text-[14px] placeholder:text-white/25 text-white/70 focus:outline-none"
+            />
+            <button
+              onClick={save}
+              className="shrink-0 text-xs text-teal-300 hover:text-teal-200 transition cursor-pointer"
+            >
+              Save
+            </button>
+          </div>
+        )}
+      </div>
+    </li>
+  );
+}
+
+// ─── Small icon button ───────────────────────────────────────────────────
+function IconBtn({
+  label,
+  icon,
+  onClick,
+  disabled,
+  danger,
+}: {
+  label: string;
+  icon: string;
+  onClick: () => void;
+  disabled?: boolean;
+  danger?: boolean;
+}) {
+  return (
+    <button
+      aria-label={label}
+      title={label}
+      disabled={disabled}
+      onClick={onClick}
+      className={`w-7 h-7 rounded-md flex items-center justify-center text-[11px] transition cursor-pointer disabled:opacity-25 disabled:cursor-default ${
+        danger
+          ? "text-white/40 hover:text-red-400 hover:bg-white/[0.06]"
+          : "text-white/50 hover:text-white hover:bg-white/[0.06]"
+      }`}
+    >
+      <i className={`fa-solid ${icon}`} />
+    </button>
   );
 }
 
