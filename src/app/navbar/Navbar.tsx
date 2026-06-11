@@ -168,16 +168,16 @@ export default function Navbar() {
       slug: `trades/${userId}`,
     },
     { icon: "fa-solid fa-calendar-days", label: "Calendar", slug: "calendar" },
-    { icon: "fa-solid fa-bullseye", label: "Goals", slug: "goals" },
+    {
+      icon: "fa-solid fa-wand-magic-sparkles",
+      label: "Quill AI",
+      slug: "chat",
+    },
   ];
 
   // Secondary destinations shown in the bottom-sheet "More" menu.
+  // Quill AI (chat) lives in the bottom tab bar, so it's not repeated here.
   const moreItems = [
-    {
-      icon: "fa-solid fa-wand-magic-sparkles",
-      label: "AI assistant",
-      slug: "chat",
-    },
     {
       icon: "fa-regular fa-circle-check",
       label: "Affirmations",
@@ -190,7 +190,6 @@ export default function Navbar() {
   ];
 
   const guideItems = [
-    { label: "AI assistant", slug: "chat" },
     { label: "Strategies", slug: "strategies" },
     { label: "Stocks/ETFs", slug: "stocks" },
     { label: "Rules", slug: "rules" },
@@ -199,7 +198,7 @@ export default function Navbar() {
   const navItems = [
     { name: "Trades", slug: `trades/${userId}` },
     { name: "Calendar", slug: "calendar" },
-    { name: "Goals", slug: "goals" },
+    { name: "Quill AI", slug: "chat" },
     { name: "Affirmations", slug: "affirmations" },
   ];
 
