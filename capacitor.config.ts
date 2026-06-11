@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from "fs";
+import { resolve } from "path";
 import type { CapacitorConfig } from "@capacitor/cli";
 import { KeyboardResize } from "@capacitor/keyboard";
 
@@ -8,10 +10,35 @@ import { KeyboardResize } from "@capacitor/keyboard";
 // inside the shell. One codebase, no static export needed — auth cookies
 // and API routes keep working exactly as they do in Safari.
 //
-// Set the production URL before syncing:
+// Set the production URL before syncing — either inline:
 //   CAP_SERVER_URL=https://your-app.vercel.app npx cap sync ios
+// or in .env.local / .env (loaded below — the Capacitor CLI doesn't read
+// dotenv files on its own; that's Next.js-only behaviour).
 // If unset, the shell loads the local fallback page in native-shell/
 // which explains how to configure it.
+
+// Minimal dotenv loader: shell env wins; .env.local beats .env.
+function loadEnvFile(file: string) {
+  const path = resolve(__dirname, file);
+  if (!existsSync(path)) return;
+  for (const line of readFileSync(path, "utf8").split("\n")) {
+    const m = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/.exec(
+      line,
+    );
+    if (!m) continue;
+    const key = m[1];
+    let val = m[2];
+    if (
+      (val.startsWith('"') && val.endsWith('"')) ||
+      (val.startsWith("'") && val.endsWith("'"))
+    ) {
+      val = val.slice(1, -1);
+    }
+    if (process.env[key] === undefined) process.env[key] = val;
+  }
+}
+loadEnvFile(".env.local");
+loadEnvFile(".env");
 
 const serverUrl = process.env.CAP_SERVER_URL;
 
