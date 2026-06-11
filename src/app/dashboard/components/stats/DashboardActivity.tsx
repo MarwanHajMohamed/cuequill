@@ -9,6 +9,7 @@ import { tradeNetPL } from "@/lib/helpers/tradeNet";
 import { Trade } from "@/app/types/Trades";
 import ViewTradeModal from "../modals/ViewTradeModal";
 
+import { fmtMoneySignedCompact } from "@/lib/helpers/fmt";
 /**
  * Two practical at-a-glance widgets that surface what the trader needs
  * to act on:
@@ -251,7 +252,7 @@ function RecentCloses({
                       pl >= 0 ? "text-green-500" : "text-red-500"
                     }`}
                   >
-                    {pl >= 0 ? "+" : "−"}${Math.abs(pl).toFixed(2)}
+                    {fmtMoneySignedCompact(pl)}
                   </span>
                 </button>
               </li>

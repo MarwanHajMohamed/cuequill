@@ -10,7 +10,6 @@ import React, { use, useEffect, useRef, useState } from "react";
 import NotesModal from "../NotesModal";
 import { useToast } from "@/hooks/useToast";
 import {
-  handleDeleteAllTrades,
   handleDeleteTrade,
   handleSaveNotes,
   handleSaveTrade,
@@ -21,6 +20,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { HeroSkeleton, TableSkeleton } from "@/components/Loaders";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
 
+import { fmtMoneyCompact } from "@/lib/helpers/fmt";
 // Every column the trades table can render. Order here is the default;
 // users can reorder and hide columns, persisted in localStorage.
 type TradeColumnKey =
@@ -98,7 +98,6 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isNotesOpen, setIsNotesOpen] = useState<boolean>(false);
-  const [delAllModal, setDelAllModal] = useState<boolean>(false);
   const [notes, setNotes] = useState<string>("");
   const [strategy, setStrategy] = useState<StrategyList>("All");
   const [symbol, setSymbol] = useState<string>("All");
@@ -194,7 +193,6 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        setDelAllModal(false);
         setIsColumnsOpen(false);
       }
     };
@@ -305,7 +303,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
               trade.status === "WIN" ? "text-green-500" : "text-red-500"
             }
           >
-            ${tradeNetPL(trade).toFixed(2)}
+            {fmtMoneyCompact(tradeNetPL(trade))}
           </span>
         );
       case "change": {
@@ -745,13 +743,6 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                     </span>
                   </button>
                 </div>
-                <button
-                  className="inline-flex items-center justify-center gap-2 px-3 md:px-4 py-2 rounded-full bg-red-500/10 text-red-300 border border-red-500/25 hover:bg-red-500/20 transition cursor-pointer text-[12px] md:text-[13px] font-medium w-9 h-9 md:w-auto md:h-auto"
-                  onClick={() => setDelAllModal(true)}
-                >
-                  <i className="fa-solid fa-trash-can text-[11px]" />
-                  <span className="md:inline hidden">Delete all</span>
-                </button>
               </div>
             )}
             {totalPages > 1 && (
@@ -849,44 +840,6 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
           }
           tradeId={editingTrade?._id}
         />
-      )}
-      {delAllModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-51 p-4">
-          <div className="flex flex-col gap-5 bg-[#0F0F17] border border-white/10 items-center p-6 md:p-7 rounded-2xl w-full max-w-md text-white text-center shadow-[0_20px_80px_rgba(0,0,0,0.6)]">
-            <div className="w-12 h-12 rounded-full bg-red-500/15 border border-red-500/25 flex items-center justify-center">
-              <i className="fa-solid fa-triangle-exclamation text-red-300 text-lg" />
-            </div>
-            <div className="flex flex-col gap-1">
-              <div className="text-lg font-semibold">Delete all trades?</div>
-              <div className="text-[13px] text-white/55 leading-relaxed">
-                This permanently removes every trade in this journal. The action
-                can&apos;t be undone.
-              </div>
-            </div>
-            <div className="flex gap-2 w-full">
-              <button
-                className="flex-1 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/80 hover:bg-white/[0.06] hover:text-white transition cursor-pointer text-[13px]"
-                onClick={() => setDelAllModal(false)}
-              >
-                Cancel
-              </button>
-              <button
-                className="flex-1 px-4 py-2 rounded-full bg-red-500/15 text-red-300 border border-red-500/25 hover:bg-red-500/25 transition cursor-pointer text-[13px] font-medium"
-                onClick={() =>
-                  handleDeleteAllTrades(
-                    userId,
-                    simulated,
-                    setDelAllModal,
-                    toast,
-                    queryClient,
-                  )
-                }
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
       )}
     </>
   );

@@ -1,22 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import connectDb from "@/lib/db";
 import { Transaction } from "@/lib/models/Transaction";
 import { BalanceEvent } from "@/app/types/Transactions";
 
-// GET handler
-export async function GET(req: NextRequest) {
+// Authenticated-user scoped — both handlers ignore any client-supplied
+// userId and use session.user.id instead.
+
+export async function GET() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   await connectDb();
 
-  const userId = req.nextUrl.searchParams.get("userId");
-  if (!userId) {
-    return NextResponse.json({ error: "Missing userId" }, { status: 400 });
-  }
-
-  const transactions = await Transaction.find({ userID: userId });
+  const transactions = await Transaction.find({ userID: session.user.id });
 
   const events: BalanceEvent[] = [];
 
-  // Push all transactions
   for (const t of transactions) {
     events.push({
       date: t.date,
@@ -25,7 +27,6 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  // Sort events by date
   events.sort((a, b) => a.date.getTime() - b.date.getTime());
 
   const timeline = events.map((e) => ({
@@ -38,12 +39,16 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   await connectDb();
 
   try {
-    const { userId, type, amount, date } = await req.json();
+    const { type, amount, date } = await req.json();
 
-    if (!userId || !type || typeof amount !== "number" || !date) {
+    if (!type || typeof amount !== "number" || !date) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
@@ -57,15 +62,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Calculate current balance
-    const transactions = await Transaction.find({ userID: userId });
+    // Calculate current balance — use the authenticated user.
+    const transactions = await Transaction.find({ userID: session.user.id });
 
     let currentBalance = 0;
     for (const t of transactions) {
       currentBalance += t.type === "DEPOSIT" ? t.amount : -t.amount;
     }
 
-    // Check withdrawal limit
     if (type === "WITHDRAW" && amount > currentBalance) {
       return NextResponse.json(
         { error: "Insufficient balance" },
@@ -73,15 +77,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Create transaction
     const transaction = await Transaction.create({
-      userID: userId,
+      userID: session.user.id,
       type,
       amount,
       date: new Date(date),
     });
 
-    // Return the transaction and new balance
     const newBalance =
       type === "DEPOSIT" ? currentBalance + amount : currentBalance - amount;
     return NextResponse.json(

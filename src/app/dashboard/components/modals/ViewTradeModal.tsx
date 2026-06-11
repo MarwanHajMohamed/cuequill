@@ -8,6 +8,7 @@ import { format } from "date-fns";
 import { motion } from "framer-motion";
 import React, { useEffect } from "react";
 
+import { fmtMoneySignedCompact } from "@/lib/helpers/fmt";
 type TradeModalProps = {
   onClose: () => void;
   initialTrade: Partial<Trade>;
@@ -125,7 +126,7 @@ export default function ViewTradeModal({
                     netPL >= 0 ? "text-green-500" : "text-red-500"
                   }`}
                 >
-                  {netPL >= 0 ? "+" : "−"}${Math.abs(netPL).toFixed(2)}
+                  {fmtMoneySignedCompact(netPL)}
                 </span>
                 <span className="text-xs text-white/40">net</span>
               </>

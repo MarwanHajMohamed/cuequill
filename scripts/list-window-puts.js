@@ -1,20 +1,29 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 /**
- * List every PUT entry in your IBKR file whose trade_time falls in a
- * given clock window, joined against the Cuequill DB so we know which
- * are CALLs vs PUTs.
+ * Cross-reference IBKR option BUYs against the Cuequill DB and (with
+ * --apply) re-tag the matched PUT entries to "First Red Opening Candle".
  *
- *   node scripts/list-window-puts.js
+ *   node scripts/list-window-puts.js               # dry-run (just lists)
+ *   node scripts/list-window-puts.js --apply       # writes to DB
  *   node scripts/list-window-puts.js --window=14:58-15:00   (default)
  *   node scripts/list-window-puts.js --tz=UTC               (default)
  *   node scripts/list-window-puts.js --tz=America/New_York
  *   node scripts/list-window-puts.js --all                  show CALLs too
+ *   node scripts/list-window-puts.js --overwrite            force-replace
+ *                                                           any strategy
  *
  * The matcher pairs each IBKR BUY with a Cuequill trade on the same
  * day with the same symbol and qty, and an entry contractPrice within
  * 1 cent. If a row shows "?" in the OPTION column it means no Cuequill
  * trade matched the IBKR order (likely a manually-entered duplicate or
  * one that was never imported).
+ *
+ * Update rules (when --apply is passed):
+ *   • only touches Cuequill trades that matched an IBKR row in the
+ *     window AND have option === "PUT"
+ *   • only retags trades whose current strategy is empty, "Other", or
+ *     already "First Red Opening Candle" (unless --overwrite)
+ *   • never touches a trade that wasn't in the IBKR file
  */
 
 const fs = require("fs");
@@ -44,6 +53,9 @@ function arg(name, def) {
   return def;
 }
 const SHOW_ALL = process.argv.includes("--all");
+const APPLY = process.argv.includes("--apply");
+const OVERWRITE = process.argv.includes("--overwrite");
+const TARGET_STRATEGY = "First Red Opening Candle";
 const TZ = arg("tz", "UTC");
 const WINDOW = arg("window", "14:58-15:00");
 
@@ -86,6 +98,7 @@ async function main() {
     console.error("MONGODB_URI not set in .env");
     process.exit(1);
   }
+
   const ibkr = JSON.parse(
     fs.readFileSync(path.join(__dirname, "ibkr-trades.json"), "utf8"),
   );
@@ -106,6 +119,7 @@ async function main() {
   }
 
   await mongoose.connect(process.env.MONGODB_URI);
+
   const Trade =
     mongoose.models.Trade ||
     mongoose.model(
@@ -113,10 +127,12 @@ async function main() {
       new mongoose.Schema({}, { strict: false, collection: "trades" }),
     );
 
-  // Pre-pull the Cuequill rows in the symbol+day envelope we need so we
-  // don't issue 55 individual queries.
+  // ------------------------------------------------------------------
+  // LOAD CANDIDATES
+  // ------------------------------------------------------------------
   const symbols = [...new Set(buys.map((b) => b.symbol))];
   const days = [...new Set(buys.map((b) => b.trade_time.slice(0, 10)))];
+
   const candidates = await Trade.find({
     symbol: { $in: symbols },
     dateBought: {
@@ -127,26 +143,28 @@ async function main() {
 
   function findMatch(t) {
     const day = t.trade_time.slice(0, 10);
+
     const candidatesForDay = candidates.filter((c) => {
       if (c.symbol !== t.symbol) return false;
       if (c.qty !== t.size) return false;
+
       const cb =
-        c.dateBought instanceof Date
-          ? c.dateBought
-          : new Date(c.dateBought);
+        c.dateBought instanceof Date ? c.dateBought : new Date(c.dateBought);
+
       return cb.toISOString().slice(0, 10) === day;
     });
-    // Prefer a price-match within 1 cent; fall back to first same-day
-    // same-symbol same-qty hit.
+
     const priceMatch = candidatesForDay.find(
       (c) => Math.abs(Number(c.contractPrice) - t.price) <= 0.01,
     );
+
     return priceMatch ?? candidatesForDay[0] ?? null;
   }
 
   const rows = buys.map((t) => {
     const m = findMatch(t);
     const d = new Date(t.trade_time);
+
     return {
       date: t.trade_time.slice(0, 10),
       tzClock: hhmm(minuteOfDayIn(d, TZ)),
@@ -161,13 +179,19 @@ async function main() {
   });
 
   const filtered = SHOW_ALL ? rows : rows.filter((r) => r.option === "PUT");
+
   console.log(
-    `${filtered.length} ${SHOW_ALL ? "OPT BUYs" : "PUT entries"} in ${WINDOW} ${TZ} (of ${buys.length} window hits total).\n`,
+    `${filtered.length} ${
+      SHOW_ALL ? "OPT BUYs" : "PUT entries"
+    } in ${WINDOW} ${TZ} (of ${buys.length} window hits total).\n`,
   );
+
   console.log(
     `DATE        ${TZ.padEnd(5).slice(0, 5)}   ET     SYMBOL  QTY  PRICE  OPT    CURRENT STRATEGY                      CUEQUILL_ID`,
   );
+
   console.log("-".repeat(120));
+
   for (const r of filtered) {
     console.log(
       [
@@ -183,6 +207,61 @@ async function main() {
       ].join("  "),
     );
   }
+
+  // ------------------------------------------------------------------
+  // SCOPED RETAG
+  // Only the matched PUT entries from the window. Default behaviour
+  // (no --overwrite) leaves any trade that already has a real strategy
+  // alone — "Other" and empty are treated as replaceable.
+  // ------------------------------------------------------------------
+  const puts = rows.filter((r) => r.option === "PUT" && r.cuequillId);
+  const eligible = puts.filter((r) => {
+    if (OVERWRITE) return true;
+    const s = (r.strategy || "").toLowerCase();
+    return s === "" || s === "other" || s === TARGET_STRATEGY.toLowerCase();
+  });
+  const skipped = puts.length - eligible.length;
+  const alreadyTagged = eligible.filter(
+    (r) => r.strategy === TARGET_STRATEGY,
+  ).length;
+  const toWrite = eligible.filter((r) => r.strategy !== TARGET_STRATEGY);
+
+  console.log(
+    `\nMatched PUTs in window: ${puts.length}`,
+    `\n  - to be tagged:    ${toWrite.length}`,
+    `\n  - already tagged:  ${alreadyTagged}`,
+    `\n  - skipped (has other strategy, use --overwrite): ${skipped}`,
+  );
+
+  if (!APPLY) {
+    console.log(
+      "\nDRY RUN. Re-run with --apply to write changes.",
+      OVERWRITE
+        ? "(Will OVERWRITE existing strategies on matched PUTs.)"
+        : "",
+    );
+    await mongoose.disconnect();
+    return;
+  }
+
+  if (toWrite.length === 0) {
+    console.log("\nNothing to write.");
+    await mongoose.disconnect();
+    return;
+  }
+
+  const result = await Trade.updateMany(
+    {
+      _id: {
+        $in: toWrite.map((r) => new mongoose.Types.ObjectId(r.cuequillId)),
+      },
+    },
+    { $set: { strategy: TARGET_STRATEGY } },
+  );
+  console.log(
+    `\nUpdated ${result.modifiedCount} PUT trade(s) to "${TARGET_STRATEGY}".`,
+  );
+
   await mongoose.disconnect();
 }
 

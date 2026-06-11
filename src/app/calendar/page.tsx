@@ -24,6 +24,7 @@ import WeekView from "./WeekView";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
 import { AnimatePresence } from "framer-motion";
 
+import { fmtMoneyCompact, fmtMoneySignedCompact } from "@/lib/helpers/fmt";
 type TradeEvent =
   | Trade
   | {
@@ -65,7 +66,7 @@ const WeekSummary = ({
                 netPL >= 0 ? "text-green-500" : "text-red-500"
               }`}
             >
-              {netPL >= 0 ? "+" : "−"}${Math.abs(netPL).toFixed(2)}
+              {fmtMoneySignedCompact(netPL)}
             </div>
             <div className="text-xs text-white/60 whitespace-nowrap">
               {tradeCount} {tradeCount === 1 ? "trade" : "trades"}
@@ -355,7 +356,7 @@ function Page() {
                 netPL >= 0 ? "text-green-500" : "text-red-500"
               }`}
             >
-              {netPL >= 0 ? "+" : "−"}${Math.abs(netPL).toFixed(2)}
+              {fmtMoneySignedCompact(netPL)}
             </div>
           ) : (
             <div className="font-semibold text-orange-400">Open</div>
@@ -397,7 +398,7 @@ function Page() {
                   netPL >= 0 ? "text-green-500" : "text-red-500"
                 }`}
               >
-                {netPL >= 0 ? "+" : "−"}${Math.abs(netPL).toFixed(2)}
+                {fmtMoneySignedCompact(netPL)}
               </div>
             ) : (
               <div className="font-semibold text-orange-400 leading-tight">
@@ -589,7 +590,7 @@ function Page() {
                     >
                       {summary.closedCount === 0
                         ? "-"
-                        : `${positive ? "+" : "−"}$${Math.abs(summary.netPL).toFixed(2)}`}
+                        : `${positive ? "" : "-"}${fmtMoneyCompact(Math.abs(summary.netPL))}`}
                     </div>
                   </div>
                 );

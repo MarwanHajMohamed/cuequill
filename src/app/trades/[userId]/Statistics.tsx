@@ -16,6 +16,7 @@ import EquityCurve from "./EquityCurve";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
 import { motion, AnimatePresence } from "framer-motion";
 
+import { fmtMoneyCompact, fmtMoneySignedCompact } from "@/lib/helpers/fmt";
 type StatsVisibility = {
   netPL: boolean;
   profitFactor: boolean;
@@ -82,48 +83,107 @@ const CustomizeMenu = ({
     setVisibility({ ...visibility, [key]: !visibility[key] });
   };
 
+  const resetAll = () => {
+    const all: StatsVisibility = { ...visibility };
+    for (const { key } of [...TILE_OPTIONS, ...SECTION_OPTIONS]) {
+      all[key] = true;
+    }
+    setVisibility(all);
+  };
+
   const renderRow = ({
     key,
     label,
   }: {
     key: keyof StatsVisibility;
     label: string;
-  }) => (
-    <label
-      key={key}
-      className="flex items-center justify-between gap-3 px-2 py-1.5 rounded hover:bg-white/5 cursor-pointer text-xs"
-    >
-      <span>{label}</span>
-      <input
-        type="checkbox"
-        checked={visibility[key]}
-        onChange={() => toggle(key)}
-        className="cursor-pointer accent-green-500"
-      />
-    </label>
-  );
+  }) => {
+    const on = visibility[key];
+    return (
+      <button
+        key={key}
+        type="button"
+        onClick={() => toggle(key)}
+        title={on ? "Hide" : "Show"}
+        className="group flex items-center gap-2.5 w-full text-left px-2 py-1.5 rounded-lg hover:bg-white/[0.04] transition cursor-pointer"
+      >
+        <span
+          className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition ${
+            on
+              ? "bg-teal-500/20 border-teal-500/40 text-teal-300"
+              : "border-white/15 text-transparent"
+          }`}
+        >
+          <i className="fa-solid fa-check text-[9px]" />
+        </span>
+        <span
+          className={`text-[13px] ${on ? "text-white/85" : "text-white/40"}`}
+        >
+          {label}
+        </span>
+      </button>
+    );
+  };
 
   return (
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="text-xs text-white/70 hover:text-white px-3 py-1.5 rounded-md border border-white/10 hover:border-white/30 transition flex items-center gap-2 cursor-pointer"
+        title="Customize stats"
+        aria-label="Customize stats"
+        aria-expanded={open}
+        className={`inline-flex items-center justify-center w-9 h-9 rounded-full border transition cursor-pointer ${
+          open
+            ? "bg-teal-500/15 text-teal-300 border-teal-500/30"
+            : "bg-white/[0.03] text-white/60 border-white/10 hover:bg-white/[0.06] hover:text-white hover:border-white/20"
+        }`}
       >
-        <i className="fa-solid fa-sliders text-[11px]" />
-        Customize
+        <i className="fa-solid fa-sliders text-[13px]" />
       </button>
-      {open && (
-        <div className="absolute right-0 top-full mt-2 bg-[#16151B] border border-white/10 rounded-md shadow-lg z-30 w-56 p-2">
-          <div className="text-[10px] uppercase tracking-wide text-white/40 px-2 pt-1 pb-1">
-            Summary tiles
-          </div>
-          {TILE_OPTIONS.map(renderRow)}
-          <div className="text-[10px] uppercase tracking-wide text-white/40 px-2 pt-3 pb-1">
-            Sections
-          </div>
-          {SECTION_OPTIONS.map(renderRow)}
-        </div>
-      )}
+      <AnimatePresence>
+        {open && (
+          <>
+            <motion.div
+              key="customize-backdrop"
+              className="fixed inset-0 z-40"
+              onClick={() => setOpen(false)}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+            />
+            <motion.div
+              key="customize-panel"
+              className="absolute right-0 top-full mt-2 z-50 w-72 origin-top-right rounded-xl border border-white/10 bg-[#0F0F17] shadow-[0_20px_80px_rgba(0,0,0,0.6)] p-2"
+              initial={{ opacity: 0, scale: 0.95, y: -6 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: -6 }}
+              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <div className="flex items-center justify-between px-2 py-1.5">
+                <span className="text-[11px] uppercase tracking-[0.14em] text-white/40 font-medium">
+                  Summary tiles
+                </span>
+                <button
+                  onClick={resetAll}
+                  className="text-[11px] text-teal-300/80 hover:text-teal-300 transition cursor-pointer"
+                >
+                  Reset
+                </button>
+              </div>
+              <div className="flex flex-col">{TILE_OPTIONS.map(renderRow)}</div>
+              <div className="px-2 pt-3 pb-1">
+                <span className="text-[11px] uppercase tracking-[0.14em] text-white/40 font-medium">
+                  Sections
+                </span>
+              </div>
+              <div className="flex flex-col">
+                {SECTION_OPTIONS.map(renderRow)}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
@@ -361,7 +421,7 @@ function CompareCard({
   const arrow = noDelta ? "·" : delta > 0 ? "↑" : "↓";
   const formatted = (() => {
     const a = Math.abs(delta);
-    if (deltaUnit === "$") return `$${a.toFixed(2)}`;
+    if (deltaUnit === "$") return `${fmtMoneyCompact(a)}`;
     if (deltaUnit === "pp") return `${a.toFixed(1)} pp`;
     return a.toFixed(2);
   })();
@@ -971,7 +1031,7 @@ export default function Statistics({
       );
       return (
         <span className="text-green-500">
-          ${tradeNetPL(biggestMonthlyWin).toFixed(2)}
+          {fmtMoneyCompact(tradeNetPL(biggestMonthlyWin))}
         </span>
       );
     }
@@ -987,7 +1047,7 @@ export default function Statistics({
       );
       return (
         <span className="text-red-500">
-          ${tradeNetPL(biggestMonthlyLoss).toFixed(2)}
+          {fmtMoneyCompact(tradeNetPL(biggestMonthlyLoss))}
         </span>
       );
     }
@@ -1231,8 +1291,8 @@ export default function Statistics({
             />
             <CompareCard
               label="Expectancy"
-              value={`$${filteredSummary.expectancy.toFixed(2)}`}
-              baseline={`$${totalSummary.expectancy.toFixed(2)}`}
+              value={`${fmtMoneyCompact(filteredSummary.expectancy)}`}
+              baseline={`${fmtMoneyCompact(totalSummary.expectancy)}`}
               delta={filteredSummary.expectancy - totalSummary.expectancy}
               deltaUnit="$"
               higherIsBetter
@@ -1240,8 +1300,8 @@ export default function Statistics({
             />
             <CompareCard
               label="Avg Win"
-              value={`$${filteredSummary.avgWin.toFixed(2)}`}
-              baseline={`$${totalSummary.avgWin.toFixed(2)}`}
+              value={`${fmtMoneyCompact(filteredSummary.avgWin)}`}
+              baseline={`${fmtMoneyCompact(totalSummary.avgWin)}`}
               delta={filteredSummary.avgWin - totalSummary.avgWin}
               deltaUnit="$"
               higherIsBetter
@@ -1249,8 +1309,8 @@ export default function Statistics({
             />
             <CompareCard
               label="Avg Loss"
-              value={`$${filteredSummary.avgLoss.toFixed(2)}`}
-              baseline={`$${totalSummary.avgLoss.toFixed(2)}`}
+              value={`${fmtMoneyCompact(filteredSummary.avgLoss)}`}
+              baseline={`${fmtMoneyCompact(totalSummary.avgLoss)}`}
               delta={filteredSummary.avgLoss - totalSummary.avgLoss}
               deltaUnit="$"
               higherIsBetter={false}
@@ -1326,17 +1386,17 @@ export default function Statistics({
                         sub.netPL >= 0 ? "text-green-500" : "text-red-500"
                       }`}
                     >
-                      {sub.netPL >= 0 ? "+" : "−"}${Math.abs(sub.netPL).toFixed(2)}
+                      {fmtMoneySignedCompact(sub.netPL)}
                     </span>
                     <span className="text-xs text-white/50">
                       {sub.winRate.toFixed(1)}% win rate
                     </span>
                   </div>
                   <div className="text-[11px] text-white/40 flex flex-col gap-0.5">
-                    <span>Avg ${sub.expectancy.toFixed(2)}/trade</span>
+                    <span>Avg {fmtMoneyCompact(sub.expectancy)}/trade</span>
                     <div className="flex flex-col md:flex-row md:gap-3 gap-0.5">
-                      <span>W avg ${sub.avgWin.toFixed(2)}</span>
-                      <span>L avg ${sub.avgLoss.toFixed(2)}</span>
+                      <span>W avg {fmtMoneyCompact(sub.avgWin)}</span>
+                      <span>L avg {fmtMoneyCompact(sub.avgLoss)}</span>
                     </div>
                   </div>
                 </div>
@@ -1398,7 +1458,7 @@ export default function Statistics({
             />
             <MiniStat
               label="Max drawdown"
-              value={maxDD < 0 ? `$${maxDD.toFixed(2)}` : "$0.00"}
+              value={maxDD < 0 ? `${fmtMoneyCompact(maxDD)}` : "$0.00"}
               tone="bad"
               info="Largest peak-to-trough decline in cumulative net P/L. Measures the worst point you'd have been at, in dollars from your equity peak."
             />
@@ -1410,7 +1470,7 @@ export default function Statistics({
               label="Best day"
               value={
                 bestDayStr
-                  ? `${formatShortDate(bestDayStr)} · +$${bestDayPL.toFixed(2)}`
+                  ? `${formatShortDate(bestDayStr)} · +${fmtMoneyCompact(bestDayPL)}`
                   : "-"
               }
               tone="good"
@@ -1420,7 +1480,7 @@ export default function Statistics({
               label="Worst day"
               value={
                 worstDayStr
-                  ? `${formatShortDate(worstDayStr)} · −$${Math.abs(worstDayPL).toFixed(2)}`
+                  ? `${formatShortDate(worstDayStr)} · −${fmtMoneyCompact(Math.abs(worstDayPL))}`
                   : "-"
               }
               tone="bad"
@@ -1603,7 +1663,7 @@ export default function Statistics({
                       label="Biggest win"
                       value={
                         monthBiggestWin > 0
-                          ? `+$${monthBiggestWin.toFixed(2)}`
+                          ? `+${fmtMoneyCompact(monthBiggestWin)}`
                           : "-"
                       }
                       tone="good"
@@ -1615,7 +1675,7 @@ export default function Statistics({
                       label="Worst loss"
                       value={
                         monthBiggestLoss < 0
-                          ? `−$${Math.abs(monthBiggestLoss).toFixed(2)}`
+                          ? `−${fmtMoneyCompact(Math.abs(monthBiggestLoss))}`
                           : "-"
                       }
                       tone="bad"
@@ -1627,7 +1687,7 @@ export default function Statistics({
                       label="Best day"
                       value={
                         monthBestDay > 0
-                          ? `+$${monthBestDay.toFixed(2)}`
+                          ? `+${fmtMoneyCompact(monthBestDay)}`
                           : "-"
                       }
                       tone="good"
@@ -1639,7 +1699,7 @@ export default function Statistics({
                       label="Worst day"
                       value={
                         monthWorstDay < 0
-                          ? `−$${Math.abs(monthWorstDay).toFixed(2)}`
+                          ? `−${fmtMoneyCompact(Math.abs(monthWorstDay))}`
                           : "-"
                       }
                       tone="bad"

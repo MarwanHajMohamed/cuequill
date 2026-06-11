@@ -7,6 +7,7 @@ import { useScrollLock } from "@/hooks/useScrollLock";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
 import { motion, AnimatePresence } from "framer-motion";
 
+import { fmtMoneySignedCompact } from "@/lib/helpers/fmt";
 type Props = {
   date: Date;
   trades: Trade[];
@@ -73,7 +74,7 @@ export default function DayTradesModal({
         >
           {/* Hero */}
           <div
-            className={`relative bg-gradient-to-b ${heroTint} p-5 md:p-6 border-b border-white/10`}
+            className={`relative shrink-0 bg-gradient-to-b ${heroTint} p-5 md:p-6 border-b border-white/10`}
           >
             <button
               onClick={onClose}
@@ -104,7 +105,7 @@ export default function DayTradesModal({
                     netPL >= 0 ? "text-green-300" : "text-red-300"
                   }`}
                 >
-                  {netPL >= 0 ? "+" : "−"}${Math.abs(netPL).toFixed(2)}
+                  {fmtMoneySignedCompact(netPL)}
                 </div>
                 <div className="text-[12px] text-white/45">net P/L</div>
               </div>
@@ -159,7 +160,7 @@ export default function DayTradesModal({
                   <button
                     key={t._id || `${t.symbol}-${t.dateBought}-${i}`}
                     onClick={() => onTradeClick(t)}
-                    className="group relative flex items-center justify-between gap-3 px-3 py-3 rounded-xl border border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.05] transition cursor-pointer text-left overflow-hidden"
+                    className="group relative shrink-0 flex items-center justify-between gap-3 px-3 py-3 rounded-xl border border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.05] transition cursor-pointer text-left overflow-hidden"
                   >
                     {/* Status accent stripe */}
                     <span
@@ -197,7 +198,7 @@ export default function DayTradesModal({
                             pl >= 0 ? "text-green-300" : "text-red-300"
                           }`}
                         >
-                          {pl >= 0 ? "+" : "−"}${Math.abs(pl).toFixed(2)}
+                          {fmtMoneySignedCompact(pl)}
                         </div>
                       ) : (
                         <div className="text-white/35 text-[13px]">-</div>
@@ -211,7 +212,7 @@ export default function DayTradesModal({
           </div>
 
           {/* Footer */}
-          <div className="p-3 md:p-4 border-t border-white/10">
+          <div className="shrink-0 p-3 md:p-4 border-t border-white/10">
             <button
               onClick={onAddTrade}
               className="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-full bg-teal-500/15 hover:bg-teal-500/25 text-teal-300 border border-teal-500/25 transition font-medium text-[13px] cursor-pointer"

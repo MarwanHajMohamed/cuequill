@@ -79,7 +79,9 @@ export default function EditTradeModal({
   const toast = useToast();
   useScrollLock();
 
-  const strategies: StrategyList[] = [
+  // Strategy ↔ direction mapping (matches data/strategies.ts so the
+  // schematic pages stay aligned). "Other" is direction-agnostic.
+  const CALL_STRATEGIES: StrategyList[] = [
     "Moving Average 40",
     "Normal Fall & Hard Fall",
     "Bearish Channel Break",
@@ -87,12 +89,41 @@ export default function EditTradeModal({
     "Bearish Gap Uptrend",
     "Hard Floor",
     "The First Uptrend Gap",
+  ];
+  const PUT_STRATEGIES: StrategyList[] = [
     "First Red Opening Candle",
     "Gap Floor Break",
     "Model of 4 Steps",
     "Hanger in Daily",
-    "Other",
   ];
+  // Filtered list shown in the dropdown — only setups relevant to the
+  // currently selected direction. Until a direction is picked, show
+  // every strategy so the dropdown isn't empty.
+  const strategies: StrategyList[] =
+    selectedOption === "CALL"
+      ? [...CALL_STRATEGIES, "Other"]
+      : selectedOption === "PUT"
+        ? [...PUT_STRATEGIES, "Other"]
+        : [...CALL_STRATEGIES, ...PUT_STRATEGIES, "Other"];
+
+  // If the user flips CALL ↔ PUT and the previously chosen strategy
+  // doesn't belong to the new direction, swap it for the first valid
+  // option so a misaligned pairing can't be saved.
+  useEffect(() => {
+    if (selectedOption === null) return;
+    const valid =
+      selectedOption === "CALL"
+        ? new Set<string>([...CALL_STRATEGIES, "Other"])
+        : new Set<string>([...PUT_STRATEGIES, "Other"]);
+    if (!valid.has(strategy)) {
+      setStrategy(
+        (selectedOption === "CALL"
+          ? CALL_STRATEGIES[0]
+          : PUT_STRATEGIES[0]) as StrategyList,
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedOption]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

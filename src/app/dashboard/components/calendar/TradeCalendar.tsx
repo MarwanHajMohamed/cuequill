@@ -18,6 +18,7 @@ import { tradeNetPL } from "@/lib/helpers/tradeNet";
 import { AnimatePresence } from "framer-motion";
 import { Skeleton } from "@/components/Loaders";
 
+import { fmtMoneySignedCompact } from "@/lib/helpers/fmt";
 const now = new Date();
 const today = now.toISOString().split("T")[0];
 
@@ -167,7 +168,7 @@ export default function TradeCalendar({ userId }: { userId: string }) {
                 netPL >= 0 ? "text-green-500" : "text-red-500"
               }`}
             >
-              {netPL >= 0 ? "+" : "−"}${Math.abs(netPL).toFixed(2)}
+              {fmtMoneySignedCompact(netPL)}
             </div>
           ) : (
             <div className="font-semibold text-orange-400">Open</div>
@@ -199,7 +200,7 @@ export default function TradeCalendar({ userId }: { userId: string }) {
                     netPL >= 0 ? "text-green-500" : "text-red-500"
                   }`}
                 >
-                  {netPL >= 0 ? "+" : "−"}${Math.abs(netPL).toFixed(2)}
+                  {fmtMoneySignedCompact(netPL)}
                 </div>
               ) : (
                 <div className="font-semibold text-orange-400">Open</div>

@@ -1,23 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import connectDB from "@/lib/db";
 import Trade from "@/lib/models/Trade";
 import mongoose from "mongoose";
 
-// Get trades for each user
+// All handlers in this file derive the user identity from the
+// authenticated session — any `userId` value the client sends is
+// ignored. Previously the GET / POST / DELETE handlers trusted the
+// client's `userId` so any logged-in user could read, create, or
+// bulk-delete trades belonging to any other user.
+
+// Get trades for the authenticated user.
 export async function GET(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   await connectDB();
 
-  const userId = req.nextUrl.searchParams.get("userId");
   const simulated = req.nextUrl.searchParams.get("simulated");
   const month = req.nextUrl.searchParams.get("month");
   const year = req.nextUrl.searchParams.get("year");
 
   try {
-    const query: Record<string, unknown> = {};
-
-    if (userId) {
-      query.userID = new mongoose.Types.ObjectId(userId);
-    }
+    const query: Record<string, unknown> = {
+      userID: new mongoose.Types.ObjectId(session.user.id),
+    };
 
     if (simulated === "true") query.simulated = true;
     if (simulated === "false") query.simulated = false;
@@ -61,13 +70,22 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// Add a new trade
+// Add a new trade for the authenticated user. The userID field on the
+// body is overwritten so a request can't create a trade owned by
+// someone else.
 export async function POST(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   await connectDB();
 
   try {
     const body = await req.json();
-    const trade = await Trade.create(body);
+    const trade = await Trade.create({
+      ...body,
+      userID: new mongoose.Types.ObjectId(session.user.id),
+    });
     return NextResponse.json(trade, { status: 201 });
   } catch (err: unknown) {
     const message =
@@ -77,25 +95,28 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// Delete all trades
+// Bulk-delete the authenticated user's trades (optionally scoped to
+// real vs. simulated). The previous version read userId from the
+// request body so any caller could wipe any account's history.
 export async function DELETE(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   await connectDB();
 
   try {
-    const { userId, simulated }: { userId: string; simulated: boolean } =
-      await req.json();
-
-    if (!userId) {
-      return NextResponse.json({ error: "Missing userId" }, { status: 400 });
-    }
+    const { simulated }: { simulated?: boolean } = await req
+      .json()
+      .catch(() => ({}));
 
     const filter: Record<string, unknown> = {
-      userID: new mongoose.Types.ObjectId(userId),
+      userID: new mongoose.Types.ObjectId(session.user.id),
     };
 
-    if (simulated) {
+    if (simulated === true) {
       filter.simulated = true;
-    } else if (!simulated) {
+    } else if (simulated === false) {
       filter.simulated = { $ne: true };
     }
 

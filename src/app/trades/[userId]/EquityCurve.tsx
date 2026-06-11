@@ -3,6 +3,7 @@
 import { Trade } from "@/app/types/Trades";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
 import { format } from "date-fns";
+import { fmtMoneyCompact } from "@/lib/helpers/fmt";
 import {
   Area,
   CartesianGrid,
@@ -123,7 +124,7 @@ export default function EquityCurve({ trades }: { trades: Trade[] }) {
               labelStyle={{ color: "#fff", marginBottom: 4 }}
               labelFormatter={(d) => format(new Date(d), "MMM d, yyyy")}
               formatter={(v: number, name: string) => [
-                `${v >= 0 ? "+" : "−"}$${Math.abs(v).toFixed(2)}`,
+                `${v >= 0 ? "+" : "−"}${fmtMoneyCompact(Math.abs(v))}`,
                 name,
               ]}
             />

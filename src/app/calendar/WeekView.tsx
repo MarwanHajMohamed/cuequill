@@ -14,6 +14,7 @@ import { format, addDays, addWeeks, subWeeks, startOfWeek } from "date-fns";
 import { Trade } from "../types/Trades";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
 
+import { fmtMoneySignedCompact } from "@/lib/helpers/fmt";
 export type WeekViewHandle = { goToToday: () => void };
 
 type TradeEventType = "WIN" | "LOSS" | "OPEN" | "TODAY";
@@ -359,7 +360,7 @@ const WeekView = forwardRef<WeekViewHandle, WeekViewProps>(function WeekView(
                           : "text-red-300 bg-red-500/10 border border-red-500/20"
                       }`}
                     >
-                      {netPL >= 0 ? "+" : "−"}${Math.abs(netPL).toFixed(2)}
+                      {fmtMoneySignedCompact(netPL)}
                     </div>
                   )}
                 </button>
