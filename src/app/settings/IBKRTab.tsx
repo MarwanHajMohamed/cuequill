@@ -131,7 +131,10 @@ export default function IBKRTab() {
             <>
               Under <span className="text-white">Trades</span>, select: Symbol,
               Strike, Date/Time, Expiry, Put/Call, Quantity, Buy/Sell,
-              TradePrice, Realized P/L, TradeID.
+              TradePrice, Realized P/L, TradeID,{" "}
+              <span className="text-white">IBCommission</span>, and{" "}
+              <span className="text-white">Taxes</span> (the last two let
+              Cuequill populate fees automatically).
             </>,
             <>
               Set <span className="text-white">Period</span> to{" "}

@@ -13,9 +13,41 @@ type CsvRow = {
   DateTime: string;
   FifoPnlRealized: string;
   TradeID?: string;
+  // Commission/fees columns. Whichever the user includes in their Flex
+  // query will be parsed; missing columns are treated as 0. IBKR
+  // reports these as negative values (debits), so we always take the
+  // absolute amount.
+  IBCommission?: string;
+  Commission?: string;
+  Taxes?: string;
 };
 
-type CsvRowWithQty = CsvRow & { remainingQty: number };
+type CsvRowWithQty = CsvRow & {
+  remainingQty: number;
+  // Buy-side commission per contract, derived once when the buy is
+  // enqueued. Avoids dividing by qty again at every fill.
+  commissionPerContract: number;
+};
+
+// Parses IBKR commission/fee strings. Returns absolute value (IBKR
+// reports debits as negatives; we store fees as positive). Empty or
+// missing values yield 0.
+function absFee(s: string | undefined | null): number {
+  if (!s) return 0;
+  const n = parseFloat(s);
+  return Number.isFinite(n) ? Math.abs(n) : 0;
+}
+
+// Total fees on a CSV row = IBCommission (or Commission alias) + Taxes,
+// per contract. We divide here because IBKR reports a single combined
+// charge for the whole order, but we may split that order across
+// multiple matched fills.
+function feesPerContract(row: CsvRow, qty: number): number {
+  if (qty <= 0) return 0;
+  const comm = absFee(row.IBCommission ?? row.Commission);
+  const taxes = absFee(row.Taxes);
+  return (comm + taxes) / qty;
+}
 
 function makeETDate(
   year: number,
@@ -148,14 +180,28 @@ export async function syncForUser(userId: string): Promise<{ inserted: number; s
       const qty = Math.abs(signedQty);
 
       if (signedQty > 0) {
-        openQueue.push({ ...row, remainingQty: qty });
+        openQueue.push({
+          ...row,
+          remainingQty: qty,
+          commissionPerContract: feesPerContract(row, qty),
+        });
       } else if (signedQty < 0) {
         let remainingSell = qty;
+        const sellCommissionPerContract = feesPerContract(row, qty);
 
         while (remainingSell > 0 && openQueue.length > 0) {
           const buyRow = openQueue[0];
           const matchQty = Math.min(buyRow.remainingQty, remainingSell);
           const pnl = (parseFloat(row.FifoPnlRealized) / qty) * matchQty;
+          // Round-trip fees on the matched portion = buy share + sell
+          // share. Rounded to 4dp so a precise sum still looks clean
+          // when displayed (display layer truncates further).
+          const fees =
+            Math.round(
+              (buyRow.commissionPerContract + sellCommissionPerContract) *
+                matchQty *
+                10000,
+            ) / 10000;
 
           trades.push({
             userID: userId,
@@ -169,6 +215,7 @@ export async function syncForUser(userId: string): Promise<{ inserted: number; s
             dateClosed: parseDateTime(row.DateTime),
             closingContractPrice: parseFloat(row.TradePrice),
             profitLoss: pnl,
+            fees,
             status: pnl > 0 ? "WIN" : "LOSS",
             simulated: false,
             notes: "",
@@ -185,6 +232,13 @@ export async function syncForUser(userId: string): Promise<{ inserted: number; s
     }
 
     for (const buyRow of openQueue) {
+      // Open trades only carry the buy-side commission. The sell-side
+      // portion is added when the closing fill arrives on a later sync.
+      const fees =
+        Math.round(
+          buyRow.commissionPerContract * buyRow.remainingQty * 10000,
+        ) / 10000;
+
       trades.push({
         userID: userId,
         symbol: buyRow.Symbol.split(" ")[0],
@@ -194,6 +248,7 @@ export async function syncForUser(userId: string): Promise<{ inserted: number; s
         contractPrice: parseFloat(buyRow.TradePrice),
         dateBought: parseDateTime(buyRow.DateTime),
         expiryDate: parseExpiry(buyRow.Expiry),
+        fees,
         status: "OPEN",
         simulated: false,
         ...(buyRow.TradeID && { ibkrTradeId: buyRow.TradeID }),

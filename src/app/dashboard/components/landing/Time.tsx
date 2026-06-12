@@ -122,17 +122,16 @@ export default function Time() {
     hours < 12 ? "Good morning" : hours < 17 ? "Good afternoon" : "Good evening";
 
   return (
-    <div className="relative w-full max-w-[1500px] mt-30 px-5 md:px-10 overflow-x-clip">
-      {/* Aurora glow.
-          - Mobile: a single cheap radial-gradient anchored to the
-            viewport so the gradient feathers naturally past every
-            edge (no hard line where the hero container starts). CSS
-            filter blur at ≥100px tanks mobile GPUs - radial gradients
-            are composited for free and look identical at this
-            softness.
-          - Desktop: keeps the layered blurred blobs since desktop
-            GPUs handle them comfortably and the multi-color depth is
-            worth it. */}
+    <div className="relative w-full max-w-[1500px] mt-30 px-5 md:px-10">
+      {/* Aurora glow - anchored to the VIEWPORT (fixed inset-0), not the
+          max-width hero container, so on ultra-wide screens the glow
+          feathers all the way to the screen edges instead of cutting
+          off at 1500px.
+          - Mobile: a single cheap radial-gradient (CSS filter blur at
+            ≥100px tanks mobile GPUs; gradients are composited free).
+          - Desktop: multi-color radial gradients spanning the full
+            viewport width, mirroring the blob layout the hero used
+            before but without a clipping container. */}
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0 -z-10 md:hidden"
@@ -143,12 +142,12 @@ export default function Time() {
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 hidden md:block"
-      >
-        <div className="absolute -top-72 -left-72 w-[900px] h-[900px] rounded-full bg-teal-500/15 blur-[180px]" />
-        <div className="absolute -top-64 -right-72 w-[820px] h-[820px] rounded-full bg-indigo-500/15 blur-[180px]" />
-        <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[700px] h-[500px] rounded-full bg-fuchsia-500/[0.07] blur-[160px]" />
-      </div>
+        className="pointer-events-none fixed inset-0 -z-10 hidden md:block"
+        style={{
+          background:
+            "radial-gradient(45% 55% at 12% 0%, rgba(20,184,166,0.16) 0%, rgba(20,184,166,0) 72%), radial-gradient(42% 50% at 88% 0%, rgba(99,102,241,0.15) 0%, rgba(99,102,241,0) 72%), radial-gradient(35% 40% at 50% 18%, rgba(217,70,239,0.07) 0%, rgba(217,70,239,0) 70%)",
+        }}
+      />
 
       <div className="flex flex-col md:flex-row justify-between md:items-end gap-8 md:gap-12">
         {/* LEFT - greeting */}

@@ -77,7 +77,9 @@ export default function TradesTab({
             <>
               Under <span className="text-white">Trades</span>, select: Symbol,
               Strike, Date/Time, Expiry, Put/Call, Quantity, Buy/Sell, TradePrice,
-              Realized P/L.
+              Realized P/L,{" "}
+              <span className="text-white">IBCommission</span>, and{" "}
+              <span className="text-white">Taxes</span>.
             </>,
             <>Save, then run the query.</>,
             <>
