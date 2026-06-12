@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Cuequill</title>
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        background: #0e0e10;
+        color: #fff;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+      }
+      .wrap {
+        padding: 32px;
+        max-width: 420px;
+      }
+      h1 {
+        font-size: 20px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        margin: 0 0 8px;
+      }
+      p {
+        font-size: 14px;
+        line-height: 1.6;
+        color: rgba(255, 255, 255, 0.55);
+        margin: 0;
+      }
+      code {
+        color: #5eead4;
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Shown only when the shell was synced WITHOUT CAP_SERVER_URL.
+         Normally the webview loads the deployed app instead. -->
+    <div class="wrap">
+      <h1>Cuequill shell isn’t pointed at a server</h1>
+      <p>
+        Re-sync with your deployed URL:<br />
+        <code>CAP_SERVER_URL=https://… npx cap sync ios</code><br />
+        then rebuild in Xcode.
+      </p>
+    </div>
+  </body>
+</html>

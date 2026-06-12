@@ -7,6 +7,7 @@ import Providers from "./providers";
 import NavbarWrapper from "./navbar/NavbarWrapper";
 import { ToastProvider } from "@/hooks/useToast";
 import PWARegister from "./PWARegister";
+import NativeBridge from "./NativeBridge";
 
 const dmMono = DM_Mono({
   subsets: ["latin"],
@@ -64,6 +65,7 @@ export default function RootLayout({
             <NavbarWrapper />
             {children}
             <PWARegister />
+            <NativeBridge />
           </ToastProvider>
         </Providers>
       </body>
