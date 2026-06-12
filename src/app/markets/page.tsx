@@ -14,18 +14,17 @@ import { useToast } from "@/hooks/useToast";
 
 type Quote = {
   symbol: string;
+  marketState: string;
   price: number;
   change: number;
   changePct: number;
+  regularPrice: number;
   prevClose: number;
-  high: number;
-  low: number;
-  open: number;
+  extended: boolean;
   ts: number;
 };
 
 // Core watchlist shown to everyone; users can add more (persisted locally).
-// Kept small so the default view stays well within Finnhub's free limit.
 const DEFAULT_SYMBOLS = [
   "SPY",
   "QQQ",
@@ -40,7 +39,7 @@ const DEFAULT_SYMBOLS = [
 ];
 
 // How often the page asks the server for fresh quotes. The server caches
-// per-symbol, so this can be brisk without hammering Finnhub.
+// per-symbol so this can be brisk without hammering the upstream feed.
 const POLL_MS = 10_000;
 
 type Session = "pre" | "open" | "after" | "closed";
@@ -104,9 +103,7 @@ function Page() {
     [],
   );
   const [quotes, setQuotes] = useState<Record<string, Quote>>({});
-  const [status, setStatus] = useState<"loading" | "ok" | "nokey" | "error">(
-    "loading",
-  );
+  const [status, setStatus] = useState<"loading" | "ok" | "error">("loading");
   const [updatedAt, setUpdatedAt] = useState<number | null>(null);
   const [query, setQuery] = useState("");
   const [adding, setAdding] = useState(false);
@@ -129,16 +126,7 @@ function Page() {
     const syms = symbolsRef.current;
     if (!syms) return;
     try {
-      const res = await fetch(`/api/finnhub/quote?symbols=${syms}`);
-      if (res.status === 500) {
-        const body = await res.json().catch(() => ({}));
-        if (typeof body?.error === "string" && body.error.includes("FINNHUB")) {
-          setStatus("nokey");
-          return;
-        }
-        setStatus("error");
-        return;
-      }
+      const res = await fetch(`/api/markets/quote?symbols=${syms}`);
       if (!res.ok) {
         setStatus("error");
         return;
@@ -183,7 +171,7 @@ function Page() {
     }
     setAdding(true);
     try {
-      const res = await fetch(`/api/finnhub/quote?symbols=${sym}`);
+      const res = await fetch(`/api/markets/quote?symbols=${sym}`);
       const data = await res.json().catch(() => ({}));
       const q = (data?.quotes as Quote[] | undefined)?.[0];
       if (!q) {
@@ -296,30 +284,7 @@ function Page() {
           transition={{ duration: 0.4, delay: 0.12, ease: "easeOut" }}
           className="mt-6"
         >
-          {status === "nokey" ? (
-            <div className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.04] p-6 text-center">
-              <div className="w-11 h-11 mx-auto rounded-full bg-amber-500/15 border border-amber-500/25 flex items-center justify-center mb-3">
-                <i className="fa-solid fa-key text-amber-300" />
-              </div>
-              <div className="text-[15px] font-semibold mb-1">
-                Live quotes need a Finnhub key
-              </div>
-              <div className="text-[13px] text-white/55 max-w-md mx-auto leading-relaxed">
-                Grab a free key at{" "}
-                <a
-                  href="https://finnhub.io/register"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-teal-300 underline decoration-teal-300/40 hover:decoration-teal-300"
-                >
-                  finnhub.io
-                </a>{" "}
-                and set <code className="text-white/80">FINNHUB_API_KEY</code>{" "}
-                in your environment, then reload.
-              </div>
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md overflow-hidden">
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full table-fixed min-w-[520px]">
                   <colgroup>
@@ -363,6 +328,14 @@ function Page() {
                                 <span className="font-semibold text-[14px] tracking-tight">
                                   {sym}
                                 </span>
+                                {q?.extended && (
+                                  <span className="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300">
+                                    {q.marketState === "POST" ||
+                                    q.marketState === "POSTPOST"
+                                      ? "AH"
+                                      : "PRE"}
+                                  </span>
+                                )}
                                 {isCustom(sym) && (
                                   <button
                                     onClick={() => removeSymbol(sym)}
@@ -395,28 +368,32 @@ function Page() {
                 </table>
               </div>
             </div>
-          )}
 
           {/* Footer status */}
-          {status !== "nokey" && (
-            <div className="mt-3 flex items-center justify-between text-[11px] text-white/40">
-              <span>
-                Change is vs previous close · {session === "pre" ? "premarket" : session === "after" ? "after-hours" : session === "open" ? "regular session" : "last close"}
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                {status === "error" ? (
-                  <span className="text-red-400/80">Connection issue</span>
-                ) : updatedAt ? (
-                  <>
-                    <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
-                    Live · updates every {POLL_MS / 1000}s
-                  </>
-                ) : (
-                  "Loading…"
-                )}
-              </span>
-            </div>
-          )}
+          <div className="mt-3 flex items-center justify-between text-[11px] text-white/40">
+            <span>
+              Change is vs previous close ·{" "}
+              {session === "pre"
+                ? "premarket"
+                : session === "after"
+                  ? "after-hours"
+                  : session === "open"
+                    ? "regular session"
+                    : "last close"}
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              {status === "error" ? (
+                <span className="text-red-400/80">Connection issue</span>
+              ) : updatedAt ? (
+                <>
+                  <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
+                  Live · updates every {POLL_MS / 1000}s
+                </>
+              ) : (
+                "Loading…"
+              )}
+            </span>
+          </div>
         </motion.div>
       </div>
     </div>
