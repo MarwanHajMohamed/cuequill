@@ -69,7 +69,7 @@ export default function DayTradesModal({
           animate={{ y: 0, opacity: 1, scale: 1 }}
           exit={{ y: 12, opacity: 0, scale: 0.98 }}
           transition={{ type: "spring", stiffness: 380, damping: 32 }}
-          className="relative flex flex-col bg-[var(--surface)] border border-white/10 rounded-2xl w-full max-w-md text-white max-h-[88vh] overflow-hidden shadow-[0_24px_80px_rgba(0,0,0,0.55)]"
+          className="relative flex flex-col bg-[var(--surface)] border border-white/10 rounded-2xl w-full max-w-md text-white max-h-[88vh] overflow-hidden shadow-[0_24px_80px_var(--shadow)]"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Hero */}

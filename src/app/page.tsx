@@ -127,7 +127,7 @@ const Step = ({
 const HeroPreview = () => (
   <div className="mt-12 mx-auto max-w-3xl w-full grid grid-cols-1 md:grid-cols-2 gap-4">
     {/* Day-trades card */}
-    <div className="rounded-2xl border border-white/10 bg-[var(--surface)] p-4 shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
+    <div className="rounded-2xl border border-white/10 bg-[var(--surface)] p-4 shadow-[0_24px_80px_var(--shadow)]">
       <div className="bg-gradient-to-b from-green-500/15 to-transparent rounded-xl px-4 py-3 border-b border-white/10">
         <div className="text-[10px] uppercase tracking-[0.18em] text-white/40 font-medium">
           Mon · June 9
@@ -190,7 +190,7 @@ const HeroPreview = () => (
     </div>
 
     {/* QuillAI card */}
-    <div className="rounded-2xl border border-white/10 bg-[var(--surface)] p-4 shadow-[0_24px_80px_rgba(0,0,0,0.45)] flex flex-col">
+    <div className="rounded-2xl border border-white/10 bg-[var(--surface)] p-4 shadow-[0_24px_80px_var(--shadow)] flex flex-col">
       <div className="flex items-center gap-2 px-2 pt-1 pb-3 border-b border-white/10">
         <span className="w-7 h-7 rounded-full bg-gradient-to-br from-teal-500/40 to-emerald-500/30 border border-teal-400/40 flex items-center justify-center">
           <i className="fa-solid fa-wand-magic-sparkles text-[11px] text-teal-200" />
@@ -300,7 +300,7 @@ export default function Home() {
 
       {/* Top bar - glass pill like the signed-in navbar */}
       <div className="fixed top-0 left-0 right-0 z-50 flex justify-center pointer-events-none">
-        <div className="pointer-events-auto flex justify-between items-center w-full max-w-[1500px] mt-6 mx-3 md:mx-10 py-2 pl-3 pr-2 bg-white/[0.03] backdrop-blur-md rounded-full border border-white/10 shadow-[0_2px_24px_rgba(0,0,0,0.25)]">
+        <div className="pointer-events-auto flex justify-between items-center w-full max-w-[1500px] mt-6 mx-3 md:mx-10 py-2 pl-3 pr-2 bg-white/[0.03] backdrop-blur-md rounded-full border border-white/10 shadow-[0_2px_24px_var(--shadow-soft)]">
           <div className="flex items-center gap-2 pl-2 pr-3 py-1">
             <CuequillLogo className="h-7 w-auto" />
           </div>
@@ -492,7 +492,7 @@ export default function Home() {
                 ))}
               </ul>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-[var(--surface)] p-4 shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
+            <div className="rounded-2xl border border-white/10 bg-[var(--surface)] p-4 shadow-[0_24px_80px_var(--shadow)]">
               <div className="flex flex-col gap-2 text-[13px]">
                 <div className="self-end max-w-[88%] rounded-2xl px-3 py-2 bg-teal-500/15 border border-teal-500/25 text-white">
                   Mark my AAPL{" "}
