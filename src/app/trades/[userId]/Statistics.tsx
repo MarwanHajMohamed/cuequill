@@ -12,6 +12,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { createPortal } from "react-dom";
 import EquityCurve from "./EquityCurve";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
 import { motion, AnimatePresence } from "framer-motion";
@@ -231,6 +232,7 @@ const MiniDonut = ({
 const InfoTooltip = ({ text }: { text: string }) => {
   const [open, setOpen] = useState(false);
   const [hovered, setHovered] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [coords, setCoords] = useState<{
     left: number;
     top: number;
@@ -239,6 +241,11 @@ const InfoTooltip = ({ text }: { text: string }) => {
   const ref = useRef<HTMLSpanElement>(null);
   const tipRef = useRef<HTMLSpanElement>(null);
   const visible = open || hovered;
+
+  // Portalling requires document - guard for SSR.
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Close on outside click (mobile/tap mode).
   useEffect(() => {
@@ -253,8 +260,9 @@ const InfoTooltip = ({ text }: { text: string }) => {
 
   // Position with `position: fixed` against the viewport so the tooltip
   // can never push the page width - even when the anchor icon is at the
-  // right edge of the screen. Clamps left to keep at least 8px between
-  // the tooltip and each viewport edge.
+  // right edge of the screen. Tries above the icon first; flips below
+  // when there's not enough room. Clamps left to keep at least 8px
+  // between the tooltip and each viewport edge.
   useLayoutEffect(() => {
     if (!visible) {
       setCoords((c) => (c.placed ? { left: 0, top: 0, placed: false } : c));
@@ -267,20 +275,25 @@ const InfoTooltip = ({ text }: { text: string }) => {
       const iconRect = iconNode.getBoundingClientRect();
       const tipRect = tipNode.getBoundingClientRect();
       const margin = 8;
-      // Use clientWidth so the scrollbar isn't counted; falls back to
-      // window.innerWidth on older browsers.
       const viewportW =
         document.documentElement.clientWidth || window.innerWidth;
+      const viewportH =
+        document.documentElement.clientHeight || window.innerHeight;
 
-      // Default: center the tooltip on the icon, then clamp into viewport.
-      let left =
-        iconRect.left + iconRect.width / 2 - tipRect.width / 2;
+      let left = iconRect.left + iconRect.width / 2 - tipRect.width / 2;
       if (left < margin) left = margin;
       const maxLeft = viewportW - margin - tipRect.width;
       if (left > maxLeft) left = maxLeft;
 
-      // Place above the icon with an 8px gap.
-      const top = iconRect.top - tipRect.height - 8;
+      // Prefer above; fall back below if we'd overflow the top.
+      const above = iconRect.top - tipRect.height - 8;
+      const below = iconRect.bottom + 8;
+      let top = above;
+      if (above < margin) top = below;
+      // If below would also overflow, pin to top margin.
+      if (top + tipRect.height > viewportH - margin) {
+        top = Math.max(margin, viewportH - margin - tipRect.height);
+      }
 
       setCoords({ left, top, placed: true });
     };
@@ -311,23 +324,30 @@ const InfoTooltip = ({ text }: { text: string }) => {
       >
         <i className="fa-solid fa-circle-info text-sm md:text-xs text-white/40 hover:text-white/70 transition-colors" />
       </button>
-      {/* Always rendered so we can measure it; visibility is gated on
-          `coords.placed` so the user never sees a frame at (0, 0). */}
-      <span
-        ref={tipRef}
-        style={{
-          position: "fixed",
-          left: coords.left,
-          top: coords.top,
-          maxWidth: "min(12rem, calc(100vw - 16px))",
-          visibility: visible && coords.placed ? "visible" : "hidden",
-          pointerEvents: "none",
-        }}
-        className="bg-[#16151B] border border-white/10 text-white/80 text-[11px] rounded-md px-2 py-1.5
-                   whitespace-normal w-48 z-50 leading-snug shadow-md normal-case"
-      >
-        {text}
-      </span>
+      {/* Portalled to <body> so a `backdrop-filter` / `transform` /
+          `filter` ancestor doesn't turn our `position: fixed` into an
+          absolute one relative to the card. Always rendered so we can
+          measure it; visibility is gated on `coords.placed` so the user
+          never sees a frame at (0, 0). */}
+      {mounted &&
+        createPortal(
+          <span
+            ref={tipRef}
+            style={{
+              position: "fixed",
+              left: coords.left,
+              top: coords.top,
+              maxWidth: "min(12rem, calc(100vw - 16px))",
+              visibility: visible && coords.placed ? "visible" : "hidden",
+              pointerEvents: "none",
+            }}
+            className="bg-[#16151B] border border-white/10 text-white/80 text-[11px] rounded-md px-2.5 py-2
+                       whitespace-normal w-48 z-[999] leading-snug shadow-md normal-case tracking-normal font-normal"
+          >
+            {text}
+          </span>,
+          document.body,
+        )}
     </span>
   );
 };
@@ -344,13 +364,35 @@ const SummaryTile = ({
   children: React.ReactNode;
 }) => (
   <div
-    className={`border border-[var(--hairline)] rounded-lg p-2 md:p-4 flex flex-col gap-1 md:gap-2 min-w-0 ${className}`}
+    className={`rounded-xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4 flex flex-col gap-1.5 md:gap-2 min-w-0 ${className}`}
   >
-    <div className="text-[10px] md:text-xs text-white/50 flex items-center justify-between gap-1.5">
+    <div className="text-[10px] md:text-[11px] uppercase tracking-[0.14em] text-white/45 font-medium flex items-center justify-between gap-1.5">
       <span className="truncate">{label}</span>
       {info && <InfoTooltip text={info} />}
     </div>
     <div className="flex items-center justify-between gap-2">{children}</div>
+  </div>
+);
+
+const SectionHeader = ({
+  title,
+  info,
+  right,
+}: {
+  title: string;
+  info?: string;
+  right?: React.ReactNode;
+}) => (
+  <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="flex items-center gap-2 flex-wrap min-w-0">
+      <h3 className="text-lg md:text-2xl font-semibold tracking-tight">
+        <span className="bg-gradient-to-r from-teal-300 to-emerald-400 bg-clip-text text-transparent">
+          {title}
+        </span>
+      </h3>
+      {info && <InfoTooltip text={info} />}
+    </div>
+    {right}
   </div>
 );
 
@@ -373,10 +415,10 @@ function VerdictPill({
 }) {
   const styles =
     tone === "good"
-      ? "bg-green-500/20 text-green-500 border-green-500"
+      ? "bg-green-500/10 text-green-300 border-green-500/25"
       : tone === "bad"
-      ? "bg-red-500/20 text-red-500 border-red-500"
-      : "bg-white/5 text-white/60 border-white/10";
+      ? "bg-red-500/10 text-red-300 border-red-500/25"
+      : "bg-white/[0.04] text-white/60 border-white/10";
   const icon =
     tone === "good" ? "✓" : tone === "bad" ? "✗" : "≈";
   return (
@@ -427,15 +469,15 @@ function CompareCard({
   })();
 
   return (
-    <div className="border border-[var(--hairline)] rounded-lg p-2 md:p-4 flex flex-col gap-1 md:gap-2 min-w-0 basis-[100px] md:basis-[200px] grow md:max-w-[280px]">
-      <div className="flex items-center justify-between gap-1 text-[10px] md:text-xs text-white/50 uppercase tracking-wide">
+    <div className="rounded-xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4 flex flex-col gap-1.5 md:gap-2 min-w-0 basis-[100px] md:basis-[200px] grow md:max-w-[280px]">
+      <div className="flex items-center justify-between gap-1 text-[10px] md:text-[11px] text-white/45 uppercase tracking-[0.14em] font-medium">
         <span className="truncate">{label}</span>
         {info && <InfoTooltip text={info} />}
       </div>
-      <div className="text-sm md:text-xl font-semibold text-white truncate">
+      <div className="text-sm md:text-xl font-semibold text-white truncate tabular-nums">
         {value}
       </div>
-      <div className={`text-[10px] md:text-[11px] ${tone}`}>
+      <div className={`text-[10px] md:text-[11px] tabular-nums ${tone}`}>
         {arrow} {formatted}
       </div>
       <div className="text-[10px] text-white/30">vs {baseline}</div>
@@ -456,18 +498,74 @@ function MiniStat({
 }) {
   const valueColor =
     tone === "good"
-      ? "text-green-500"
+      ? "text-green-400"
       : tone === "bad"
-      ? "text-red-500"
+      ? "text-red-400"
       : "text-white";
   return (
-    <div className="border border-[var(--hairline)] rounded-lg p-2 md:p-4 flex flex-col gap-1 md:gap-2 min-w-0">
-      <div className="flex items-center justify-between gap-1 text-[10px] md:text-xs text-white/50 uppercase tracking-wide">
+    <div className="rounded-xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4 flex flex-col gap-1.5 md:gap-2 min-w-0">
+      <div className="flex items-center justify-between gap-1 text-[10px] md:text-[11px] text-white/45 uppercase tracking-[0.14em] font-medium">
         <span className="truncate">{label}</span>
         {info && <InfoTooltip text={info} />}
       </div>
-      <div className={`text-sm md:text-xl font-semibold truncate ${valueColor}`}>
+      <div className={`text-sm md:text-xl font-semibold truncate tabular-nums ${valueColor}`}>
         {value}
+      </div>
+    </div>
+  );
+}
+
+function MetricTile({
+  label,
+  value,
+  sub,
+  tone,
+  icon,
+  info,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  tone: "good" | "bad" | "neutral";
+  icon: string;
+  info?: string;
+}) {
+  const valueColor =
+    tone === "good"
+      ? "text-green-400"
+      : tone === "bad"
+      ? "text-red-400"
+      : "text-white";
+  const chip =
+    tone === "good"
+      ? "bg-green-500/10 text-green-300 border-green-500/25"
+      : tone === "bad"
+      ? "bg-red-500/10 text-red-300 border-red-500/25"
+      : "bg-white/[0.04] text-white/60 border-white/10";
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4 flex flex-col gap-2 min-w-0">
+      <div className="flex items-center justify-between gap-1.5">
+        <div className="flex items-center gap-2 min-w-0">
+          <div
+            className={`shrink-0 w-7 h-7 rounded-lg border flex items-center justify-center ${chip}`}
+          >
+            <i className={`fa-solid ${icon} text-[11px]`} />
+          </div>
+          <span className="text-[10px] md:text-[11px] uppercase tracking-[0.14em] text-white/45 font-medium truncate">
+            {label}
+          </span>
+        </div>
+        {info && <InfoTooltip text={info} />}
+      </div>
+      <div className="flex flex-col gap-0.5 min-w-0">
+        <div
+          className={`text-base md:text-xl font-semibold tabular-nums truncate ${valueColor}`}
+        >
+          {value}
+        </div>
+        {sub && (
+          <div className="text-[11px] text-white/40 truncate">{sub}</div>
+        )}
       </div>
     </div>
   );
@@ -493,21 +591,31 @@ function BreakdownTable({
   // Largest absolute net P/L for the inline bar widths.
   const maxAbs = Math.max(...rows.map((r) => Math.abs(r.netPL)), 1);
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center gap-1 text-xs text-white/60 uppercase tracking-wide">
+    <div className="flex flex-col gap-2.5">
+      <div className="flex items-center gap-1.5 text-[10px] md:text-[11px] uppercase tracking-[0.18em] text-white/45 font-medium">
         <span>{title}</span>
         {info && <InfoTooltip text={info} />}
       </div>
-      <div className="border border-[var(--hairline)] rounded-lg overflow-x-auto md:overflow-hidden">
+      <div className="rounded-xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md overflow-x-auto md:overflow-hidden">
         <table className="w-full min-w-[480px] md:min-w-0 text-xs md:text-sm">
           <thead>
-            <tr className="text-white/40 bg-white/3">
-              <th className="text-left font-normal py-2 px-3">Label</th>
-              <th className="text-right font-normal py-2 px-3">N</th>
-              <th className="text-right font-normal py-2 px-3">Win %</th>
-              <th className="text-right font-normal py-2 px-3">Net</th>
-              <th className="text-right font-normal py-2 px-3">Avg</th>
-              <th className="w-1/4 text-left font-normal py-2 px-3 hidden md:table-cell"></th>
+            <tr className="text-white/40 bg-white/[0.02] border-b border-white/[0.06]">
+              <th className="text-left font-medium py-2.5 px-3 text-[10px] uppercase tracking-[0.14em]">
+                Label
+              </th>
+              <th className="text-right font-medium py-2.5 px-3 text-[10px] uppercase tracking-[0.14em]">
+                N
+              </th>
+              <th className="text-right font-medium py-2.5 px-3 text-[10px] uppercase tracking-[0.14em]">
+                Win %
+              </th>
+              <th className="text-right font-medium py-2.5 px-3 text-[10px] uppercase tracking-[0.14em]">
+                Net
+              </th>
+              <th className="text-right font-medium py-2.5 px-3 text-[10px] uppercase tracking-[0.14em]">
+                Avg
+              </th>
+              <th className="w-1/4 text-left font-normal py-2.5 px-3 hidden md:table-cell"></th>
             </tr>
           </thead>
           <tbody>
@@ -515,36 +623,41 @@ function BreakdownTable({
               const isProfit = r.netPL >= 0;
               const widthPct = (Math.abs(r.netPL) / maxAbs) * 100;
               return (
-                <tr key={r.label} className="border-t border-[var(--hairline)]">
-                  <td className="py-2 px-3 truncate max-w-[180px]">
+                <tr
+                  key={r.label}
+                  className="border-t border-white/[0.06] hover:bg-white/[0.02] transition"
+                >
+                  <td className="py-2.5 px-3 truncate max-w-[180px] text-white/85">
                     {r.label}
                   </td>
-                  <td className="py-2 px-3 text-right text-white/60">
+                  <td className="py-2.5 px-3 text-right text-white/55 tabular-nums">
                     {r.n}
                   </td>
-                  <td className="py-2 px-3 text-right text-white/60">
+                  <td className="py-2.5 px-3 text-right text-white/55 tabular-nums">
                     {r.winRate.toFixed(0)}%
                   </td>
                   <td
-                    className={`py-2 px-3 text-right font-medium ${
-                      isProfit ? "text-green-500" : "text-red-500"
+                    className={`py-2.5 px-3 text-right font-medium tabular-nums ${
+                      isProfit ? "text-green-400" : "text-red-400"
                     }`}
                   >
                     {isProfit ? "+" : "−"}${Math.abs(r.netPL).toFixed(2)}
                   </td>
                   <td
-                    className={`py-2 px-3 text-right ${
-                      r.expectancy >= 0 ? "text-green-500/80" : "text-red-500/80"
+                    className={`py-2.5 px-3 text-right tabular-nums ${
+                      r.expectancy >= 0
+                        ? "text-green-400/80"
+                        : "text-red-400/80"
                     }`}
                   >
                     {r.expectancy >= 0 ? "+" : "−"}$
                     {Math.abs(r.expectancy).toFixed(2)}
                   </td>
-                  <td className="py-2 px-3 hidden md:table-cell">
-                    <div className="w-full h-2 bg-white/5 rounded-sm overflow-hidden">
+                  <td className="py-2.5 px-3 hidden md:table-cell">
+                    <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
                       <div
-                        className={`h-full ${
-                          isProfit ? "bg-green-500/50" : "bg-red-500/50"
+                        className={`h-full rounded-full ${
+                          isProfit ? "bg-green-500/60" : "bg-red-500/60"
                         }`}
                         style={{ width: `${widthPct}%` }}
                       />
@@ -1075,8 +1188,8 @@ export default function Statistics({
               className="basis-[100px] md:basis-[200px] grow max-w-[280px]"
             >
               <div
-                className={`text-sm md:text-2xl truncate ${
-                  netProfit >= 0 ? "text-green-500" : "text-red-500"
+                className={`text-sm md:text-2xl font-semibold tabular-nums truncate ${
+                  netProfit >= 0 ? "text-green-400" : "text-red-400"
                 }`}
               >
                 {netProfit >= 0 ? "" : "−"}${Math.abs(netProfit).toFixed(2)}
@@ -1091,8 +1204,8 @@ export default function Statistics({
               className="basis-[100px] md:basis-[200px] grow max-w-[280px]"
             >
               <div
-                className={`text-sm md:text-2xl truncate ${
-                  profitFactor >= 1 ? "text-green-500" : "text-red-500"
+                className={`text-sm md:text-2xl font-semibold tabular-nums truncate ${
+                  profitFactor >= 1 ? "text-green-400" : "text-red-400"
                 }`}
               >
                 {profitFactor === Infinity
@@ -1113,7 +1226,7 @@ export default function Statistics({
               info="Percentage of closed trades that ended as wins."
               className="basis-[100px] md:basis-[200px] grow max-w-[280px]"
             >
-              <div className="text-sm md:text-2xl truncate">
+              <div className="text-sm md:text-2xl font-semibold tabular-nums truncate">
                 {concludedCount > 0 ? `${winRatePct.toFixed(0)}%` : "-"}
               </div>
               <div className="hidden md:block">
@@ -1129,11 +1242,11 @@ export default function Statistics({
               className="basis-[100px] md:basis-[200px] grow max-w-[280px]"
             >
               <div
-                className={`text-sm md:text-2xl truncate ${
+                className={`text-sm md:text-2xl font-semibold tabular-nums truncate ${
                   avgRR === Infinity || avgRR >= 1
-                    ? "text-green-500"
+                    ? "text-green-400"
                     : avgRR > 0
-                      ? "text-red-500"
+                      ? "text-red-400"
                       : ""
                 }`}
               >
@@ -1153,8 +1266,8 @@ export default function Statistics({
               className="basis-[100px] md:basis-[200px] grow max-w-[280px]"
             >
               <div
-                className={`text-sm md:text-2xl truncate ${
-                  longestWinStreak > 0 ? "text-green-500" : ""
+                className={`text-sm md:text-2xl font-semibold tabular-nums truncate ${
+                  longestWinStreak > 0 ? "text-green-400" : ""
                 }`}
               >
                 {longestWinStreak > 0 ? longestWinStreak : "-"}
@@ -1173,57 +1286,62 @@ export default function Statistics({
 
       {/* Performance by tag */}
       {visibility.tagStats && tagStats.length > 0 && (
-        <div className="w-full mb-10 border border-[var(--hairline)] rounded-lg p-4 md:p-6">
-          <div className="md:text-xl text-sm font-bold mb-4">
-            Performance by tag
-          </div>
-          <div className="overflow-x-auto">
+        <div className="w-full mb-10 flex flex-col gap-4 md:gap-5">
+          <SectionHeader
+            title="Performance by tag"
+            info="Net P/L grouped by the tags you've added to your trades. Highlights which mistakes are costing the most and which patterns are paying off."
+          />
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4 overflow-x-auto">
             <table className="w-full text-sm min-w-[480px]">
               <thead>
-                <tr className="text-[10px] uppercase tracking-wider text-white/40">
-                  <th className="text-left py-2 pr-3 font-normal">Tag</th>
-                  <th className="text-right py-2 px-3 font-normal">Trades</th>
-                  <th className="text-right py-2 px-3 font-normal">Win rate</th>
-                  <th className="text-right py-2 px-3 font-normal">Avg P/L</th>
-                  <th className="text-right py-2 pl-3 font-normal">Total P/L</th>
+                <tr className="text-[10px] uppercase tracking-[0.14em] text-white/40 border-b border-white/[0.06]">
+                  <th className="text-left py-2.5 pr-3 font-medium">Tag</th>
+                  <th className="text-right py-2.5 px-3 font-medium">Trades</th>
+                  <th className="text-right py-2.5 px-3 font-medium">
+                    Win rate
+                  </th>
+                  <th className="text-right py-2.5 px-3 font-medium">Avg P/L</th>
+                  <th className="text-right py-2.5 pl-3 font-medium">
+                    Total P/L
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {tagStats.map((s) => (
                   <tr
                     key={s.label}
-                    className="border-t border-white/5 hover:bg-white/5 transition"
+                    className="border-t border-white/[0.06] hover:bg-white/[0.02] transition"
                   >
-                    <td className="py-2 pr-3">
+                    <td className="py-2.5 pr-3">
                       <span
                         className={`px-2 py-0.5 rounded-full text-xs border ${
                           s.kind === "mistake"
-                            ? "bg-red-500/20 border-red-500 text-red-500"
+                            ? "bg-red-500/10 border-red-500/25 text-red-300"
                             : s.kind === "good"
-                              ? "bg-green-500/20 border-green-500 text-green-500"
+                              ? "bg-green-500/10 border-green-500/25 text-green-300"
                               : "border-white/15 text-white/70"
                         }`}
                       >
                         {s.label}
                       </span>
                     </td>
-                    <td className="text-right py-2 px-3 text-white/70">
+                    <td className="text-right py-2.5 px-3 text-white/55 tabular-nums">
                       {s.count}
                     </td>
-                    <td className="text-right py-2 px-3 text-white/70">
+                    <td className="text-right py-2.5 px-3 text-white/55 tabular-nums">
                       {s.winRate.toFixed(0)}%
                     </td>
                     <td
-                      className={`text-right py-2 px-3 font-medium ${
-                        s.avgPL >= 0 ? "text-green-500" : "text-red-500"
+                      className={`text-right py-2.5 px-3 font-medium tabular-nums ${
+                        s.avgPL >= 0 ? "text-green-400" : "text-red-400"
                       }`}
                     >
                       {s.avgPL >= 0 ? "+" : "−"}$
                       {Math.abs(s.avgPL).toFixed(2)}
                     </td>
                     <td
-                      className={`text-right py-2 pl-3 font-medium ${
-                        s.totalPL >= 0 ? "text-green-500" : "text-red-500"
+                      className={`text-right py-2.5 pl-3 font-medium tabular-nums ${
+                        s.totalPL >= 0 ? "text-green-400" : "text-red-400"
                       }`}
                     >
                       {s.totalPL >= 0 ? "+" : "−"}$
@@ -1239,38 +1357,42 @@ export default function Statistics({
 
       {/* ── Filter Insights ─────────────────────────────────────────── */}
       {visibility.filteredStats && (
-        <div className="w-full mt-8 md:mt-16">
-          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-            <div className="flex items-center gap-2">
-              <h3 className="md:text-xl text-sm font-bold">Filter Insights</h3>
-              <InfoTooltip text="Compares the trades currently matching your filters against your all-time baseline. Use it to ask: 'Is this subset of trades actually better than my average?'" />
-              <span className="text-xs text-white/40">
-                {filteredSummary.n} closed
-                {data.length > 0 && (
-                  <>
-                    {" "}
-                    · {((filteredSummary.n / Math.max(1, closedData.length)) * 100).toFixed(0)}% of total
-                  </>
-                )}
-              </span>
-            </div>
-            <div className="flex items-center gap-1">
-              <VerdictPill tone={verdict.tone} label={verdict.label} />
-              <InfoTooltip text="Verdict comparing the filter's expectancy against your baseline expectancy. ≥ $1/trade better = Outperforms, ≤ $1 worse = Underperforms, within $1 = Similar. Needs at least 5 trades." />
-            </div>
-          </div>
+        <div className="w-full mt-8 md:mt-16 flex flex-col gap-4 md:gap-5">
+          <SectionHeader
+            title="Filter insights"
+            info="Compares the trades currently matching your filters against your all-time baseline. Use it to ask: 'Is this subset of trades actually better than my average?'"
+            right={
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] text-white/40 tabular-nums">
+                  {filteredSummary.n} closed
+                  {data.length > 0 && (
+                    <>
+                      {" "}
+                      ·{" "}
+                      {(
+                        (filteredSummary.n / Math.max(1, closedData.length)) *
+                        100
+                      ).toFixed(0)}
+                      %
+                    </>
+                  )}
+                </span>
+                <VerdictPill tone={verdict.tone} label={verdict.label} />
+              </div>
+            }
+          />
 
           {activeFilters.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mb-4">
+            <div className="flex flex-wrap gap-1.5">
               {activeFilters.map((f) => (
                 <span
                   key={f.label}
-                  className={`text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wide ${
+                  className={`text-[10px] px-2 py-0.5 rounded-full uppercase tracking-[0.14em] border ${
                     f.tone === "good"
-                      ? "bg-green-500/20 text-green-500"
+                      ? "bg-green-500/10 text-green-300 border-green-500/25"
                       : f.tone === "bad"
-                      ? "bg-red-500/20 text-red-500"
-                      : "bg-white/5 text-white/60"
+                      ? "bg-red-500/10 text-red-300 border-red-500/25"
+                      : "bg-white/[0.04] text-white/60 border-white/10"
                   }`}
                 >
                   {f.label}
@@ -1346,16 +1468,14 @@ export default function Statistics({
 
       {/* ── Performance Breakdown ───────────────────────────────────── */}
       {visibility.totalStats && (
-        <div className="w-full mt-8 md:mt-16 flex flex-col gap-4 md:gap-6">
-          <div className="flex items-center gap-2">
-            <h3 className="md:text-xl text-sm font-bold">
-              Performance Breakdown
-            </h3>
-            <InfoTooltip text="A bird's-eye view of where your edge is across your entire trading history - split by direction, strategy, symbol, streaks, and best/worst day." />
-          </div>
+        <div className="w-full mt-8 md:mt-16 flex flex-col gap-4 md:gap-5">
+          <SectionHeader
+            title="Performance breakdown"
+            info="A bird's-eye view of where your edge is across your entire trading history - split by direction, strategy, symbol, streaks, and best/worst day."
+          />
 
           {/* CALL vs PUT */}
-          <div className="flex items-center gap-1 text-xs text-white/60 uppercase tracking-wide">
+          <div className="flex items-center gap-1.5 text-[10px] md:text-[11px] uppercase tracking-[0.18em] text-white/45 font-medium">
             <span>CALL vs PUT</span>
             <InfoTooltip text="Side-by-side breakdown of how your CALLs and PUTs each perform. Compare net P/L, win rate, and average per trade to spot directional edge or bias." />
           </div>
@@ -1363,41 +1483,66 @@ export default function Statistics({
             {(["CALL", "PUT"] as const).map((opt) => {
               const sub = byOption.find((b) => b.label === opt);
               if (!sub) return null;
+              const isCall = opt === "CALL";
+              const chip = isCall
+                ? "bg-green-500/10 text-green-300 border-green-500/25"
+                : "bg-red-500/10 text-red-300 border-red-500/25";
               return (
                 <div
                   key={opt}
-                  className="border border-[var(--hairline)] rounded-lg p-4 flex flex-col gap-2"
+                  className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5 flex flex-col gap-3"
                 >
-                  <div className="flex items-baseline justify-between">
-                    <span
-                      className={`text-sm font-semibold ${
-                        opt === "CALL" ? "text-green-500" : "text-red-500"
-                      }`}
-                    >
-                      {opt}
-                    </span>
-                    <span className="text-xs text-white/40">
-                      {sub.n} trades
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium border uppercase tracking-[0.14em] ${chip}`}
+                      >
+                        <i
+                          className={`fa-solid ${
+                            isCall
+                              ? "fa-arrow-trend-up"
+                              : "fa-arrow-trend-down"
+                          } text-[9px]`}
+                        />
+                        {opt}
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-white/40 tabular-nums">
+                      {sub.n} trade{sub.n === 1 ? "" : "s"}
                     </span>
                   </div>
                   <div className="flex items-baseline gap-3 flex-wrap">
                     <span
-                      className={`text-sm md:text-2xl font-semibold truncate ${
-                        sub.netPL >= 0 ? "text-green-500" : "text-red-500"
+                      className={`text-2xl md:text-3xl font-semibold tracking-tight tabular-nums truncate ${
+                        sub.netPL >= 0 ? "text-green-400" : "text-red-400"
                       }`}
                     >
                       {fmtMoneySignedCompact(sub.netPL)}
                     </span>
-                    <span className="text-xs text-white/50">
+                    <span className="text-xs text-white/50 tabular-nums">
                       {sub.winRate.toFixed(1)}% win rate
                     </span>
                   </div>
-                  <div className="text-[11px] text-white/40 flex flex-col gap-0.5">
-                    <span>Avg {fmtMoneyCompact(sub.expectancy)}/trade</span>
-                    <div className="flex flex-col md:flex-row md:gap-3 gap-0.5">
-                      <span>W avg {fmtMoneyCompact(sub.avgWin)}</span>
-                      <span>L avg {fmtMoneyCompact(sub.avgLoss)}</span>
-                    </div>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-white/45 tabular-nums">
+                    <span>
+                      Avg{" "}
+                      <span className="text-white/70">
+                        {fmtMoneyCompact(sub.expectancy)}
+                      </span>
+                      /trade
+                    </span>
+                    <span>
+                      W avg{" "}
+                      <span className="text-green-400/80">
+                        {fmtMoneyCompact(sub.avgWin)}
+                      </span>
+                    </span>
+                    <span>
+                      L avg{" "}
+                      <span className="text-red-400/80">
+                        {fmtMoneyCompact(sub.avgLoss)}
+                      </span>
+                    </span>
                   </div>
                 </div>
               );
@@ -1423,14 +1568,23 @@ export default function Statistics({
           )}
 
           {/* Streaks & Risk */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <MiniStat
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+            <MetricTile
               label="Current streak"
               value={
                 curStreakKind === null
                   ? "-"
-                  : `${curStreakKind === "WIN" ? "W" : "L"} × ${curStreakLen}`
+                  : `${curStreakLen} ${
+                      curStreakKind === "WIN"
+                        ? curStreakLen === 1
+                          ? "win"
+                          : "wins"
+                        : curStreakLen === 1
+                        ? "loss"
+                        : "losses"
+                    }`
               }
+              sub={curStreakKind === null ? undefined : "in a row"}
               tone={
                 curStreakKind === "WIN"
                   ? "good"
@@ -1438,58 +1592,81 @@ export default function Statistics({
                   ? "bad"
                   : "neutral"
               }
+              icon="fa-bolt"
               info="Your active streak - how many consecutive winners or losers your most recent trades are. A long loss streak can be a tilt warning."
             />
-            <MiniStat
-              label="Longest win streak"
+            <MetricTile
+              label="Best streak"
               value={
                 longestWinStreakFiltered > 0
                   ? `${longestWinStreakFiltered}`
                   : "-"
               }
+              sub={
+                longestWinStreakFiltered > 0
+                  ? `consecutive wins`
+                  : undefined
+              }
               tone="good"
+              icon="fa-trophy"
               info="Most consecutive winning trades inside the current filter. Open trades are ignored."
             />
-            <MiniStat
-              label="Longest loss streak"
+            <MetricTile
+              label="Worst streak"
               value={longestLossStreak > 0 ? `${longestLossStreak}` : "-"}
+              sub={
+                longestLossStreak > 0 ? "consecutive losses" : undefined
+              }
               tone="bad"
+              icon="fa-circle-minus"
               info="Most consecutive losing trades. Useful for sizing - your risk per trade should survive a streak this long."
             />
-            <MiniStat
+            <MetricTile
               label="Max drawdown"
               value={maxDD < 0 ? `${fmtMoneyCompact(maxDD)}` : "$0.00"}
+              sub="peak to trough"
               tone="bad"
+              icon="fa-arrow-trend-down"
               info="Largest peak-to-trough decline in cumulative net P/L. Measures the worst point you'd have been at, in dollars from your equity peak."
             />
           </div>
 
           {/* Best / Worst day + consistency */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <MiniStat
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-3">
+            <MetricTile
               label="Best day"
               value={
-                bestDayStr
-                  ? `${formatShortDate(bestDayStr)} · +${fmtMoneyCompact(bestDayPL)}`
-                  : "-"
+                bestDayStr ? `+${fmtMoneyCompact(bestDayPL)}` : "-"
               }
+              sub={bestDayStr ? formatShortDate(bestDayStr) : undefined}
               tone="good"
+              icon="fa-sun"
               info="Single calendar day with the highest net P/L across all your trades closed that day."
             />
-            <MiniStat
+            <MetricTile
               label="Worst day"
               value={
                 worstDayStr
-                  ? `${formatShortDate(worstDayStr)} · −${fmtMoneyCompact(Math.abs(worstDayPL))}`
+                  ? `−${fmtMoneyCompact(Math.abs(worstDayPL))}`
                   : "-"
               }
+              sub={worstDayStr ? formatShortDate(worstDayStr) : undefined}
               tone="bad"
+              icon="fa-cloud-bolt"
               info="Single calendar day with the largest net loss. Compare to your daily max-loss rule."
             />
-            <MiniStat
+            <MetricTile
               label="Profitable days"
-              value={`${consistencyPct.toFixed(0)}% (${profitableDays}/${dayMap.size})`}
+              value={
+                dayMap.size > 0 ? `${consistencyPct.toFixed(0)}%` : "-"
+              }
+              sub={
+                dayMap.size > 0
+                  ? `${profitableDays} of ${dayMap.size} days green`
+                  : undefined
+              }
               tone={consistencyPct >= 50 ? "good" : "bad"}
+              icon="fa-calendar-check"
               info="Percentage of trading days that ended net positive. A high number with a low avg-win signals consistency; low + big avg-win signals lumpy P/L."
             />
           </div>
@@ -1511,6 +1688,7 @@ export default function Statistics({
         const greenDays = Array.from(monthDayMap.values()).filter(
           (v) => v > 0,
         ).length;
+        const redDays = tradedDays - greenDays;
         const dayValues = Array.from(monthDayMap.values());
         const monthBestDay = dayValues.length ? Math.max(...dayValues) : 0;
         const monthWorstDay = dayValues.length ? Math.min(...dayValues) : 0;
@@ -1529,36 +1707,85 @@ export default function Statistics({
             ? { tone: "bad" as const, label: "Losing month" }
             : { tone: "neutral" as const, label: "Break-even" };
 
-        return (
-          <div className="w-full mt-8 md:mt-16 flex flex-col gap-4 md:gap-6">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h3 className="md:text-xl text-sm font-bold">
-                Statistics per Month
-              </h3>
-              <VerdictPill
-                tone={monthVerdict.tone}
-                label={monthVerdict.label}
-              />
-            </div>
+        // Per-trading-day bars for the strip. Walks all weekdays of the
+        // month, marking each with its net P/L (or null for untraded).
+        const daysInMonth = new Date(year, date.monthIndex + 1, 0).getDate();
+        const dailyBars: Array<{
+          day: number;
+          pl: number | null;
+          isWeekend: boolean;
+        }> = [];
+        for (let d = 1; d <= daysInMonth; d++) {
+          const iso = `${year}-${String(date.monthIndex + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+          const weekday = new Date(year, date.monthIndex, d).getDay();
+          const isWeekend = weekday === 0 || weekday === 6;
+          const pl = monthDayMap.has(iso) ? monthDayMap.get(iso)! : null;
+          dailyBars.push({ day: d, pl, isWeekend });
+        }
+        const maxAbsDayPL = Math.max(
+          Math.abs(monthBestDay),
+          Math.abs(monthWorstDay),
+          1,
+        );
 
-            {/* Month navigator */}
-            <div className="border border-[var(--hairline)] rounded-lg flex items-center justify-between px-2 py-2 md:px-3 md:py-2.5">
+        const isCurrentMonth =
+          date.monthIndex === new Date().getMonth() &&
+          date.year === new Date().getFullYear();
+        const jumpToToday = () => {
+          const now = new Date();
+          setMonthDir(
+            now.getFullYear() * 12 + now.getMonth() >
+              year * 12 + date.monthIndex
+              ? 1
+              : -1,
+          );
+          setDate({ monthIndex: now.getMonth(), year: now.getFullYear() });
+        };
+
+        return (
+          <div className="w-full mt-8 md:mt-16 flex flex-col gap-4 md:gap-5">
+            {/* Header */}
+            <SectionHeader
+              title="Statistics per month"
+              right={
+                <VerdictPill
+                  tone={monthVerdict.tone}
+                  label={monthVerdict.label}
+                />
+              }
+            />
+
+            {/* Month navigator - pill controls + jump-to-today */}
+            <div className="flex items-center justify-between gap-3">
               <button
                 onClick={handlePrevMonth}
                 aria-label="Previous month"
-                className="px-2 py-1 rounded text-white/60 hover:text-white hover:bg-white/5 text-base leading-none cursor-pointer"
+                className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white hover:border-white/20 transition cursor-pointer"
               >
-                ‹
+                <i className="fa-solid fa-chevron-left text-[11px]" />
               </button>
-              <div className="text-sm md:text-base font-semibold">
-                {currentMonth} {year}
+              <div className="flex flex-col items-center gap-0.5">
+                <div className="text-base md:text-xl font-semibold tracking-tight tabular-nums">
+                  {currentMonth} {year}
+                </div>
+                {!isCurrentMonth && (
+                  <button
+                    onClick={jumpToToday}
+                    className="text-[11px] text-teal-300/80 hover:text-teal-300 transition cursor-pointer"
+                  >
+                    Jump to today
+                  </button>
+                )}
+                {isCurrentMonth && (
+                  <div className="text-[11px] text-white/40">This month</div>
+                )}
               </div>
               <button
                 onClick={handleNextMonth}
                 aria-label="Next month"
-                className="px-2 py-1 rounded text-white/60 hover:text-white hover:bg-white/5 text-base leading-none cursor-pointer"
+                className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white hover:border-white/20 transition cursor-pointer"
               >
-                ›
+                <i className="fa-solid fa-chevron-right text-[11px]" />
               </button>
             </div>
 
@@ -1568,163 +1795,229 @@ export default function Statistics({
               onTouchEnd={onMonthTouchEnd}
               style={{ touchAction: "pan-y" }}
             >
-            <AnimatePresence mode="wait" initial={false} custom={monthDir}>
-              <motion.div
-                key={`${year}-${date.monthIndex}`}
-                custom={monthDir}
-                variants={{
-                  enter: (dir: number) => ({
-                    opacity: 0,
-                    x: dir > 0 ? 32 : -32,
-                  }),
-                  center: { opacity: 1, x: 0 },
-                  exit: (dir: number) => ({
-                    opacity: 0,
-                    x: dir > 0 ? -32 : 32,
-                  }),
-                }}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{ duration: 0.22, ease: "easeOut" }}
-                className="flex flex-col gap-4 md:gap-6"
-              >
-            {monthlyData.length === 0 ? (
-              <div className="border border-[var(--hairline)] rounded-lg p-8 text-center text-sm text-white/40">
-                No trades for {currentMonth} {year}
-              </div>
-            ) : (
-              <>
-                {/* Headline tiles - same flex-wrap pattern as the top
-                    summary tiles, so a lone orphan stretches full-width. */}
-                <div className="flex flex-wrap gap-2 md:gap-3">
-                  <SummaryTile
-                    label="Net P/L"
-                    info="Total realized profit/loss for trades closed this month, after fees."
-                    className="basis-[100px] md:basis-[200px] grow md:max-w-[280px]"
-                  >
-                    <div
-                      className={`text-sm md:text-2xl font-semibold truncate ${
-                        monthSummary.netPL >= 0
-                          ? "text-green-500"
-                          : "text-red-500"
-                      }`}
-                    >
-                      {monthSummary.netPL >= 0 ? "+" : "−"}$
-                      {Math.abs(monthSummary.netPL).toFixed(2)}
+              <AnimatePresence mode="wait" initial={false} custom={monthDir}>
+                <motion.div
+                  key={`${year}-${date.monthIndex}`}
+                  custom={monthDir}
+                  variants={{
+                    enter: (dir: number) => ({
+                      opacity: 0,
+                      x: dir > 0 ? 32 : -32,
+                    }),
+                    center: { opacity: 1, x: 0 },
+                    exit: (dir: number) => ({
+                      opacity: 0,
+                      x: dir > 0 ? -32 : 32,
+                    }),
+                  }}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={{ duration: 0.22, ease: "easeOut" }}
+                  className="flex flex-col gap-4 md:gap-5"
+                >
+                  {monthlyData.length === 0 ? (
+                    <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-10 text-center">
+                      <div className="text-white/30 text-3xl mb-3">
+                        <i className="fa-regular fa-calendar-xmark" />
+                      </div>
+                      <div className="text-sm text-white/55">
+                        No trades for {currentMonth} {year}
+                      </div>
                     </div>
-                  </SummaryTile>
-                  <SummaryTile
-                    label="Trades"
-                    info="Closed trades this month."
-                    className="basis-[100px] md:basis-[200px] grow md:max-w-[280px]"
-                  >
-                    <div className="text-sm md:text-2xl font-semibold truncate">
-                      {monthSummary.n}
-                    </div>
-                  </SummaryTile>
-                  <SummaryTile
-                    label="Win Rate"
-                    info="Percentage of closed trades this month that were winners."
-                    className="basis-[100px] md:basis-[200px] grow md:max-w-[280px]"
-                  >
-                    <div
-                      className={`text-sm md:text-2xl font-semibold truncate ${
-                        monthSummary.winRate >= 50
-                          ? "text-green-500"
-                          : "text-red-500"
-                      }`}
-                    >
-                      {monthSummary.winRate.toFixed(0)}%
-                    </div>
-                  </SummaryTile>
-                  <SummaryTile
-                    label="Avg / Trade"
-                    info="Average net profit per trade this month (expectancy)."
-                    className="basis-[100px] md:basis-[200px] grow md:max-w-[280px]"
-                  >
-                    <div
-                      className={`text-sm md:text-2xl font-semibold truncate ${
-                        monthSummary.expectancy >= 0
-                          ? "text-green-500"
-                          : "text-red-500"
-                      }`}
-                    >
-                      {monthSummary.expectancy >= 0 ? "+" : "−"}$
-                      {Math.abs(monthSummary.expectancy).toFixed(2)}
-                    </div>
-                  </SummaryTile>
-                </div>
+                  ) : (
+                    <>
+                      {/* Hero card - net P/L + headline metrics */}
+                      <div
+                        className={`relative overflow-hidden rounded-2xl border md:backdrop-blur-md p-5 md:p-6 ${
+                          monthSummary.netPL >= 0
+                            ? "border-green-500/20 bg-gradient-to-br from-green-500/[0.06] via-white/[0.03] to-white/[0.02]"
+                            : "border-red-500/20 bg-gradient-to-br from-red-500/[0.06] via-white/[0.03] to-white/[0.02]"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-4 flex-wrap">
+                          <div className="flex flex-col gap-1 min-w-0">
+                            <div className="text-[10px] md:text-[11px] uppercase tracking-[0.18em] text-white/45 font-medium flex items-center gap-1.5">
+                              Net P/L
+                              <InfoTooltip text="Total realized profit/loss for trades closed this month, after fees." />
+                            </div>
+                            <div
+                              className={`text-3xl md:text-5xl font-semibold tracking-tight tabular-nums truncate ${
+                                monthSummary.netPL >= 0
+                                  ? "text-green-400"
+                                  : "text-red-400"
+                              }`}
+                            >
+                              {monthSummary.netPL >= 0 ? "+" : "−"}$
+                              {Math.abs(monthSummary.netPL).toFixed(2)}
+                            </div>
+                            <div className="text-[12px] text-white/50">
+                              {monthSummary.n} trade
+                              {monthSummary.n === 1 ? "" : "s"} ·{" "}
+                              {monthSummary.winRate.toFixed(0)}% win rate ·{" "}
+                              <span
+                                className={
+                                  monthSummary.expectancy >= 0
+                                    ? "text-green-400/85"
+                                    : "text-red-400/85"
+                                }
+                              >
+                                {monthSummary.expectancy >= 0 ? "+" : "−"}$
+                                {Math.abs(monthSummary.expectancy).toFixed(2)}
+                                /trade
+                              </span>
+                            </div>
+                          </div>
+                          {tradedDays > 0 && (
+                            <div className="flex items-center gap-3">
+                              <div className="flex flex-col items-end">
+                                <div className="text-[10px] uppercase tracking-[0.14em] text-white/40">
+                                  Days traded
+                                </div>
+                                <div className="text-xl md:text-2xl font-semibold tabular-nums">
+                                  {tradedDays}
+                                </div>
+                                <div className="text-[11px] text-white/50">
+                                  <span className="text-green-400/85">
+                                    {greenDays} green
+                                  </span>
+                                  {" · "}
+                                  <span className="text-red-400/85">
+                                    {redDays} red
+                                  </span>
+                                </div>
+                              </div>
+                              <MiniDonut
+                                greenPct={
+                                  tradedDays > 0
+                                    ? (greenDays / tradedDays) * 100
+                                    : 0
+                                }
+                                size={48}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </div>
 
-                {/* Detail tiles */}
-                <div className="flex flex-wrap gap-2 md:gap-3">
-                  <div className="basis-[100px] md:basis-[200px] grow md:max-w-[280px]">
-                    <MiniStat
-                      label="Biggest win"
-                      value={
-                        monthBiggestWin > 0
-                          ? `+${fmtMoneyCompact(monthBiggestWin)}`
-                          : "-"
-                      }
-                      tone="good"
-                      info="Largest single winning trade closed this month."
-                    />
-                  </div>
-                  <div className="basis-[100px] md:basis-[200px] grow md:max-w-[280px]">
-                    <MiniStat
-                      label="Worst loss"
-                      value={
-                        monthBiggestLoss < 0
-                          ? `−${fmtMoneyCompact(Math.abs(monthBiggestLoss))}`
-                          : "-"
-                      }
-                      tone="bad"
-                      info="Largest single losing trade closed this month."
-                    />
-                  </div>
-                  <div className="basis-[100px] md:basis-[200px] grow md:max-w-[280px]">
-                    <MiniStat
-                      label="Best day"
-                      value={
-                        monthBestDay > 0
-                          ? `+${fmtMoneyCompact(monthBestDay)}`
-                          : "-"
-                      }
-                      tone="good"
-                      info="Best single calendar day this month - sum of all trades closed that day."
-                    />
-                  </div>
-                  <div className="basis-[100px] md:basis-[200px] grow md:max-w-[280px]">
-                    <MiniStat
-                      label="Worst day"
-                      value={
-                        monthWorstDay < 0
-                          ? `−${fmtMoneyCompact(Math.abs(monthWorstDay))}`
-                          : "-"
-                      }
-                      tone="bad"
-                      info="Worst single calendar day this month."
-                    />
-                  </div>
-                  <div className="basis-[100px] md:basis-[200px] grow md:max-w-[280px]">
-                    <MiniStat
-                      label="Days traded"
-                      value={
-                        tradedDays > 0
-                          ? `${tradedDays} (${greenDays} green)`
-                          : "-"
-                      }
-                      tone={
-                        greenDays > tradedDays - greenDays ? "good" : "bad"
-                      }
-                      info="Number of distinct calendar days you closed trades this month, with the count of profitable days in parentheses."
-                    />
-                  </div>
-                </div>
-              </>
-            )}
-              </motion.div>
-            </AnimatePresence>
+                      {/* Daily P/L strip */}
+                      {tradedDays > 0 && (
+                        <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="text-[10px] md:text-[11px] uppercase tracking-[0.18em] text-white/45 font-medium flex items-center gap-1.5">
+                              Daily P/L
+                              <InfoTooltip text="Each bar is one calendar day's net P/L. Greyed = weekend, faint dash = no trades that day." />
+                            </div>
+                            <div className="text-[11px] text-white/40 flex items-center gap-3">
+                              <span className="flex items-center gap-1">
+                                <span className="inline-block w-2 h-2 rounded-sm bg-green-500/70" />
+                                Win
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <span className="inline-block w-2 h-2 rounded-sm bg-red-500/70" />
+                                Loss
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-end gap-[2px] md:gap-[3px] h-20 md:h-24">
+                            {dailyBars.map((b) => {
+                              if (b.pl === null) {
+                                return (
+                                  <div
+                                    key={b.day}
+                                    title={`${currentMonth} ${b.day}: no trades`}
+                                    className={`flex-1 self-center h-px ${
+                                      b.isWeekend
+                                        ? "bg-white/[0.04]"
+                                        : "bg-white/10"
+                                    }`}
+                                  />
+                                );
+                              }
+                              const heightPct =
+                                (Math.abs(b.pl) / maxAbsDayPL) * 100;
+                              const isProfit = b.pl >= 0;
+                              return (
+                                <div
+                                  key={b.day}
+                                  title={`${currentMonth} ${b.day}: ${
+                                    isProfit ? "+" : "−"
+                                  }$${Math.abs(b.pl).toFixed(2)}`}
+                                  className="flex-1 flex items-end justify-center min-w-0 h-full"
+                                >
+                                  <div
+                                    style={{
+                                      height: `${Math.max(heightPct, 4)}%`,
+                                    }}
+                                    className={`w-full rounded-sm transition ${
+                                      isProfit
+                                        ? "bg-green-500/65 hover:bg-green-500/85"
+                                        : "bg-red-500/65 hover:bg-red-500/85"
+                                    }`}
+                                  />
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <div className="flex justify-between text-[10px] text-white/35 mt-2 tabular-nums">
+                            <span>1</span>
+                            <span>{Math.ceil(daysInMonth / 2)}</span>
+                            <span>{daysInMonth}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Detail tiles - extremes */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+                        <MetricTile
+                          label="Biggest win"
+                          value={
+                            monthBiggestWin > 0
+                              ? `+${fmtMoneyCompact(monthBiggestWin)}`
+                              : "-"
+                          }
+                          tone="good"
+                          icon="fa-arrow-trend-up"
+                          info="Largest single winning trade closed this month."
+                        />
+                        <MetricTile
+                          label="Worst loss"
+                          value={
+                            monthBiggestLoss < 0
+                              ? `−${fmtMoneyCompact(Math.abs(monthBiggestLoss))}`
+                              : "-"
+                          }
+                          tone="bad"
+                          icon="fa-arrow-trend-down"
+                          info="Largest single losing trade closed this month."
+                        />
+                        <MetricTile
+                          label="Best day"
+                          value={
+                            monthBestDay > 0
+                              ? `+${fmtMoneyCompact(monthBestDay)}`
+                              : "-"
+                          }
+                          tone="good"
+                          icon="fa-sun"
+                          info="Best single calendar day this month - sum of all trades closed that day."
+                        />
+                        <MetricTile
+                          label="Worst day"
+                          value={
+                            monthWorstDay < 0
+                              ? `−${fmtMoneyCompact(Math.abs(monthWorstDay))}`
+                              : "-"
+                          }
+                          tone="bad"
+                          icon="fa-cloud-bolt"
+                          info="Worst single calendar day this month."
+                        />
+                      </div>
+                    </>
+                  )}
+                </motion.div>
+              </AnimatePresence>
             </div>
           </div>
         );
