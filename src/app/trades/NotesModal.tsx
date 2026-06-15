@@ -82,7 +82,7 @@ export default function NotesModal({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.97, y: 4 }}
           transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className="bg-[var(--surface)] border border-white/10 rounded-2xl w-full max-w-lg shadow-[0_24px_80px_rgba(0,0,0,0.55)] overflow-hidden"
+          className="bg-[var(--surface)] border border-white/10 rounded-2xl w-full max-w-lg shadow-[0_24px_80px_var(--shadow)] overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}

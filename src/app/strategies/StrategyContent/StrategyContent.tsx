@@ -251,7 +251,7 @@ export default function StrategyContent({ blocks }: Props) {
                   key={currentImages[currentImageIndex]}
                   src={currentImages[currentImageIndex]}
                   alt=""
-                  className="max-w-full max-h-[92vh] rounded-xl shadow-[0_20px_80px_rgba(0,0,0,0.6)]"
+                  className="max-w-full max-h-[92vh] rounded-xl shadow-[0_20px_80px_var(--shadow)]"
                   custom={direction}
                   variants={variants}
                   initial="enter"

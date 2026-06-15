@@ -525,7 +525,7 @@ export default function Navbar() {
         {/* -------- DESKTOP NAV -------- */}
         <div
           ref={desktopBarRef}
-          className="relative hidden md:flex justify-between items-center w-full max-w-[1500px] mt-6 mx-10 py-2 pl-3 pr-2 bg-white/[0.03] backdrop-blur-md rounded-full border border-white/10 shadow-[0_2px_24px_rgba(0,0,0,0.25)]"
+          className="relative hidden md:flex justify-between items-center w-full max-w-[1500px] mt-6 mx-10 py-2 pl-3 pr-2 bg-white/[0.03] backdrop-blur-md rounded-full border border-white/10 shadow-[0_2px_24px_var(--shadow-soft)]"
         >
           {/* Sliding active pill - single element spanning the whole
               desktop bar so it can move between brand, nav items, and
@@ -793,7 +793,7 @@ export default function Navbar() {
         >
           <div
             ref={bottomBarRef}
-            className="pointer-events-auto relative flex items-stretch w-[calc(100%-24px)] max-w-[440px] mx-3 mb-3 px-1.5 py-1 bg-white/[0.06] backdrop-blur-xl border border-white/15 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.45)]"
+            className="pointer-events-auto relative flex items-stretch w-[calc(100%-24px)] max-w-[440px] mx-3 mb-3 px-1.5 py-1 bg-white/[0.06] backdrop-blur-xl border border-white/15 rounded-full shadow-[0_8px_32px_var(--shadow)]"
           >
             {/* Single sliding indicator pill - measured from each tab's
                 offsetLeft / width relative to the bar. Draggable: hold
@@ -802,7 +802,7 @@ export default function Navbar() {
             {bottomPill && activeBottomKey && (
               <motion.span
                 aria-hidden
-                className="absolute top-1 bottom-1 rounded-full bg-white/15 backdrop-blur-md border border-white/25 shadow-[0_2px_10px_rgba(0,0,0,0.25)] cursor-grab active:cursor-grabbing"
+                className="absolute top-1 bottom-1 rounded-full bg-white/15 backdrop-blur-md border border-white/25 shadow-[0_2px_10px_var(--shadow-soft)] cursor-grab active:cursor-grabbing"
                 style={{
                   left: 0,
                   x: pillX,
@@ -897,7 +897,7 @@ export default function Navbar() {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", stiffness: 380, damping: 36 }}
-              className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-[var(--surface-2)] border-t border-white/10 rounded-t-3xl shadow-[0_-12px_40px_rgba(0,0,0,0.5)]"
+              className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-[var(--surface-2)] border-t border-white/10 rounded-t-3xl shadow-[0_-12px_40px_var(--shadow)]"
               style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
             >
               {/* Grab handle */}
