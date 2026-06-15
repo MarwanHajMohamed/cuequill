@@ -154,7 +154,7 @@ const CustomizeMenu = ({
             />
             <motion.div
               key="customize-panel"
-              className="absolute right-0 top-full mt-2 z-50 w-72 origin-top-right rounded-xl border border-white/10 bg-[#0F0F17] shadow-[0_20px_80px_rgba(0,0,0,0.6)] p-2"
+              className="absolute right-0 top-full mt-2 z-50 w-72 origin-top-right rounded-xl border border-white/10 bg-[var(--surface)] shadow-[0_20px_80px_rgba(0,0,0,0.6)] p-2"
               initial={{ opacity: 0, scale: 0.95, y: -6 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: -6 }}
@@ -344,7 +344,7 @@ const SummaryTile = ({
   children: React.ReactNode;
 }) => (
   <div
-    className={`border border-[#282828] rounded-lg p-2 md:p-4 flex flex-col gap-1 md:gap-2 min-w-0 ${className}`}
+    className={`border border-[var(--hairline)] rounded-lg p-2 md:p-4 flex flex-col gap-1 md:gap-2 min-w-0 ${className}`}
   >
     <div className="text-[10px] md:text-xs text-white/50 flex items-center justify-between gap-1.5">
       <span className="truncate">{label}</span>
@@ -427,7 +427,7 @@ function CompareCard({
   })();
 
   return (
-    <div className="border border-[#282828] rounded-lg p-2 md:p-4 flex flex-col gap-1 md:gap-2 min-w-0 basis-[100px] md:basis-[200px] grow md:max-w-[280px]">
+    <div className="border border-[var(--hairline)] rounded-lg p-2 md:p-4 flex flex-col gap-1 md:gap-2 min-w-0 basis-[100px] md:basis-[200px] grow md:max-w-[280px]">
       <div className="flex items-center justify-between gap-1 text-[10px] md:text-xs text-white/50 uppercase tracking-wide">
         <span className="truncate">{label}</span>
         {info && <InfoTooltip text={info} />}
@@ -461,7 +461,7 @@ function MiniStat({
       ? "text-red-500"
       : "text-white";
   return (
-    <div className="border border-[#282828] rounded-lg p-2 md:p-4 flex flex-col gap-1 md:gap-2 min-w-0">
+    <div className="border border-[var(--hairline)] rounded-lg p-2 md:p-4 flex flex-col gap-1 md:gap-2 min-w-0">
       <div className="flex items-center justify-between gap-1 text-[10px] md:text-xs text-white/50 uppercase tracking-wide">
         <span className="truncate">{label}</span>
         {info && <InfoTooltip text={info} />}
@@ -498,7 +498,7 @@ function BreakdownTable({
         <span>{title}</span>
         {info && <InfoTooltip text={info} />}
       </div>
-      <div className="border border-[#282828] rounded-lg overflow-x-auto md:overflow-hidden">
+      <div className="border border-[var(--hairline)] rounded-lg overflow-x-auto md:overflow-hidden">
         <table className="w-full min-w-[480px] md:min-w-0 text-xs md:text-sm">
           <thead>
             <tr className="text-white/40 bg-white/3">
@@ -515,7 +515,7 @@ function BreakdownTable({
               const isProfit = r.netPL >= 0;
               const widthPct = (Math.abs(r.netPL) / maxAbs) * 100;
               return (
-                <tr key={r.label} className="border-t border-[#282828]">
+                <tr key={r.label} className="border-t border-[var(--hairline)]">
                   <td className="py-2 px-3 truncate max-w-[180px]">
                     {r.label}
                   </td>
@@ -1173,7 +1173,7 @@ export default function Statistics({
 
       {/* Performance by tag */}
       {visibility.tagStats && tagStats.length > 0 && (
-        <div className="w-full mb-10 border border-[#282828] rounded-lg p-4 md:p-6">
+        <div className="w-full mb-10 border border-[var(--hairline)] rounded-lg p-4 md:p-6">
           <div className="md:text-xl text-sm font-bold mb-4">
             Performance by tag
           </div>
@@ -1366,7 +1366,7 @@ export default function Statistics({
               return (
                 <div
                   key={opt}
-                  className="border border-[#282828] rounded-lg p-4 flex flex-col gap-2"
+                  className="border border-[var(--hairline)] rounded-lg p-4 flex flex-col gap-2"
                 >
                   <div className="flex items-baseline justify-between">
                     <span
@@ -1542,7 +1542,7 @@ export default function Statistics({
             </div>
 
             {/* Month navigator */}
-            <div className="border border-[#282828] rounded-lg flex items-center justify-between px-2 py-2 md:px-3 md:py-2.5">
+            <div className="border border-[var(--hairline)] rounded-lg flex items-center justify-between px-2 py-2 md:px-3 md:py-2.5">
               <button
                 onClick={handlePrevMonth}
                 aria-label="Previous month"
@@ -1590,7 +1590,7 @@ export default function Statistics({
                 className="flex flex-col gap-4 md:gap-6"
               >
             {monthlyData.length === 0 ? (
-              <div className="border border-[#282828] rounded-lg p-8 text-center text-sm text-white/40">
+              <div className="border border-[var(--hairline)] rounded-lg p-8 text-center text-sm text-white/40">
                 No trades for {currentMonth} {year}
               </div>
             ) : (

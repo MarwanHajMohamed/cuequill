@@ -513,7 +513,7 @@ function RuleRow({
                           className="fixed inset-0 z-40"
                           onClick={() => setMenuOpen(false)}
                         />
-                        <div className="absolute right-0 top-full mt-1 z-50 w-48 rounded-xl border border-white/10 bg-[#0F0F17] shadow-[0_20px_80px_rgba(0,0,0,0.6)] p-1">
+                        <div className="absolute right-0 top-full mt-1 z-50 w-48 rounded-xl border border-white/10 bg-[var(--surface)] shadow-[0_20px_80px_rgba(0,0,0,0.6)] p-1">
                           <div className="px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-white/35 font-medium">
                             Move to
                           </div>

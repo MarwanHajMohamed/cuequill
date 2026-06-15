@@ -52,8 +52,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
+        {/* Apply the saved theme before first paint so there's no flash of
+            the wrong palette. Defaults to dark (the original UI). */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){try{var t=localStorage.getItem('cuequill:theme');var m=t==='light'?'light':'dark';var e=document.documentElement;e.classList.add(m);e.style.colorScheme=m;}catch(e){document.documentElement.classList.add('dark');}})();",
+          }}
+        />
         <link
           rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css"

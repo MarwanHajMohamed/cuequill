@@ -62,7 +62,7 @@ export default function ViewTradeModal({
     >
       <motion.div
         onClick={(e) => e.stopPropagation()}
-        className="relative flex flex-col bg-[#0F0F17] border border-white/10 rounded-2xl md:w-[90%] md:max-w-md w-full max-h-full md:max-h-[90vh] overflow-hidden"
+        className="relative flex flex-col bg-[var(--surface)] border border-white/10 rounded-2xl md:w-[90%] md:max-w-md w-full max-h-full md:max-h-[90vh] overflow-hidden"
         initial={{ opacity: 0, scale: 0.96, y: 16 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.96, y: 16 }}
@@ -278,7 +278,7 @@ export default function ViewTradeModal({
         </div>
 
         {/* ── Footer (fixed at bottom of card) ── */}
-        <div className="shrink-0 px-5 md:px-6 py-3 md:py-4 flex justify-end gap-2 border-t border-white/5 bg-[#0F0F17]">
+        <div className="shrink-0 px-5 md:px-6 py-3 md:py-4 flex justify-end gap-2 border-t border-white/5 bg-[var(--surface)]">
           <button
             onClick={onClose}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer"

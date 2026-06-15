@@ -281,40 +281,40 @@ const Account = () => {
             styles={{
               control: (base, state) => ({
                 ...base,
-                backgroundColor: "rgba(255,255,255,0.03)",
+                backgroundColor: "rgb(var(--fg-rgb) / 0.03)",
                 borderColor: state.isFocused
-                  ? "rgba(255,255,255,0.25)"
-                  : "rgba(255,255,255,0.10)",
+                  ? "rgb(var(--fg-rgb) / 0.25)"
+                  : "rgb(var(--fg-rgb) / 0.10)",
                 borderRadius: 12,
                 minHeight: 40,
                 boxShadow: "none",
-                color: "white",
+                color: "rgb(var(--fg-rgb))",
                 "&:hover": {
-                  borderColor: "rgba(255,255,255,0.20)",
+                  borderColor: "rgb(var(--fg-rgb) / 0.20)",
                   cursor: "pointer",
                 },
               }),
               singleValue: (base) => ({
                 ...base,
-                color: "white",
+                color: "rgb(var(--fg-rgb))",
                 fontSize: 14,
               }),
-              input: (base) => ({ ...base, color: "white" }),
+              input: (base) => ({ ...base, color: "rgb(var(--fg-rgb))" }),
               menu: (base) => ({
                 ...base,
-                backgroundColor: "#13131a",
-                border: "1px solid rgba(255,255,255,0.10)",
+                backgroundColor: "var(--surface-2)",
+                border: "1px solid rgb(var(--fg-rgb) / 0.10)",
                 borderRadius: 12,
-                color: "white",
+                color: "rgb(var(--fg-rgb))",
                 overflow: "hidden",
               }),
               menuList: (base) => ({ ...base, padding: 4 }),
               option: (base, state) => ({
                 ...base,
                 backgroundColor: state.isFocused
-                  ? "rgba(255,255,255,0.06)"
+                  ? "rgb(var(--fg-rgb) / 0.06)"
                   : "transparent",
-                color: state.isSelected ? "#5eead4" : "white",
+                color: state.isSelected ? "var(--color-teal-400)" : "white",
                 fontSize: 13,
                 cursor: "pointer",
                 borderRadius: 8,

@@ -18,6 +18,7 @@ import {
   PanInfo,
 } from "framer-motion";
 import TimezoneDisplay from "@/helpers/TimezoneDisplay";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const CuequillLogo = ({ className = "" }: { className?: string }) => (
   <svg
@@ -619,7 +620,7 @@ export default function Navbar() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -4, scale: 0.98 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute left-0 top-[calc(100%+8px)] flex flex-col bg-[#15141A]/95 backdrop-blur-md rounded-xl border border-white/10 shadow-xl min-w-[160px] z-50 p-1"
+                    className="absolute left-0 top-[calc(100%+8px)] flex flex-col bg-[var(--surface-2)]/95 backdrop-blur-md rounded-xl border border-white/10 shadow-xl min-w-[160px] z-50 p-1"
                   >
                     {guideItems.map((subItem) => {
                       const sub = isActive(subItem.slug);
@@ -687,7 +688,7 @@ export default function Navbar() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -4, scale: 0.98 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute right-0 top-[calc(100%+8px)] flex flex-col bg-[#15141A]/95 backdrop-blur-md rounded-xl border border-white/10 shadow-xl min-w-[240px] z-50 overflow-hidden"
+                    className="absolute right-0 top-[calc(100%+8px)] flex flex-col bg-[var(--surface-2)]/95 backdrop-blur-md rounded-xl border border-white/10 shadow-xl min-w-[240px] z-50 overflow-hidden"
                   >
                     {/* Identity header */}
                     {session?.user && (
@@ -728,6 +729,13 @@ export default function Navbar() {
                         <i className="fa-solid fa-right-from-bracket w-4 text-center text-white/60" />
                         <span>Logout</span>
                       </button>
+                    </div>
+
+                    <div className="p-3 border-t border-white/10 flex items-center justify-between">
+                      <span className="text-[12px] text-white/60">
+                        Appearance
+                      </span>
+                      <ThemeToggle />
                     </div>
 
                     <div className="p-3 border-t border-white/10 flex items-center justify-between">
@@ -889,7 +897,7 @@ export default function Navbar() {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", stiffness: 380, damping: 36 }}
-              className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-[#13131a] border-t border-white/10 rounded-t-3xl shadow-[0_-12px_40px_rgba(0,0,0,0.5)]"
+              className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-[var(--surface-2)] border-t border-white/10 rounded-t-3xl shadow-[0_-12px_40px_rgba(0,0,0,0.5)]"
               style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
             >
               {/* Grab handle */}
@@ -937,6 +945,18 @@ export default function Navbar() {
                     </Link>
                   );
                 })}
+              </div>
+
+              <div className="mx-4 mb-3 p-3 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-between">
+                <div className="flex flex-col">
+                  <span className="text-[13px] text-white/85 font-medium">
+                    Appearance
+                  </span>
+                  <span className="text-[11px] text-white/45">
+                    Light or dark theme
+                  </span>
+                </div>
+                <ThemeToggle />
               </div>
 
               <div className="mx-4 mb-3 p-3 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-between">

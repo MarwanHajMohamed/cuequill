@@ -42,7 +42,7 @@ export default function NotesModal({
       onClick={onClose}
     >
       <div
-        className="bg-[#0F0F17] border border-white/10 rounded-2xl w-full max-w-md shadow-[0_24px_80px_rgba(0,0,0,0.55)] overflow-hidden"
+        className="bg-[var(--surface)] border border-white/10 rounded-2xl w-full max-w-md shadow-[0_24px_80px_rgba(0,0,0,0.55)] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-5 py-4 border-b border-white/10 flex items-center gap-2">

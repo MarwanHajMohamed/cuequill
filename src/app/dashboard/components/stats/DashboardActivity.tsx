@@ -103,7 +103,7 @@ function OpenPositions({
   onSelect: (t: Trade) => void;
 }) {
   return (
-    <section className="flex-1 min-w-0 border border-[#282828] rounded-lg p-4 md:p-6 flex flex-col gap-3">
+    <section className="flex-1 min-w-0 border border-[var(--hairline)] rounded-lg p-4 md:p-6 flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-sm md:text-base font-semibold">
           Open positions
@@ -199,7 +199,7 @@ function RecentCloses({
   onSelect: (t: Trade) => void;
 }) {
   return (
-    <section className="flex-1 min-w-0 border border-[#282828] rounded-lg p-4 md:p-6 flex flex-col gap-3">
+    <section className="flex-1 min-w-0 border border-[var(--hairline)] rounded-lg p-4 md:p-6 flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-sm md:text-base font-semibold">Recent closes</h2>
         <Link

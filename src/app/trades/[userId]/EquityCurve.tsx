@@ -34,7 +34,7 @@ export default function EquityCurve({ trades }: { trades: Trade[] }) {
 
   if (closed.length === 0) {
     return (
-      <div className="border border-[#282828] rounded-lg p-6 text-center text-sm text-white/40">
+      <div className="border border-[var(--hairline)] rounded-lg p-6 text-center text-sm text-white/40">
         Equity curve will appear once you have closed trades.
       </div>
     );
@@ -58,7 +58,7 @@ export default function EquityCurve({ trades }: { trades: Trade[] }) {
   const currentEquity = data[data.length - 1].equity;
 
   return (
-    <div className="border border-[#282828] rounded-lg p-4 md:p-6 w-full">
+    <div className="border border-[var(--hairline)] rounded-lg p-4 md:p-6 w-full">
       <div className="flex justify-between items-baseline mb-4 flex-wrap gap-2">
         <div className="text-sm font-semibold">Equity curve</div>
         <div className="flex gap-4 text-xs">
