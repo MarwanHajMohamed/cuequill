@@ -319,34 +319,34 @@ export default function Home() {
           <div className="max-w-5xl mx-auto flex flex-col items-center text-center">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/[0.03] text-[11px] uppercase tracking-[0.16em] text-white/55 mb-6">
               <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
-              Trading journal · US options
+              For discretionary US options traders
             </div>
             <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold leading-[1.05] mb-5 max-w-3xl tracking-tight">
-              Journal trades, talk to an AI that knows them,{" "}
+              Your trades remember everything.{" "}
               <span className="bg-gradient-to-r from-teal-300 via-emerald-300 to-emerald-400 bg-clip-text text-transparent">
-                find your edge
+                You don&apos;t.
               </span>
-              .
             </h1>
             <p className="text-base md:text-lg text-white/60 mb-8 max-w-xl leading-relaxed">
-              Log every trade. Auto-import from IBKR. Then ask{" "}
+              Cuequill imports every fill from your broker, lines them up in
+              one calendar you&apos;ll actually open, and lets you ask{" "}
               <span className="text-white/85 font-medium">QuillAI</span>{" "}
-              questions about your history, log new trades in plain English,
-              and track your goals.
+              questions in plain English. Find what works. Cut what
+              doesn&apos;t. Stop bleeding money to mistakes you can&apos;t see.
             </p>
             <div className="flex items-center justify-center gap-3 flex-wrap">
               <Link
                 href="/login"
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[14px] font-medium"
               >
-                Sign in to get started
+                Open your journal
                 <i className="fa-solid fa-arrow-right text-[11px]" />
               </Link>
               <a
                 href="#features"
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[14px] font-medium"
               >
-                See what&apos;s inside
+                Take the tour
               </a>
             </div>
             <HeroPreview />
@@ -358,26 +358,27 @@ export default function Home() {
           <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-10 md:gap-16 items-start">
             <div>
               <div className="text-[11px] uppercase tracking-[0.18em] text-teal-400 mb-3 font-medium">
-                Why Cuequill
+                The problem
               </div>
               <h2 className="text-2xl md:text-3xl font-semibold tracking-tight mb-4 leading-tight">
-                Most journals stop at logging. Cuequill is built for review.
+                Most traders keep a journal. Almost nobody reads it.
               </h2>
             </div>
             <div className="text-[14px] md:text-[15px] text-white/65 leading-relaxed space-y-4">
               <p>
-                Every trade you take lives in one calendar, with a P/L tint per
-                day and a week-summary that reads at a glance. Click into any
-                day for a polished modal with the full breakdown.
+                Three months from now, you&apos;ll forget why that AAPL trade
+                worked. You&apos;ll forget which week you sized up and gave
+                back a month. You&apos;ll keep running the setup that flatters
+                your gut even when the numbers say it&apos;s the one bleeding
+                you.
               </p>
               <p>
+                Cuequill remembers for you. Every fill lands in a calendar you
+                can scan in two seconds. Click any day for the full breakdown.
+                Ask{" "}
                 <span className="text-white/85 font-medium">QuillAI</span>{" "}
-                sees every trade. Ask it which strategy is performing, what
-                your last losses had in common, or just say{" "}
-                <em className="text-white/85">
-                  &quot;log a 5 SPY 600 CALL at $1.20 expiring Friday&quot;
-                </em>
-                {" "}- it does the rest.
+                what your last five losses had in common - and get an actual
+                answer, not a spreadsheet to build.
               </p>
             </div>
           </div>
@@ -388,66 +389,66 @@ export default function Home() {
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-12">
               <div className="text-[11px] uppercase tracking-[0.18em] text-teal-400 mb-3 font-medium">
-                Inside the app
+                What&apos;s inside
               </div>
               <h2 className="text-2xl md:text-3xl font-semibold tracking-tight">
-                Everything you need. Nothing you don&apos;t.
+                Built around the part nobody else does. Reviewing.
               </h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
               <Feature
                 tint="teal"
                 icon="fa-wand-magic-sparkles"
-                title="QuillAI (built on Gemini)"
-                body="Ask in plain English: how's this month, which strategy wins, what's common to my last 5 losses. It can also add and edit trades for you."
+                title="Ask, don't dig"
+                body="QuillAI has read every fill in your journal. Ask which strategy is leaking money. Ask what your last five losses had in common. Ask it to log a fresh trade in one sentence. It does the rest."
               />
               <Feature
                 tint="indigo"
                 icon="fa-calendar-days"
-                title="P/L calendar"
-                body="Daily and weekly P/L at a glance. Drill into any day for a glass-styled trade list. Mon-Fri grid with Fed days flagged."
+                title="Your month, in one glance"
+                body="Every trading day tinted green or red by P/L. Click any day for a clean breakdown of every fill. The week's total on the right. No more guessing how you did."
               />
               <Feature
                 tint="emerald"
                 icon="fa-arrows-rotate"
-                title="IBKR auto-sync"
-                body="One-time setup. Trades, commissions, and fees import every weekday after market close - no manual entry."
+                title="Set it once, forget it"
+                body="Drop in your IBKR Flex token. Cuequill imports fills nightly - commissions and fees included. Never paste a screenshot into a spreadsheet again."
               />
               <Feature
                 tint="amber"
                 icon="fa-square-poll-vertical"
-                title="Stats that matter"
-                body="Net P/L, profit factor, win rate, expectancy, R:R, streaks - filtered by symbol, strategy, period, or all of the above."
+                title="The numbers your broker won't show you"
+                body="Expectancy, profit factor, win rate, R:R, streaks. Sliced by symbol, strategy, period - or all four at once. See what's luck and what's actual edge."
               />
               <Feature
                 tint="fuchsia"
                 icon="fa-bezier-curve"
-                title="Strategy playbook"
-                body="Each setup gets a schematic with rules, examples, and a play button for the visual. Tag trades to track which work."
+                title="Your setups, schematic-first"
+                body="Every strategy gets its own page: schematic, entry rules, example charts. Tag your trades so you can finally see which setups deserve your size and which are draining it."
               />
               <Feature
                 tint="rose"
                 icon="fa-bullseye"
-                title="Goals + affirmations"
-                body="Monthly and daily goals with progress bars. A daily affirmations ritual so the discipline beat doesn't slip."
+                title="Discipline, on rails"
+                body="Daily and monthly goals you'll actually hit. A daily affirmations ritual so the discipline beat doesn't slip. A risk budget that warns you before you give back the week."
               />
               <Feature
                 tint="teal"
                 icon="fa-mobile-screen-button"
-                title="Installable PWA"
-                body="Add to your home screen. Real native-app feel with a floating bottom tab bar, swipe gestures, and offline caching."
+                title="Lives in your pocket"
+                body="Install it like a real app. Floating bottom tab bar, swipe-to-change-month, offline cache. Open it on the lunch break and check today."
               />
               <Feature
                 tint="indigo"
                 icon="fa-sliders"
-                title="Customisable table"
-                body="Toggle and reorder columns, pick which summary tiles to show. Filters slide in from the side and respect deep links."
+                title="Your table, your rules"
+                body="Reorder columns. Hide what you don't care about. Filters slide in from the side and live in the URL - so you can share a view or come back to it."
               />
               <Feature
                 tint="emerald"
                 icon="fa-shield-halved"
-                title="Your data, your account"
-                body="Trades scoped to your user. Simulated trading mode for testing without polluting your real journal."
+                title="Private by default"
+                body="Trades scoped to your account. IBKR token encrypted at rest. Want to test a strategy without polluting your real journal? Simulated mode is one toggle away."
               />
             </div>
           </div>
@@ -466,14 +467,14 @@ export default function Home() {
                 <span className="bg-gradient-to-r from-teal-300 to-emerald-300 bg-clip-text text-transparent">
                   QuillAI
                 </span>
-                . A journaling buddy that does the work.
+                . Your journal, finally talkable to.
               </h2>
               <p className="text-[14px] md:text-[15px] text-white/65 leading-relaxed mb-4">
-                Cuequill ships with{" "}
-                <span className="text-white/85 font-medium">QuillAI</span> - a
-                built-in assistant that sees your full trade history. It will
-                analyse, compare, and even add or edit trades from a single
-                line of plain English.
+                <span className="text-white/85 font-medium">QuillAI</span> has
+                read every fill you&apos;ve ever made. Ask it what&apos;s
+                working. Ask it what your last losses had in common. Ask it to
+                log a fresh trade in one sentence. It answers in seconds -
+                instead of you spending an hour pivoting cells.
               </p>
               <ul className="space-y-2 text-[13.5px] text-white/70">
                 {[
@@ -533,24 +534,24 @@ export default function Home() {
                 How it works
               </div>
               <h2 className="text-2xl md:text-3xl font-semibold tracking-tight">
-                Three steps. No ceremony.
+                Three steps to a journal that fights for you.
               </h2>
             </div>
             <div className="space-y-8">
               <Step
                 index={1}
-                title="Connect IBKR or log manually"
-                body="Paste a Flex Web Service token and Query ID once. Cuequill imports trades nightly. Or skip it and add trades by hand in the chat."
+                title="Plug in once"
+                body="Drop your IBKR Flex token into settings. Cuequill imports every fill nightly - commissions and fees included. Prefer to log by hand? Tell QuillAI in plain English and you're done."
               />
               <Step
                 index={2}
-                title="Review your day, week, month"
-                body="The calendar tints each day with its P/L. Drill into any day for a clean trade list. Stats per filter recompute as you tweak."
+                title="Open it like a habit"
+                body="The calendar tints every trading day with its P/L. One click reveals every fill on that day. Filters and stats recompute live - no formulas to maintain, nothing to break."
               />
               <Step
                 index={3}
-                title="Ask QuillAI"
-                body="Open the chat and ask anything about your history. It can also log, edit, and close trades for you in plain English."
+                title="Talk to your trades"
+                body="Open the chat. Ask anything. Get an answer in seconds - about your own data, not the internet's. Then act on it before the bell."
               />
             </div>
           </div>
@@ -570,7 +571,11 @@ export default function Home() {
             <div className="space-y-0">
               <FAQItem
                 q="Who is Cuequill for?"
-                a="Discretionary US options traders who want to systematically review their trades and find their edge. If you're trading SPY, AAPL, NVDA, TSLA, QQQ, or similar high-volume names, you'll feel at home."
+                a="Discretionary US options traders who want to actually review their trades instead of just logging them. If you trade SPY, AAPL, NVDA, TSLA, QQQ or similar high-volume names off setups you've built up over time, you'll feel at home."
+              />
+              <FAQItem
+                q="I already use a spreadsheet. Why switch?"
+                a="Because you stopped opening it. A spreadsheet rewards you for building formulas, not for reading what they say. Cuequill is built for the reading part - a calendar that loads in two seconds, stats that update live as you filter, and an AI that answers questions a pivot table never could."
               />
               <FAQItem
                 q="What does QuillAI actually do?"
@@ -600,19 +605,19 @@ export default function Home() {
         <section className="px-6 py-20 md:py-28 text-center">
           <div className="max-w-2xl mx-auto rounded-3xl border border-white/10 bg-white/[0.02] p-8 md:p-12">
             <h2 className="text-2xl md:text-4xl font-semibold mb-5 leading-tight tracking-tight">
-              Stop journaling like it&apos;s homework.{" "}
+              Your next month{" "}
               <span className="bg-gradient-to-r from-teal-300 to-emerald-300 bg-clip-text text-transparent">
-                Start reviewing like it matters.
+                doesn&apos;t have to look like last month.
               </span>
             </h2>
             <p className="text-[14px] text-white/55 mb-7 max-w-md mx-auto">
-              Log a trade, ask a question, install it on your phone.
+              Three minutes to set up. The rest of your trading career to use.
             </p>
             <Link
               href="/login"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[14px] font-medium"
             >
-              Sign in to Cuequill
+              Open your journal
               <i className="fa-solid fa-arrow-right text-[11px]" />
             </Link>
           </div>

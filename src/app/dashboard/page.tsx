@@ -5,6 +5,7 @@ import Time from "./components/landing/Time";
 import TradeCalendar from "./components/calendar/TradeCalendar";
 import DashboardStats from "./components/stats/DashboardStats";
 import DashboardActivity from "./components/stats/DashboardActivity";
+import DashboardInsights from "./components/insights/DashboardInsights";
 import { withAuth } from "@/lib/withAuth";
 import { useSession } from "next-auth/react";
 
@@ -21,6 +22,7 @@ function Page() {
         <TradeCalendar userId={userId} />
         <DashboardActivity userId={userId} />
         <DashboardStats userId={userId} />
+        <DashboardInsights userId={userId} />
         {/* <Portfolio userId={userId} /> */}
       </div>
     </div>
