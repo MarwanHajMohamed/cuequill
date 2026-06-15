@@ -52,7 +52,7 @@ export default function TransactionModal({ type, userId, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-[#0F0F17] p-6 w-[90%] max-w-lg flex flex-col gap-4 rounded-xl">
+      <div className="bg-[var(--surface)] p-6 w-[90%] max-w-lg flex flex-col gap-4 rounded-xl">
         <div className="flex flex-col gap-1 w-full">
           <div>Amount to {type?.toLowerCase()}:</div>
           <input

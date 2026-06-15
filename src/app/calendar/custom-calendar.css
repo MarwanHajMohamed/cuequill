@@ -1,11 +1,11 @@
 /* Full-month calendar - same visual language as the dashboard mini
-   calendar (border-[#282828], rounded corners, transparent tiles with
+   calendar (border-[var(--hairline)], rounded corners, transparent tiles with
    white/5 hovers, muted P/L tints) but sized for the dedicated page. */
 
 .react-calendar.custom-calendar_full-view {
   width: 100%;
   background-color: transparent;
-  border: 1px solid #282828;
+  border: 1px solid var(--hairline);
   border-radius: 12px;
   font-family: inherit;
   /* No interior padding - the calendar's own grid + nav row sit flush
@@ -36,7 +36,7 @@
   margin-bottom: 8px;
 }
 .react-calendar.custom-calendar_full-view .react-calendar__navigation button {
-  color: white;
+  color: rgb(var(--fg-rgb));
   background: transparent;
   border-radius: 6px;
   transition: 100ms ease-in-out;
@@ -51,7 +51,7 @@
 .react-calendar.custom-calendar_full-view
   .react-calendar__navigation__arrow {
   font-size: 18px;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgb(var(--fg-rgb) / 0.6);
   min-width: 32px;
 }
 .react-calendar.custom-calendar_full-view
@@ -60,8 +60,8 @@
 .react-calendar.custom-calendar_full-view
   .react-calendar__navigation
   button:enabled:focus {
-  background-color: rgba(255, 255, 255, 0.05) !important;
-  color: white;
+  background-color: rgb(var(--fg-rgb) / 0.05) !important;
+  color: rgb(var(--fg-rgb));
 }
 .react-calendar.custom-calendar_full-view
   .react-calendar__navigation
@@ -75,7 +75,7 @@
   font-size: 11px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgb(var(--fg-rgb) / 0.4);
   margin-bottom: 6px;
   display: grid !important;
   grid-template-columns: repeat(5, 1fr) !important;
@@ -92,7 +92,7 @@
 .react-calendar.custom-calendar_full-view .react-calendar__tile {
   position: relative;
   background: transparent;
-  color: white;
+  color: rgb(var(--fg-rgb));
   padding: 0 0 12px 0;
   border: 1px solid transparent;
   border-radius: 8px;
@@ -105,7 +105,7 @@
   left: 10px;
   font-size: 14px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.95);
+  color: rgb(var(--fg-rgb) / 0.95);
 }
 
 .react-calendar.custom-calendar_full-view .react-calendar__tile--now {
@@ -117,7 +117,7 @@
   .react-calendar__tile:enabled:hover,
 .react-calendar.custom-calendar_full-view
   .react-calendar__tile:enabled:focus {
-  background-color: rgba(255, 255, 255, 0.05) !important;
+  background-color: rgb(var(--fg-rgb) / 0.05) !important;
 }
 
 /* Per-day P/L background tints - muted to read as calm dashboard. */
@@ -207,7 +207,7 @@
   .react-calendar__century-view__decades__decade {
   position: relative;
   background: transparent;
-  color: white;
+  color: rgb(var(--fg-rgb));
   border: 1px solid transparent;
   border-radius: 8px;
   padding: 14px 0;
@@ -224,7 +224,7 @@
   .react-calendar__decade-view__years__year:enabled:hover,
 .react-calendar.custom-calendar_full-view
   .react-calendar__century-view__decades__decade:enabled:hover {
-  background-color: rgba(255, 255, 255, 0.05) !important;
+  background-color: rgb(var(--fg-rgb) / 0.05) !important;
 }
 .react-calendar.custom-calendar_full-view
   .react-calendar__year-view__months__month abbr,
@@ -241,7 +241,7 @@
    doesn't apply (e.g. embedded mini calendars). */
 .react-calendar__tile {
   background: transparent;
-  color: white;
+  color: rgb(var(--fg-rgb));
   height: 60px;
   padding: 5px 0;
   border-radius: 8px;

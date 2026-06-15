@@ -207,7 +207,7 @@ export default function TradesTab({
           onClick={() => setConfirmOpen(false)}
         >
           <div
-            className="flex flex-col gap-5 bg-[#0F0F17] border border-white/10 items-center p-6 md:p-7 rounded-2xl w-full max-w-md text-white text-center shadow-[0_20px_80px_rgba(0,0,0,0.6)]"
+            className="flex flex-col gap-5 bg-[var(--surface)] border border-white/10 items-center p-6 md:p-7 rounded-2xl w-full max-w-md text-white text-center shadow-[0_20px_80px_rgba(0,0,0,0.6)]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="w-12 h-12 rounded-full bg-red-500/15 border border-red-500/25 flex items-center justify-center">

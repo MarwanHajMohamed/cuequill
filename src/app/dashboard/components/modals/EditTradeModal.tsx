@@ -156,7 +156,7 @@ export default function EditTradeModal({
       >
         <motion.div
           onClick={(e) => e.stopPropagation()}
-          className="relative flex flex-col bg-[#0F0F17] border border-white/10 rounded-2xl md:w-[90%] md:max-w-lg w-full max-h-full md:max-h-[90vh] overflow-hidden"
+          className="relative flex flex-col bg-[var(--surface)] border border-white/10 rounded-2xl md:w-[90%] md:max-w-lg w-full max-h-full md:max-h-[90vh] overflow-hidden"
           initial={{ opacity: 0, scale: 0.96, y: 16 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: 16 }}
@@ -429,7 +429,7 @@ export default function EditTradeModal({
           </div>
 
           {/* ── Footer (fixed at bottom of card) ── */}
-          <div className="shrink-0 px-5 md:px-6 py-3 md:py-4 flex items-center justify-between gap-2 border-t border-white/5 bg-[#0F0F17]">
+          <div className="shrink-0 px-5 md:px-6 py-3 md:py-4 flex items-center justify-between gap-2 border-t border-white/5 bg-[var(--surface)]">
             <div>
               {onDelete && initialTrade?._id && (
                 <button
@@ -499,7 +499,7 @@ export default function EditTradeModal({
         >
           <motion.div
             onClick={(e) => e.stopPropagation()}
-            className="flex flex-col gap-4 bg-[#0F0F17] border border-white/10 items-center p-6 rounded-2xl w-full max-w-sm text-white"
+            className="flex flex-col gap-4 bg-[var(--surface)] border border-white/10 items-center p-6 rounded-2xl w-full max-w-sm text-white"
             initial={{ scale: 0.96, y: 16 }}
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.96, y: 16 }}

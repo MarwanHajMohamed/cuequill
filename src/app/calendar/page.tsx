@@ -49,7 +49,7 @@ const WeekSummary = ({
 }) => {
   const hasTrades = tradeCount > 0;
   return (
-    <div className="border border-[#282828] rounded-lg p-3 flex flex-col gap-1.5">
+    <div className="border border-[var(--hairline)] rounded-lg p-3 flex flex-col gap-1.5">
       <div className="flex justify-between items-baseline">
         <div className="text-xs text-white/60">Week {weekNum}</div>
         {hasTrades && (

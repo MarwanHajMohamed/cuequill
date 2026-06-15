@@ -67,7 +67,7 @@ function PeriodTile({
   return (
     <div
       className={`border rounded-lg p-3 md:p-4 flex flex-col gap-1 md:gap-2 min-w-0 basis-[150px] md:basis-[220px] grow md:max-w-[320px] ${
-        highlight ? "border-white/20 bg-white/5" : "border-[#282828]"
+        highlight ? "border-white/20 bg-white/5" : "border-[var(--hairline)]"
       }`}
     >
       <div className="text-[10px] md:text-xs text-white/50 uppercase tracking-wide">
@@ -117,7 +117,7 @@ function MiniTile({
         ? "text-red-500"
         : "text-white";
   return (
-    <div className="border border-[#282828] rounded-lg p-2 md:p-3 flex flex-col gap-1 min-w-0 basis-[120px] md:basis-[180px] grow md:max-w-[240px]">
+    <div className="border border-[var(--hairline)] rounded-lg p-2 md:p-3 flex flex-col gap-1 min-w-0 basis-[120px] md:basis-[180px] grow md:max-w-[240px]">
       <div className="text-[10px] md:text-xs text-white/50 uppercase tracking-wide truncate">
         {label}
       </div>
@@ -310,7 +310,7 @@ export default function DashboardStats({ userId }: { userId: string }) {
 
       {/* Equity sparkline */}
       {s.curve.length >= 2 && (
-        <div className="border border-[#282828] rounded-lg p-3 md:p-4 flex flex-col gap-2">
+        <div className="border border-[var(--hairline)] rounded-lg p-3 md:p-4 flex flex-col gap-2">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="text-[10px] md:text-xs text-white/50 uppercase tracking-wide">
               Recent equity ({s.curve.length} trades)

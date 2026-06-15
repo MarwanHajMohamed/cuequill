@@ -495,7 +495,7 @@ function Page() {
               className="hidden md:block pointer-events-none absolute inset-x-0 bottom-0 h-16 z-10"
               style={{
                 background:
-                  "linear-gradient(to top, rgba(14,14,16,0.85) 0%, rgba(14,14,16,0.4) 45%, rgba(14,14,16,0) 100%)",
+                  "linear-gradient(to top, rgb(var(--bg-rgb) / 0.85) 0%, rgb(var(--bg-rgb) / 0.4) 45%, rgb(var(--bg-rgb) / 0) 100%)",
                 backdropFilter: "blur(12px)",
                 WebkitBackdropFilter: "blur(12px)",
                 maskImage:
@@ -517,7 +517,7 @@ function Page() {
             e.preventDefault();
             send(input);
           }}
-          className="fixed left-5 right-5 z-30 bottom-[calc(74px+env(safe-area-inset-bottom))] bg-[#0E0E10]/85 backdrop-blur-md md:static md:left-auto md:right-auto md:bottom-auto md:mt-3 md:bg-white/[0.04] md:backdrop-blur-0 flex items-end gap-2 rounded-2xl border border-white/10 px-3 py-2"
+          className="fixed left-5 right-5 z-30 bottom-[calc(74px+env(safe-area-inset-bottom))] bg-[var(--background)]/85 backdrop-blur-md md:static md:left-auto md:right-auto md:bottom-auto md:mt-3 md:bg-white/[0.04] md:backdrop-blur-0 flex items-end gap-2 rounded-2xl border border-white/10 px-3 py-2"
         >
           <textarea
             ref={inputRef}
@@ -559,7 +559,7 @@ function Page() {
               bottom: `calc(58px + env(safe-area-inset-bottom))`,
               height: composerH + 100,
               background:
-                "linear-gradient(to top, rgba(14,14,16,0.92) 0%, rgba(14,14,16,0.5) 50%, rgba(14,14,16,0) 100%)",
+                "linear-gradient(to top, rgb(var(--bg-rgb) / 0.92) 0%, rgb(var(--bg-rgb) / 0.5) 50%, rgb(var(--bg-rgb) / 0) 100%)",
               backdropFilter: "blur(12px)",
               WebkitBackdropFilter: "blur(12px)",
               maskImage: "linear-gradient(to top, #000 65%, transparent 100%)",
