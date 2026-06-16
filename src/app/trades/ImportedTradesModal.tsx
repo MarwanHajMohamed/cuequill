@@ -17,10 +17,9 @@ type ImportedTrade = {
   hasDuplicate?: boolean;
 };
 
-// Modal that lists the trades inserted by the most recent IBKR sync,
-// flags rows that look like duplicates of existing trades (same natural
-// key), and lets the user delete any of them. Auto-opens from the
-// trades page after a sync inserts at least one row.
+// Lists the trades inserted by the most recent IBKR sync, flags rows that
+// look like duplicates of existing trades, and lets the user delete any of
+// them. Auto-opens from the trades page after a sync inserts a row.
 export default function ImportedTradesModal({
   onClose,
   onDeleted,
@@ -73,7 +72,13 @@ export default function ImportedTradesModal({
     }
   };
 
+  const count = trades?.length ?? 0;
   const dupCount = (trades ?? []).filter((t) => t.hasDuplicate).length;
+
+  const subtitle =
+    trades === null
+      ? "Loading…"
+      : `${count} trade${count === 1 ? "" : "s"} from the last sync`;
 
   return (
     <AnimatePresence>
@@ -96,65 +101,49 @@ export default function ImportedTradesModal({
           className="bg-[var(--surface)] border border-white/10 rounded-2xl w-full max-w-lg shadow-[0_24px_80px_var(--shadow)] overflow-hidden flex flex-col max-h-[85vh]"
         >
           {/* Header */}
-          <div className="relative px-5 md:px-6 py-4 border-b border-white/10 flex items-center justify-between gap-3 shrink-0">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="shrink-0 w-9 h-9 rounded-xl border border-teal-500/25 bg-teal-500/10 text-teal-300 flex items-center justify-center">
-                <i className="fa-solid fa-arrows-rotate text-[13px]" />
-              </div>
-              <div className="flex flex-col gap-0.5 min-w-0">
-                <div className="text-[10px] uppercase tracking-[0.18em] text-white/40 font-medium">
-                  IBKR Sync
-                </div>
-                <div className="text-[15px] md:text-base font-semibold tracking-tight">
-                  <span className="bg-gradient-to-r from-teal-300 to-emerald-400 bg-clip-text text-transparent">
-                    Imported trades
+          <div className="px-5 py-4 flex items-start justify-between gap-3 shrink-0">
+            <div className="min-w-0">
+              <h2 className="text-[16px] font-semibold tracking-tight">
+                Imported trades
+              </h2>
+              <p className="text-[12px] mt-0.5">
+                <span className="text-white/45">{subtitle}</span>
+                {dupCount > 0 && (
+                  <span className="text-amber-400">
+                    {" · "}
+                    {dupCount} possible duplicate{dupCount === 1 ? "" : "s"}
                   </span>
-                </div>
-              </div>
+                )}
+              </p>
             </div>
             <button
               type="button"
               onClick={onClose}
               aria-label="Close"
-              className="w-8 h-8 rounded-full text-white/45 hover:text-white hover:bg-white/[0.06] transition cursor-pointer flex items-center justify-center"
+              className="shrink-0 w-8 h-8 rounded-full text-white/45 hover:text-white hover:bg-white/[0.06] transition cursor-pointer flex items-center justify-center"
             >
               <i className="fa-solid fa-xmark text-[13px]" />
             </button>
           </div>
 
-          {/* Summary line */}
-          <div className="px-5 md:px-6 py-3 border-b border-white/10 text-[11.5px] flex items-center justify-between gap-3 shrink-0">
-            <span className="text-white/55 tabular-nums">
-              {trades === null
-                ? "Loading…"
-                : `${trades.length} trade${trades.length === 1 ? "" : "s"} from the last sync`}
-            </span>
-            {dupCount > 0 && (
-              <span className="inline-flex items-center gap-1.5 text-amber-300">
-                <i className="fa-solid fa-triangle-exclamation text-[10px]" />
-                {dupCount} possible duplicate{dupCount === 1 ? "" : "s"}
-              </span>
-            )}
-          </div>
-
           {/* List */}
-          <div className="flex-1 overflow-y-auto px-5 md:px-6 py-3">
+          <div className="flex-1 overflow-y-auto px-3 pb-3">
             {error && (
-              <div className="text-[12px] text-red-300 border border-red-500/25 bg-red-500/10 rounded-xl px-3 py-2 mb-3">
+              <div className="text-[12px] text-red-300 border border-red-500/25 bg-red-500/10 rounded-xl px-3 py-2 mb-2 mx-2">
                 {error}
               </div>
             )}
 
             {trades === null ? (
-              <div className="text-[12px] text-white/45 px-3 py-6 text-center">
-                Loading imported trades…
+              <div className="text-[12px] text-white/40 px-3 py-10 text-center">
+                Loading…
               </div>
-            ) : trades.length === 0 ? (
-              <div className="text-[12px] text-white/45 border border-dashed border-white/10 rounded-xl px-3 py-8 text-center">
-                Nothing from the last sync remains in your journal.
+            ) : count === 0 ? (
+              <div className="text-[12px] text-white/40 px-3 py-10 text-center">
+                Nothing from the last sync remains.
               </div>
             ) : (
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-1">
                 {trades.map((t) => (
                   <ImportedRow
                     key={t._id}
@@ -165,20 +154,6 @@ export default function ImportedTradesModal({
                 ))}
               </div>
             )}
-          </div>
-
-          {/* Footer */}
-          <div className="px-5 md:px-6 py-3 border-t border-white/10 flex items-center justify-between gap-2 shrink-0">
-            <span className="text-[10.5px] text-white/35">
-              Deleting here is final - removes the trade from your journal.
-            </span>
-            <button
-              type="button"
-              onClick={onClose}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer"
-            >
-              Done
-            </button>
           </div>
         </motion.div>
       </motion.div>
@@ -196,6 +171,7 @@ function ImportedRow({
   onDelete: () => void;
 }) {
   const isCall = trade.option === "CALL";
+  const isOpen = trade.status === "OPEN";
   const net = (trade.profitLoss ?? 0) - (trade.fees ?? 0);
   const day = (iso: string | null | undefined) =>
     iso
@@ -206,64 +182,42 @@ function ImportedRow({
       : "—";
 
   return (
-    <div
-      className={`group flex items-center gap-3 px-3 py-2 rounded-xl border bg-white/[0.02] hover:bg-white/[0.04] transition ${
-        trade.hasDuplicate ? "border-amber-500/30" : "border-white/10"
-      }`}
-    >
+    <div className="group flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/[0.04] transition">
       <span
-        className={`shrink-0 inline-flex items-center justify-center w-12 text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full border ${
-          isCall
-            ? "bg-green-500/10 text-green-300 border-green-500/25"
-            : "bg-red-500/10 text-red-300 border-red-500/25"
+        className={`shrink-0 w-11 text-center text-[10px] font-semibold uppercase tracking-wide py-1 rounded-md ${
+          isCall ? "bg-green-500/12 text-green-300" : "bg-red-500/12 text-red-300"
         }`}
       >
         {trade.option}
       </span>
 
       <div className="flex flex-col min-w-0 flex-1">
-        <div className="flex items-center gap-2 min-w-0 flex-wrap">
-          <span className="text-[13.5px] font-semibold text-white truncate">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-[14px] font-semibold text-white truncate">
             {trade.symbol}
           </span>
-          <span className="text-[11.5px] text-white/45 tabular-nums">
+          <span className="text-[12px] text-white/45 tabular-nums shrink-0">
             {trade.strike} × {trade.qty}
           </span>
           {trade.hasDuplicate && (
-            <span
-              title="Another trade with the same symbol, strike, qty, option and day already exists."
-              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/25 text-[9.5px] font-medium uppercase tracking-wide"
-            >
-              <i className="fa-solid fa-triangle-exclamation text-[8px]" />
-              Possible dup
-            </span>
+            <i
+              title="Looks like a duplicate of a trade already in your journal."
+              className="fa-solid fa-triangle-exclamation text-amber-400/80 text-[10px] shrink-0"
+            />
           )}
         </div>
-        <div className="text-[10.5px] text-white/40 tabular-nums">
+        <div className="text-[11px] text-white/40 tabular-nums">
           {day(trade.dateBought)}
           {trade.dateClosed ? ` → ${day(trade.dateClosed)}` : " · open"}
         </div>
       </div>
 
-      <div className="shrink-0 text-right">
-        <div
-          className={`text-[13px] font-semibold tabular-nums ${
-            trade.status === "OPEN"
-              ? "text-white/50"
-              : net >= 0
-                ? "text-green-300"
-                : "text-red-300"
-          }`}
-        >
-          {trade.status === "OPEN"
-            ? "—"
-            : `${net >= 0 ? "+" : "−"}$${Math.abs(net).toFixed(2)}`}
-        </div>
-        {trade.fees ? (
-          <div className="text-[9.5px] text-white/35 tabular-nums">
-            fees ${trade.fees.toFixed(2)}
-          </div>
-        ) : null}
+      <div
+        className={`shrink-0 text-[13.5px] font-semibold tabular-nums ${
+          isOpen ? "text-white/40" : net >= 0 ? "text-green-300" : "text-red-300"
+        }`}
+      >
+        {isOpen ? "—" : `${net >= 0 ? "+" : "−"}$${Math.abs(net).toFixed(2)}`}
       </div>
 
       <button
@@ -271,12 +225,7 @@ function ImportedRow({
         onClick={onDelete}
         disabled={deleting}
         aria-label="Delete trade"
-        title="Delete this imported trade"
-        className={`shrink-0 w-8 h-8 rounded-full border flex items-center justify-center transition ${
-          deleting
-            ? "border-white/10 bg-white/[0.02] text-white/30 cursor-not-allowed"
-            : "border-white/10 bg-white/[0.03] text-white/55 hover:text-red-300 hover:border-red-500/30 hover:bg-red-500/10 cursor-pointer"
-        }`}
+        className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white/35 hover:text-red-300 hover:bg-red-500/10 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
       >
         <i
           className={`fa-solid ${deleting ? "fa-circle-notch animate-spin" : "fa-trash-can"} text-[11px]`}
