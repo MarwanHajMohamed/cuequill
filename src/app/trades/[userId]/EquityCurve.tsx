@@ -97,38 +97,39 @@ export default function EquityCurve({ trades }: { trades: Trade[] }) {
               </linearGradient>
             </defs>
             <CartesianGrid
-              stroke="#282828"
+              stroke="var(--hairline)"
               strokeDasharray="3 3"
               vertical={false}
             />
             <XAxis
               dataKey="date"
-              tick={{ fill: "#666", fontSize: 10 }}
+              tick={{ fill: "currentColor", fontSize: 10, opacity: 0.5 }}
               tickFormatter={(d) => format(new Date(d), "MMM d")}
               minTickGap={40}
-              stroke="#333"
+              stroke="var(--hairline)"
             />
             <YAxis
-              tick={{ fill: "#666", fontSize: 10 }}
-              stroke="#333"
+              tick={{ fill: "currentColor", fontSize: 10, opacity: 0.5 }}
+              stroke="var(--hairline)"
               tickFormatter={(v) => `$${v}`}
               width={60}
             />
             <Tooltip
               contentStyle={{
-                background: "#16151B",
-                border: "1px solid #282828",
+                background: "var(--surface)",
+                border: "1px solid var(--hairline)",
                 borderRadius: 6,
                 fontSize: 12,
+                color: "var(--foreground)",
               }}
-              labelStyle={{ color: "#fff", marginBottom: 4 }}
+              labelStyle={{ color: "var(--foreground)", marginBottom: 4 }}
               labelFormatter={(d) => format(new Date(d), "MMM d, yyyy")}
               formatter={(v: number, name: string) => [
                 `${v >= 0 ? "+" : "−"}${fmtMoneyCompact(Math.abs(v))}`,
                 name,
               ]}
             />
-            <ReferenceLine y={0} stroke="#444" />
+            <ReferenceLine y={0} stroke="var(--hairline)" />
             <Area
               type="monotone"
               dataKey="drawdown"

@@ -98,7 +98,7 @@ export function StrategyChart({
 
   return (
     <PlaybackContext.Provider value={{ progressX, playing }}>
-      <div className="w-full border border-white/10 rounded-lg overflow-hidden bg-[#16151C]">
+      <div className="w-full border border-white/10 rounded-lg overflow-hidden bg-[var(--surface)]">
         <div className="flex items-center justify-between px-4 py-2 border-b border-white/10">
           {title && (
             <div className="text-xs text-white/50 uppercase tracking-wide">

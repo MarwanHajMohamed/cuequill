@@ -361,10 +361,11 @@ export default function DashboardStats({ userId }: { userId: string }) {
                 />
                 <ReTooltip
                   contentStyle={{
-                    background: "#16151B",
-                    border: "1px solid rgba(255,255,255,0.1)",
+                    background: "var(--surface)",
+                    border: "1px solid var(--hairline)",
                     borderRadius: 6,
                     fontSize: 11,
+                    color: "var(--foreground)",
                   }}
                   labelFormatter={(_, payload) =>
                     payload?.[0]?.payload?.date ?? ""

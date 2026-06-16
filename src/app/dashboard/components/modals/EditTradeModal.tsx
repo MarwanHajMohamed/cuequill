@@ -238,7 +238,7 @@ export default function EditTradeModal({
                 autoCapitalize="characters"
                 autoCorrect="off"
                 spellCheck={false}
-                className="w-full p-2 text-base text-white bg-[#1A1A1D] rounded border border-white/10 focus:border-white/30 focus:outline-none uppercase placeholder:normal-case placeholder:text-white/30"
+                className="w-full p-2 text-base text-white bg-white/[0.03] rounded border border-white/10 focus:border-white/30 focus:outline-none uppercase placeholder:normal-case placeholder:text-white/30"
               />
             </Field>
 
@@ -308,7 +308,7 @@ export default function EditTradeModal({
                     setStrategy(e.target.value as StrategyList);
                     setErrorMessage("");
                   }}
-                  className="w-full p-2 text-base bg-[#1A1A1D] text-white rounded border border-white/10 focus:border-white/30 focus:outline-none cursor-pointer"
+                  className="w-full p-2 text-base bg-white/[0.03] text-white rounded border border-white/10 focus:border-white/30 focus:outline-none cursor-pointer"
                 >
                   {strategies.map((s) => (
                     <option key={s} value={s}>
@@ -324,7 +324,7 @@ export default function EditTradeModal({
                     setStatus(e.target.value as TradeEventType);
                     setErrorMessage("");
                   }}
-                  className="w-full p-2 text-base bg-[#1A1A1D] text-white rounded border border-white/10 focus:border-white/30 focus:outline-none cursor-pointer"
+                  className="w-full p-2 text-base bg-white/[0.03] text-white rounded border border-white/10 focus:border-white/30 focus:outline-none cursor-pointer"
                 >
                   <option value="OPEN">Open</option>
                   <option value="WIN">Win</option>
@@ -410,7 +410,7 @@ export default function EditTradeModal({
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="What did you see? What did you learn?"
                 rows={3}
-                className="w-full p-2 text-sm text-white bg-[#1A1A1D] rounded border border-white/10 focus:border-white/30 focus:outline-none resize-none"
+                className="w-full p-2 text-sm text-white bg-white/[0.03] rounded border border-white/10 focus:border-white/30 focus:outline-none resize-none"
               />
             </Field>
 
@@ -581,7 +581,7 @@ function NumberInput({
         onChange(isNaN(v) ? null : v);
       }}
       placeholder={placeholder}
-      className="w-full min-w-0 p-2 text-base text-white bg-[#1A1A1D] rounded border border-white/10 focus:border-white/30 focus:outline-none placeholder:text-white/30"
+      className="w-full min-w-0 p-2 text-base text-white bg-white/[0.03] rounded border border-white/10 focus:border-white/30 focus:outline-none placeholder:text-white/30"
     />
   );
 }
@@ -607,7 +607,7 @@ function DateInput({
       // `min-w-0` overrides iOS Safari's intrinsic min-width on date
       // inputs (otherwise the picker swallows grid gaps on narrow
       // screens); `appearance-none` strips the inset shadow.
-      className="w-full min-w-0 p-2 text-base text-white bg-[#1A1A1D] rounded border border-white/10 focus:border-white/30 focus:outline-none appearance-none"
+      className="w-full min-w-0 p-2 text-base text-white bg-white/[0.03] rounded border border-white/10 focus:border-white/30 focus:outline-none appearance-none"
     />
   );
 }

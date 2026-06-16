@@ -341,7 +341,7 @@ const InfoTooltip = ({ text }: { text: string }) => {
               visibility: visible && coords.placed ? "visible" : "hidden",
               pointerEvents: "none",
             }}
-            className="bg-[#16151B] border border-white/10 text-white/80 text-[11px] rounded-md px-2.5 py-2
+            className="bg-[var(--surface)] border border-white/10 text-white/80 text-[11px] rounded-md px-2.5 py-2
                        whitespace-normal w-48 z-[999] leading-snug shadow-md normal-case tracking-normal font-normal"
           >
             {text}

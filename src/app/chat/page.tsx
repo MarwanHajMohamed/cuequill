@@ -863,7 +863,7 @@ function MarkdownText({ text }: { text: string }) {
             if (isBlock) {
               return (
                 <code
-                  className="block bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-[12.5px] overflow-x-auto"
+                  className="block bg-white/[0.06] border border-white/10 rounded-lg px-3 py-2 text-[12.5px] overflow-x-auto"
                   {...rest}
                 >
                   {children}
@@ -880,7 +880,7 @@ function MarkdownText({ text }: { text: string }) {
             );
           },
           pre: ({ children }) => (
-            <pre className="bg-black/40 border border-white/10 rounded-lg p-3 overflow-x-auto text-[12.5px]">
+            <pre className="bg-white/[0.06] border border-white/10 rounded-lg p-3 overflow-x-auto text-[12.5px]">
               {children}
             </pre>
           ),

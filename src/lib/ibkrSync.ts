@@ -261,6 +261,7 @@ export async function syncForUser(userId: string): Promise<{ inserted: number; s
       ibkrLastSync: new Date(),
       ibkrLastSyncInserted: 0,
       ibkrLastSyncSkipped: 0,
+      ibkrLastSyncTradeIds: [],
     });
     return { inserted: 0, skipped: 0 };
   }
@@ -322,8 +323,10 @@ export async function syncForUser(userId: string): Promise<{ inserted: number; s
     return true;
   });
 
+  let insertedIds: unknown[] = [];
   if (newTrades.length > 0) {
-    await Trade.insertMany(newTrades);
+    const inserted = await Trade.insertMany(newTrades);
+    insertedIds = inserted.map((d) => d._id);
   }
 
   const skipped = trades.length - newTrades.length;
@@ -331,6 +334,7 @@ export async function syncForUser(userId: string): Promise<{ inserted: number; s
     ibkrLastSync: new Date(),
     ibkrLastSyncInserted: newTrades.length,
     ibkrLastSyncSkipped: skipped,
+    ibkrLastSyncTradeIds: insertedIds,
   });
 
   return { inserted: newTrades.length, skipped };

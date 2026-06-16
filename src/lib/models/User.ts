@@ -11,6 +11,10 @@ export interface IUser extends Document {
   ibkrLastSync: Date;
   ibkrLastSyncInserted: number;
   ibkrLastSyncSkipped: number;
+  // ObjectIds of the trades inserted by the most recent sync. Used by
+  // the settings UI to show what was imported and let the user delete
+  // any duplicates the dedupe pass didn't catch.
+  ibkrLastSyncTradeIds: mongoose.Types.ObjectId[];
 }
 
 const UserSchema = new Schema<IUser>({
@@ -24,6 +28,7 @@ const UserSchema = new Schema<IUser>({
   ibkrLastSync: { type: Date },
   ibkrLastSyncInserted: { type: Number },
   ibkrLastSyncSkipped: { type: Number },
+  ibkrLastSyncTradeIds: [{ type: Schema.Types.ObjectId, ref: "Trade", default: [] }],
 });
 
 export const User = models.User || mongoose.model<IUser>("User", UserSchema);

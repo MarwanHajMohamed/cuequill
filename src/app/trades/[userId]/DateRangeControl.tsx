@@ -264,7 +264,7 @@ function DateField({
         value={value}
         min={min}
         onChange={(e) => onChange(e.target.value)}
-        className="p-1 text-xs xl:text-sm text-white bg-[#1A1A1D] rounded border border-white/10 focus:border-white/30 focus:outline-none"
+        className="p-1 text-xs xl:text-sm text-white bg-white/[0.03] rounded border border-white/10 focus:border-white/30 focus:outline-none"
       />
     </div>
   );

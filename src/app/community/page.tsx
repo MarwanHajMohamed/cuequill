@@ -8,7 +8,7 @@ function Page() {
       <div className="flex gap-[35px] w-full max-w-[1500px] px-5 mt-6 m-10 p-4 ">
         {/* Left box */}
         <div
-          className="w-[100%] h-[calc(100vh-200px)] bg-[#16151C] flex flex-col 
+          className="w-[100%] h-[calc(100vh-200px)] bg-[var(--surface)] flex flex-col 
             rounded-lg"
         >
           {/* Header bar */}
@@ -48,7 +48,7 @@ function Page() {
 
         {/* Right box */}
         <div
-          className="w-[300px] h-[calc(100vh-200px)] bg-[#16151C] flex flex-col 
+          className="w-[300px] h-[calc(100vh-200px)] bg-[var(--surface)] flex flex-col 
             rounded-lg  "
         >
           {/* Header bar */}

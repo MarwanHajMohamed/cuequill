@@ -1,10 +1,28 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 
 const COOLDOWN_MS = 15 * 60 * 1000;
 
 const inputClass =
   "w-full px-3 py-2 rounded-xl bg-white/[0.03] border border-white/10 text-[13px] text-white placeholder:text-white/40 focus:border-white/25 focus:outline-none transition";
+
+type ImportedTrade = {
+  _id: string;
+  symbol: string;
+  option: "CALL" | "PUT";
+  strike: number;
+  qty: number;
+  contractPrice: number;
+  closingContractPrice?: number | null;
+  dateBought: string;
+  dateClosed?: string | null;
+  expiryDate?: string | null;
+  profitLoss?: number | null;
+  fees?: number | null;
+  status: "WIN" | "LOSS" | "OPEN";
+  hasDuplicate?: boolean;
+};
 
 export default function IBKRTab() {
   const [token, setToken] = useState("");
@@ -17,6 +35,13 @@ export default function IBKRTab() {
   const [syncStatus, setSyncStatus] = useState("");
   const [syncing, setSyncing] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+
+  // Last-imported viewer state
+  const [importedOpen, setImportedOpen] = useState(false);
+  const [importedLoading, setImportedLoading] = useState(false);
+  const [importedTrades, setImportedTrades] = useState<ImportedTrade[]>([]);
+  const [importedError, setImportedError] = useState("");
+  const [deleting, setDeleting] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     fetch("/api/user/ibkr-settings")
@@ -86,8 +111,52 @@ export default function IBKRTab() {
       setLastSync(new Date().toISOString());
       setLastInserted(data.inserted);
       setLastSkipped(data.skipped);
+      // If a panel was open, refresh; otherwise let user open it.
+      if (importedOpen) loadImported();
     } else {
       setSyncStatus(`Error: ${data.error}`);
+    }
+  };
+
+  const loadImported = async () => {
+    setImportedLoading(true);
+    setImportedError("");
+    try {
+      const r = await fetch("/api/ibkr/last-imported");
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error ?? "Failed to load imported trades");
+      setImportedTrades(d.trades ?? []);
+    } catch (e) {
+      setImportedError(e instanceof Error ? e.message : "Failed to load");
+      setImportedTrades([]);
+    } finally {
+      setImportedLoading(false);
+    }
+  };
+
+  const handleToggleImported = () => {
+    const next = !importedOpen;
+    setImportedOpen(next);
+    if (next && importedTrades.length === 0 && !importedLoading) {
+      loadImported();
+    }
+  };
+
+  const handleDeleteImported = async (id: string) => {
+    setDeleting((d) => ({ ...d, [id]: true }));
+    try {
+      const r = await fetch(`/api/trades/${id}`, { method: "DELETE" });
+      if (!r.ok) throw new Error("Delete failed");
+      // Optimistic remove from list.
+      setImportedTrades((trades) => trades.filter((t) => t._id !== id));
+    } catch (e) {
+      setImportedError(e instanceof Error ? e.message : "Delete failed");
+    } finally {
+      setDeleting((d) => {
+        const next = { ...d };
+        delete next[id];
+        return next;
+      });
     }
   };
 
@@ -254,7 +323,195 @@ export default function IBKRTab() {
             <span className="text-[12px] text-white/60">{syncStatus}</span>
           )}
         </div>
+
+        {/* Imported-trades viewer */}
+        {(lastInserted ?? 0) > 0 || importedTrades.length > 0 ? (
+          <div className="mt-1">
+            <button
+              type="button"
+              onClick={handleToggleImported}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white transition text-[12px] font-medium cursor-pointer"
+            >
+              <i
+                className={`fa-solid fa-chevron-right text-[9px] transition-transform ${importedOpen ? "rotate-90" : ""}`}
+              />
+              {importedOpen ? "Hide" : "View"} imported trades
+              {lastInserted != null && lastInserted > 0 && (
+                <span className="ml-1 text-white/40 tabular-nums">
+                  ({lastInserted})
+                </span>
+              )}
+            </button>
+
+            <AnimatePresence initial={false}>
+              {importedOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                  className="overflow-hidden"
+                >
+                  <div className="mt-3">
+                    {importedLoading ? (
+                      <div className="text-[12px] text-white/45 px-3 py-4">
+                        Loading imported trades…
+                      </div>
+                    ) : importedError ? (
+                      <div className="text-[12px] text-red-300 border border-red-500/25 bg-red-500/10 rounded-xl px-3 py-2">
+                        {importedError}
+                      </div>
+                    ) : importedTrades.length === 0 ? (
+                      <div className="text-[12px] text-white/45 border border-dashed border-white/10 rounded-xl px-3 py-4 text-center">
+                        Nothing from the last sync remains in the journal.
+                      </div>
+                    ) : (
+                      <>
+                        <div className="text-[11px] text-white/45 mb-2 flex items-center justify-between">
+                          <span>
+                            {importedTrades.length} trade
+                            {importedTrades.length === 1 ? "" : "s"} from the
+                            last sync
+                          </span>
+                          {importedTrades.some((t) => t.hasDuplicate) && (
+                            <span className="inline-flex items-center gap-1.5 text-amber-300">
+                              <i className="fa-solid fa-triangle-exclamation text-[10px]" />
+                              {
+                                importedTrades.filter((t) => t.hasDuplicate)
+                                  .length
+                              }{" "}
+                              possible duplicate
+                              {importedTrades.filter((t) => t.hasDuplicate)
+                                .length === 1
+                                ? ""
+                                : "s"}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          {importedTrades.map((t) => (
+                            <ImportedRow
+                              key={t._id}
+                              trade={t}
+                              deleting={!!deleting[t._id]}
+                              onDelete={() => handleDeleteImported(t._id)}
+                            />
+                          ))}
+                        </div>
+                        <div className="mt-3 text-[10.5px] text-white/35">
+                          Deleting here is final - removes the trade from your
+                          journal. Use it to clean up duplicates the dedupe
+                          missed.
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        ) : null}
       </section>
+    </div>
+  );
+}
+
+function ImportedRow({
+  trade,
+  deleting,
+  onDelete,
+}: {
+  trade: ImportedTrade;
+  deleting: boolean;
+  onDelete: () => void;
+}) {
+  const isCall = trade.option === "CALL";
+  const net =
+    (trade.profitLoss ?? 0) - (trade.fees ?? 0);
+  const day = (iso: string | null | undefined) =>
+    iso ? new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "—";
+
+  return (
+    <div
+      className={`group flex items-center gap-3 px-3 py-2 rounded-xl border bg-white/[0.02] hover:bg-white/[0.04] transition ${
+        trade.hasDuplicate ? "border-amber-500/30" : "border-white/10"
+      }`}
+    >
+      {/* Direction chip */}
+      <span
+        className={`shrink-0 inline-flex items-center justify-center w-12 text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full border ${
+          isCall
+            ? "bg-green-500/10 text-green-300 border-green-500/25"
+            : "bg-red-500/10 text-red-300 border-red-500/25"
+        }`}
+      >
+        {trade.option}
+      </span>
+
+      {/* Symbol + strike */}
+      <div className="flex flex-col min-w-0 flex-1">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-[13.5px] font-semibold text-white truncate">
+            {trade.symbol}
+          </span>
+          <span className="text-[11.5px] text-white/45 tabular-nums">
+            {trade.strike} × {trade.qty}
+          </span>
+          {trade.hasDuplicate && (
+            <span
+              title="Another trade with the same symbol, strike, qty, option and day already exists."
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/25 text-[9.5px] font-medium uppercase tracking-wide"
+            >
+              <i className="fa-solid fa-triangle-exclamation text-[8px]" />
+              Possible dup
+            </span>
+          )}
+        </div>
+        <div className="text-[10.5px] text-white/40 tabular-nums">
+          {day(trade.dateBought)}
+          {trade.dateClosed ? ` → ${day(trade.dateClosed)}` : " · open"}
+        </div>
+      </div>
+
+      {/* P/L */}
+      <div className="shrink-0 text-right">
+        <div
+          className={`text-[13px] font-semibold tabular-nums ${
+            trade.status === "OPEN"
+              ? "text-white/50"
+              : net >= 0
+                ? "text-green-300"
+                : "text-red-300"
+          }`}
+        >
+          {trade.status === "OPEN"
+            ? "—"
+            : `${net >= 0 ? "+" : "−"}$${Math.abs(net).toFixed(2)}`}
+        </div>
+        {trade.fees ? (
+          <div className="text-[9.5px] text-white/35 tabular-nums">
+            fees ${trade.fees.toFixed(2)}
+          </div>
+        ) : null}
+      </div>
+
+      {/* Delete */}
+      <button
+        type="button"
+        onClick={onDelete}
+        disabled={deleting}
+        aria-label="Delete trade"
+        title="Delete this imported trade"
+        className={`shrink-0 w-8 h-8 rounded-full border flex items-center justify-center transition ${
+          deleting
+            ? "border-white/10 bg-white/[0.02] text-white/30 cursor-not-allowed"
+            : "border-white/10 bg-white/[0.03] text-white/55 hover:text-red-300 hover:border-red-500/30 hover:bg-red-500/10 cursor-pointer"
+        }`}
+      >
+        <i
+          className={`fa-solid ${deleting ? "fa-circle-notch animate-spin" : "fa-trash-can"} text-[11px]`}
+        />
+      </button>
     </div>
   );
 }

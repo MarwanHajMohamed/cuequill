@@ -8,6 +8,7 @@ import { withAuth } from "@/lib/withAuth";
 import { useQueryClient } from "@tanstack/react-query";
 import React, { use, useEffect, useRef, useState } from "react";
 import NotesModal from "../NotesModal";
+import ImportedTradesModal from "../ImportedTradesModal";
 import { useToast } from "@/hooks/useToast";
 import {
   handleDeleteTrade,
@@ -113,6 +114,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
     setCurrentPage(next);
   };
   const [syncing, setSyncing] = useState<boolean>(false);
+  const [showImported, setShowImported] = useState<boolean>(false);
   const [isFiltersOpen, setIsFiltersOpen] = useState<boolean>(false);
   const tradesPerPage = 15;
 
@@ -180,6 +182,9 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
           `Imported ${inserted} new trade${inserted === 1 ? "" : "s"}${skipped ? ` (${skipped} skipped)` : ""}`,
         );
         await queryClient.invalidateQueries({ queryKey: ["trades", userId] });
+        // Auto-open the imported-trades modal so the user can verify or
+        // delete any duplicates the dedupe pass didn't catch.
+        setShowImported(true);
       }
     } catch (err) {
       toast(
@@ -742,6 +747,16 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                       {syncing ? "Syncing…" : "Sync IBKR"}
                     </span>
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowImported(true)}
+                    disabled={syncing}
+                    title="See what the last sync imported"
+                    aria-label="View last imported trades"
+                    className="inline-flex items-center justify-center gap-2 px-3 md:px-3 py-2 rounded-full bg-white/[0.03] text-white/60 border border-white/10 hover:bg-white/[0.06] hover:text-white transition cursor-pointer text-[12px] md:text-[13px] font-medium w-9 h-9"
+                  >
+                    <i className="fa-solid fa-list-check text-[11px]" />
+                  </button>
                 </div>
               </div>
             )}
@@ -839,6 +854,16 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
             handleSaveNotes(e, editingTrade?._id, userId, queryClient)
           }
           tradeId={editingTrade?._id}
+        />
+      )}
+      {showImported && (
+        <ImportedTradesModal
+          onClose={() => setShowImported(false)}
+          onDeleted={() => {
+            // Refresh the trades table after a row gets deleted from
+            // the modal so the table reflects the change.
+            queryClient.invalidateQueries({ queryKey: ["trades", userId] });
+          }}
         />
       )}
     </>

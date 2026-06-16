@@ -2,36 +2,48 @@
 
 import { useTheme } from "@/hooks/useTheme";
 
-// Compact segmented Light/Dark switch. Uses the white-neutral utilities so
-// it themes itself like the rest of the app.
+// Single switch. Two equal 24×24 slots inside a 52-wide pill: moon on
+// the left, sun on the right. Thumb is a 24×24 circle that slides
+// between them; whichever icon is "behind" the thumb is the active
+// theme. Both icons sit perfectly centered in their slots so the icon
+// stays dead-center even when the thumb covers it.
 export default function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
-  const options: { value: "light" | "dark"; icon: string }[] = [
-    { value: "light", icon: "fa-sun" },
-    { value: "dark", icon: "fa-moon" },
-  ];
+  const { theme, toggle } = useTheme();
+  const isLight = theme === "light";
   return (
-    <div className="relative inline-flex rounded-full border border-white/10 bg-white/[0.04] p-0.5">
-      {options.map((o) => {
-        const active = theme === o.value;
-        return (
-          <button
-            key={o.value}
-            type="button"
-            onClick={() => setTheme(o.value)}
-            aria-label={`${o.value} theme`}
-            aria-pressed={active}
-            className={`relative z-10 w-7 h-7 rounded-full flex items-center justify-center transition cursor-pointer ${
-              active ? "text-teal-300" : "text-white/45 hover:text-white/75"
-            }`}
-          >
-            {active && (
-              <span className="absolute inset-0 rounded-full bg-white/10 border border-white/15" />
-            )}
-            <i className={`relative fa-solid ${o.icon} text-[11px]`} />
-          </button>
-        );
-      })}
-    </div>
+    <button
+      type="button"
+      onClick={toggle}
+      role="switch"
+      aria-checked={isLight}
+      aria-label={`Switch to ${isLight ? "dark" : "light"} theme`}
+      title={`Switch to ${isLight ? "dark" : "light"} theme`}
+      className="relative inline-flex w-[52px] h-7 rounded-full border border-white/10 bg-white/[0.04] hover:bg-white/[0.06] transition cursor-pointer"
+    >
+      {/* Thumb - 24px circle, slides between the two slots. */}
+      <span
+        className={`absolute top-0.5 w-6 h-6 rounded-full bg-white/15 border border-white/20 shadow-[0_2px_8px_var(--shadow-soft)] transition-[left] duration-200 ease-out ${
+          isLight ? "left-[26px]" : "left-0.5"
+        }`}
+      />
+
+      {/* Moon slot (left). */}
+      <span
+        className={`absolute top-0.5 left-0.5 w-6 h-6 flex items-center justify-center pointer-events-none transition-colors ${
+          isLight ? "text-white/40" : "text-teal-300"
+        }`}
+      >
+        <i className="fa-solid fa-moon text-[10px]" />
+      </span>
+
+      {/* Sun slot (right). */}
+      <span
+        className={`absolute top-0.5 left-[26px] w-6 h-6 flex items-center justify-center pointer-events-none transition-colors ${
+          isLight ? "text-teal-300" : "text-white/40"
+        }`}
+      >
+        <i className="fa-solid fa-sun text-[10px]" />
+      </span>
+    </button>
   );
 }

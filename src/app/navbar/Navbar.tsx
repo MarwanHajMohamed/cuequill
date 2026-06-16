@@ -30,17 +30,17 @@ const CuequillLogo = ({ className = "" }: { className?: string }) => (
   >
     <path
       d="M31 27.2C37 39.8 43.5 61.2 40.5 62.6C37.5 64 31 75.2 31 75.2C31 75.2 24.5 64.5 21.5 62.6C18.5 60.7 25 39.8 31 27.2Z"
-      fill="#FAFAFA"
+      fill="currentColor"
     />
     <path
       d="M31 47V75"
-      stroke="#0F172A"
+      style={{ stroke: "var(--background)" }}
       strokeWidth="1.32"
       strokeLinecap="round"
     />
     <path
       d="M31 54.56C31.8616 54.56 32.56 53.8616 32.56 53C32.56 52.1384 31.8616 51.44 31 51.44C30.1384 51.44 29.44 52.1384 29.44 53C29.44 53.8616 30.1384 54.56 31 54.56Z"
-      fill="#0F172A"
+      style={{ fill: "var(--background)" }}
     />
   </svg>
 );

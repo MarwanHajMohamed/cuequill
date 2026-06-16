@@ -35,15 +35,19 @@
 
 :root.light {
   color-scheme: light;
-  /* Flips every text-white / bg-white/x / border-white/x to dark ink. */
-  --color-white: #0d0f14;
-  --foreground: #0d0f14;
+  /* Flips every text-white / bg-white/x / border-white/x to dark ink.
+     #1f2937 (slate-800) over pure black keeps contrast high (≈13.5:1
+     on the off-white background) without the heavy, aggressive feel of
+     true black. All the muted text-white/45 / text-white/55 utilities
+     also soften proportionally. */
+  --color-white: #1f2937;
+  --foreground: #1f2937;
   --background: #f6f7f9;
   --surface: #ffffff;
   --surface-2: #ffffff;
   --hairline: #e4e6eb;
   --bg-rgb: 246 247 249;
-  --fg-rgb: 13 15 20;
+  --fg-rgb: 31 41 55;
   /* Soft, cool shadows so cards lift gently off a light background
      instead of looking heavy/black. */
   --shadow: rgba(2, 6, 23, 0.12);
@@ -53,13 +57,31 @@
      darken them so links, the brand gradient, and P/L stay legible. */
   --color-teal-300: #0f766e;
   --color-teal-400: #0d9488;
+  --color-emerald-300: #047857;
   --color-emerald-400: #059669;
   --color-green-300: #15803d;
   --color-green-400: #16a34a;
   --color-red-300: #b91c1c;
   --color-red-400: #dc2626;
   --color-amber-300: #b45309;
+  --color-amber-400: #d97706;
+  --color-yellow-300: #a16207;
+  --color-yellow-500: #ca8a04;
+  --color-orange-300: #c2410c;
+  --color-orange-400: #ea580c;
   --color-indigo-300: #4f46e5;
+  --color-fuchsia-300: #a21caf;
+  --color-rose-300: #be123c;
+}
+
+/* Light-mode aurora boost. The radial-gradient washes are inline on
+   the page hero divs (~13 of them) using the same structural class
+   signature - rather than rewriting each, bump saturation + a touch of
+   brightness only when in light mode so the tints stay visible against
+   the off-white background without forcing every gradient stop to be
+   re-tuned. Keeps the dark-mode look untouched. */
+:root.light [aria-hidden].pointer-events-none.fixed.inset-0.-z-10 {
+  filter: saturate(1.4) brightness(1.03);
 }
 
 body {

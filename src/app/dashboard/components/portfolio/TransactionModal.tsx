@@ -58,7 +58,7 @@ export default function TransactionModal({ type, userId, onClose }: Props) {
           <input
             type="number"
             value={amount === null ? "" : amount}
-            className="w-full p-2 text-white bg-[#1A1A1D] rounded"
+            className="w-full p-2 text-white bg-white/[0.03] rounded"
             onChange={(e) =>
               setAmount(e.target.value === "" ? null : Number(e.target.value))
             }
@@ -69,14 +69,14 @@ export default function TransactionModal({ type, userId, onClose }: Props) {
           <input
             type="date"
             value={dateOfTransfer}
-            className="w-full p-2 text-white bg-[#1A1A1D] rounded"
+            className="w-full p-2 text-white bg-white/[0.03] rounded"
             onChange={(e) => setDateOfTransfer(e.target.value)}
           />
         </div>
         <div className="flex gap-2 justify-end mt-2">
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-[#16151C] transition duration-200 ease-in-out rounded hover:bg-gray-700 cursor-pointer"
+            className="px-4 py-2 bg-[var(--surface)] transition duration-200 ease-in-out rounded hover:bg-white/[0.06] cursor-pointer"
           >
             Cancel
           </button>

@@ -86,7 +86,7 @@ export default function Filters({
         <select
           value={strategy}
           onChange={(e) => setStrategy(e.target.value as StrategyList)}
-          className="w-full p-1.5 bg-[#1A1A1D] text-white text-xs xl:text-sm rounded cursor-pointer border border-white/10 transition duration-100 hover:border-white/40"
+          className="w-full p-1.5 bg-white/[0.03] text-white text-xs xl:text-sm rounded cursor-pointer border border-white/10 transition duration-100 hover:border-white/40"
         >
           {strategies.map((s, i) => (
             <option value={s} key={i}>
@@ -106,7 +106,7 @@ export default function Filters({
         <select
           value={symbol}
           onChange={(e) => setSymbol(e.target.value)}
-          className="w-full p-1.5 bg-[#1A1A1D] text-xs xl:text-sm text-white rounded cursor-pointer border border-white/10 transition duration-100 hover:border-white/40"
+          className="w-full p-1.5 bg-white/[0.03] text-xs xl:text-sm text-white rounded cursor-pointer border border-white/10 transition duration-100 hover:border-white/40"
         >
           {symbols.map((s, i) => (
             <option value={s} key={i}>
@@ -172,7 +172,7 @@ export default function Filters({
         onClick={() => setIsPanelOpen(true)}
         aria-label="Open filters"
         title="Filters"
-        className={`cursor-pointer fixed left-0 top-1/2 -translate-y-1/2 z-40 inline-flex items-center justify-center gap-1 w-7 h-12 rounded-r-xl bg-[#16151C]/80 border border-l-0 border-white/10 text-white/50 hover:w-8 hover:text-white hover:bg-[#16151C] hover:border-white/25 opacity-60 hover:opacity-100 shadow-md transition-all duration-200 ${
+        className={`cursor-pointer fixed left-0 top-1/2 -translate-y-1/2 z-40 inline-flex items-center justify-center gap-1 w-7 h-12 rounded-r-xl bg-[var(--surface)]/80 border border-l-0 border-white/10 text-white/50 hover:w-8 hover:text-white hover:bg-[var(--surface)] hover:border-white/25 opacity-60 hover:opacity-100 shadow-md transition-all duration-200 ${
           isPanelOpen
             ? "opacity-0 pointer-events-none -translate-x-4"
             : "pointer-events-auto"
@@ -199,7 +199,7 @@ export default function Filters({
       {/* ── Pill sidebar - persistent push on desktop, modal overlay on
             mobile. Sits directly under the navbar pill. ── */}
       <aside
-        className={`fixed md:top-[100px] top-19 bottom-4 md:bottom-5 left-5 md:left-[max(40px,calc((100vw-1580px)/2+40px))] w-60 max-w-[85vw] bg-[#111113] border border-white/10 rounded-3xl z-30 flex flex-col shadow-2xl transition-all duration-300 ease-out ${
+        className={`fixed md:top-[100px] top-19 bottom-4 md:bottom-5 left-5 md:left-[max(40px,calc((100vw-1580px)/2+40px))] w-60 max-w-[85vw] bg-[var(--surface)] border border-white/10 rounded-3xl z-30 flex flex-col shadow-2xl transition-all duration-300 ease-out ${
           isPanelOpen
             ? "translate-x-0 opacity-100"
             : "-translate-x-[120%] opacity-0 pointer-events-none"
