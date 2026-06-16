@@ -162,7 +162,7 @@ export default function Home() {
             transition={{ duration: 0.5, ease: "easeOut" }}
             className="md:col-span-8"
           >
-            <DayPreview />
+            <DayPreviews />
           </motion.div>
         </section>
 
@@ -187,7 +187,7 @@ export default function Home() {
               Friday&rdquo; and it&apos;s in.
             </>
           }
-          preview={<QuillAIPreview />}
+          preview={<QuillAIPreviews />}
         />
 
         {/* ──────────────────────────────────────────────────────────── */}
@@ -211,7 +211,7 @@ export default function Home() {
               trader, not picked off a finance API.
             </>
           }
-          preview={<NumbersPreview />}
+          preview={<NumbersPreviews />}
         />
 
         {/* ──────────────────────────────────────────────────────────── */}
@@ -235,7 +235,7 @@ export default function Home() {
               QuillAI accepts it as a sentence.
             </>
           }
-          preview={<IBKRPreview />}
+          preview={<IBKRPreviews />}
         />
 
         {/* ──────────────────────────────────────────────────────────── */}
@@ -697,6 +697,256 @@ function IBKRPreview() {
             </div>
           ))}
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Secondary examples ──────────────────────────────────────────────
+// Each process shows a second, smaller preview beneath the main one so a
+// visitor sees more than one facet of the product per section.
+
+function DayPreviews() {
+  return (
+    <div className="flex flex-col gap-5">
+      <DayPreview />
+      <MiniCalendar />
+    </div>
+  );
+}
+
+// A month tinted by P/L - the calendar the copy promises.
+function MiniCalendar() {
+  const cells: ({ d: number; pl: number } | null)[] = [
+    { d: 2, pl: 120 }, { d: 3, pl: -60 }, { d: 4, pl: 340 }, { d: 5, pl: 0 }, { d: 6, pl: 210 },
+    { d: 9, pl: 847 }, { d: 10, pl: -180 }, { d: 11, pl: 90 }, { d: 12, pl: 410 }, { d: 13, pl: -55 },
+    { d: 16, pl: 60 }, { d: 17, pl: 220 }, { d: 18, pl: -120 }, { d: 19, pl: 300 }, { d: 20, pl: 0 },
+    { d: 23, pl: 540 }, { d: 24, pl: -210 }, { d: 25, pl: 130 }, { d: 26, pl: 75 }, { d: 27, pl: 190 },
+  ];
+  return (
+    <div className="rounded-2xl border border-white/10 bg-[var(--surface)] shadow-[0_24px_80px_var(--shadow)] p-5">
+      <div className="flex items-baseline justify-between mb-3">
+        <div className="text-[10px] uppercase tracking-[0.22em] text-white/40">
+          June · tinted by P/L
+        </div>
+        <div className="text-[13px] font-semibold tabular-nums text-green-300">
+          +$3,182
+        </div>
+      </div>
+      <div className="grid grid-cols-5 gap-1.5">
+        {["M", "T", "W", "T", "F"].map((d, i) => (
+          <div
+            key={i}
+            className="text-center text-[9px] uppercase tracking-wider text-white/30 pb-1"
+          >
+            {d}
+          </div>
+        ))}
+        {cells.map((c, i) => {
+          if (!c)
+            return (
+              <div key={i} className="aspect-square rounded-md bg-white/[0.02]" />
+            );
+          const w = c.pl > 0;
+          const l = c.pl < 0;
+          return (
+            <div
+              key={i}
+              className={`aspect-square rounded-md border flex flex-col items-center justify-center gap-0.5 ${
+                w
+                  ? "bg-green-500/12 border-green-500/20"
+                  : l
+                    ? "bg-red-500/12 border-red-500/20"
+                    : "bg-white/[0.03] border-white/10"
+              }`}
+            >
+              <span className="text-[10px] text-white/45 tabular-nums">
+                {c.d}
+              </span>
+              {c.pl !== 0 && (
+                <span
+                  className={`text-[8.5px] font-semibold tabular-nums ${
+                    w ? "text-green-300" : "text-red-300"
+                  }`}
+                >
+                  {w ? "+" : "−"}${Math.abs(c.pl)}
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function QuillAIPreviews() {
+  return (
+    <div className="flex flex-col gap-5">
+      <QuillAIPreview />
+      <MiniChat />
+    </div>
+  );
+}
+
+// Second QuillAI example: an answer that renders your actual trades.
+function MiniChat() {
+  const losses = [
+    { sym: "NVDA", strike: 140, qty: 2, pl: -118 },
+    { sym: "NVDA", strike: 145, qty: 1, pl: -64 },
+    { sym: "NVDA", strike: 138, qty: 3, pl: -201 },
+  ];
+  return (
+    <div className="rounded-2xl border border-white/10 bg-[var(--surface)] shadow-[0_24px_80px_var(--shadow)] p-5 flex flex-col gap-2">
+      <Bubble side="user">Show my last 3 NVDA losses.</Bubble>
+      <Bubble side="ai">
+        <div className="mb-1.5">
+          All <span className="text-green-300 font-semibold">CALL</span>s on Hard
+          Floor:
+        </div>
+        <div className="flex flex-col gap-1.5">
+          {losses.map((t, i) => (
+            <div
+              key={i}
+              className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/[0.05] px-2.5 py-1.5"
+            >
+              <span className="font-semibold text-[12.5px] text-white">
+                {t.sym}
+              </span>
+              <span className="text-[10.5px] text-white/45 tabular-nums">
+                {t.strike} × {t.qty}
+              </span>
+              <span className="ml-auto text-[12.5px] font-semibold tabular-nums text-red-300">
+                −${Math.abs(t.pl)}
+              </span>
+            </div>
+          ))}
+        </div>
+      </Bubble>
+    </div>
+  );
+}
+
+function NumbersPreviews() {
+  return (
+    <div className="flex flex-col gap-5">
+      <NumbersPreview />
+      <MiniStrategyTable />
+    </div>
+  );
+}
+
+// Second numbers example: win rate + net by strategy.
+function MiniStrategyTable() {
+  const rows = [
+    { name: "MA 40", win: 71, net: 1840 },
+    { name: "First Red Opening", win: 64, net: 1120 },
+    { name: "Bullish Gap", win: 52, net: 410 },
+    { name: "Hard Floor", win: 38, net: -640 },
+  ];
+  const max = Math.max(...rows.map((r) => Math.abs(r.net)));
+  return (
+    <div className="rounded-2xl border border-white/10 bg-[var(--surface)] shadow-[0_24px_80px_var(--shadow)] overflow-hidden">
+      <div className="px-5 py-3.5 border-b border-white/10 text-[10px] uppercase tracking-[0.22em] text-white/40">
+        By strategy · MTD
+      </div>
+      <div className="divide-y divide-white/[0.06]">
+        {rows.map((r, i) => {
+          const w = r.net >= 0;
+          return (
+            <div key={i} className="px-5 py-2.5 flex items-center gap-3">
+              <span className="text-[12.5px] text-white/85 w-32 truncate">
+                {r.name}
+              </span>
+              <span className="text-[11px] text-white/40 tabular-nums w-9">
+                {r.win}%
+              </span>
+              <div className="flex-1 h-1.5 rounded-full bg-white/[0.05] overflow-hidden">
+                <div
+                  className={`h-full rounded-full ${w ? "bg-green-500/70" : "bg-red-500/70"}`}
+                  style={{ width: `${(Math.abs(r.net) / max) * 100}%` }}
+                />
+              </div>
+              <span
+                className={`text-[12.5px] font-semibold tabular-nums w-16 text-right ${
+                  w ? "text-green-300" : "text-red-300"
+                }`}
+              >
+                {w ? "+" : "−"}${Math.abs(r.net)}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function IBKRPreviews() {
+  return (
+    <div className="flex flex-col gap-5">
+      <IBKRPreview />
+      <MiniImported />
+    </div>
+  );
+}
+
+// Second IBKR example: the post-sync review with a duplicate flagged.
+function MiniImported() {
+  const rows = [
+    { sym: "AAPL", opt: "PUT", strike: 230, qty: 3, pl: 285, dup: false },
+    { sym: "SPY", opt: "CALL", strike: 600, qty: 5, pl: 420, dup: false },
+    { sym: "NVDA", opt: "CALL", strike: 140, qty: 2, pl: -58, dup: true },
+  ];
+  return (
+    <div className="rounded-2xl border border-white/10 bg-[var(--surface)] shadow-[0_24px_80px_var(--shadow)] overflow-hidden">
+      <div className="px-5 py-3.5 border-b border-white/10 flex items-baseline justify-between">
+        <span className="text-[14px] font-semibold tracking-tight">
+          Imported trades
+        </span>
+        <span className="text-[11px] text-white/45">
+          3 from the last sync · <span className="text-amber-400">1 dup</span>
+        </span>
+      </div>
+      <div className="px-2 py-2 flex flex-col gap-1">
+        {rows.map((t, i) => {
+          const w = t.pl >= 0;
+          return (
+            <div
+              key={i}
+              className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/[0.04] transition"
+            >
+              <span
+                className={`shrink-0 w-11 text-center text-[10px] font-semibold uppercase tracking-wide py-1 rounded-md ${
+                  t.opt === "CALL"
+                    ? "bg-green-500/12 text-green-300"
+                    : "bg-red-500/12 text-red-300"
+                }`}
+              >
+                {t.opt}
+              </span>
+              <span className="text-[14px] font-semibold text-white">
+                {t.sym}
+              </span>
+              <span className="text-[12px] text-white/45 tabular-nums">
+                {t.strike} × {t.qty}
+              </span>
+              {t.dup && (
+                <i
+                  title="Looks like a duplicate of a trade already in your journal."
+                  className="fa-solid fa-triangle-exclamation text-amber-400/80 text-[10px]"
+                />
+              )}
+              <span
+                className={`ml-auto text-[13.5px] font-semibold tabular-nums ${
+                  w ? "text-green-300" : "text-red-300"
+                }`}
+              >
+                {w ? "+" : "−"}${Math.abs(t.pl)}
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
