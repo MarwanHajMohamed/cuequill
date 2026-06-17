@@ -277,6 +277,24 @@ export default function PricingPage() {
           })}
         </section>
 
+        {/* Quill AI feature comparison */}
+        <section className="max-w-[1000px] mx-auto pb-24 md:pb-32 border-t border-white/10 pt-16 md:pt-20">
+          <div className="text-[11px] uppercase tracking-[0.22em] text-white/40 mb-4 flex items-center gap-3">
+            <span className="w-6 h-px bg-white/30" />
+            <i className="fa-solid fa-wand-magic-sparkles text-teal-300" />
+            Quill AI
+          </div>
+          <h2 className="text-2xl md:text-3xl font-semibold tracking-tight mb-3">
+            What Quill AI can do, by plan.
+          </h2>
+          <p className="text-[13.5px] text-white/55 leading-relaxed max-w-xl mb-8">
+            The assistant that reads your own trades. Starter gets a taste;
+            Pro and Founder unlock the full conversation.
+          </p>
+
+          <QuillFeatureTable />
+        </section>
+
         {/* FAQ */}
         <section className="max-w-[900px] mx-auto pb-28 md:pb-40 border-t border-white/10 pt-16 md:pt-20">
           <h2 className="text-2xl md:text-3xl font-semibold tracking-tight mb-8">
@@ -323,6 +341,131 @@ export default function PricingPage() {
           </div>
         </div>
       </footer>
+    </div>
+  );
+}
+
+// Quill AI capabilities mapped across the three plans. `true`/`false`
+// render a check / dash; a string renders a qualifier (e.g. "Limited").
+type Cell = boolean | string;
+type QuillRow = { feature: string; note?: string; starter: Cell; pro: Cell; founder: Cell };
+
+const QUILL_ROWS: QuillRow[] = [
+  {
+    feature: "Chat with your trades",
+    note: "Ask questions in plain English",
+    starter: "5 / day",
+    pro: "Unlimited",
+    founder: "Unlimited",
+  },
+  {
+    feature: "Reads imported IBKR fills",
+    note: "Commissions and taxes included",
+    starter: false,
+    pro: true,
+    founder: true,
+  },
+  {
+    feature: "Performance analysis",
+    note: "Win rate, edge, drawdowns by strategy",
+    starter: "Basic",
+    pro: true,
+    founder: true,
+  },
+  {
+    feature: "Pattern & mistake spotting",
+    note: "Recurring setups and slip-ups",
+    starter: false,
+    pro: true,
+    founder: true,
+  },
+  {
+    feature: "Rule-adherence checks",
+    note: "Did this trade follow your rules?",
+    starter: false,
+    pro: true,
+    founder: true,
+  },
+  {
+    feature: "Natural-language trade entry",
+    note: "Log a trade as a sentence",
+    starter: false,
+    pro: true,
+    founder: true,
+  },
+  {
+    feature: "Saved threads & history",
+    starter: false,
+    pro: true,
+    founder: true,
+  },
+  {
+    feature: "Early access to new AI features",
+    starter: false,
+    pro: false,
+    founder: true,
+  },
+];
+
+function QuillCell({ value }: { value: Cell }) {
+  if (value === true)
+    return (
+      <i className="fa-solid fa-check text-teal-300 text-[12px]" aria-label="Included" />
+    );
+  if (value === false)
+    return <span className="text-white/20" aria-label="Not included">—</span>;
+  return (
+    <span className="text-[12px] font-medium text-white/70">{value}</span>
+  );
+}
+
+function QuillFeatureTable() {
+  return (
+    <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02]">
+      {/* Header row */}
+      <div className="grid grid-cols-[1.6fr_repeat(3,0.9fr)] md:grid-cols-[2fr_repeat(3,1fr)] items-center px-4 md:px-6 py-3 border-b border-white/10 bg-white/[0.02]">
+        <span className="text-[11px] uppercase tracking-[0.16em] text-white/40">
+          Capability
+        </span>
+        <span className="text-center text-[12px] font-semibold text-white/70">
+          Starter
+        </span>
+        <span className="text-center text-[12px] font-semibold text-teal-300">
+          Pro
+        </span>
+        <span className="text-center text-[12px] font-semibold text-white/70">
+          Founder
+        </span>
+      </div>
+
+      {QUILL_ROWS.map((row, i) => (
+        <div
+          key={row.feature}
+          className={`grid grid-cols-[1.6fr_repeat(3,0.9fr)] md:grid-cols-[2fr_repeat(3,1fr)] items-center px-4 md:px-6 py-3.5 ${
+            i !== QUILL_ROWS.length - 1 ? "border-b border-white/[0.07]" : ""
+          } hover:bg-white/[0.02] transition`}
+        >
+          <div className="pr-3">
+            <div className="text-[13px] font-medium text-white/85">
+              {row.feature}
+            </div>
+            {row.note && (
+              <div className="text-[11.5px] text-white/40 leading-snug mt-0.5">
+                {row.note}
+              </div>
+            )}
+          </div>
+          <div className="flex justify-center text-center">
+            <QuillCell value={row.starter} />
+          </div>
+          <div className="flex justify-center text-center">
+            <QuillCell value={row.pro} />
+          </div>
+          <div className="flex justify-center text-center">
+            <QuillCell value={row.founder} />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
