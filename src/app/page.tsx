@@ -1,10 +1,10 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import PageLoading from "./PageLoading";
 import ThemeToggle from "@/components/ThemeToggle";
 
@@ -80,60 +80,66 @@ export default function Home() {
         {/* ──────────────────────────────────────────────────────────── */}
         {/* Hero - editorial, left-aligned, single accent word in italic */}
         {/* ──────────────────────────────────────────────────────────── */}
-        <section className="max-w-[1200px] mx-auto pt-36 md:pt-48 pb-20 md:pb-32">
+        <section className="relative overflow-hidden max-w-[1200px] mx-auto pt-36 md:pt-44 pb-20 md:pb-28">
+          {/* Oversized faded backdrop word - same motif as the pricing page. */}
+          <span
+            aria-hidden
+            className="pointer-events-none select-none absolute left-1/2 -translate-x-1/2 top-24 md:top-20 text-[26vw] md:text-[20vw] font-semibold tracking-tighter leading-none text-white/[0.035]"
+          >
+            Journal
+          </span>
+
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
-            className="grid md:grid-cols-12 gap-8 md:gap-12 items-end"
+            className="relative text-center max-w-[840px] mx-auto"
           >
-            <div className="md:col-span-8">
-              <div className="text-[11px] uppercase tracking-[0.22em] text-white/40 mb-6 flex items-center gap-3">
-                <span className="w-6 h-px bg-white/30" />
-                Cuequill · v0.1
-              </div>
-              <h1 className="text-[40px] sm:text-[60px] md:text-[88px] font-semibold leading-[0.95] tracking-[-0.02em]">
-                A discretionary
-                <br />
-                options journal
-                <br />
-                that <em className="font-normal text-teal-300">remembers</em>
-                <br />
-                for you.
-              </h1>
+            <div className="text-[11px] uppercase tracking-[0.22em] text-white/40 mb-6 inline-flex items-center gap-3">
+              <span className="w-6 h-px bg-white/30" />
+              Cuequill · v0.1
+              <span className="w-6 h-px bg-white/30" />
             </div>
-
-            <div className="md:col-span-4 md:pb-3">
-              <p className="text-[14px] md:text-[15px] text-white/55 leading-relaxed mb-6 max-w-sm">
-                Built for traders who keep meaning to read their journal and
-                never do. IBKR-synced, AI-queryable, opinionated about which
-                numbers actually matter.
-              </p>
-              <div className="flex items-center gap-3 flex-wrap">
-                <Link
-                  href="/login"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/90 text-[var(--background)] hover:bg-white transition text-[13.5px] font-semibold"
-                >
-                  Sign in
-                  <i className="fa-solid fa-chevron-right text-[10px]" />
-                </Link>
-                <a
-                  href="#look"
-                  className="text-[13px] text-white/55 hover:text-white transition inline-flex items-center gap-1.5"
-                >
-                  See it first
-                  <i className="fa-solid fa-arrow-down text-[10px]" />
-                </a>
-              </div>
+            <h1 className="text-[38px] sm:text-[56px] md:text-[76px] font-semibold leading-[0.98] tracking-[-0.02em]">
+              A discretionary options journal
+              <br />
+              that <em className="font-normal text-teal-300">remembers</em> for
+              you.
+            </h1>
+            <p className="mt-6 text-[14px] md:text-[15px] text-white/55 leading-relaxed max-w-xl mx-auto">
+              Built for traders who keep meaning to read their journal and never
+              do. IBKR-synced, AI-queryable, opinionated about which numbers
+              actually matter.
+            </p>
+            <div className="mt-9 flex items-center justify-center gap-3 flex-wrap">
+              <Link
+                href="/login"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/90 text-[var(--background)] hover:bg-white transition text-[13.5px] font-semibold"
+              >
+                Sign in
+                <i className="fa-solid fa-chevron-right text-[10px]" />
+              </Link>
+              <a
+                href="#look"
+                className="px-5 py-2.5 rounded-full bg-white/[0.06] text-white border border-white/15 hover:bg-white/10 transition text-[13px] inline-flex items-center gap-1.5"
+              >
+                See it first
+                <i className="fa-solid fa-arrow-down text-[10px]" />
+              </a>
             </div>
           </motion.div>
 
-          {/* Stamps row - tabular, deliberately understated. */}
-          <div className="mt-16 md:mt-24 pt-6 border-t border-white/10 grid grid-cols-2 md:grid-cols-4 gap-y-4 gap-x-8 text-[11.5px]">
-            <Stamp k="Built for" v="US options · IBKR" />
-            <Stamp k="Imports from" v="Flex Web Service" />
-            <Stamp k="AI by" v="Google Gemini" />
-            <Stamp k="Available" v="Invite-only" />
+          {/* Built-on strip - mirrors the pricing page. */}
+          <div className="relative mt-16 md:mt-24 pt-8 border-t border-white/10">
+            <p className="text-center text-[11px] uppercase tracking-[0.22em] text-white/35 mb-6">
+              Built for · built on
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4 text-white/40">
+              <BuiltOn icon="fa-solid fa-chart-simple" label="US options" />
+              <BuiltOn icon="fa-solid fa-building-columns" label="Interactive Brokers" />
+              <BuiltOn icon="fa-solid fa-wand-magic-sparkles" label="Google Gemini" />
+              <BuiltOn icon="fa-solid fa-lock" label="Invite-only" />
+            </div>
           </div>
         </section>
 
@@ -245,13 +251,27 @@ export default function Home() {
         />
 
         {/* ──────────────────────────────────────────────────────────── */}
+        {/* FAQ - accordion, same component language as the pricing page  */}
+        {/* ──────────────────────────────────────────────────────────── */}
+        <section className="max-w-[760px] mx-auto pb-24 md:pb-32 border-t border-white/10 pt-16 md:pt-20">
+          <h2 className="text-2xl md:text-4xl font-semibold tracking-tight text-center mb-10">
+            Questions, before you start.
+          </h2>
+          <div className="rounded-2xl border border-white/10 bg-white/[0.02] divide-y divide-white/[0.07] overflow-hidden">
+            {FAQS.map((faq, i) => (
+              <FaqItem key={faq.q} q={faq.q} a={faq.a} index={i} />
+            ))}
+          </div>
+        </section>
+
+        {/* ──────────────────────────────────────────────────────────── */}
         {/* Closing - a sentence, not a sermon                           */}
         {/* ──────────────────────────────────────────────────────────── */}
-        <section className="max-w-[900px] mx-auto pb-32 md:pb-44 border-t border-white/10 pt-20 md:pt-28">
-          <h2 className="text-2xl md:text-4xl font-semibold tracking-tight leading-[1.1] max-w-2xl">
+        <section className="max-w-[760px] mx-auto pb-32 md:pb-44 border-t border-white/10 pt-20 md:pt-28 text-center">
+          <h2 className="text-2xl md:text-4xl font-semibold tracking-tight leading-[1.1]">
             Your next month doesn&apos;t have to look like last month.
           </h2>
-          <div className="mt-8 flex items-center gap-4 flex-wrap">
+          <div className="mt-8 flex items-center justify-center gap-3 flex-wrap">
             <Link
               href="/login"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/90 text-[var(--background)] hover:bg-white transition text-[13.5px] font-semibold"
@@ -259,36 +279,58 @@ export default function Home() {
               Open your journal
               <i className="fa-solid fa-chevron-right text-[10px]" />
             </Link>
-            <span className="text-[12px] text-white/40">
-              Three minutes to set up · invite-only
-            </span>
+            <Link
+              href="/pricing"
+              className="px-5 py-2.5 rounded-full bg-white/[0.06] text-white border border-white/15 hover:bg-white/10 transition text-[13px] inline-flex items-center gap-1.5"
+            >
+              See pricing
+              <i className="fa-solid fa-arrow-right text-[10px]" />
+            </Link>
           </div>
+          <p className="mt-5 text-[12px] text-white/40">
+            Three minutes to set up · invite-only
+          </p>
         </section>
       </main>
 
-      {/* Footer - quiet, single row */}
-      <footer className="px-6 md:px-10 py-8 border-t border-white/10">
-        <div className="max-w-[1200px] mx-auto flex flex-col md:flex-row justify-between items-center gap-3 text-[11.5px] text-white/40">
-          <div className="flex items-center gap-2">
-            <CuequillLogo className="h-4 w-auto opacity-70" />
-            <span>Cuequill · © {new Date().getFullYear()}</span>
+      {/* Footer - multi-column, matches the pricing page */}
+      <footer className="px-6 md:px-10 py-12 border-t border-white/10">
+        <div className="max-w-[1200px] mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
+          <div className="col-span-2 md:col-span-1">
+            <div className="flex items-center gap-2 mb-3">
+              <CuequillLogo className="h-5 w-auto" />
+              <span className="text-[14px] font-semibold tracking-tight">
+                Cuequill
+              </span>
+            </div>
+            <p className="text-[12px] text-white/40 leading-relaxed max-w-[200px]">
+              A discretionary options journal that remembers for you.
+            </p>
           </div>
-          <div className="flex items-center gap-4">
-            <a
-              href="mailto:hi@cuequill.app"
-              className="hover:text-white transition"
-            >
-              Contact
-            </a>
-            <a
-              href="https://ai.google.dev/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-white transition"
-            >
-              AI by Gemini
-            </a>
-          </div>
+          <FooterCol
+            title="Product"
+            links={[
+              { label: "Overview", href: "#look" },
+              { label: "Pricing", href: "/pricing" },
+              { label: "Sign in", href: "/login" },
+            ]}
+          />
+          <FooterCol
+            title="Resources"
+            links={[
+              { label: "Quill AI", href: "#look" },
+              { label: "IBKR sync", href: "#look" },
+            ]}
+          />
+          <FooterCol
+            title="Contact"
+            links={[
+              { label: "hi@cuequill.app", href: "mailto:hi@cuequill.app" },
+            ]}
+          />
+        </div>
+        <div className="max-w-[1200px] mx-auto mt-10 pt-6 border-t border-white/10 text-[11.5px] text-white/35">
+          Cuequill · © {new Date().getFullYear()}
         </div>
       </footer>
     </div>
@@ -297,13 +339,94 @@ export default function Home() {
 
 // ─── helpers ─────────────────────────────────────────────────────────
 
-function Stamp({ k, v }: { k: string; v: string }) {
+const FAQS: { q: string; a: string }[] = [
+  {
+    q: "What is Cuequill, exactly?",
+    a: "A journal for discretionary options traders. Log trades by hand or sync them from IBKR, review them on a P/L-tinted calendar, and ask Quill AI questions about your own trading.",
+  },
+  {
+    q: "Do I need Interactive Brokers?",
+    a: "No. Manual entry works fully on its own. IBKR sync is a convenience — drop in a Flex Web Service token and Cuequill imports every fill weeknight after close, commissions and taxes included.",
+  },
+  {
+    q: "Is it free to try?",
+    a: "Yes. The Starter plan — manual logging, calendar, core stats and rules — is free forever. You only pay when you want IBKR sync and the full Quill AI.",
+  },
+  {
+    q: "Does Quill AI use my trades to train models?",
+    a: "No. It reads your trades to answer your questions in the moment. Your journal is yours and isn't used to train models.",
+  },
+];
+
+function BuiltOn({ icon, label }: { icon: string; label: string }) {
   return (
-    <div className="flex flex-col gap-0.5">
-      <span className="uppercase tracking-[0.18em] text-white/35 text-[10px]">
-        {k}
-      </span>
-      <span className="text-white/80 tabular-nums">{v}</span>
+    <span className="inline-flex items-center gap-2 text-[13px] font-medium grayscale opacity-70 hover:opacity-100 transition">
+      <i className={`${icon} text-[14px]`} />
+      {label}
+    </span>
+  );
+}
+
+function FaqItem({ q, a, index }: { q: string; a: string; index: number }) {
+  const [open, setOpen] = useState(index === 0);
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left cursor-pointer hover:bg-white/[0.02] transition"
+        aria-expanded={open}
+      >
+        <span className="text-[14px] font-medium text-white/90">{q}</span>
+        <i
+          className={`fa-solid fa-chevron-down text-[11px] text-white/45 transition-transform duration-200 shrink-0 ${
+            open ? "-rotate-180" : ""
+          }`}
+        />
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
+            className="overflow-hidden"
+          >
+            <p className="px-5 pb-4 text-[13px] text-white/55 leading-relaxed">
+              {a}
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function FooterCol({
+  title,
+  links,
+}: {
+  title: string;
+  links: { label: string; href: string }[];
+}) {
+  return (
+    <div>
+      <h3 className="text-[11px] uppercase tracking-[0.16em] text-white/35 mb-3">
+        {title}
+      </h3>
+      <ul className="flex flex-col gap-2">
+        {links.map((l) => (
+          <li key={l.label}>
+            <Link
+              href={l.href}
+              className="text-[12.5px] text-white/55 hover:text-white transition"
+            >
+              {l.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
