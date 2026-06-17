@@ -216,6 +216,52 @@ export default function EditTradeModal({
               </button>
             </div>
 
+            {/* Status sits directly beneath direction - three buttons
+                styled to match the CALL/PUT toggle above. */}
+            <div className="mt-2 grid grid-cols-3 gap-2">
+              {(
+                [
+                  {
+                    value: "OPEN" as TradeEventType,
+                    label: "Open",
+                    activeClass:
+                      "bg-white/[0.08] border-white/30 text-white",
+                  },
+                  {
+                    value: "WIN" as TradeEventType,
+                    label: "Win",
+                    activeClass:
+                      "bg-green-500/25 border-green-500 text-green-400",
+                  },
+                  {
+                    value: "LOSS" as TradeEventType,
+                    label: "Loss",
+                    activeClass:
+                      "bg-red-500/25 border-red-500 text-red-400",
+                  },
+                ]
+              ).map((s) => {
+                const active = status === s.value;
+                return (
+                  <button
+                    key={s.value}
+                    type="button"
+                    onClick={() => {
+                      setStatus(s.value);
+                      setErrorMessage("");
+                    }}
+                    className={`px-3 py-2 rounded-lg border text-sm font-semibold transition cursor-pointer ${
+                      active
+                        ? s.activeClass
+                        : "border-white/10 text-white/60 hover:bg-white/5"
+                    }`}
+                  >
+                    {s.label}
+                  </button>
+                );
+              })}
+            </div>
+
             {errorMessage && (
               <div className="mt-3 border border-red-500/50 text-red-400 text-center text-xs py-1.5 rounded-md bg-red-500/10 shake">
                 {errorMessage}
@@ -299,46 +345,27 @@ export default function EditTradeModal({
               </Field>
             </div>
 
-            {/* Strategy / Status */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <Field label="Strategy">
-                <select
-                  value={strategy}
-                  onChange={(e) => {
-                    setStrategy(e.target.value as StrategyList);
-                    setErrorMessage("");
-                  }}
-                  className="w-full p-2 text-base bg-white/[0.03] text-white rounded border border-white/10 focus:border-white/30 focus:outline-none cursor-pointer"
-                >
-                  {strategies.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="Status">
-                <select
-                  value={status}
-                  onChange={(e) => {
-                    setStatus(e.target.value as TradeEventType);
-                    setErrorMessage("");
-                  }}
-                  className="w-full p-2 text-base bg-white/[0.03] text-white rounded border border-white/10 focus:border-white/30 focus:outline-none cursor-pointer"
-                >
-                  <option value="OPEN">Open</option>
-                  <option value="WIN">Win</option>
-                  <option value="LOSS">Loss</option>
-                </select>
-              </Field>
-            </div>
+            {/* Strategy (Status lives in the hero next to direction). */}
+            <Field label="Strategy">
+              <select
+                value={strategy}
+                onChange={(e) => {
+                  setStrategy(e.target.value as StrategyList);
+                  setErrorMessage("");
+                }}
+                className="w-full p-2 text-base bg-white/[0.03] text-white rounded border border-white/10 focus:border-white/30 focus:outline-none cursor-pointer"
+              >
+                {strategies.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </Field>
 
             {/* Closing block - only when WIN/LOSS */}
             {isClosed && (
               <div className="flex flex-col gap-3 p-3 md:p-4 border border-white/10 rounded-lg bg-white/3">
-                <div className="text-[10px] uppercase tracking-wider text-white/40">
-                  Closing details
-                </div>
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="Closing Contract">
                     <NumberInput
@@ -362,10 +389,7 @@ export default function EditTradeModal({
                     />
                   </Field>
                 </div>
-                <Field
-                  label="Fees / Commissions"
-                  hint="Optional · total round-trip"
-                >
+                <Field label="Fees / Commissions">
                   <NumberInput
                     value={fees}
                     onChange={(v) => setFees(v)}
@@ -377,7 +401,7 @@ export default function EditTradeModal({
             )}
 
             {/* Tags */}
-            <Field label="Tags" hint={`${tags.length} selected`}>
+            <Field label="Tags">
               <div className="flex flex-wrap gap-1.5">
                 {TRADE_TAG_OPTIONS.map(({ label, kind }) => {
                   const selected = tags.includes(label);
@@ -408,7 +432,7 @@ export default function EditTradeModal({
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="What did you see? What did you learn?"
+                placeholder=""
                 rows={3}
                 className="w-full p-2 text-sm text-white bg-white/[0.03] rounded border border-white/10 focus:border-white/30 focus:outline-none resize-none"
               />
