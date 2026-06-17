@@ -93,14 +93,14 @@ export default function Home() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
-            className="relative text-center max-w-[840px] mx-auto"
+            className="relative text-center max-w-[760px] mx-auto"
           >
             <div className="text-[11px] uppercase tracking-[0.22em] text-white/40 mb-6 inline-flex items-center gap-3">
               <span className="w-6 h-px bg-white/30" />
               Cuequill · v0.1
               <span className="w-6 h-px bg-white/30" />
             </div>
-            <h1 className="text-[38px] sm:text-[56px] md:text-[76px] font-semibold leading-[0.98] tracking-[-0.02em]">
+            <h1 className="text-[34px] sm:text-[48px] md:text-[58px] font-semibold leading-[1.02] tracking-[-0.02em]">
               A discretionary options journal
               <br />
               that <em className="font-normal text-teal-300">remembers</em> for
