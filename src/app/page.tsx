@@ -59,6 +59,12 @@ export default function Home() {
             </span>
           </Link>
           <div className="flex items-center gap-2">
+            <Link
+              href="/pricing"
+              className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-full text-white/60 hover:text-white transition text-[13px] font-medium"
+            >
+              Pricing
+            </Link>
             <ThemeToggle />
             <Link
               href="/login"

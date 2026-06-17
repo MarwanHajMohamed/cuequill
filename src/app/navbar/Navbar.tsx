@@ -187,6 +187,7 @@ export default function Navbar() {
     { icon: "fa-solid fa-bezier-curve", label: "Strategies", slug: "strategies" },
     { icon: "fa-solid fa-coins", label: "Stocks & ETFs", slug: "stocks" },
     { icon: "fa-solid fa-list-check", label: "Rules", slug: "rules" },
+    { icon: "fa-solid fa-tag", label: "Plans & pricing", slug: "pricing" },
     { icon: "fa-solid fa-gear", label: "Settings", slug: "settings" },
   ];
 
@@ -712,6 +713,16 @@ export default function Navbar() {
                     )}
 
                     <div className="p-1">
+                      <button
+                        className="w-full flex items-center gap-3 px-3 py-2 text-left text-[13px] rounded-lg cursor-pointer text-white/80 hover:bg-white/5 hover:text-white transition"
+                        onClick={() => {
+                          handleRoute("pricing");
+                          setOpen(false);
+                        }}
+                      >
+                        <i className="fa-solid fa-tag w-4 text-center text-white/60" />
+                        <span>Plans &amp; pricing</span>
+                      </button>
                       <button
                         className="w-full flex items-center gap-3 px-3 py-2 text-left text-[13px] rounded-lg cursor-pointer text-white/80 hover:bg-white/5 hover:text-white transition"
                         onClick={() => {
