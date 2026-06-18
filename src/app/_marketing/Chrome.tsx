@@ -134,55 +134,52 @@ export function SiteHeader() {
   );
 }
 
-// Footer - glass-card vibe to match the signed-in app. Soft hairlines,
-// no editorial type-spec line.
+// Footer - plain, no glass card. Soft hairline rules to match the app.
 export function SiteFooter() {
   return (
-    <footer className="px-6 md:px-10 pb-10">
-      <div className="max-w-[1200px] mx-auto rounded-3xl border border-white/10 bg-white/[0.02] backdrop-blur-md shadow-[0_8px_40px_var(--shadow-soft)] overflow-hidden">
-        <div className="px-6 md:px-10 py-12 grid grid-cols-2 md:grid-cols-12 gap-y-8 gap-x-6">
-          <div className="md:col-span-5 flex flex-col gap-3">
-            <Link href="/" className="flex items-center gap-2.5">
-              <CuequillLogo className="h-5 w-auto" />
-              <span className="font-semibold tracking-tight text-[13.5px]">
-                Cuequill
-              </span>
-            </Link>
-            <p className="max-w-[30ch] text-[13px] text-white/55 leading-relaxed">
-              A trading journal that remembers for you. Built for discretionary
-              US options traders.
-            </p>
-          </div>
-
-          <FooterCol
-            title="Product"
-            links={[
-              { label: "Overview", href: "/" },
-              { label: "Features", href: "/features" },
-              { label: "Pricing", href: "/pricing" },
-              { label: "Sign in", href: "/login" },
-            ]}
-          />
-          <FooterCol
-            title="Inside"
-            links={[
-              { label: "The Day View", href: "/#day" },
-              { label: "Quill AI", href: "/#quill" },
-              { label: "Numbers", href: "/#numbers" },
-              { label: "IBKR sync", href: "/#ibkr" },
-            ]}
-          />
-          <FooterCol
-            title="Contact"
-            links={[{ label: "hi@cuequill.app", href: "mailto:hi@cuequill.app" }]}
-          />
+    <footer className="border-t border-white/10">
+      <div className="max-w-[1200px] mx-auto px-6 md:px-10 py-12 grid grid-cols-2 md:grid-cols-12 gap-y-8 gap-x-6">
+        <div className="md:col-span-5 flex flex-col gap-3">
+          <Link href="/" className="flex items-center gap-2.5">
+            <CuequillLogo className="h-5 w-auto" />
+            <span className="font-semibold tracking-tight text-[13.5px]">
+              Cuequill
+            </span>
+          </Link>
+          <p className="max-w-[30ch] text-[13px] text-white/55 leading-relaxed">
+            A trading journal that remembers for you. Built for discretionary
+            US options traders.
+          </p>
         </div>
 
-        <div className="border-t border-white/10">
-          <div className="px-6 md:px-10 py-4 flex items-center justify-between text-[10.5px] uppercase tracking-[0.18em] text-white/35">
-            <span>© {new Date().getFullYear()} Cuequill</span>
-            <span>Invite-only</span>
-          </div>
+        <FooterCol
+          title="Product"
+          links={[
+            { label: "Overview", href: "/" },
+            { label: "Features", href: "/features" },
+            { label: "Pricing", href: "/pricing" },
+            { label: "Sign in", href: "/login" },
+          ]}
+        />
+        <FooterCol
+          title="Inside"
+          links={[
+            { label: "The Day View", href: "/#day" },
+            { label: "Quill AI", href: "/#quill" },
+            { label: "Numbers", href: "/#numbers" },
+            { label: "IBKR sync", href: "/#ibkr" },
+          ]}
+        />
+        <FooterCol
+          title="Contact"
+          links={[{ label: "hi@cuequill.app", href: "mailto:hi@cuequill.app" }]}
+        />
+      </div>
+
+      <div className="border-t border-white/10">
+        <div className="max-w-[1200px] mx-auto px-6 md:px-10 py-4 flex items-center justify-between text-[10.5px] uppercase tracking-[0.18em] text-white/35">
+          <span>© {new Date().getFullYear()} Cuequill</span>
+          <span>Invite-only</span>
         </div>
       </div>
     </footer>

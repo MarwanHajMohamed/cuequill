@@ -47,10 +47,9 @@ export default function Home() {
           align="right"
           heading={
             <>
-              The thing
+              A calendar tinted by
               <br />
-              you&apos;ll{" "}
-              <span className="italic text-teal-300">actually open.</span>
+              your <span className="italic text-teal-300">daily P/L.</span>
             </>
           }
           body="A calendar tinted by your P/L. Click any day, see what you did and why. No CSV exports. No pivot tables. Just the part you were going to do in Excel anyway, except you'll open it."
@@ -68,10 +67,10 @@ export default function Home() {
           align="left"
           heading={
             <>
-              An assistant that
+              Ask your trades
               <br />
-              has{" "}
-              <span className="italic text-teal-300">read your journal.</span>
+              anything, in{" "}
+              <span className="italic text-teal-300">plain English.</span>
             </>
           }
           body="Ask in plain English. Cuequill's AI answers from your trades, not the internet's. It can log a fresh fill in one sentence, then call it back when you ask."
@@ -89,9 +88,9 @@ export default function Home() {
           align="right"
           heading={
             <>
-              The ones your broker
+              Expectancy, win rate,
               <br />
-              <span className="italic text-teal-300">won&apos;t show you.</span>
+              <span className="italic text-teal-300">profit factor.</span>
             </>
           }
           body="Expectancy. Profit factor. Win rate sliced by strategy, symbol, hour. A risk budget you can't bury. Numbers chosen by a trader, not picked off a finance API."
@@ -109,9 +108,9 @@ export default function Home() {
           align="left"
           heading={
             <>
-              One token. Nightly sync.
+              Every IBKR fill,
               <br />
-              <span className="italic text-teal-300">Forget it.</span>
+              <span className="italic text-teal-300">synced nightly.</span>
             </>
           }
           body="Drop a Flex Web Service token in settings. Cuequill imports every fill weeknight after close — commissions and taxes included. Manual entry still works."
@@ -188,13 +187,6 @@ function Hero() {
               Open your journal
               <i className="fa-solid fa-arrow-right text-[10px]" />
             </Link>
-            <a
-              href="#day"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-white/15 text-white/75 hover:text-white hover:border-white/30 transition text-[12.5px]"
-            >
-              Read the issue
-              <i className="fa-solid fa-arrow-down text-[10px]" />
-            </a>
           </motion.div>
         </div>
       </div>
