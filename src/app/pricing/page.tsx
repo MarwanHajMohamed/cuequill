@@ -347,7 +347,6 @@ function PlansSpread({
               plan={plan}
               cycle={cycle}
               index={i}
-              isLast={i === PLANS.length - 1}
             />
           ))}
         </div>
@@ -360,12 +359,10 @@ function PlanColumn({
   plan,
   cycle,
   index,
-  isLast,
 }: {
   plan: Plan;
   cycle: Cycle;
   index: number;
-  isLast: boolean;
 }) {
   const isContact = plan.monthly === null;
   const price = cycle === "annual" ? plan.annual : plan.monthly;

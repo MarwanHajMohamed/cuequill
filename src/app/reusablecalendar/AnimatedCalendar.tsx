@@ -82,41 +82,28 @@ const AnimatedCalendar = forwardRef<
     );
   }, [activeStartDate, onMonthChange]);
 
-  // Safety net: whenever activeStartDate changes, the next render has just
-  // happened, so the days grid must be a fully-visible, interactive node.
-  // The animation paths below mutate inline styles to fade/slide the grid,
-  // then schedule a requestAnimationFrame to restore them. rAF doesn't fire
-  // when the tab is backgrounded, and rapid prev/next or drill-up/down can
-  // queue restores against a stale element. Either way the grid can be left
-  // at opacity: 0 / translated off-screen / pointer-events: none, which on
-  // the dashboard reads as "all white tiles". This effect forces a clean
-  // reset on any active days grid after each commit, so the broken state
-  // self-heals on the next month change rather than needing a refresh.
+  // Safety net for the days-grid animation below. The animation mutates
+  // inline opacity / transform / pointer-events on a DOM ref and relies on
+  // requestAnimationFrame to restore them after setActiveStartDate commits.
+  // rAF doesn't fire while the tab is backgrounded, and rapid prev/next or
+  // drill-up/down can leave restores queued against a stale element. Either
+  // way the grid can be left at opacity 0 / translated off-screen / pointer-
+  // events none, which on the dashboard reads as "all white tiles". This
+  // effect waits past the longest animation (about 440ms total) and forces
+  // any lingering inline styles back to neutral so the broken state always
+  // self-heals on the next month commit without a page refresh.
   useEffect(() => {
-    const days = calendarRef.current?.querySelector(
-      ".react-calendar__month-view__days",
-    ) as HTMLElement | null;
-    if (!days) return;
-    // Defer one frame so an in-flight animation gets to paint its end state
-    // before we clear styles. If the rAF chain already restored things, this
-    // is a no-op (setting empty strings on already-empty styles).
-    const id = requestAnimationFrame(() => {
+    const timer = window.setTimeout(() => {
       const el = calendarRef.current?.querySelector(
         ".react-calendar__month-view__days",
       ) as HTMLElement | null;
       if (!el) return;
-      // Only reset if the grid is currently mid-animation (opacity < 1 or
-      // any transform), so we don't fight a real animation in progress.
-      const cs = window.getComputedStyle(el);
-      const opacity = parseFloat(cs.opacity);
-      if (opacity < 1 || el.style.transform || el.style.pointerEvents) {
-        el.style.transition = "";
-        el.style.transform = "";
-        el.style.opacity = "";
-        el.style.pointerEvents = "";
-      }
-    });
-    return () => cancelAnimationFrame(id);
+      el.style.transition = "";
+      el.style.transform = "";
+      el.style.opacity = "";
+      el.style.pointerEvents = "";
+    }, 500);
+    return () => window.clearTimeout(timer);
   }, [activeStartDate]);
 
   const getDaysEl = () =>
@@ -293,10 +280,14 @@ const AnimatedCalendar = forwardRef<
 
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          days.style.transition = "transform 0.22s ease, opacity 0.22s ease";
-          days.style.transform = "translateX(0)";
-          days.style.opacity = "1";
-          days.style.pointerEvents = "";
+          // Re-query in case react-calendar replaced the grid node during
+          // the commit triggered by setActiveStartDate. Styling a stale
+          // (detached) element leaves the visible grid stuck at opacity 0.
+          const after = getDaysEl() ?? days;
+          after.style.transition = "transform 0.22s ease, opacity 0.22s ease";
+          after.style.transform = "translateX(0)";
+          after.style.opacity = "1";
+          after.style.pointerEvents = "";
         });
       });
     }, 220);

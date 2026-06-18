@@ -338,9 +338,9 @@ function FeaturesHero() {
           transition={{ duration: 0.55, delay: 0.1, ease: "easeOut" }}
           className="mt-8 max-w-xl text-[14px] text-white/65 leading-relaxed"
         >
-          Five groups, twenty-six entries. What's free, what's Pro, and what
-          you can ask Quill AI to do for you in plain English. Pricing
-          supplement&apos;s next door.
+          Five groups, twenty-six entries. What&apos;s free, what&apos;s Pro,
+          and what you can ask Quill AI to do for you in plain English.
+          Pricing supplement&apos;s next door.
         </motion.p>
 
         <motion.div
