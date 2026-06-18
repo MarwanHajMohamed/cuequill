@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { DM_Mono, Newsreader } from "next/font/google";
+import { DM_Mono } from "next/font/google";
 import "./globals.css";
 import "react-calendar/dist/Calendar.css";
 import "@/app/calendar/custom-calendar.css";
@@ -9,23 +9,13 @@ import { ToastProvider } from "@/hooks/useToast";
 import PWARegister from "./PWARegister";
 import NativeBridge from "./NativeBridge";
 
+// Single typeface for the whole app - headings inherit this via
+// globals.css, so there's no separate display/serif font.
 const dmMono = DM_Mono({
   subsets: ["latin"],
   weight: ["300", "400", "500"],
   style: ["normal", "italic"],
   display: "swap",
-});
-
-// Editorial display serif - variable font with opsz axis. Applied
-// globally to h1/h2/h3 via globals.css so every page in the app
-// (marketing + signed-in) shares the same heading typography. Body
-// stays on DM Mono.
-const newsreader = Newsreader({
-  subsets: ["latin"],
-  axes: ["opsz"],
-  style: ["normal", "italic"],
-  display: "swap",
-  variable: "--font-display",
 });
 
 export const metadata: Metadata = {
@@ -79,7 +69,7 @@ export default function RootLayout({
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css"
         />
       </head>
-      <body className={`${dmMono.className} ${newsreader.variable}`}>
+      <body className={dmMono.className}>
         <Providers>
           <ToastProvider>
             <NavbarWrapper />
