@@ -4,14 +4,13 @@ import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import PageLoading from "./PageLoading";
 import {
   FaqRow,
   SectionMark,
   SiteFooter,
   SiteHeader,
-  Standfirst,
 } from "./_marketing/Chrome";
 
 // ─── Page ────────────────────────────────────────────────────────────
@@ -23,16 +22,6 @@ export default function Home() {
   useEffect(() => {
     if (status === "authenticated") router.push("/dashboard");
   }, [status, router]);
-
-  const today = useMemo(
-    () =>
-      new Date().toLocaleDateString("en-GB", {
-        weekday: "short",
-        day: "2-digit",
-        month: "short",
-      }),
-    [],
-  );
 
   if (status === "loading") return <PageLoading />;
   if (status === "authenticated") return null;
@@ -50,13 +39,10 @@ export default function Home() {
       <SiteHeader />
 
       <main className="flex-1 pt-20">
-        <Standfirst left={`Ver 1.0 · ${today}`} right="US options" />
-
         <Hero />
 
         <FeatureSpread
           id="day"
-          n="I"
           label="The Day View"
           align="right"
           heading={
@@ -78,7 +64,6 @@ export default function Home() {
 
         <FeatureSpread
           id="quill"
-          n="II"
           label="Quill AI"
           align="left"
           heading={
@@ -100,7 +85,6 @@ export default function Home() {
 
         <FeatureSpread
           id="numbers"
-          n="III"
           label="Numbers"
           align="right"
           heading={
@@ -121,7 +105,6 @@ export default function Home() {
 
         <FeatureSpread
           id="ibkr"
-          n="IV"
           label="IBKR sync"
           align="left"
           heading={
@@ -154,27 +137,26 @@ export default function Home() {
 
 function Hero() {
   return (
-    <section className="border-b border-[var(--rule)] px-6 md:px-10">
+    <section className="px-6 md:px-10">
       <div className="max-w-[1200px] mx-auto py-20 md:py-32">
         <div className="flex flex-col">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.4 }}
-            className="text-[10.5px] uppercase tracking-[0.24em] text-white/45 mb-8 flex items-center gap-3"
+            className="mb-8"
           >
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
-            Front page
-            <span className="h-px w-10 bg-[var(--rule)]" />
-            <span className="text-white/30">Est. 2026</span>
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[10.5px] uppercase tracking-[0.2em] text-white/55">
+              <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
+              Trading journal · v1.0
+            </span>
           </motion.div>
 
           <motion.h1
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, ease: "easeOut" }}
-            className="text-[48px] sm:text-[72px] md:text-[100px] leading-[0.92] font-medium tracking-[-0.025em]"
-            style={{ fontVariationSettings: '"opsz" 144' }}
+            className="text-[40px] sm:text-[60px] md:text-[76px] leading-[0.98] font-medium tracking-[-0.025em]"
           >
             Know why you make money.{" "}
             <span className="italic font-normal text-teal-300">
@@ -226,7 +208,6 @@ function Hero() {
 
 function FeatureSpread({
   id,
-  n,
   label,
   align,
   heading,
@@ -235,7 +216,6 @@ function FeatureSpread({
   preview,
 }: {
   id: string;
-  n: string;
   label: string;
   align: "left" | "right";
   heading: React.ReactNode;
@@ -247,7 +227,7 @@ function FeatureSpread({
   return (
     <section
       id={id}
-      className="border-b border-[var(--rule)] px-6 md:px-10 py-20 md:py-28"
+      className="px-6 md:px-10 py-20 md:py-28"
     >
       <div className="max-w-[1200px] mx-auto grid md:grid-cols-12 gap-10 md:gap-12 items-start">
         <motion.div
@@ -257,12 +237,9 @@ function FeatureSpread({
           transition={{ duration: 0.5, ease: "easeOut" }}
           className={`md:col-span-5 ${textOnLeft ? "md:order-1" : "md:order-2"} md:sticky md:top-28 self-start`}
         >
-          <SectionMark n={n} label={label} />
+          <SectionMark label={label} />
 
-          <h2
-            className="mt-8 text-[36px] md:text-[52px] leading-[1.02] font-medium tracking-[-0.02em]"
-            style={{ fontVariationSettings: '"opsz" 72' }}
-          >
+          <h2 className="mt-6 text-[34px] md:text-[48px] leading-[1.04] font-medium tracking-[-0.02em]">
             {heading}
           </h2>
 
@@ -270,7 +247,7 @@ function FeatureSpread({
             {body}
           </p>
 
-          <dl className="mt-8 grid grid-cols-3 gap-x-4 gap-y-3 max-w-md border-t border-[var(--rule)] pt-5">
+          <dl className="mt-8 grid grid-cols-3 gap-x-4 gap-y-3 max-w-md border-t border-white/10 pt-5">
             {stats.map(([k, v]) => (
               <div key={k} className="flex flex-col gap-0.5">
                 <dt className="text-[10px] uppercase tracking-[0.18em] text-white/35">
@@ -319,20 +296,17 @@ const FAQS: { q: string; a: string }[] = [
 
 function FaqSection() {
   return (
-    <section className="border-b border-[var(--rule)] px-6 md:px-10 py-20 md:py-28">
+    <section className="px-6 md:px-10 py-20 md:py-28">
       <div className="max-w-[1200px] mx-auto grid md:grid-cols-12 gap-10">
         <div className="md:col-span-4">
-          <SectionMark n="V" label="Letters" />
-          <h2
-            className="mt-8 text-[36px] md:text-[44px] leading-[1.02] font-medium tracking-[-0.02em]"
-            style={{ fontVariationSettings: '"opsz" 72' }}
-          >
+          <SectionMark label="FAQ" />
+          <h2 className="mt-6 text-[32px] md:text-[40px] leading-[1.04] font-medium tracking-[-0.02em]">
             Questions, before
             <br />
             <span className="italic text-teal-300">you start.</span>
           </h2>
           <p className="mt-5 max-w-xs text-[13px] text-white/55 leading-relaxed">
-            More in the pricing supplement, or write directly.
+            More on the pricing page, or write directly.
           </p>
           <a
             href="mailto:hi@cuequill.app"
@@ -342,7 +316,7 @@ function FaqSection() {
             <i className="fa-solid fa-arrow-up-right-from-square text-[10px]" />
           </a>
         </div>
-        <div className="md:col-span-8 md:border-l md:border-[var(--rule)] md:pl-10 divide-y divide-[var(--rule)]">
+        <div className="md:col-span-8 rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur-md shadow-[0_8px_40px_var(--shadow-soft)] divide-y divide-white/[0.07] overflow-hidden">
           {FAQS.map((faq, i) => (
             <FaqRow key={faq.q} q={faq.q} a={faq.a} index={i} />
           ))}
@@ -356,17 +330,14 @@ function FaqSection() {
 
 function Signoff() {
   return (
-    <section className="px-6 md:px-10 py-28 md:py-36">
-      <div className="max-w-[1200px] mx-auto">
-        <SectionMark n="✶" label="End note" />
-        <h2
-          className="mt-10 text-[44px] sm:text-[64px] md:text-[88px] leading-[0.95] font-medium tracking-[-0.025em] max-w-4xl"
-          style={{ fontVariationSettings: '"opsz" 144' }}
-        >
+    <section className="px-6 md:px-10 py-20 md:py-28">
+      <div className="max-w-[1200px] mx-auto rounded-3xl border border-white/10 bg-white/[0.02] backdrop-blur-md shadow-[0_8px_40px_var(--shadow-soft)] p-8 md:p-14">
+        <SectionMark label="Get started" />
+        <h2 className="mt-6 text-[36px] sm:text-[52px] md:text-[68px] leading-[0.98] font-medium tracking-[-0.025em] max-w-4xl">
           Your next month doesn&apos;t have to look like{" "}
           <span className="italic text-teal-300">last month.</span>
         </h2>
-        <div className="mt-12 flex items-center gap-3 flex-wrap">
+        <div className="mt-10 flex items-center gap-3 flex-wrap">
           <Link
             href="/login"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 transition text-[13px] font-medium"
@@ -418,7 +389,7 @@ function PreviewClipping({
 
 function DayPreview() {
   return (
-    <PreviewClipping caption="Fig. 1 — Day modal" meta="Mon · June 9">
+    <PreviewClipping caption="Day view" meta="Mon · June 9">
       <div className="px-5 md:px-6 py-5 border-b border-[var(--rule)] flex items-baseline justify-between gap-3 flex-wrap">
         <div>
           <p className="text-[10px] uppercase tracking-[0.22em] text-white/40 mb-1.5">
@@ -525,7 +496,7 @@ function DayPreview() {
 
 function QuillAIPreview() {
   return (
-    <PreviewClipping caption="Fig. 2 — Quill AI" meta="347 trades read">
+    <PreviewClipping caption="Quill AI" meta="347 trades read">
       <div className="px-5 md:px-6 pt-5 pb-3">
         <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-teal-500/10 text-teal-300 border border-teal-500/25 text-[11px] uppercase tracking-[0.16em] font-medium">
           <i className="fa-solid fa-wand-magic-sparkles text-[10px]" />
@@ -588,7 +559,7 @@ function Bubble({
 
 function NumbersPreview() {
   return (
-    <PreviewClipping caption="Fig. 3 — Statistics" meta="MTD">
+    <PreviewClipping caption="Statistics" meta="MTD">
       <div className="px-5 md:px-6 pt-5 pb-2">
         <p className="text-[10px] uppercase tracking-[0.22em] text-white/40 mb-1">
           Expectancy
@@ -657,7 +628,7 @@ function NumbersPreview() {
 
 function IBKRPreview() {
   return (
-    <PreviewClipping caption="Fig. 4 — IBKR sync" meta="Last run 22:00 ET">
+    <PreviewClipping caption="IBKR sync" meta="Last run 22:00 ET">
       <div className="px-5 md:px-6 py-4 border-b border-[var(--rule)] flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3">
           <span className="relative flex items-center justify-center w-9 h-9 rounded-xl border border-teal-500/25 bg-teal-500/10 text-teal-300">
