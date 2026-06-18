@@ -30,7 +30,6 @@ export default function Home() {
         weekday: "short",
         day: "2-digit",
         month: "short",
-        year: "numeric",
       }),
     [],
   );
@@ -51,10 +50,7 @@ export default function Home() {
       <SiteHeader />
 
       <main className="flex-1 pt-20">
-        <Standfirst
-          left={`Ver 1.0 · ${today}`}
-          right="Discretionary US options · Invite only"
-        />
+        <Standfirst left={`Ver 1.0 · ${today}`} right="US options" />
 
         <Hero />
 
@@ -180,9 +176,10 @@ function Hero() {
             className="text-[48px] sm:text-[72px] md:text-[100px] leading-[0.92] font-medium tracking-[-0.025em]"
             style={{ fontVariationSettings: '"opsz" 144' }}
           >
-            A trading journal that{" "}
-            <span className="italic font-normal text-teal-300">remembers</span>{" "}
-            for you.
+            Know why you make money.{" "}
+            <span className="italic font-normal text-teal-300">
+              And why you don&apos;t.
+            </span>
           </motion.h1>
 
           <motion.p

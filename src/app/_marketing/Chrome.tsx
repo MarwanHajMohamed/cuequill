@@ -36,12 +36,24 @@ export const CuequillLogo = ({ className = "" }: { className?: string }) => (
 );
 
 // Pill navbar - preserved from the previous landing page per the brief.
-// Glass-pill structure, fixed at top, centered up to a max width.
+// Glass-pill structure, fixed at top, centered up to a max width. On
+// phones the Features / Pricing links and Sign in pill collapse behind
+// a single hamburger that expands a sheet menu so all three remain
+// reachable without crowding the pill.
 export function SiteHeader() {
+  const [menuOpen, setMenuOpen] = useState(false);
+
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 flex justify-center pointer-events-none px-3 md:px-10">
-      <div className="pointer-events-auto flex justify-between items-center w-full max-w-[1200px] mt-5 py-2 pl-3 pr-2 bg-white/[0.03] backdrop-blur-md rounded-full border border-white/10 shadow-[0_2px_24px_var(--shadow-soft)]">
-        <Link href="/" className="flex items-center gap-2 pl-2 pr-3 py-1">
+    <header
+      className="fixed top-0 left-0 right-0 z-50 flex flex-col items-center pointer-events-none px-3 md:px-10"
+      style={{ paddingTop: "env(safe-area-inset-top)" }}
+    >
+      <div className="pointer-events-auto flex justify-between items-center w-full max-w-[1200px] mt-3 md:mt-5 py-2 pl-3 pr-2 bg-white/[0.03] backdrop-blur-md rounded-full border border-white/10 shadow-[0_2px_24px_var(--shadow-soft)]">
+        <Link
+          href="/"
+          className="flex items-center gap-2 pl-2 pr-3 py-1"
+          onClick={() => setMenuOpen(false)}
+        >
           <CuequillLogo className="h-6 w-auto" />
           <span className="text-[13.5px] font-semibold tracking-tight">
             Cuequill
@@ -63,12 +75,61 @@ export function SiteHeader() {
           <ThemeToggle />
           <Link
             href="/login"
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[12.5px] font-medium"
+            className="hidden sm:inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[12.5px] font-medium"
           >
             Sign in
           </Link>
+          <button
+            type="button"
+            onClick={() => setMenuOpen((o) => !o)}
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={menuOpen}
+            className="sm:hidden inline-flex items-center justify-center w-9 h-9 rounded-full border border-white/15 text-white/80 hover:text-white hover:border-white/30 transition cursor-pointer"
+          >
+            <i
+              className={`fa-solid ${menuOpen ? "fa-xmark" : "fa-bars"} text-[14px]`}
+            />
+          </button>
         </div>
       </div>
+
+      {/* Mobile sheet menu - drops below the pill, matches its glass. */}
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="sm:hidden pointer-events-auto w-full max-w-[1200px] mt-2 px-3"
+          >
+            <div className="flex flex-col rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md shadow-[0_2px_24px_var(--shadow-soft)] overflow-hidden">
+              <Link
+                href="/features"
+                onClick={() => setMenuOpen(false)}
+                className="px-5 py-3.5 text-[14px] text-white/80 hover:text-white hover:bg-white/[0.04] border-b border-[var(--rule)] transition"
+              >
+                Features
+              </Link>
+              <Link
+                href="/pricing"
+                onClick={() => setMenuOpen(false)}
+                className="px-5 py-3.5 text-[14px] text-white/80 hover:text-white hover:bg-white/[0.04] border-b border-[var(--rule)] transition"
+              >
+                Pricing
+              </Link>
+              <Link
+                href="/login"
+                onClick={() => setMenuOpen(false)}
+                className="px-5 py-3.5 text-[14px] font-medium text-teal-300 hover:bg-teal-500/[0.08] transition inline-flex items-center justify-between"
+              >
+                Sign in
+                <i className="fa-solid fa-arrow-right text-[11px]" />
+              </Link>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
   );
 }
