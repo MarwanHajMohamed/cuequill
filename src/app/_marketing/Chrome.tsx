@@ -134,69 +134,55 @@ export function SiteHeader() {
   );
 }
 
-// Standfirst strip - mono ticker under the navbar. Sets the daily
-// market memo voice. Inline data tokens, hairline divider above
-// everything.
-export function Standfirst({ left, right }: { left: string; right: string }) {
-  return (
-    <div className="border-b border-[var(--rule)]">
-      <div className="max-w-[1200px] mx-auto px-6 md:px-10 py-3 flex items-center justify-between text-[10.5px] uppercase tracking-[0.22em] text-white/40 gap-4">
-        <span className="truncate">{left}</span>
-        <span className="truncate text-right tabular-nums">{right}</span>
-      </div>
-    </div>
-  );
-}
-
-// Footer - two-tier, mono labels. No glass cards.
+// Footer - glass-card vibe to match the signed-in app. Soft hairlines,
+// no editorial type-spec line.
 export function SiteFooter() {
   return (
-    <footer className="border-t border-[var(--rule)]">
-      <div className="max-w-[1200px] mx-auto px-6 md:px-10 py-12 grid grid-cols-2 md:grid-cols-12 gap-y-8 gap-x-6">
-        <div className="md:col-span-5 flex flex-col gap-3">
-          <Link href="/" className="flex items-center gap-2.5">
-            <CuequillLogo className="h-5 w-auto" />
-            <span className="font-semibold tracking-tight text-[13.5px]">
-              Cuequill
-            </span>
-          </Link>
-          <p className="max-w-[28ch] text-[13px] text-white/55 leading-relaxed italic font-display">
-            A trading journal that remembers for you. Built for discretionary US
-            options traders.
-          </p>
+    <footer className="px-6 md:px-10 pb-10">
+      <div className="max-w-[1200px] mx-auto rounded-3xl border border-white/10 bg-white/[0.02] backdrop-blur-md shadow-[0_8px_40px_var(--shadow-soft)] overflow-hidden">
+        <div className="px-6 md:px-10 py-12 grid grid-cols-2 md:grid-cols-12 gap-y-8 gap-x-6">
+          <div className="md:col-span-5 flex flex-col gap-3">
+            <Link href="/" className="flex items-center gap-2.5">
+              <CuequillLogo className="h-5 w-auto" />
+              <span className="font-semibold tracking-tight text-[13.5px]">
+                Cuequill
+              </span>
+            </Link>
+            <p className="max-w-[30ch] text-[13px] text-white/55 leading-relaxed">
+              A trading journal that remembers for you. Built for discretionary
+              US options traders.
+            </p>
+          </div>
+
+          <FooterCol
+            title="Product"
+            links={[
+              { label: "Overview", href: "/" },
+              { label: "Features", href: "/features" },
+              { label: "Pricing", href: "/pricing" },
+              { label: "Sign in", href: "/login" },
+            ]}
+          />
+          <FooterCol
+            title="Inside"
+            links={[
+              { label: "The Day View", href: "/#day" },
+              { label: "Quill AI", href: "/#quill" },
+              { label: "Numbers", href: "/#numbers" },
+              { label: "IBKR sync", href: "/#ibkr" },
+            ]}
+          />
+          <FooterCol
+            title="Contact"
+            links={[{ label: "hi@cuequill.app", href: "mailto:hi@cuequill.app" }]}
+          />
         </div>
 
-        <FooterCol
-          title="Read"
-          links={[
-            { label: "Overview", href: "/" },
-            { label: "Features", href: "/features" },
-            { label: "Pricing", href: "/pricing" },
-            { label: "Sign in", href: "/login" },
-          ]}
-        />
-        <FooterCol
-          title="Inside"
-          links={[
-            { label: "The Day View", href: "/#day" },
-            { label: "Quill AI", href: "/#quill" },
-            { label: "Numbers", href: "/#numbers" },
-            { label: "IBKR sync", href: "/#ibkr" },
-          ]}
-        />
-        <FooterCol
-          title="Contact"
-          links={[{ label: "hi@cuequill.app", href: "mailto:hi@cuequill.app" }]}
-        />
-      </div>
-
-      <div className="border-t border-[var(--rule)]">
-        <div className="max-w-[1200px] mx-auto px-6 md:px-10 py-4 flex items-center justify-between text-[10.5px] uppercase tracking-[0.22em] text-white/35">
-          <span>© {new Date().getFullYear()} Cuequill</span>
-          <span className="hidden sm:inline">
-            Set in Newsreader &amp; DM Mono
-          </span>
-          <span>Invite-only</span>
+        <div className="border-t border-white/10">
+          <div className="px-6 md:px-10 py-4 flex items-center justify-between text-[10.5px] uppercase tracking-[0.18em] text-white/35">
+            <span>© {new Date().getFullYear()} Cuequill</span>
+            <span>Invite-only</span>
+          </div>
         </div>
       </div>
     </footer>
@@ -212,10 +198,7 @@ function FooterCol({
 }) {
   return (
     <div className="md:col-span-2">
-      <h3
-        className="text-[10.5px] uppercase tracking-[0.22em] text-white/40 mb-3 font-medium"
-        style={{ fontFamily: "inherit", fontVariationSettings: "normal" }}
-      >
+      <h3 className="text-[10.5px] uppercase tracking-[0.2em] text-white/40 mb-3 font-medium">
         {title}
       </h3>
       <ul className="flex flex-col gap-1.5 text-[12.5px]">
@@ -234,8 +217,8 @@ function FooterCol({
   );
 }
 
-// FAQ row - serif question, plus/cross expand, mono body. Reused
-// across landing + pricing.
+// FAQ row - glass accordion item to match the app. Meant to live inside
+// a rounded glass card with `divide-y divide-white/[0.07]`.
 export function FaqRow({
   q,
   a,
@@ -247,27 +230,19 @@ export function FaqRow({
 }) {
   const [open, setOpen] = useState(index === 0);
   return (
-    <div className="group">
+    <div>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between gap-6 py-5 text-left cursor-pointer"
+        className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left cursor-pointer hover:bg-white/[0.02] transition"
         aria-expanded={open}
       >
-        <span className="text-[20px] md:text-[22px] leading-snug tracking-[-0.01em] text-white/90 group-hover:text-white transition">
-          {q}
-        </span>
-        <span
-          className={`shrink-0 w-7 h-7 rounded-full border border-[var(--rule)] flex items-center justify-center text-white/55 group-hover:text-white group-hover:border-white/40 transition tabular-nums text-[11px] ${
-            open ? "bg-teal-500/10 border-teal-500/40 text-teal-300" : ""
+        <span className="text-[14px] font-medium text-white/90">{q}</span>
+        <i
+          className={`fa-solid fa-chevron-down text-[11px] text-white/45 transition-transform duration-200 shrink-0 ${
+            open ? "-rotate-180" : ""
           }`}
-        >
-          <i
-            className={`fa-solid fa-plus text-[10px] transition-transform duration-200 ${
-              open ? "rotate-45" : ""
-            }`}
-          />
-        </span>
+        />
       </button>
       <AnimatePresence initial={false}>
         {open && (
@@ -278,7 +253,7 @@ export function FaqRow({
             transition={{ duration: 0.22, ease: "easeOut" }}
             className="overflow-hidden"
           >
-            <p className="pb-5 pr-12 text-[13px] text-white/60 leading-relaxed">
+            <p className="px-5 pb-4 text-[13px] text-white/55 leading-relaxed">
               {a}
             </p>
           </motion.div>
@@ -288,18 +263,13 @@ export function FaqRow({
   );
 }
 
-// Tiny utility - small section folio marker. Roman numeral in serif
-// italic + uppercase mono label, divided by a hairline.
-export function SectionMark({ n, label }: { n: string; label: string }) {
+// Section kicker - glass pill with a teal dot, matching the chips used
+// across the signed-in app. (Replaced the old serif Roman-numeral mark.)
+export function SectionMark({ label }: { label: string }) {
   return (
-    <div className="flex items-baseline gap-3 md:gap-4">
-      <span className="font-display italic text-teal-300 text-[20px] md:text-[22px] tabular-nums">
-        {n}
-      </span>
-      <span className="h-px flex-1 bg-[var(--rule)] max-w-[120px] translate-y-[-3px]" />
-      <span className="text-[10.5px] uppercase tracking-[0.22em] text-white/45">
-        {label}
-      </span>
-    </div>
+    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[10.5px] uppercase tracking-[0.2em] text-white/55">
+      <span className="w-1.5 h-1.5 rounded-full bg-teal-400" />
+      {label}
+    </span>
   );
 }

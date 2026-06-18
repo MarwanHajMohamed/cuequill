@@ -2,13 +2,12 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   FaqRow,
   SectionMark,
   SiteFooter,
   SiteHeader,
-  Standfirst,
 } from "../_marketing/Chrome";
 
 // ─── Data ────────────────────────────────────────────────────────────
@@ -185,17 +184,6 @@ const FAQS: { q: string; a: string }[] = [
 export default function PricingPage() {
   const [cycle, setCycle] = useState<Cycle>("annual");
 
-  const today = useMemo(
-    () =>
-      new Date().toLocaleDateString("en-GB", {
-        weekday: "short",
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      }),
-    [],
-  );
-
   return (
     <div className="min-h-screen flex flex-col">
       {/* Same fixed teal/indigo aurora wash used on the journal page so
@@ -211,8 +199,6 @@ export default function PricingPage() {
       <SiteHeader />
 
       <main className="flex-1 pt-20">
-        <Standfirst left={`Pricing Supplement · ${today}`} right="2 Tiers " />
-
         <PricingHero />
 
         <PlansSpread cycle={cycle} setCycle={setCycle} />
@@ -233,27 +219,26 @@ export default function PricingPage() {
 
 function PricingHero() {
   return (
-    <section className="border-b border-[var(--rule)] px-6 md:px-10">
+    <section className="px-6 md:px-10">
       <div className="max-w-[1200px] mx-auto py-20 md:py-28">
         <div className="flex flex-col">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.4 }}
-            className="text-[10.5px] uppercase tracking-[0.24em] text-white/45 mb-8 flex items-center gap-3"
+            className="mb-8"
           >
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-teal-400" />
-            Pricing
-            <span className="h-px w-10 bg-[var(--rule)]" />
-            <span className="text-white/30">Two tiers</span>
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[10.5px] uppercase tracking-[0.2em] text-white/55">
+              <span className="w-1.5 h-1.5 rounded-full bg-teal-400" />
+              Pricing · two tiers
+            </span>
           </motion.div>
 
           <motion.h1
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, ease: "easeOut" }}
-            className="text-[44px] sm:text-[64px] md:text-[86px] leading-[0.94] font-medium tracking-[-0.025em]"
-            style={{ fontVariationSettings: '"opsz" 144' }}
+            className="text-[40px] sm:text-[60px] md:text-[76px] leading-[0.98] font-medium tracking-[-0.025em]"
           >
             Free for as long as you want.{" "}
             <span className="italic font-normal text-teal-300">
@@ -325,15 +310,12 @@ function PlansSpread({
   setCycle: (c: Cycle) => void;
 }) {
   return (
-    <section className="border-b border-[var(--rule)] px-6 md:px-10 py-20 md:py-28">
+    <section className="px-6 md:px-10 py-20 md:py-28">
       <div className="max-w-[1100px] mx-auto">
-        <SectionMark n="I" label="The tiers" />
+        <SectionMark label="Plans" />
 
-        <div className="mt-8 flex flex-col md:flex-row md:items-end md:justify-between gap-6 md:gap-10">
-          <h2
-            className="text-[36px] md:text-[52px] leading-[1.02] font-medium tracking-[-0.02em] max-w-3xl"
-            style={{ fontVariationSettings: '"opsz" 72' }}
-          >
+        <div className="mt-6 flex flex-col md:flex-row md:items-end md:justify-between gap-6 md:gap-10">
+          <h2 className="text-[32px] md:text-[48px] leading-[1.04] font-medium tracking-[-0.02em] max-w-3xl">
             Two tiers.{" "}
             <span className="italic text-teal-300">No hidden fees.</span>
           </h2>
@@ -497,13 +479,10 @@ function PlanColumn({
 
 function CompareSection({ cycle }: { cycle: Cycle }) {
   return (
-    <section className="border-b border-[var(--rule)] px-6 md:px-10 py-20 md:py-28">
+    <section className="px-6 md:px-10 py-20 md:py-28">
       <div className="max-w-[1200px] mx-auto">
-        <SectionMark n="II" label="The lineage" />
-        <h2
-          className="mt-8 text-[36px] md:text-[44px] leading-[1.02] font-medium tracking-[-0.02em]"
-          style={{ fontVariationSettings: '"opsz" 72' }}
-        >
+        <SectionMark label="Compare" />
+        <h2 className="mt-6 text-[32px] md:text-[40px] leading-[1.04] font-medium tracking-[-0.02em]">
           What sits inside each tier.
         </h2>
 
@@ -612,14 +591,11 @@ function CompareCell({ value, accent }: { value: Cell; accent?: boolean }) {
 
 function FaqSection() {
   return (
-    <section className="border-b border-[var(--rule)] px-6 md:px-10 py-20 md:py-28">
+    <section className="px-6 md:px-10 py-20 md:py-28">
       <div className="max-w-[1200px] mx-auto grid md:grid-cols-12 gap-10">
         <div className="md:col-span-4">
-          <SectionMark n="III" label="Letters" />
-          <h2
-            className="mt-8 text-[36px] md:text-[44px] leading-[1.02] font-medium tracking-[-0.02em]"
-            style={{ fontVariationSettings: '"opsz" 72' }}
-          >
+          <SectionMark label="FAQ" />
+          <h2 className="mt-6 text-[32px] md:text-[40px] leading-[1.04] font-medium tracking-[-0.02em]">
             Frequently <span className="italic text-teal-300">asked.</span>
           </h2>
           <p className="mt-5 max-w-xs text-[13px] text-white/55 leading-relaxed">
@@ -633,7 +609,7 @@ function FaqSection() {
             <i className="fa-solid fa-arrow-up-right-from-square text-[10px]" />
           </a>
         </div>
-        <div className="md:col-span-8 md:border-l md:border-[var(--rule)] md:pl-10 divide-y divide-[var(--rule)]">
+        <div className="md:col-span-8 rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur-md shadow-[0_8px_40px_var(--shadow-soft)] divide-y divide-white/[0.07] overflow-hidden">
           {FAQS.map((faq, i) => (
             <FaqRow key={faq.q} q={faq.q} a={faq.a} index={i} />
           ))}
@@ -647,19 +623,16 @@ function FaqSection() {
 
 function Signoff() {
   return (
-    <section className="px-6 md:px-10 py-28 md:py-36">
-      <div className="max-w-[1200px] mx-auto">
-        <SectionMark n="✶" label="Sign-off" />
-        <h2
-          className="mt-10 text-[44px] sm:text-[60px] md:text-[80px] leading-[0.95] font-medium tracking-[-0.025em] max-w-4xl"
-          style={{ fontVariationSettings: '"opsz" 144' }}
-        >
+    <section className="px-6 md:px-10 py-20 md:py-28">
+      <div className="max-w-[1200px] mx-auto rounded-3xl border border-white/10 bg-white/[0.02] backdrop-blur-md shadow-[0_8px_40px_var(--shadow-soft)] p-8 md:p-14">
+        <SectionMark label="Get started" />
+        <h2 className="mt-6 text-[36px] sm:text-[52px] md:text-[64px] leading-[0.98] font-medium tracking-[-0.025em] max-w-4xl">
           Start free, today.{" "}
           <span className="italic text-teal-300">
             Upgrade when you mean it.
           </span>
         </h2>
-        <div className="mt-12 flex items-center gap-3 flex-wrap">
+        <div className="mt-10 flex items-center gap-3 flex-wrap">
           <Link
             href="/login"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 transition text-[13px] font-medium"
