@@ -1,0 +1,244 @@
+"use client";
+
+import { AnimatePresence, motion } from "framer-motion";
+import Link from "next/link";
+import { useState } from "react";
+import ThemeToggle from "@/components/ThemeToggle";
+
+// Shared chrome for the marketing surfaces (landing + pricing). Lives
+// under `_marketing` so Next's file-router treats it as private and
+// doesn't try to route it. Each page file can only have a default
+// export, so anything reused between pages goes here.
+
+export const CuequillLogo = ({ className = "" }: { className?: string }) => (
+  <svg
+    viewBox="16 25 30 52"
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+    fill="none"
+    aria-label="Cuequill"
+  >
+    <path
+      d="M31 27.2C37 39.8 43.5 61.2 40.5 62.6C37.5 64 31 75.2 31 75.2C31 75.2 24.5 64.5 21.5 62.6C18.5 60.7 25 39.8 31 27.2Z"
+      fill="currentColor"
+    />
+    <path
+      d="M31 47V75"
+      style={{ stroke: "var(--background)" }}
+      strokeWidth="1.32"
+      strokeLinecap="round"
+    />
+    <path
+      d="M31 54.56C31.8616 54.56 32.56 53.8616 32.56 53C32.56 52.1384 31.8616 51.44 31 51.44C30.1384 51.44 29.44 52.1384 29.44 53C29.44 53.8616 30.1384 54.56 31 54.56Z"
+      style={{ fill: "var(--background)" }}
+    />
+  </svg>
+);
+
+// Pill navbar - preserved from the previous landing page per the brief.
+// Glass-pill structure, fixed at top, centered up to a max width.
+export function SiteHeader() {
+  return (
+    <header className="fixed top-0 left-0 right-0 z-50 flex justify-center pointer-events-none px-3 md:px-10">
+      <div className="pointer-events-auto flex justify-between items-center w-full max-w-[1200px] mt-5 py-2 pl-3 pr-2 bg-white/[0.03] backdrop-blur-md rounded-full border border-white/10 shadow-[0_2px_24px_var(--shadow-soft)]">
+        <Link href="/" className="flex items-center gap-2 pl-2 pr-3 py-1">
+          <CuequillLogo className="h-6 w-auto" />
+          <span className="text-[13.5px] font-semibold tracking-tight">
+            Cuequill
+          </span>
+        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/features"
+            className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-full text-white/55 hover:text-white transition text-[12.5px]"
+          >
+            Features
+          </Link>
+          <Link
+            href="/pricing"
+            className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-full text-white/55 hover:text-white transition text-[12.5px]"
+          >
+            Pricing
+          </Link>
+          <ThemeToggle />
+          <Link
+            href="/login"
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[12.5px] font-medium"
+          >
+            Sign in
+          </Link>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+// Standfirst strip - mono ticker under the navbar. Sets the daily
+// market memo voice. Inline data tokens, hairline divider above
+// everything.
+export function Standfirst({ left, right }: { left: string; right: string }) {
+  return (
+    <div className="border-b border-[var(--rule)]">
+      <div className="max-w-[1200px] mx-auto px-6 md:px-10 py-3 flex items-center justify-between text-[10.5px] uppercase tracking-[0.22em] text-white/40 gap-4">
+        <span className="truncate">{left}</span>
+        <span className="truncate text-right tabular-nums">{right}</span>
+      </div>
+    </div>
+  );
+}
+
+// Footer - two-tier, mono labels. No glass cards.
+export function SiteFooter() {
+  return (
+    <footer className="border-t border-[var(--rule)]">
+      <div className="max-w-[1200px] mx-auto px-6 md:px-10 py-12 grid grid-cols-2 md:grid-cols-12 gap-y-8 gap-x-6">
+        <div className="md:col-span-5 flex flex-col gap-3">
+          <Link href="/" className="flex items-center gap-2.5">
+            <CuequillLogo className="h-5 w-auto" />
+            <span className="font-semibold tracking-tight text-[13.5px]">
+              Cuequill
+            </span>
+          </Link>
+          <p className="max-w-[28ch] text-[13px] text-white/55 leading-relaxed italic font-display">
+            A trading journal that remembers for you. Built for discretionary US
+            options traders.
+          </p>
+        </div>
+
+        <FooterCol
+          title="Read"
+          links={[
+            { label: "Overview", href: "/" },
+            { label: "Features", href: "/features" },
+            { label: "Pricing", href: "/pricing" },
+            { label: "Sign in", href: "/login" },
+          ]}
+        />
+        <FooterCol
+          title="Inside"
+          links={[
+            { label: "The Day View", href: "/#day" },
+            { label: "Quill AI", href: "/#quill" },
+            { label: "Numbers", href: "/#numbers" },
+            { label: "IBKR sync", href: "/#ibkr" },
+          ]}
+        />
+        <FooterCol
+          title="Contact"
+          links={[{ label: "hi@cuequill.app", href: "mailto:hi@cuequill.app" }]}
+        />
+      </div>
+
+      <div className="border-t border-[var(--rule)]">
+        <div className="max-w-[1200px] mx-auto px-6 md:px-10 py-4 flex items-center justify-between text-[10.5px] uppercase tracking-[0.22em] text-white/35">
+          <span>© {new Date().getFullYear()} Cuequill</span>
+          <span className="hidden sm:inline">
+            Set in Newsreader &amp; DM Mono
+          </span>
+          <span>Invite-only</span>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+function FooterCol({
+  title,
+  links,
+}: {
+  title: string;
+  links: { label: string; href: string }[];
+}) {
+  return (
+    <div className="md:col-span-2">
+      <h3
+        className="text-[10.5px] uppercase tracking-[0.22em] text-white/40 mb-3 font-medium"
+        style={{ fontFamily: "inherit", fontVariationSettings: "normal" }}
+      >
+        {title}
+      </h3>
+      <ul className="flex flex-col gap-1.5 text-[12.5px]">
+        {links.map((l) => (
+          <li key={l.label}>
+            <Link
+              href={l.href}
+              className="text-white/65 hover:text-white transition"
+            >
+              {l.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+// FAQ row - serif question, plus/cross expand, mono body. Reused
+// across landing + pricing.
+export function FaqRow({
+  q,
+  a,
+  index,
+}: {
+  q: string;
+  a: string;
+  index: number;
+}) {
+  const [open, setOpen] = useState(index === 0);
+  return (
+    <div className="group">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center justify-between gap-6 py-5 text-left cursor-pointer"
+        aria-expanded={open}
+      >
+        <span className="text-[20px] md:text-[22px] leading-snug tracking-[-0.01em] text-white/90 group-hover:text-white transition">
+          {q}
+        </span>
+        <span
+          className={`shrink-0 w-7 h-7 rounded-full border border-[var(--rule)] flex items-center justify-center text-white/55 group-hover:text-white group-hover:border-white/40 transition tabular-nums text-[11px] ${
+            open ? "bg-teal-500/10 border-teal-500/40 text-teal-300" : ""
+          }`}
+        >
+          <i
+            className={`fa-solid fa-plus text-[10px] transition-transform duration-200 ${
+              open ? "rotate-45" : ""
+            }`}
+          />
+        </span>
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
+            className="overflow-hidden"
+          >
+            <p className="pb-5 pr-12 text-[13px] text-white/60 leading-relaxed">
+              {a}
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// Tiny utility - small section folio marker. Roman numeral in serif
+// italic + uppercase mono label, divided by a hairline.
+export function SectionMark({ n, label }: { n: string; label: string }) {
+  return (
+    <div className="flex items-baseline gap-3 md:gap-4">
+      <span className="font-display italic text-teal-300 text-[20px] md:text-[22px] tabular-nums">
+        {n}
+      </span>
+      <span className="h-px flex-1 bg-[var(--rule)] max-w-[120px] translate-y-[-3px]" />
+      <span className="text-[10.5px] uppercase tracking-[0.22em] text-white/45">
+        {label}
+      </span>
+    </div>
+  );
+}

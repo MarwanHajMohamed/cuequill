@@ -82,6 +82,43 @@ const AnimatedCalendar = forwardRef<
     );
   }, [activeStartDate, onMonthChange]);
 
+  // Safety net: whenever activeStartDate changes, the next render has just
+  // happened, so the days grid must be a fully-visible, interactive node.
+  // The animation paths below mutate inline styles to fade/slide the grid,
+  // then schedule a requestAnimationFrame to restore them. rAF doesn't fire
+  // when the tab is backgrounded, and rapid prev/next or drill-up/down can
+  // queue restores against a stale element. Either way the grid can be left
+  // at opacity: 0 / translated off-screen / pointer-events: none, which on
+  // the dashboard reads as "all white tiles". This effect forces a clean
+  // reset on any active days grid after each commit, so the broken state
+  // self-heals on the next month change rather than needing a refresh.
+  useEffect(() => {
+    const days = calendarRef.current?.querySelector(
+      ".react-calendar__month-view__days",
+    ) as HTMLElement | null;
+    if (!days) return;
+    // Defer one frame so an in-flight animation gets to paint its end state
+    // before we clear styles. If the rAF chain already restored things, this
+    // is a no-op (setting empty strings on already-empty styles).
+    const id = requestAnimationFrame(() => {
+      const el = calendarRef.current?.querySelector(
+        ".react-calendar__month-view__days",
+      ) as HTMLElement | null;
+      if (!el) return;
+      // Only reset if the grid is currently mid-animation (opacity < 1 or
+      // any transform), so we don't fight a real animation in progress.
+      const cs = window.getComputedStyle(el);
+      const opacity = parseFloat(cs.opacity);
+      if (opacity < 1 || el.style.transform || el.style.pointerEvents) {
+        el.style.transition = "";
+        el.style.transform = "";
+        el.style.opacity = "";
+        el.style.pointerEvents = "";
+      }
+    });
+    return () => cancelAnimationFrame(id);
+  }, [activeStartDate]);
+
   const getDaysEl = () =>
     (calendarRef.current?.querySelector(
       ".react-calendar__month-view__days"
