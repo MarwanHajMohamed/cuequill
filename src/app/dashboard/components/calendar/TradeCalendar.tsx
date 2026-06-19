@@ -148,7 +148,7 @@ export default function TradeCalendar({ userId }: { userId: string }) {
       ...summary,
       isToday: dayStr === today,
       isFed: fedDates.has(dayStr),
-      holidayName: holidays.get(dayStr) ?? null,
+      marketDay: holidays.get(dayStr) ?? null,
     };
   };
 
@@ -183,9 +183,9 @@ export default function TradeCalendar({ userId }: { userId: string }) {
       );
     }
 
-    const { total, closedCount, netPL, isToday, isFed, holidayName } =
+    const { total, closedCount, netPL, isToday, isFed, marketDay } =
       getDaySummary(date);
-    if (total === 0 && !isToday && !isFed && !holidayName) return null;
+    if (total === 0 && !isToday && !isFed && !marketDay) return null;
 
     return (
       <>
@@ -194,14 +194,22 @@ export default function TradeCalendar({ userId }: { userId: string }) {
             Fed
           </span>
         )}
-        {holidayName && (
-          <span
-            title={`Market closed — ${holidayName}`}
-            className="absolute top-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[8px] md:text-[9px] font-semibold uppercase tracking-wide leading-none"
-          >
-            Closed
-          </span>
-        )}
+        {marketDay &&
+          (marketDay.early ? (
+            <span
+              title={`Early close 1:00pm ET — ${marketDay.name}`}
+              className="absolute top-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 text-[8px] md:text-[9px] font-semibold uppercase tracking-wide leading-none"
+            >
+              1pm
+            </span>
+          ) : (
+            <span
+              title={`Market closed — ${marketDay.name}`}
+              className="absolute top-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[8px] md:text-[9px] font-semibold uppercase tracking-wide leading-none"
+            >
+              Closed
+            </span>
+          ))}
         <div className="mt-1 flex flex-col items-center gap-0.5 text-[10px] md:text-xs">
           {isToday && <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />}
           {total > 0 && (

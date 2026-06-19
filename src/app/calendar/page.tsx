@@ -342,7 +342,7 @@ function Page() {
       hasOpen,
       isToday,
       isFed: fedDates.has(dayStr),
-      holidayName: holidays.get(dayStr) ?? null,
+      marketDay: holidays.get(dayStr) ?? null,
     };
   };
 
@@ -379,9 +379,9 @@ function Page() {
       netPL,
       isToday,
       isFed,
-      holidayName,
+      marketDay,
     } = getDaySummary(date);
-    if (tradeCount === 0 && !isToday && !isFed && !holidayName) return null;
+    if (tradeCount === 0 && !isToday && !isFed && !marketDay) return null;
 
     return (
       <>
@@ -390,14 +390,22 @@ function Page() {
             Fed
           </span>
         )}
-        {holidayName && (
-          <span
-            title={`Market closed — ${holidayName}`}
-            className="absolute top-1 left-1 px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[8px] md:text-[9px] font-semibold uppercase tracking-wide leading-none"
-          >
-            Closed
-          </span>
-        )}
+        {marketDay &&
+          (marketDay.early ? (
+            <span
+              title={`Early close 1:00pm ET — ${marketDay.name}`}
+              className="absolute top-1 left-1 px-1.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 text-[8px] md:text-[9px] font-semibold uppercase tracking-wide leading-none"
+            >
+              1pm
+            </span>
+          ) : (
+            <span
+              title={`Market closed — ${marketDay.name}`}
+              className="absolute top-1 left-1 px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[8px] md:text-[9px] font-semibold uppercase tracking-wide leading-none"
+            >
+              Closed
+            </span>
+          ))}
         {isToday && (
           <span className="absolute top-2 right-1 w-1.5 h-1.5 rounded-full bg-blue-400" />
         )}

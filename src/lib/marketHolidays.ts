@@ -58,36 +58,58 @@ function observed(d: Date): Date {
   return d;
 }
 
-const cache = new Map<number, Map<string, string>>();
+// A non-standard NYSE session. `early` true means a 1:00 pm ET early
+// close; otherwise it's a full-day closure.
+export type MarketDay = { name: string; early: boolean };
 
-// Map of "yyyy-MM-dd" → holiday name for all NYSE full-day closures in a
-// given calendar year. Memoized per year.
-export function getYearHolidays(year: number): Map<string, string> {
+const cache = new Map<number, Map<string, MarketDay>>();
+
+// Map of "yyyy-MM-dd" → MarketDay for every NYSE full closure and 1pm
+// early close in a given calendar year. Memoized per year.
+export function getYearMarketDays(year: number): Map<string, MarketDay> {
   const cached = cache.get(year);
   if (cached) return cached;
 
-  const out = new Map<string, string>();
-  const add = (d: Date, name: string) => out.set(isoOf(d), name);
+  const out = new Map<string, MarketDay>();
+  const addFull = (d: Date, name: string) =>
+    out.set(isoOf(d), { name, early: false });
 
+  // ── Full-day closures ──────────────────────────────────────────────
   // New Year's Day. NYSE does NOT close the preceding Friday when Jan 1
   // falls on a Saturday — only shift forward off a Sunday.
   const newYear = new Date(Date.UTC(year, 0, 1));
-  if (newYear.getUTCDay() !== 6) add(observed(newYear), "New Year's Day");
+  if (newYear.getUTCDay() !== 6) addFull(observed(newYear), "New Year's Day");
 
-  add(nthWeekday(year, 1, 1, 3), "Martin Luther King Jr. Day"); // 3rd Mon Jan
-  add(nthWeekday(year, 2, 1, 3), "Presidents' Day"); // 3rd Mon Feb
-  add(addDays(easterSunday(year), -2), "Good Friday");
-  add(lastWeekday(year, 5, 1), "Memorial Day"); // last Mon May
+  addFull(nthWeekday(year, 1, 1, 3), "Martin Luther King Jr. Day"); // 3rd Mon Jan
+  addFull(nthWeekday(year, 2, 1, 3), "Presidents' Day"); // 3rd Mon Feb
+  addFull(addDays(easterSunday(year), -2), "Good Friday");
+  addFull(lastWeekday(year, 5, 1), "Memorial Day"); // last Mon May
 
   // Juneteenth — NYSE holiday from 2022 onward.
   if (year >= 2022) {
-    add(observed(new Date(Date.UTC(year, 5, 19))), "Juneteenth");
+    addFull(observed(new Date(Date.UTC(year, 5, 19))), "Juneteenth");
   }
 
-  add(observed(new Date(Date.UTC(year, 6, 4))), "Independence Day");
-  add(nthWeekday(year, 9, 1, 1), "Labor Day"); // 1st Mon Sep
-  add(nthWeekday(year, 11, 4, 4), "Thanksgiving Day"); // 4th Thu Nov
-  add(observed(new Date(Date.UTC(year, 11, 25))), "Christmas Day");
+  addFull(observed(new Date(Date.UTC(year, 6, 4))), "Independence Day");
+  addFull(nthWeekday(year, 9, 1, 1), "Labor Day"); // 1st Mon Sep
+  const thanksgiving = nthWeekday(year, 11, 4, 4); // 4th Thu Nov
+  addFull(thanksgiving, "Thanksgiving Day");
+  addFull(observed(new Date(Date.UTC(year, 11, 25))), "Christmas Day");
+
+  // ── 1pm early closes ───────────────────────────────────────────────
+  // Only on a weekday that isn't already a full closure (e.g. when the
+  // adjacent holiday is observed on this very day).
+  const addEarly = (d: Date, name: string) => {
+    const dow = d.getUTCDay();
+    if (dow === 0 || dow === 6) return; // weekend — market shut anyway
+    const key = isoOf(d);
+    if (out.has(key)) return; // already a full closure
+    out.set(key, { name, early: true });
+  };
+
+  addEarly(addDays(thanksgiving, 1), "Day after Thanksgiving");
+  addEarly(new Date(Date.UTC(year, 6, 3)), "Independence Day eve");
+  addEarly(new Date(Date.UTC(year, 11, 24)), "Christmas Eve");
 
   cache.set(year, out);
   return out;
