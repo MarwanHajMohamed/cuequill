@@ -6,12 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import PageLoading from "./PageLoading";
-import {
-  FaqRow,
-  SectionMark,
-  SiteFooter,
-  SiteHeader,
-} from "./_marketing/Chrome";
+import { FaqRow, SiteFooter, SiteHeader } from "./_marketing/Chrome";
 
 // ─── Page ────────────────────────────────────────────────────────────
 
@@ -43,7 +38,6 @@ export default function Home() {
 
         <FeatureSpread
           id="day"
-          label="The Day View"
           align="right"
           heading={
             <>
@@ -63,7 +57,6 @@ export default function Home() {
 
         <FeatureSpread
           id="quill"
-          label="Quill AI"
           align="left"
           heading={
             <>
@@ -84,7 +77,6 @@ export default function Home() {
 
         <FeatureSpread
           id="numbers"
-          label="Numbers"
           align="right"
           heading={
             <>
@@ -104,7 +96,6 @@ export default function Home() {
 
         <FeatureSpread
           id="ibkr"
-          label="IBKR sync"
           align="left"
           heading={
             <>
@@ -139,18 +130,6 @@ function Hero() {
     <section className="px-6 md:px-10">
       <div className="max-w-[1200px] mx-auto py-20 md:py-32">
         <div className="flex flex-col">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.4 }}
-            className="mb-8"
-          >
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[10.5px] uppercase tracking-[0.2em] text-white/55">
-              <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
-              Trading journal · v1.0
-            </span>
-          </motion.div>
-
           <motion.h1
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -200,7 +179,6 @@ function Hero() {
 
 function FeatureSpread({
   id,
-  label,
   align,
   heading,
   body,
@@ -208,7 +186,6 @@ function FeatureSpread({
   preview,
 }: {
   id: string;
-  label: string;
   align: "left" | "right";
   heading: React.ReactNode;
   body: React.ReactNode;
@@ -229,9 +206,7 @@ function FeatureSpread({
           transition={{ duration: 0.5, ease: "easeOut" }}
           className={`md:col-span-5 ${textOnLeft ? "md:order-1" : "md:order-2"} md:sticky md:top-28 self-start`}
         >
-          <SectionMark label={label} />
-
-          <h2 className="mt-6 text-[34px] md:text-[48px] leading-[1.04] font-medium tracking-[-0.02em]">
+          <h2 className="text-[34px] md:text-[48px] leading-[1.04] font-medium tracking-[-0.02em]">
             {heading}
           </h2>
 
@@ -291,8 +266,7 @@ function FaqSection() {
     <section className="px-6 md:px-10 py-20 md:py-28">
       <div className="max-w-[1200px] mx-auto grid md:grid-cols-12 gap-10">
         <div className="md:col-span-4">
-          <SectionMark label="FAQ" />
-          <h2 className="mt-6 text-[32px] md:text-[40px] leading-[1.04] font-medium tracking-[-0.02em]">
+          <h2 className="text-[32px] md:text-[40px] leading-[1.04] font-medium tracking-[-0.02em]">
             Questions, before
             <br />
             <span className="italic text-teal-300">you start.</span>
@@ -324,8 +298,7 @@ function Signoff() {
   return (
     <section className="px-6 md:px-10 py-20 md:py-28">
       <div className="max-w-[1200px] mx-auto rounded-3xl border border-white/10 bg-white/[0.02] backdrop-blur-md shadow-[0_8px_40px_var(--shadow-soft)] p-8 md:p-14">
-        <SectionMark label="Get started" />
-        <h2 className="mt-6 text-[36px] sm:text-[52px] md:text-[68px] leading-[0.98] font-medium tracking-[-0.025em] max-w-4xl">
+        <h2 className="text-[36px] sm:text-[52px] md:text-[68px] leading-[0.98] font-medium tracking-[-0.025em] max-w-4xl">
           Your next month doesn&apos;t have to look like{" "}
           <span className="italic text-teal-300">last month.</span>
         </h2>
