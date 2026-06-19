@@ -102,8 +102,8 @@ const GROUPS: FeatureGroup[] = [
       },
       {
         title: "Statistics page",
-        body: "Expectancy, profit factor, win rate, R:R, streaks. Slice by symbol, strategy, period, or all four at once. Headline tiles and a monthly section walk side-by-side with an equity curve.",
-        detail: "Per strategy · per symbol",
+        body: "Expectancy, profit factor, win rate, R:R, streaks — the headline stats are free. On Pro, slice them by symbol and strategy, with a monthly section and equity curve.",
+        detail: "Core free · per-strategy & per-symbol on Pro",
         tiers: ["Free", "Pro"],
       },
       {
@@ -140,8 +140,8 @@ const GROUPS: FeatureGroup[] = [
       {
         title: "Ask anything",
         body: "Which strategy is leaking money this month? What did my last five losses have in common? Quill AI answers from your data, not the internet's.",
-        detail: "25 credits / mo Starter · 500 / mo Pro",
-        tiers: ["Free", "Pro"],
+        detail: "Pro only",
+        tiers: ["Pro"],
       },
       {
         title: "Reads imported fills",
@@ -152,8 +152,8 @@ const GROUPS: FeatureGroup[] = [
       {
         title: "Performance analysis",
         body: "Group by strategy, symbol, day-of-week, time-of-day. Quill returns the cuts that matter, not a wall of numbers.",
-        detail: "Free: basic · Pro: full",
-        tiers: ["Free", "Pro"],
+        detail: "Pro only",
+        tiers: ["Pro"],
       },
       {
         title: "Pattern & mistake spotting",
@@ -195,14 +195,14 @@ const GROUPS: FeatureGroup[] = [
       {
         title: "Rules board",
         body: "Your own rules, organized in sections. Edit inline, drag to reorder, link from Quill AI when you ask about rule-adherence.",
-        detail: "Sections · inline editor",
-        tiers: ["Free", "Pro"],
+        detail: "Sections · inline editor · Pro",
+        tiers: ["Pro"],
       },
       {
         title: "Affirmations",
         body: "A short daily-discipline ritual. Tick through the affirmations before the open so the rules are fresh in your head, not just on paper.",
-        detail: "Daily ritual",
-        tiers: ["Free", "Pro"],
+        detail: "Daily ritual · Pro",
+        tiers: ["Pro"],
       },
       {
         title: "Goals",
