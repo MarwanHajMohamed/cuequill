@@ -1,6 +1,21 @@
 import { StrategyList, Trade, TradeEventType } from "@/app/types/Trades";
 import { format } from "date-fns";
 
+// Field keys we mark invalid. Mirrors the input keys used in
+// EditTradeModal so the modal can highlight individual inputs instead
+// of showing a single banner message.
+export type InvalidField =
+  | "option"
+  | "symbol"
+  | "contractPrice"
+  | "qty"
+  | "strike"
+  | "dateBought"
+  | "expiryDate"
+  | "closingContractPrice";
+
+// Returns every field that is missing or malformed - the modal
+// highlights each one in red instead of surfacing a single message.
 const validate = (
   selectedOption: "CALL" | "PUT" | null,
   symbol: string,
@@ -10,36 +25,28 @@ const validate = (
   dateBought: string,
   expiryDate: string,
   status: TradeEventType,
-  closingContractPrice: number | null
-): string => {
-  if (selectedOption === null) {
-    return "Select an option";
-  } else if (symbol === "") {
-    return "Enter a symbol";
-  } else if (contractPrice === null || Number.isNaN(contractPrice)) {
-    return "Fill out the contract price";
-  } else if (qty === null || Number.isNaN(qty)) {
-    return "Fill out the quantity";
-  } else if (strike === null || Number.isNaN(strike)) {
-    return "Fill out the strike";
-  } else if (dateBought === "") {
-    return "Fill out the buy date";
-  } else if (expiryDate === "") {
-    return "Fill out the expiry date";
-  } else if (
-    (status === "WIN" && closingContractPrice === null) ||
-    (status === "LOSS" && closingContractPrice === null) ||
-    (status === "WIN" && Number.isNaN(closingContractPrice)) ||
-    (status === "LOSS" && Number.isNaN(closingContractPrice))
+  closingContractPrice: number | null,
+): Set<InvalidField> => {
+  const invalid = new Set<InvalidField>();
+  if (selectedOption === null) invalid.add("option");
+  if (symbol === "") invalid.add("symbol");
+  if (contractPrice === null || Number.isNaN(contractPrice))
+    invalid.add("contractPrice");
+  if (qty === null || Number.isNaN(qty)) invalid.add("qty");
+  if (strike === null || Number.isNaN(strike)) invalid.add("strike");
+  if (dateBought === "") invalid.add("dateBought");
+  if (expiryDate === "") invalid.add("expiryDate");
+  if (
+    (status === "WIN" || status === "LOSS") &&
+    (closingContractPrice === null || Number.isNaN(closingContractPrice))
   ) {
-    return "Fill out the closing contract price";
-  } else {
-    return "";
+    invalid.add("closingContractPrice");
   }
+  return invalid;
 };
 
 export const handleSave = (
-  setErrorMessage: React.Dispatch<React.SetStateAction<string>>,
+  setInvalidFields: React.Dispatch<React.SetStateAction<Set<InvalidField>>>,
   date: Date,
   selectedOption: "CALL" | "PUT" | null,
   userId: string,
@@ -59,9 +66,9 @@ export const handleSave = (
   toast: (message: string) => void,
   onSave: (trade: Trade) => void,
   initialTrade: Partial<Trade> | null,
-  fees?: number | null
+  fees?: number | null,
 ) => {
-  const error: string = validate(
+  const invalid = validate(
     selectedOption,
     symbol,
     contractPrice,
@@ -70,12 +77,14 @@ export const handleSave = (
     dateBought,
     expiryDate,
     status,
-    closingContractPrice
+    closingContractPrice,
   );
-  if (error) {
-    setErrorMessage(error);
+  if (invalid.size > 0) {
+    setInvalidFields(invalid);
     return;
   }
+  // Clear any prior highlights now that the form passes validation.
+  setInvalidFields(new Set());
 
   const formattedDate = format(date, "yyyy-MM-dd");
 
