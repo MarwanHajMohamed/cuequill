@@ -13,6 +13,7 @@ import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useRouter } from "next/navigation";
 import { handleSaveTrade } from "@/handlers/tradeHandlers";
 import { useFedDates } from "@/hooks/useFedDates";
+import { useMarketHolidays } from "@/hooks/useMarketHolidays";
 import AnimatedCalendar from "@/app/reusablecalendar/AnimatedCalendar";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
 import { AnimatePresence } from "framer-motion";
@@ -30,6 +31,7 @@ export default function TradeCalendar({ userId }: { userId: string }) {
   const [dayListOpen, setDayListOpen] = useState(false);
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
   const fedDates = useFedDates();
+  const holidays = useMarketHolidays();
 
   const [simulated] = useLocalStorage<boolean>("simulated", false);
 
@@ -146,6 +148,7 @@ export default function TradeCalendar({ userId }: { userId: string }) {
       ...summary,
       isToday: dayStr === today,
       isFed: fedDates.has(dayStr),
+      holidayName: holidays.get(dayStr) ?? null,
     };
   };
 
@@ -180,14 +183,23 @@ export default function TradeCalendar({ userId }: { userId: string }) {
       );
     }
 
-    const { total, closedCount, netPL, isToday, isFed } = getDaySummary(date);
-    if (total === 0 && !isToday && !isFed) return null;
+    const { total, closedCount, netPL, isToday, isFed, holidayName } =
+      getDaySummary(date);
+    if (total === 0 && !isToday && !isFed && !holidayName) return null;
 
     return (
       <>
         {isFed && (
           <span className="absolute bottom-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 text-[8px] md:text-[9px] font-semibold uppercase tracking-wide leading-none">
             Fed
+          </span>
+        )}
+        {holidayName && (
+          <span
+            title={`Market closed — ${holidayName}`}
+            className="absolute top-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[8px] md:text-[9px] font-semibold uppercase tracking-wide leading-none"
+          >
+            Closed
           </span>
         )}
         <div className="mt-1 flex flex-col items-center gap-0.5 text-[10px] md:text-xs">

@@ -2,6 +2,7 @@
 
 import "./custom-calendar.css";
 import { useFedDates } from "@/hooks/useFedDates";
+import { useMarketHolidays } from "@/hooks/useMarketHolidays";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useTrades } from "@/hooks/useTrades";
 import {
@@ -120,6 +121,7 @@ function Page() {
 
   const { data: trades } = useTrades(userId, simulated);
   const fedDates = useFedDates();
+  const holidays = useMarketHolidays();
 
   // Measure the actual y-offset of the calendar's days grid (nav + weekday
   // header height) so the sidebar starts at the same vertical position as
@@ -340,6 +342,7 @@ function Page() {
       hasOpen,
       isToday,
       isFed: fedDates.has(dayStr),
+      holidayName: holidays.get(dayStr) ?? null,
     };
   };
 
@@ -376,14 +379,23 @@ function Page() {
       netPL,
       isToday,
       isFed,
+      holidayName,
     } = getDaySummary(date);
-    if (tradeCount === 0 && !isToday && !isFed) return null;
+    if (tradeCount === 0 && !isToday && !isFed && !holidayName) return null;
 
     return (
       <>
         {isFed && (
           <span className="absolute top-1 right-1 px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 text-[8px] md:text-[9px] font-semibold uppercase tracking-wide leading-none">
             Fed
+          </span>
+        )}
+        {holidayName && (
+          <span
+            title={`Market closed — ${holidayName}`}
+            className="absolute top-1 left-1 px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[8px] md:text-[9px] font-semibold uppercase tracking-wide leading-none"
+          >
+            Closed
           </span>
         )}
         {isToday && (
