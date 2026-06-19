@@ -42,19 +42,19 @@ const PLANS: Plan[] = [
     href: "/login",
     included: [
       "Manual trade logging, unlimited",
-      "Calendar P&L, net of commissions",
-      "Core stats & win rate",
-      "Rules board & affirmations",
-      "25 Quill AI credits / month",
-      "Light & dark themes",
+      "Calendar with P&L",
+      "Up to 3 custom strategies",
+      "Manual IBKR import",
+      "Win rate & core stats",
+      "90-day history",
     ],
     excluded: [
-      "IBKR Flex auto-sync",
-      "Quill AI over your own trades",
-      "Strategy & symbol analytics",
-      "Equity curve & portfolio history",
-      "Credit top-ups",
-      "Priority support",
+      "Quill AI",
+      "Auto IBKR sync",
+      "Unlimited strategies",
+      "Per-strategy & per-symbol stats",
+      "Rules board & affirmations",
+      "Unlimited history",
     ],
   },
   {
@@ -67,13 +67,12 @@ const PLANS: Plan[] = [
     featured: true,
     leadIn: "Everything in Starter, plus",
     included: [
-      "IBKR Flex auto-sync after close",
       "Quill AI over your own trades",
-      "500 Quill AI credits / month",
-      "Buy credit top-ups any time",
-      "Full analytics by strategy & symbol",
-      "Equity curve & portfolio history",
-      "Priority support",
+      "Auto IBKR sync after close",
+      "Unlimited strategies",
+      "Per-strategy & per-symbol stats",
+      "Rules board & affirmations",
+      "Unlimited history retained",
     ],
   },
 ];
@@ -91,24 +90,23 @@ const COMPARE: CompareGroup[] = [
   {
     title: "Journaling",
     rows: [
-      { feature: "Trades logged", starter: "Unlimited", pro: "Unlimited" },
-      { feature: "Manual entry & editing", starter: true, pro: true },
+      { feature: "Manual trade logging", starter: "Unlimited", pro: "Unlimited" },
       {
         feature: "Calendar P&L",
         note: "Net of commissions",
         starter: true,
         pro: true,
       },
-      { feature: "Rules board & affirmations", starter: true, pro: true },
-      { feature: "Light & dark themes", starter: true, pro: true },
+      { feature: "Custom strategies", starter: "Up to 3", pro: "Unlimited" },
+      { feature: "Rules board & affirmations", starter: false, pro: true },
     ],
   },
   {
     title: "Imports & sync",
     rows: [
-      { feature: "CSV / manual import", starter: true, pro: true },
+      { feature: "Manual IBKR import", starter: true, pro: true },
       {
-        feature: "IBKR Flex auto-sync",
+        feature: "IBKR auto-sync",
         note: "Every weeknight after close",
         starter: false,
         pro: true,
@@ -117,33 +115,25 @@ const COMPARE: CompareGroup[] = [
     ],
   },
   {
-    title: "Quill AI",
+    title: "Stats",
     rows: [
-      {
-        feature: "Credits",
-        starter: "25 / mo",
-        pro: "500 / mo",
-      },
-      {
-        feature: "Top-ups",
-        note: "Buy extra credits any time",
-        starter: true,
-        pro: true,
-      },
-      { feature: "Reads imported IBKR fills", starter: false, pro: true },
-      { feature: "Performance analysis", starter: "Basic", pro: true },
-      { feature: "Pattern & mistake spotting", starter: false, pro: true },
-      { feature: "Rule-adherence checks", starter: false, pro: true },
-      { feature: "Natural-language trade entry", starter: false, pro: true },
+      { feature: "Win rate & core stats", starter: true, pro: true },
+      { feature: "Per-strategy stats", starter: false, pro: true },
+      { feature: "Per-symbol stats", starter: false, pro: true },
     ],
   },
   {
-    title: "Analytics",
+    title: "Quill AI",
     rows: [
-      { feature: "Win rate & core stats", starter: true, pro: true },
-      { feature: "By strategy & symbol", starter: false, pro: true },
-      { feature: "Equity curve", starter: false, pro: true },
-      { feature: "Portfolio history", starter: false, pro: true },
+      {
+        feature: "Quill AI over your trades",
+        note: "Ask questions in plain English",
+        starter: false,
+        pro: true,
+      },
+      { feature: "Reads imported IBKR fills", starter: false, pro: true },
+      { feature: "Pattern & mistake spotting", starter: false, pro: true },
+      { feature: "Rule-adherence checks", starter: false, pro: true },
     ],
   },
 ];
@@ -151,7 +141,7 @@ const COMPARE: CompareGroup[] = [
 const FAQS: { q: string; a: string }[] = [
   {
     q: "Is the free plan actually free?",
-    a: "Yes. Manual logging, the calendar, core stats and rules cost nothing and always will. You only pay when you want IBKR sync and the full Quill AI.",
+    a: "Yes. Manual logging, the calendar with P&L, up to three strategies, core win-rate stats and 90 days of history cost nothing and always will. You only pay when you want Quill AI, auto-sync, and the rest.",
   },
   {
     q: "What do I need for IBKR sync?",
@@ -167,7 +157,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "What if I hit a plan limit?",
-    a: "Nothing breaks. Once your monthly Quill AI credits are spent the chat pauses until the next cycle — your trades stay fully intact. On Pro you can top up credits any time; on Starter, upgrade to Pro for more.",
+    a: "Nothing breaks. On the free plan you keep three strategies and 90 days of history; older trades stay safe and reappear if you upgrade. Pro lifts every limit and adds Quill AI.",
   },
   {
     q: "Does my trade data train the AI?",
