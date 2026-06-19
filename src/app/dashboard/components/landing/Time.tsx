@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import React, { useState, useEffect } from "react";
+import { getMarketDay, isMarketOpenAt } from "@/lib/marketHolidays";
 
 // New-York "now" for market-hour math. Returns a Date whose getHours /
 // getDay etc. read out the wall-clock time in America/New_York.
@@ -26,26 +27,41 @@ const useMarketCountdown = () => {
       const minutes = ny.getMinutes();
       const isWeekday = day >= 1 && day <= 5;
       const afterOpen = hours > 9 || (hours === 9 && minutes >= 30);
-      const beforeClose = hours < 16;
-      const open = isWeekday && afterOpen && beforeClose;
+      const todayMarket = getMarketDay(ny);
+      // Holiday-aware: false on full-day closures and after the 1pm ET
+      // early closes, so the "Closes in / Opens in" label doesn't keep
+      // counting down on a day the bell never rings.
+      const open = isMarketOpenAt(ny);
 
-      const target = new Date(ny);
       if (open) {
-        target.setHours(16, 0, 0, 0);
+        // Close time depends on the day - 1pm on early-close days,
+        // 4pm otherwise.
+        const closeHour = todayMarket?.early ? 13 : 16;
+        const target = new Date(ny);
+        target.setHours(closeHour, 0, 0, 0);
         const diffMs = target.getTime() - ny.getTime();
         setLabel(`Closes in ${formatDuration(diffMs)}`);
         return;
       }
 
-      // Next open: today 9:30 if pre-open weekday; otherwise next weekday
-      // 9:30.
+      // Next open: step forward day-by-day skipping weekends AND any
+      // full-day NYSE closure (Juneteenth, Christmas, etc.) so we don't
+      // promise "Opens in 2h" on a holiday morning.
       const next = new Date(ny);
       next.setSeconds(0, 0);
-      if (isWeekday && !afterOpen) {
+      const isFullHoliday = todayMarket && !todayMarket.early;
+      if (isWeekday && !afterOpen && !isFullHoliday) {
         next.setHours(9, 30, 0, 0);
       } else {
         next.setDate(next.getDate() + 1);
-        while (next.getDay() === 0 || next.getDay() === 6) {
+        while (
+          next.getDay() === 0 ||
+          next.getDay() === 6 ||
+          (() => {
+            const md = getMarketDay(next);
+            return md !== null && !md.early;
+          })()
+        ) {
           next.setDate(next.getDate() + 1);
         }
         next.setHours(9, 30, 0, 0);
@@ -109,14 +125,11 @@ export default function Time() {
     );
   }
 
-  const day = currentTime.getDay();
   const hours = currentTime.getHours();
-  const minutes = currentTime.getMinutes();
-  const marketOpen =
-    day >= 1 &&
-    day <= 5 &&
-    (hours > 9 || (hours === 9 && minutes >= 30)) &&
-    hours < 16;
+  // Holiday-aware NYSE session check - matches the calendar's market-day
+  // badge so the dashboard pill, the countdown, and the calendar agree
+  // on what "Closed" means.
+  const marketOpen = isMarketOpenAt(currentTime);
 
   const greeting =
     hours < 12 ? "Good morning" : hours < 17 ? "Good afternoon" : "Good evening";

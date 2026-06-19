@@ -19,6 +19,7 @@ import {
 } from "framer-motion";
 import TimezoneDisplay from "@/helpers/TimezoneDisplay";
 import ThemeToggle from "@/components/ThemeToggle";
+import { isMarketOpenAt } from "@/lib/marketHolidays";
 
 const CuequillLogo = ({ className = "" }: { className?: string }) => (
   <svg
@@ -423,15 +424,9 @@ export default function Navbar() {
 
   if (!currentTime) return null;
 
-  const day = currentTime.getDay();
-  const hours = currentTime.getHours();
-  const minutes = currentTime.getMinutes();
-
-  const marketOpen =
-    day >= 1 &&
-    day <= 5 &&
-    (hours > 9 || (hours === 9 && minutes >= 30)) &&
-    hours < 16;
+  // Holiday-aware NYSE session check - returns false on full-day
+  // closures (Juneteenth, etc.) and after the 1pm ET early close.
+  const marketOpen = isMarketOpenAt(currentTime);
 
   /* ---------------- UI ---------------- */
 
