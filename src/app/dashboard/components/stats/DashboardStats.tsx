@@ -74,7 +74,7 @@ function PeriodTile({
         {label}
       </div>
       <div
-        className={`text-base md:text-2xl font-semibold truncate ${
+        className={`text-base md:text-2xl font-normal truncate ${
           summary.count === 0
             ? "text-white/40"
             : positive
@@ -122,7 +122,7 @@ function MiniTile({
         {label}
       </div>
       <div
-        className={`text-sm md:text-base font-semibold truncate ${valueColor}`}
+        className={`text-sm md:text-base font-normal truncate ${valueColor}`}
       >
         {value}
       </div>
@@ -316,7 +316,7 @@ export default function DashboardStats({ userId }: { userId: string }) {
               Recent equity ({s.curve.length} trades)
             </div>
             <div
-              className={`text-sm md:text-base font-semibold ${
+              className={`text-sm md:text-base font-normal ${
                 curveEnd - curveStart >= 0
                   ? "text-green-500"
                   : "text-red-500"

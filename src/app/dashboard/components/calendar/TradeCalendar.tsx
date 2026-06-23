@@ -167,7 +167,7 @@ export default function TradeCalendar({ userId }: { userId: string }) {
         <div className="mt-1 flex flex-col items-center gap-0.5 text-[10px] md:text-xs">
           {closedCount > 0 ? (
             <div
-              className={`font-semibold ${
+              className={`font-normal ${
                 netPL >= 0 ? "text-green-500" : "text-red-500"
               }`}
             >
@@ -216,7 +216,7 @@ export default function TradeCalendar({ userId }: { userId: string }) {
             <>
               {closedCount > 0 ? (
                 <div
-                  className={`font-semibold ${
+                  className={`font-normal ${
                     netPL >= 0 ? "text-green-500" : "text-red-500"
                   }`}
                 >

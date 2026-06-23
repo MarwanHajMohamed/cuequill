@@ -248,7 +248,7 @@ function RecentCloses({
                     </div>
                   </div>
                   <span
-                    className={`text-sm md:text-base font-semibold whitespace-nowrap ${
+                    className={`text-sm md:text-base font-normal whitespace-nowrap ${
                       pl >= 0 ? "text-green-500" : "text-red-500"
                     }`}
                   >
