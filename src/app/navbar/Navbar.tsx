@@ -437,6 +437,27 @@ export default function Navbar() {
 
   return (
     <>
+      {/* Glossy scroll-blend behind the top nav. Page content blurs and
+          fades up into the background colour through a progressive-blur
+          scrim (mask fades the blur out toward the bottom edge), so the
+          floating bar reads as one seamless surface with the page. Sits
+          below the bar (z-40) and ignores pointer events. */}
+      <div
+        aria-hidden
+        className="fixed top-0 inset-x-0 z-40 pointer-events-none"
+        style={{
+          height: "calc(env(safe-area-inset-top) + 96px)",
+          background:
+            "linear-gradient(to bottom, rgb(var(--bg-rgb)) 0%, rgb(var(--bg-rgb) / 0.55) 42%, rgb(var(--bg-rgb) / 0) 100%)",
+          backdropFilter: "blur(10px)",
+          WebkitBackdropFilter: "blur(10px)",
+          maskImage:
+            "linear-gradient(to bottom, black 0%, black 52%, transparent 100%)",
+          WebkitMaskImage:
+            "linear-gradient(to bottom, black 0%, black 52%, transparent 100%)",
+        }}
+      />
+
       {/* TIME */}
       <div className="fixed left-1/2 top-1 text-[10px] z-50 -translate-x-1/2 hidden md:flex">
         <TimezoneDisplay showWeekDay showMonth showYear showDay />
@@ -786,6 +807,23 @@ export default function Navbar() {
           another position:fixed (the inner one scrolls away with the
           page), so these render at the fragment root as their own
           fixed layers pinned to the viewport bottom. */}
+        {/* Glossy scroll-blend behind the mobile tab bar - mirror of the
+            top scrim so content melts down into the floating bar. */}
+        <div
+          aria-hidden
+          className="md:hidden fixed bottom-0 inset-x-0 z-40 pointer-events-none"
+          style={{
+            height: "calc(env(safe-area-inset-bottom) + 100px)",
+            background:
+              "linear-gradient(to top, rgb(var(--bg-rgb)) 0%, rgb(var(--bg-rgb) / 0.55) 42%, rgb(var(--bg-rgb) / 0) 100%)",
+            backdropFilter: "blur(10px)",
+            WebkitBackdropFilter: "blur(10px)",
+            maskImage:
+              "linear-gradient(to top, black 0%, black 52%, transparent 100%)",
+            WebkitMaskImage:
+              "linear-gradient(to top, black 0%, black 52%, transparent 100%)",
+          }}
+        />
         {/* "More" sheet backdrop */}
         <div
           onClick={() => setOpenMore(false)}
