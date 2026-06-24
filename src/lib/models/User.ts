@@ -15,6 +15,8 @@ export interface IUser extends Document {
   // the settings UI to show what was imported and let the user delete
   // any duplicates the dedupe pass didn't catch.
   ibkrLastSyncTradeIds: mongoose.Types.ObjectId[];
+  // Tickers the user tracks on the earnings calendar.
+  watchlist: string[];
 }
 
 const UserSchema = new Schema<IUser>({
@@ -29,6 +31,7 @@ const UserSchema = new Schema<IUser>({
   ibkrLastSyncInserted: { type: Number },
   ibkrLastSyncSkipped: { type: Number },
   ibkrLastSyncTradeIds: [{ type: Schema.Types.ObjectId, ref: "Trade", default: [] }],
+  watchlist: { type: [String], default: [] },
 });
 
 export const User = models.User || mongoose.model<IUser>("User", UserSchema);
