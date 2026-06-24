@@ -94,33 +94,7 @@ function AffirmationsPage() {
         }}
       />
 
-      {/* HERO - left-aligned, same hero language as the Trades page. */}
       <div className="relative w-full max-w-[1500px] mt-30 px-5 md:px-10">
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: "easeOut" }}
-          className="flex flex-col gap-2"
-        >
-          <div className="text-[11px] uppercase tracking-[0.18em] text-white/40 font-medium">
-            Morning ritual
-          </div>
-          <div className="flex items-baseline justify-between gap-4 flex-wrap">
-            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight leading-[1.05]">
-              <span className="bg-gradient-to-r from-teal-300 to-emerald-400 bg-clip-text text-transparent">
-                Daily affirmations
-              </span>
-            </h1>
-            <div className="text-[12px] text-white/45 tabular-nums">
-              {read.size} of {AFFIRMATIONS.length} read
-            </div>
-          </div>
-          <p className="text-[13px] md:text-[14px] text-white/55 max-w-xl leading-relaxed mt-1">
-            Read each one out loud. Mean it. Tap to mark as read - the list
-            resets at midnight.
-          </p>
-        </motion.div>
-
         {/* Progress */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}

@@ -12,10 +12,7 @@ function Page() {
             rounded-lg"
         >
           {/* Header bar */}
-          <div className="w-full h-20 flex items-center justify-between border-b border-white/20 rounded-t-lg px-5">
-            {/* Left: Title */}
-            <h2 className="text-white text-2xl">Community</h2>
-
+          <div className="w-full h-20 flex items-center justify-end border-b border-white/20 rounded-t-lg px-5">
             {/* Right: Search + circle */}
             <div className="flex items-center gap-4">
               {/* Search bar */}
