@@ -63,7 +63,7 @@ const WeekSummary = ({
         <>
           <div className="flex justify-between items-baseline gap-2">
             <div
-              className={`text-lg font-semibold ${
+              className={`text-lg font-normal ${
                 netPL >= 0 ? "text-green-500" : "text-red-500"
               }`}
             >
@@ -355,7 +355,7 @@ function Page() {
         <div className="mt-1 flex flex-col items-center gap-0.5 text-[10px] md:text-xs">
           {closedCount > 0 ? (
             <div
-              className={`font-semibold ${
+              className={`font-normal ${
                 netPL >= 0 ? "text-green-500" : "text-red-500"
               }`}
             >
@@ -417,7 +417,7 @@ function Page() {
           <div className="absolute bottom-1.5 left-1.5 right-1.5 flex flex-col items-start gap-1 text-[10px] md:text-xs">
             {closedCount > 0 ? (
               <div
-                className={`font-semibold leading-tight ${
+                className={`font-normal leading-tight ${
                   netPL >= 0 ? "text-green-500" : "text-red-500"
                 }`}
               >
@@ -603,7 +603,7 @@ function Page() {
                       {label}
                     </div>
                     <div
-                      className={`text-lg md:text-2xl font-semibold tracking-tight tabular-nums ${
+                      className={`text-lg md:text-2xl font-normal tracking-tight tabular-nums ${
                         summary.closedCount === 0
                           ? "text-white/40"
                           : positive

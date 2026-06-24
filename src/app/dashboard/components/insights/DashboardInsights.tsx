@@ -173,7 +173,7 @@ function DailyRiskBudget({ trades }: { trades: Trade[] }) {
 
       <div className="flex items-end justify-between gap-3 mb-2">
         <div className="flex flex-col gap-0.5 min-w-0">
-          <div className={`text-2xl md:text-3xl font-semibold tabular-nums tracking-tight ${tone.text}`}>
+          <div className={`text-2xl md:text-3xl font-normal tabular-nums tracking-tight ${tone.text}`}>
             {todayNet >= 0
               ? `+$${todayNet.toFixed(2)}`
               : `−$${todayLoss.toFixed(2)}`}
@@ -289,7 +289,7 @@ function RankGroup({
             <div className="flex-1 min-w-0">
               <div className="flex items-baseline justify-between gap-2">
                 <span className="text-white/85 truncate">{r.label}</span>
-                <span className={`${accent} tabular-nums font-semibold whitespace-nowrap`}>
+                <span className={`${accent} tabular-nums font-normal whitespace-nowrap`}>
                   {r.expectancy >= 0 ? "+" : "−"}$
                   {Math.abs(r.expectancy).toFixed(2)}
                   <span className="text-white/35 font-normal">/trade</span>
@@ -359,7 +359,7 @@ function MistakeLeaderboard({ trades }: { trades: Trade[] }) {
         {totalDrag < 0 && (
           <div className="text-[11px] text-white/55">
             Top 3 tags account for{" "}
-            <span className="text-red-400 font-medium tabular-nums">
+            <span className="text-red-400 font-normal tabular-nums">
               {fmtMoneySignedCompact(totalDrag)}
             </span>{" "}
             of drag.
@@ -383,7 +383,7 @@ function MistakeLeaderboard({ trades }: { trades: Trade[] }) {
                     </span>
                   </div>
                   <span
-                    className={`text-[12.5px] tabular-nums font-semibold whitespace-nowrap ${
+                    className={`text-[12.5px] tabular-nums font-normal whitespace-nowrap ${
                       r.total < 0 ? "text-red-400" : "text-green-400"
                     }`}
                   >

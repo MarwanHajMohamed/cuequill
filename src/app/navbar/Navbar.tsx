@@ -187,6 +187,11 @@ export default function Navbar() {
     },
     { icon: "fa-solid fa-bezier-curve", label: "Strategies", slug: "strategies" },
     { icon: "fa-solid fa-coins", label: "Stocks & ETFs", slug: "stocks" },
+    {
+      icon: "fa-regular fa-calendar-days",
+      label: "Earnings",
+      slug: "earnings",
+    },
     { icon: "fa-solid fa-list-check", label: "Rules", slug: "rules" },
     { icon: "fa-solid fa-tag", label: "Plans & pricing", slug: "pricing" },
     { icon: "fa-solid fa-gear", label: "Settings", slug: "settings" },
@@ -195,6 +200,7 @@ export default function Navbar() {
   const guideItems = [
     { label: "Strategies", slug: "strategies" },
     { label: "Stocks/ETFs", slug: "stocks" },
+    { label: "Earnings", slug: "earnings" },
     { label: "Rules", slug: "rules" },
   ];
 
