@@ -94,17 +94,6 @@ function EarningsPage() {
       />
 
       <div className="w-full max-w-[1100px] px-4 md:px-6 pt-24 md:pt-28 flex flex-col gap-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">
-            Earnings calendar
-          </h1>
-          <p className="mt-1 text-[13px] text-white/50">
-            Upcoming earnings for the symbols on your watchlist, from Yahoo
-            Finance.
-          </p>
-        </div>
-
         {/* Watchlist editor */}
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md p-4 md:p-5">
           <div className="flex items-center justify-between gap-3 mb-3">

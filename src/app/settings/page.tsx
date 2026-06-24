@@ -89,18 +89,6 @@ function Page() {
       />
 
       <div className="w-full max-w-[1100px] mt-30 px-5 md:px-10">
-        {/* Hero */}
-        <div className="flex flex-col gap-2 mb-6">
-          <div className="text-[11px] uppercase tracking-[0.18em] text-white/40 font-medium">
-            Preferences
-          </div>
-          <h1 className="text-3xl md:text-4xl font-semibold tracking-tight leading-[1.05]">
-            <span className="bg-gradient-to-r from-teal-300 to-emerald-400 bg-clip-text text-transparent">
-              Settings
-            </span>
-          </h1>
-        </div>
-
         {/* Card */}
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md overflow-hidden flex flex-col md:flex-row">
           {/* Tabs */}
