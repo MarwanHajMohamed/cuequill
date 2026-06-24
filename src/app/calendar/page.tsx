@@ -371,6 +371,35 @@ function Page() {
       );
     }
 
+    // Decade drill-up view: each tile is a year - show yearly P/L + count.
+    if (view === "decade") {
+      const { total, closedCount, netPL } = getYearSummary(date);
+      if (total === 0) return null;
+      return (
+        <div className="mt-1 flex flex-col items-center gap-0.5 text-[10px] md:text-xs">
+          {closedCount > 0 ? (
+            <div
+              className={`font-normal ${
+                netPL >= 0 ? "text-green-500" : "text-red-500"
+              }`}
+            >
+              {fmtMoneySignedCompact(netPL)}
+            </div>
+          ) : (
+            <div className="font-semibold text-orange-400">Open</div>
+          )}
+          <div className="text-white/40 text-[9px] md:text-[10px]">
+            {total} {total === 1 ? "trade" : "trades"}
+          </div>
+        </div>
+      );
+    }
+
+    // Day badges (Fed / market-closed / today) only belong on the month
+    // grid — never on the year/decade tiles (where Jan 1 would otherwise
+    // tag every cell as a holiday "Closed").
+    if (view !== "month") return null;
+
     const {
       tradeCount,
       closedCount,
@@ -479,6 +508,13 @@ function Page() {
       if (hasOpen) return "day-open";
       return "";
     }
+    if (view === "decade") {
+      const { closedCount, netPL, hasOpen } = getYearSummary(date);
+      if (closedCount > 0) return netPL >= 0 ? "day-win" : "day-loss";
+      if (hasOpen) return "day-open";
+      return "";
+    }
+    if (view !== "month") return "";
     const { closedCount, netPL, hasOpen } = getDaySummary(date);
     if (closedCount > 0) return netPL >= 0 ? "day-win" : "day-loss";
     if (hasOpen) return "day-open";
@@ -516,6 +552,43 @@ function Page() {
     }
     return map;
   }, [trades]);
+
+  // Per-year aggregates for the decade (years) drill-up view.
+  const tradesByYear = useMemo(() => {
+    const map = new Map<
+      number,
+      { netPL: number; closedCount: number; hasOpen: boolean; total: number }
+    >();
+    if (!trades) return map;
+    for (const t of trades) {
+      const isClosed = t.status === "WIN" || t.status === "LOSS";
+      const dateStr = isClosed && t.dateClosed ? t.dateClosed : t.dateBought;
+      const y = new Date(dateStr).getFullYear();
+      const prev = map.get(y) ?? {
+        netPL: 0,
+        closedCount: 0,
+        hasOpen: false,
+        total: 0,
+      };
+      prev.total += 1;
+      if (isClosed) {
+        prev.netPL += tradeNetPL(t);
+        prev.closedCount += 1;
+      } else if (t.status === "OPEN") {
+        prev.hasOpen = true;
+      }
+      map.set(y, prev);
+    }
+    return map;
+  }, [trades]);
+
+  const getYearSummary = (date: Date) =>
+    tradesByYear.get(date.getFullYear()) ?? {
+      netPL: 0,
+      closedCount: 0,
+      hasOpen: false,
+      total: 0,
+    };
 
   // Net P/L + counts for the Mon-Fri window starting at weekStart.
   // Buckets on the same exit/entry-date rule as the rest of the page.
