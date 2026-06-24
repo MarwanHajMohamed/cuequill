@@ -237,6 +237,17 @@
   font-weight: 500;
 }
 
+/* Current month / year highlight when zoomed out — same blue as the
+   day-grid "today". Needs higher specificity than the month/year tile
+   rule above (which sets border: transparent) or it gets clobbered. */
+.react-calendar.custom-calendar_full-view
+  .react-calendar__year-view__months__month.react-calendar__tile--now,
+.react-calendar.custom-calendar_full-view
+  .react-calendar__decade-view__years__year.react-calendar__tile--now {
+  background-color: rgba(59, 130, 246, 0.08);
+  border-color: rgba(59, 130, 246, 0.35);
+}
+
 /* Standalone tile defaults - only used if the full-view selector
    doesn't apply (e.g. embedded mini calendars). */
 .react-calendar__tile {

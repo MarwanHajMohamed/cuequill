@@ -142,6 +142,35 @@
   pointer-events: none;
 }
 
+/* Year (months) & decade (years) drill-up grids. Without this they fall
+   back to react-calendar's default flex layout (no gap) at the 96px day
+   height, which reads as squat buttons with odd spacing on mobile. */
+.react-calendar.custom-calendar .react-calendar__year-view__months,
+.react-calendar.custom-calendar .react-calendar__decade-view__years,
+.react-calendar.custom-calendar .react-calendar__century-view__decades {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 6px;
+}
+.react-calendar.custom-calendar .react-calendar__year-view__months__month,
+.react-calendar.custom-calendar .react-calendar__decade-view__years__year,
+.react-calendar.custom-calendar
+  .react-calendar__century-view__decades__decade {
+  height: auto;
+  min-height: 66px;
+  padding: 12px 0;
+}
+/* Current month / year — same blue ring as the day-grid "today". High
+   specificity so the P/L tints (which only set background) don't drop the
+   blue border. */
+.react-calendar.custom-calendar
+  .react-calendar__year-view__months__month.react-calendar__tile--now,
+.react-calendar.custom-calendar
+  .react-calendar__decade-view__years__year.react-calendar__tile--now {
+  background-color: rgba(59, 130, 246, 0.08);
+  border-color: rgba(59, 130, 246, 0.35);
+}
+
 @media (max-width: 768px) {
   .react-calendar__tile {
     height: 72px;
@@ -157,5 +186,17 @@
   .react-calendar .react-calendar__month-view__days,
   .react-calendar .react-calendar__month-view__weekdays {
     gap: 3px;
+  }
+  .react-calendar.custom-calendar .react-calendar__year-view__months,
+  .react-calendar.custom-calendar .react-calendar__decade-view__years,
+  .react-calendar.custom-calendar .react-calendar__century-view__decades {
+    gap: 4px;
+  }
+  .react-calendar.custom-calendar .react-calendar__year-view__months__month,
+  .react-calendar.custom-calendar .react-calendar__decade-view__years__year,
+  .react-calendar.custom-calendar
+    .react-calendar__century-view__decades__decade {
+    min-height: 52px;
+    padding: 9px 0;
   }
 }
