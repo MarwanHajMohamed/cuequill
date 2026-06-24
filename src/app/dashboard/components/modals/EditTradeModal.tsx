@@ -1,14 +1,19 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { TradeEventType, StrategyList, Trade } from "@/app/types/Trades";
-import { TRADE_TAG_OPTIONS } from "@/app/data/tradeTags";
+import {
+  TAG_KIND_BY_LABEL,
+  TRADE_TAG_OPTIONS,
+  TradeTagKind,
+} from "@/app/data/tradeTags";
 import { useSession } from "next-auth/react";
 import { useToast } from "@/hooks/useToast";
 import { useScrollLock } from "@/hooks/useScrollLock";
-import { handleSave } from "./helpers";
+import { useTrades } from "@/hooks/useTrades";
+import { handleSave, type InvalidField } from "./helpers";
 
 type TradeModalProps = {
   date: Date;
@@ -66,14 +71,37 @@ export default function EditTradeModal({
   );
   const [notes, setNotes] = useState<string>(initialTrade?.notes ?? "");
   const [tags, setTags] = useState<string[]>(initialTrade?.tags ?? []);
-  const toggleTag = (label: string) =>
+  const addTag = (raw: string) => {
+    const label = raw.trim();
+    if (!label) return;
     setTags((prev) =>
-      prev.includes(label) ? prev.filter((t) => t !== label) : [...prev, label],
+      // Case-insensitive dedupe so "FOMO" and "fomo" collapse, but
+      // preserve the canonical casing already in the list (or the
+      // suggestion list) over what the user typed.
+      prev.some((t) => t.toLowerCase() === label.toLowerCase())
+        ? prev
+        : [...prev, label],
     );
+  };
+  const removeTag = (label: string) =>
+    setTags((prev) => prev.filter((t) => t !== label));
   const [simulated, setSimulated] = useState<boolean>(
     initialTrade?.simulated || false,
   );
-  const [errorMessage, setErrorMessage] = useState<string>("");
+  // Invalid fields are tracked individually so the modal can outline
+  // each broken input in red instead of showing a single banner. A
+  // field is removed from the set as soon as the user edits it.
+  const [invalidFields, setInvalidFields] = useState<Set<InvalidField>>(
+    new Set(),
+  );
+  const isInvalid = (k: InvalidField) => invalidFields.has(k);
+  const clearInvalid = (k: InvalidField) =>
+    setInvalidFields((prev) => {
+      if (!prev.has(k)) return prev;
+      const next = new Set(prev);
+      next.delete(k);
+      return next;
+    });
   const [delModal, setDelModal] = useState<boolean>(false);
 
   const toast = useToast();
@@ -182,13 +210,21 @@ export default function EditTradeModal({
               {symbol || "-"}
             </div>
 
-            {/* Direction toggle */}
-            <div className="mt-4 grid grid-cols-2 gap-2">
+            {/* Direction toggle. When the form is submitted without a
+                direction selected, both buttons get the same red outline
+                so the missing choice is unambiguous. */}
+            <div
+              className={`mt-4 grid grid-cols-2 gap-2 ${
+                isInvalid("option")
+                  ? "rounded-lg ring-2 ring-red-500/40 ring-offset-2 ring-offset-[var(--surface)] transition-shadow duration-150"
+                  : ""
+              }`}
+            >
               <button
                 type="button"
                 onClick={() => {
                   setSelectedOption("CALL");
-                  setErrorMessage("");
+                  clearInvalid("option");
                 }}
                 className={`px-3 py-2 rounded-lg border text-sm font-semibold transition cursor-pointer ${
                   isCall
@@ -203,7 +239,7 @@ export default function EditTradeModal({
                 type="button"
                 onClick={() => {
                   setSelectedOption("PUT");
-                  setErrorMessage("");
+                  clearInvalid("option");
                 }}
                 className={`px-3 py-2 rounded-lg border text-sm font-semibold transition cursor-pointer ${
                   isPut
@@ -248,7 +284,10 @@ export default function EditTradeModal({
                     type="button"
                     onClick={() => {
                       setStatus(s.value);
-                      setErrorMessage("");
+                      // Switching away from WIN/LOSS hides the closing
+                      // input, so any prior "missing closing price" mark
+                      // becomes irrelevant - drop it.
+                      if (s.value === "OPEN") clearInvalid("closingContractPrice");
                     }}
                     className={`px-3 py-2 rounded-lg border text-sm font-semibold transition cursor-pointer ${
                       active
@@ -262,85 +301,93 @@ export default function EditTradeModal({
               })}
             </div>
 
-            {errorMessage && (
-              <div className="mt-3 border border-red-500/50 text-red-400 text-center text-xs py-1.5 rounded-md bg-red-500/10 shake">
-                {errorMessage}
-              </div>
-            )}
           </div>
 
           {/* ── Body (scrollable, takes remaining space) ── */}
           <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-5 px-5 md:px-6 py-5 md:py-6">
             {/* Symbol */}
-            <Field label="Symbol">
+            <Field label="Symbol" required>
               <input
                 type="text"
                 value={symbol}
                 onChange={(e) => {
                   setSymbol(e.target.value.toUpperCase());
-                  setErrorMessage("");
+                  clearInvalid("symbol");
                 }}
                 placeholder="e.g. SPY"
                 autoCapitalize="characters"
                 autoCorrect="off"
                 spellCheck={false}
-                className="w-full p-2 text-base text-white bg-white/[0.03] rounded border border-white/10 focus:border-white/30 focus:outline-none uppercase placeholder:normal-case placeholder:text-white/30"
+                className={`w-full p-2 text-base text-white bg-white/[0.03] rounded border focus:outline-none uppercase placeholder:normal-case placeholder:text-white/30 ${
+                  isInvalid("symbol")
+                    ? "border-red-500/70 ring-2 ring-red-500/15 bg-red-500/[0.04] focus:border-red-500 focus:ring-red-500/25 transition-[border-color,box-shadow,background-color] duration-150"
+                    : "border-white/10 focus:border-white/30"
+                }`}
               />
             </Field>
 
             {/* Contract / Qty / Strike */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              <Field label="Contract">
+              <Field label="Contract" required>
                 <NumberInput
                   value={contractPrice}
                   onChange={(v) => {
                     setContractPrice(v);
-                    setErrorMessage("");
+                    clearInvalid("contractPrice");
                   }}
                   placeholder="0.00"
+                  invalid={isInvalid("contractPrice")}
                 />
               </Field>
-              <Field label="Qty">
+              <Field label="Qty" required>
                 <NumberInput
                   value={qty}
                   onChange={(v) => {
                     setQty(v);
-                    setErrorMessage("");
+                    clearInvalid("qty");
                   }}
                   placeholder="1"
+                  invalid={isInvalid("qty")}
                 />
               </Field>
-              <Field label="Strike" className="col-span-2 md:col-span-1">
+              <Field
+                label="Strike"
+                required
+                className="col-span-2 md:col-span-1"
+              >
                 <NumberInput
                   value={strike}
                   onChange={(v) => {
                     setStrike(v);
-                    setErrorMessage("");
+                    clearInvalid("strike");
                   }}
                   placeholder="0"
+                  invalid={isInvalid("strike")}
                 />
               </Field>
             </div>
 
             {/* Dates */}
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Date Bought">
+              <Field label="Date Bought" required>
                 <DateInput
                   value={dateBought}
                   onChange={(v) => {
                     setDateBought(v);
-                    setErrorMessage("");
+                    clearInvalid("dateBought");
                   }}
+                  invalid={isInvalid("dateBought")}
                 />
               </Field>
-              <Field label="Expiry">
+              <Field label="Expiry" required>
                 <DateInput
                   value={expiryDate}
                   min={dateBought}
                   onChange={(v) => {
                     setExpiryDate(v);
-                    setErrorMessage("");
+                    clearInvalid("expiryDate");
                   }}
+                  invalid={isInvalid("expiryDate")}
                 />
               </Field>
             </div>
@@ -351,7 +398,6 @@ export default function EditTradeModal({
                 value={strategy}
                 onChange={(e) => {
                   setStrategy(e.target.value as StrategyList);
-                  setErrorMessage("");
                 }}
                 className="w-full p-2 text-base bg-white/[0.03] text-white rounded border border-white/10 focus:border-white/30 focus:outline-none cursor-pointer"
               >
@@ -367,14 +413,15 @@ export default function EditTradeModal({
             {isClosed && (
               <div className="flex flex-col gap-3 p-3 md:p-4 border border-white/10 rounded-lg bg-white/3">
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Closing Contract">
+                  <Field label="Closing Contract" required>
                     <NumberInput
                       value={closingContractPrice}
                       onChange={(v) => {
                         setClosingContractPrice(v);
-                        setErrorMessage("");
+                        clearInvalid("closingContractPrice");
                       }}
                       placeholder="0.00"
+                      invalid={isInvalid("closingContractPrice")}
                     />
                   </Field>
                   <Field label="Date Closed">
@@ -384,7 +431,6 @@ export default function EditTradeModal({
                       max={expiryDate}
                       onChange={(v) => {
                         setDateClosed(v);
-                        setErrorMessage("");
                       }}
                     />
                   </Field>
@@ -400,35 +446,22 @@ export default function EditTradeModal({
               </div>
             )}
 
-            {/* Tags */}
+            {/* Tags - typed combobox. Autocompletes from the preset list
+                plus every tag the user has previously attached to any
+                trade. Anything new the user types becomes its own tag on
+                Enter/comma. */}
             <Field label="Tags">
-              <div className="flex flex-wrap gap-1.5">
-                {TRADE_TAG_OPTIONS.map(({ label, kind }) => {
-                  const selected = tags.includes(label);
-                  const selectedClasses =
-                    kind === "mistake"
-                      ? "bg-red-500/15 border-red-500/50 text-red-400"
-                      : "bg-green-500/15 border-green-500/50 text-green-400";
-                  return (
-                    <button
-                      key={label}
-                      type="button"
-                      onClick={() => toggleTag(label)}
-                      className={`px-2.5 py-1 rounded-full text-xs border transition cursor-pointer ${
-                        selected
-                          ? selectedClasses
-                          : "border-white/10 text-white/60 hover:bg-white/5"
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
+              <TagsInput
+                value={tags}
+                onAdd={addTag}
+                onRemove={removeTag}
+                userId={userId}
+                simulated={simulated}
+              />
             </Field>
 
             {/* Notes */}
-            <Field label="Notes" hint="Optional">
+            <Field label="Notes">
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
@@ -478,7 +511,7 @@ export default function EditTradeModal({
                 type="button"
                 onClick={() =>
                   handleSave(
-                    setErrorMessage,
+                    setInvalidFields,
                     date,
                     selectedOption,
                     userId as string,
@@ -563,11 +596,13 @@ export default function EditTradeModal({
 function Field({
   label,
   hint,
+  required,
   className = "",
   children,
 }: {
   label: string;
   hint?: string;
+  required?: boolean;
   className?: string;
   children: React.ReactNode;
 }) {
@@ -576,6 +611,11 @@ function Field({
       <div className="flex items-center justify-between gap-2">
         <label className="text-[10px] uppercase tracking-wider text-white/40">
           {label}
+          {required && (
+            <span aria-hidden className="ml-1">
+              *
+            </span>
+          )}
         </label>
         {hint && <span className="text-[10px] text-white/30">{hint}</span>}
       </div>
@@ -589,11 +629,13 @@ function NumberInput({
   onChange,
   placeholder,
   step,
+  invalid,
 }: {
   value: number | null;
   onChange: (v: number | null) => void;
   placeholder?: string;
   step?: string;
+  invalid?: boolean;
 }) {
   return (
     <input
@@ -605,7 +647,11 @@ function NumberInput({
         onChange(isNaN(v) ? null : v);
       }}
       placeholder={placeholder}
-      className="w-full min-w-0 p-2 text-base text-white bg-white/[0.03] rounded border border-white/10 focus:border-white/30 focus:outline-none placeholder:text-white/30"
+      className={`w-full min-w-0 p-2 text-base text-white bg-white/[0.03] rounded border focus:outline-none placeholder:text-white/30 ${
+        invalid
+          ? "border-red-500/70 ring-2 ring-red-500/15 bg-red-500/[0.04] focus:border-red-500 focus:ring-red-500/25 transition-[border-color,box-shadow,background-color] duration-150"
+          : "border-white/10 focus:border-white/30"
+      }`}
     />
   );
 }
@@ -615,11 +661,13 @@ function DateInput({
   onChange,
   min,
   max,
+  invalid,
 }: {
   value: string;
   onChange: (v: string) => void;
   min?: string;
   max?: string;
+  invalid?: boolean;
 }) {
   return (
     <input
@@ -631,7 +679,188 @@ function DateInput({
       // `min-w-0` overrides iOS Safari's intrinsic min-width on date
       // inputs (otherwise the picker swallows grid gaps on narrow
       // screens); `appearance-none` strips the inset shadow.
-      className="w-full min-w-0 p-2 text-base text-white bg-white/[0.03] rounded border border-white/10 focus:border-white/30 focus:outline-none appearance-none"
+      className={`w-full min-w-0 p-2 text-base text-white bg-white/[0.03] rounded border focus:outline-none appearance-none ${
+        invalid
+          ? "border-red-500/70 ring-2 ring-red-500/15 bg-red-500/[0.04] focus:border-red-500 focus:ring-red-500/25 transition-[border-color,box-shadow,background-color] duration-150"
+          : "border-white/10 focus:border-white/30"
+      }`}
     />
+  );
+}
+
+// Combobox-style tag input. Selected tags render as removable chips on
+// the left; the user types into the trailing input. Suggestions come
+// from the preset list plus every tag this user has ever attached to a
+// trade, filtered by what they're typing. Enter / comma / Tab commits
+// the current input as a new tag (creating it if it doesn't exist).
+// Backspace on an empty input removes the most recent tag for fast
+// correction.
+function TagsInput({
+  value,
+  onAdd,
+  onRemove,
+  userId,
+  simulated,
+}: {
+  value: string[];
+  onAdd: (tag: string) => void;
+  onRemove: (tag: string) => void;
+  userId: string | undefined;
+  simulated: boolean;
+}) {
+  const [input, setInput] = useState("");
+  const [focused, setFocused] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const blurTimer = useRef<number | null>(null);
+
+  // Pull every tag the user has previously used, so autocomplete grows
+  // with their journal. Cached by react-query; same hook the rest of the
+  // app uses, so no extra network requests in practice.
+  const { data: trades } = useTrades(userId, simulated);
+
+  const suggestions = useMemo(() => {
+    const seen = new Map<string, TradeTagKind | "other">();
+    for (const preset of TRADE_TAG_OPTIONS) {
+      seen.set(preset.label.toLowerCase(), preset.kind);
+    }
+    for (const t of trades ?? []) {
+      for (const tag of t.tags ?? []) {
+        const k = tag.toLowerCase();
+        if (!seen.has(k)) {
+          seen.set(k, TAG_KIND_BY_LABEL[tag] ?? "other");
+        }
+      }
+    }
+    return Array.from(seen.entries()).map(([k, kind]) => ({
+      // Preserve original casing - look up canonical form from either
+      // the preset list or the trades that introduced it.
+      label:
+        TRADE_TAG_OPTIONS.find((p) => p.label.toLowerCase() === k)?.label ??
+        (trades ?? [])
+          .flatMap((t) => t.tags ?? [])
+          .find((t) => t.toLowerCase() === k) ??
+        k,
+      kind,
+    }));
+  }, [trades]);
+
+  const selectedLower = new Set(value.map((v) => v.toLowerCase()));
+  const inputLower = input.trim().toLowerCase();
+  const filtered = suggestions
+    .filter((s) => !selectedLower.has(s.label.toLowerCase()))
+    .filter(
+      (s) => !inputLower || s.label.toLowerCase().includes(inputLower),
+    )
+    .slice(0, 8);
+
+  const exactExists =
+    !!inputLower &&
+    (suggestions.some((s) => s.label.toLowerCase() === inputLower) ||
+      selectedLower.has(inputLower));
+
+  const commit = (label: string) => {
+    onAdd(label);
+    setInput("");
+  };
+
+  const chipClasses = (kind: TradeTagKind | "other" | undefined) =>
+    kind === "mistake"
+      ? "bg-red-500/15 border-red-500/50 text-red-400"
+      : kind === "good"
+        ? "bg-green-500/15 border-green-500/50 text-green-400"
+        : "bg-white/[0.06] border-white/15 text-white/80";
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === "," || e.key === "Tab") {
+      if (input.trim()) {
+        e.preventDefault();
+        commit(input.trim());
+      }
+      return;
+    }
+    if (e.key === "Backspace" && !input && value.length > 0) {
+      onRemove(value[value.length - 1]);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+      {/* Chip strip + inline input. Looks like a single field. */}
+      <div
+        className="flex flex-wrap items-center gap-1.5 p-1.5 rounded border border-white/10 bg-white/[0.03] focus-within:border-white/30 cursor-text"
+        onClick={() => inputRef.current?.focus()}
+      >
+        {value.map((tag) => {
+          const kind = TAG_KIND_BY_LABEL[tag] ?? "other";
+          return (
+            <span
+              key={tag}
+              className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs border ${chipClasses(kind)}`}
+            >
+              {tag}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRemove(tag);
+                }}
+                aria-label={`Remove ${tag}`}
+                className="opacity-70 hover:opacity-100 cursor-pointer"
+              >
+                <i className="fa-solid fa-xmark text-[10px]" />
+              </button>
+            </span>
+          );
+        })}
+        <input
+          ref={inputRef}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onFocus={() => {
+            if (blurTimer.current) window.clearTimeout(blurTimer.current);
+            setFocused(true);
+          }}
+          onBlur={() => {
+            // Delay so a click on a suggestion chip lands before the
+            // dropdown unmounts.
+            blurTimer.current = window.setTimeout(() => setFocused(false), 120);
+          }}
+          placeholder={value.length === 0 ? "Add tag" : ""}
+          className="flex-1 min-w-[140px] bg-transparent text-sm text-white placeholder-white/35 px-1.5 py-1 outline-none"
+        />
+      </div>
+
+      {/* Suggestion dropdown - shown when focused. If the user has typed
+          something that doesn't match any existing tag, the first option
+          is a "Create" affordance so they know it'll become a brand-new
+          tag. */}
+      {focused && (filtered.length > 0 || (inputLower && !exactExists)) && (
+        <div className="flex flex-wrap gap-1.5">
+          {inputLower && !exactExists && (
+            <button
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => commit(input.trim())}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs border border-teal-500/40 text-teal-300 bg-teal-500/[0.08] hover:bg-teal-500/[0.18] transition cursor-pointer"
+            >
+              <i className="fa-solid fa-plus text-[10px]" />
+              Create &quot;{input.trim()}&quot;
+            </button>
+          )}
+          {filtered.map((s) => (
+            <button
+              key={s.label}
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => commit(s.label)}
+              className={`px-2.5 py-1 rounded-full text-xs border transition cursor-pointer border-white/10 text-white/65 hover:bg-white/[0.06] hover:text-white`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
