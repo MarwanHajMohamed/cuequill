@@ -175,22 +175,15 @@ export default function Time() {
           </h1>
         </motion.div>
 
-        {/* RIGHT - status card */}
+        {/* RIGHT - clock */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.06, ease: "easeOut" }}
-          className="w-full md:w-[340px] rounded-2xl bg-white/[0.03] p-5"
+          className="flex flex-col gap-1 md:items-end"
         >
-          {/* Top row: countdown */}
-          {countdown && (
-            <div className="flex items-center justify-end">
-              <div className="text-[11px] text-white/50">{countdown}</div>
-            </div>
-          )}
-
           {/* Big NY clock */}
-          <div className="mt-3 flex items-baseline gap-2">
+          <div className="flex items-baseline gap-2">
             <div className="text-2xl md:text-3xl font-light tracking-tight tabular-nums text-white">
               <TimezoneDisplay showSeconds={false} />
             </div>
@@ -199,8 +192,8 @@ export default function Time() {
             </div>
           </div>
 
-          {/* Date */}
-          <div className="mt-3 flex items-center text-[12px] text-white/55">
+          {/* Date + countdown */}
+          <div className="flex items-center gap-2 text-[12px] text-white/45">
             <TimezoneDisplay
               showWeekDay
               showDay
@@ -210,6 +203,12 @@ export default function Time() {
               showMinutes={false}
               showSeconds={false}
             />
+            {countdown && (
+              <>
+                <span className="text-white/25">·</span>
+                <span>{countdown}</span>
+              </>
+            )}
           </div>
         </motion.div>
       </div>
