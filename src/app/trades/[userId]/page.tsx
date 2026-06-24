@@ -130,6 +130,10 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
   const [isColumnsOpen, setIsColumnsOpen] = useState<boolean>(false);
   const dragKey = useRef<TradeColumnKey | null>(null);
   const [dragOverKey, setDragOverKey] = useState<TradeColumnKey | null>(null);
+  // Mirrors `dragKey.current` as state so the table can re-render and
+  // highlight every cell in the column being dragged (the ref doesn't
+  // trigger a render on its own).
+  const [draggingKey, setDraggingKey] = useState<TradeColumnKey | null>(null);
 
   const columnOrder = reconcileOrder(storedOrder);
   const hiddenSet = new Set(hiddenColumns);
@@ -654,14 +658,57 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                   <table className="border-collapse table-auto min-w-full">
                     <thead>
                       <tr>
-                        {visibleColumns.map((key) => (
-                          <th
-                            key={key}
-                            className="px-2 md:px-4 py-2 whitespace-nowrap w-full text-white/40 md:text-[11px] text-[10px] text-left uppercase tracking-[0.12em] font-medium"
-                          >
-                            {COLUMN_LABELS[key]}
-                          </th>
-                        ))}
+                        {visibleColumns.map((key) => {
+                          const isDragging = draggingKey === key;
+                          const isDragOver =
+                            dragOverKey === key && draggingKey !== key;
+                          return (
+                            <th
+                              key={key}
+                              draggable
+                              onDragStart={(e) => {
+                                dragKey.current = key;
+                                setDraggingKey(key);
+                                // setData is required for Firefox to
+                                // actually start the drag.
+                                e.dataTransfer.setData("text/plain", key);
+                                e.dataTransfer.effectAllowed = "move";
+                              }}
+                              onDragOver={(e) => {
+                                if (!dragKey.current) return;
+                                e.preventDefault();
+                                e.dataTransfer.dropEffect = "move";
+                                if (dragOverKey !== key) setDragOverKey(key);
+                              }}
+                              onDragLeave={() => {
+                                if (dragOverKey === key) setDragOverKey(null);
+                              }}
+                              onDrop={(e) => {
+                                e.preventDefault();
+                                if (dragKey.current && dragKey.current !== key) {
+                                  moveColumn(dragKey.current, key);
+                                }
+                                dragKey.current = null;
+                                setDragOverKey(null);
+                                setDraggingKey(null);
+                              }}
+                              onDragEnd={() => {
+                                dragKey.current = null;
+                                setDragOverKey(null);
+                                setDraggingKey(null);
+                              }}
+                              className={`px-2 md:px-4 py-2 whitespace-nowrap w-full md:text-[11px] text-[10px] text-left uppercase tracking-[0.12em] font-medium cursor-grab active:cursor-grabbing select-none transition ${
+                                isDragging
+                                  ? "bg-white/[0.06] text-white"
+                                  : isDragOver
+                                    ? "text-white bg-teal-500/10"
+                                    : "text-white/40 hover:text-white/70"
+                              }`}
+                            >
+                              {COLUMN_LABELS[key]}
+                            </th>
+                          );
+                        })}
                       </tr>
                     </thead>
                     <AnimatePresence
@@ -700,8 +747,14 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                             {visibleColumns.map((key) => (
                               <td
                                 key={key}
-                                className={`px-2 md:px-4 py-1 whitespace-nowrap w-full ${
+                                className={`px-2 md:px-4 py-1 whitespace-nowrap w-full transition ${
                                   key === "notes" ? "text-center" : ""
+                                } ${
+                                  draggingKey === key
+                                    ? "bg-white/[0.06]"
+                                    : dragOverKey === key && draggingKey !== null
+                                      ? "bg-teal-500/[0.06]"
+                                      : ""
                                 }`}
                               >
                                 {renderCell(key, trade)}

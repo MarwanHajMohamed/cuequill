@@ -92,14 +92,34 @@ async function fetchIbkrCsv(token: string, queryId: string): Promise<string> {
   const status = extractXmlValue(sendXml, "Status");
   if (status !== "Success") {
     const errorMsg = extractXmlValue(sendXml, "ErrorMessage") || "Unknown error";
-    if (/could not be generated|try again/i.test(errorMsg)) {
+    const errorCode = extractXmlValue(sendXml, "ErrorCode");
+
+    // IBKR uses similar "please try again shortly" wording for several
+    // distinct failures: a real rate limit, a half-generated statement
+    // still on their side, a bad token, a bad queryId, etc. Only the
+    // explicit wait-and-retry codes mean "this clears on its own" -
+    // everything else is a config problem the user needs to fix. Codes
+    // per IBKR Flex docs:
+    //   1004               - statement still incomplete on IBKR's side
+    //   1018 / 1019 / 1020 - statement throttled, retry after delay
+    //   1003 / 1011        - invalid or expired token
+    //   1006               - invalid queryId
+    const RETRY_CODES = new Set(["1004", "1018", "1019", "1020"]);
+    if (RETRY_CODES.has(errorCode)) {
       const err = new Error(
-        "IBKR allows roughly one sync every ~15 minutes per query. Please wait and try again."
+        errorCode === "1004"
+          ? "IBKR is still finishing the previous statement for this query. Please wait a few minutes and try again."
+          : "IBKR is rate-limiting this query (about one sync every ~15 minutes). Please wait and try again.",
       );
       (err as Error & { code?: string }).code = "RATE_LIMITED";
       throw err;
     }
-    throw new Error(`IBKR request failed: ${errorMsg}`);
+
+    // Surface IBKR's exact message and code so the user can actually act
+    // on it (e.g. regenerate token in the IBKR portal when it's expired).
+    throw new Error(
+      `IBKR request failed${errorCode ? ` (code ${errorCode})` : ""}: ${errorMsg}`,
+    );
   }
 
   const referenceCode = extractXmlValue(sendXml, "ReferenceCode");
@@ -116,7 +136,10 @@ async function fetchIbkrCsv(token: string, queryId: string): Promise<string> {
 
     if (body.includes("<Status>Fail</Status>")) {
       const errorMsg = extractXmlValue(body, "ErrorMessage") || "Unknown error";
-      throw new Error(`IBKR retrieval failed: ${errorMsg}`);
+      const errorCode = extractXmlValue(body, "ErrorCode");
+      throw new Error(
+        `IBKR retrieval failed${errorCode ? ` (code ${errorCode})` : ""}: ${errorMsg}`,
+      );
     }
 
     return body;

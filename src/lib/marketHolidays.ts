@@ -114,3 +114,35 @@ export function getYearMarketDays(year: number): Map<string, MarketDay> {
   cache.set(year, out);
   return out;
 }
+
+// Look up the NYSE schedule entry for a given calendar day in NY local
+// time. Returns `null` on regular sessions (weekday with no special
+// schedule) so callers can treat it as a normal full-hour day.
+export function getMarketDay(nyDate: Date): MarketDay | null {
+  const key = `${nyDate.getFullYear()}-${pad(nyDate.getMonth() + 1)}-${pad(
+    nyDate.getDate(),
+  )}`;
+  return getYearMarketDays(nyDate.getFullYear()).get(key) ?? null;
+}
+
+// `nyDate` is a Date whose getDay/getHours/getMinutes read out in
+// America/New_York wall-clock time (i.e. constructed via
+// `new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }))`).
+// Returns whether the NYSE is currently in its regular cash session,
+// accounting for weekends, full-day holidays, AND the 1pm ET early
+// closes around July 4th / Thanksgiving / Christmas.
+export function isMarketOpenAt(nyDate: Date): boolean {
+  const day = nyDate.getDay();
+  if (day === 0 || day === 6) return false;
+
+  const md = getMarketDay(nyDate);
+  if (md && !md.early) return false; // full-day closure
+
+  const hours = nyDate.getHours();
+  const minutes = nyDate.getMinutes();
+  const afterOpen = hours > 9 || (hours === 9 && minutes >= 30);
+  // Early-close days end the session at 1:00 pm ET instead of 4:00 pm.
+  const closeHour = md?.early ? 13 : 16;
+  const beforeClose = hours < closeHour;
+  return afterOpen && beforeClose;
+}

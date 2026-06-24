@@ -415,7 +415,8 @@ function Page() {
     return (
       <>
         {isFed && (
-          <span className="absolute top-1 right-1 px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 text-[8px] md:text-[9px] font-semibold uppercase tracking-wide leading-none">
+          <span className="absolute top-1 right-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-500/35 text-purple-100 border border-purple-400/60 shadow-[0_0_8px_rgba(168,85,247,0.35)] text-[9px] md:text-[10px] font-bold uppercase tracking-wide leading-none">
+            <span className="w-1 h-1 rounded-full bg-purple-200" aria-hidden />
             Fed
           </span>
         )}
@@ -423,15 +424,17 @@ function Page() {
           (marketDay.early ? (
             <span
               title={`Early close 1:00pm ET — ${marketDay.name}`}
-              className="absolute top-1 left-1 px-1.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 text-[8px] md:text-[9px] font-semibold uppercase tracking-wide leading-none"
+              className="absolute top-1 right-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-500/35 text-sky-100 border border-sky-400/60 shadow-[0_0_8px_rgba(56,189,248,0.35)] text-[9px] md:text-[10px] font-bold uppercase tracking-wide leading-none"
             >
+              <i className="fa-solid fa-clock text-[8px]" aria-hidden />
               1pm
             </span>
           ) : (
             <span
               title={`Market closed — ${marketDay.name}`}
-              className="absolute top-1 left-1 px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[8px] md:text-[9px] font-semibold uppercase tracking-wide leading-none"
+              className="absolute top-1 right-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/35 text-amber-100 border border-amber-400/60 shadow-[0_0_8px_rgba(245,158,11,0.4)] text-[9px] md:text-[10px] font-bold uppercase tracking-wide leading-none"
             >
+              <i className="fa-solid fa-lock text-[8px]" aria-hidden />
               Closed
             </span>
           ))}
