@@ -6,11 +6,18 @@ import {
   forwardRef,
   useEffect,
   useImperativeHandle,
+  useLayoutEffect,
   useRef,
   useState,
 } from "react";
 import Calendar, { OnArgs } from "react-calendar";
 import { format } from "date-fns";
+
+// react-calendar's grid container differs per view; the swipe / slide /
+// zoom logic targets whichever one is currently mounted.
+const GRID_SELECTOR =
+  ".react-calendar__month-view__days, .react-calendar__year-view__months, .react-calendar__decade-view__years, .react-calendar__century-view__decades";
+const VIEW_ORDER = ["month", "year", "decade", "century"];
 
 export type AnimatedCalendarHandle = {
   goToToday: () => void;
@@ -74,6 +81,10 @@ const AnimatedCalendar = forwardRef<
     mode: "idle" | "horizontal" | "vertical";
   } | null>(null);
   const [activeStartDate, setActiveStartDate] = useState<Date>(new Date());
+  // Mirror react-calendar's current view so swipe steps and the drill
+  // zoom-animation know whether we're on months, years, or decades.
+  const [view, setView] = useState<string>("month");
+  const prevViewIdx = useRef<number | null>(null);
 
   // Notify the parent of every month change (including initial mount).
   useEffect(() => {
@@ -94,22 +105,60 @@ const AnimatedCalendar = forwardRef<
   // self-heals on the next month commit without a page refresh.
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      const el = calendarRef.current?.querySelector(
-        ".react-calendar__month-view__days",
-      ) as HTMLElement | null;
-      if (!el) return;
-      el.style.transition = "";
-      el.style.transform = "";
-      el.style.opacity = "";
-      el.style.pointerEvents = "";
+      const grids = calendarRef.current?.querySelectorAll(GRID_SELECTOR);
+      grids?.forEach((g) => {
+        const el = g as HTMLElement;
+        el.style.transition = "";
+        el.style.transform = "";
+        el.style.opacity = "";
+        el.style.pointerEvents = "";
+      });
     }, 500);
     return () => window.clearTimeout(timer);
-  }, [activeStartDate]);
+  }, [activeStartDate, view]);
 
+  // The active grid for the current view (days / months / years / decades).
   const getDaysEl = () =>
     (calendarRef.current?.querySelector(
-      ".react-calendar__month-view__days"
+      GRID_SELECTOR
     ) as HTMLElement | null) ?? null;
+
+  // How far one swipe/arrow step moves, by view.
+  const stepDate = (base: Date, dir: "next" | "prev"): Date => {
+    const delta = dir === "next" ? 1 : -1;
+    const y = base.getFullYear();
+    const m = base.getMonth();
+    if (view === "year") return new Date(y + delta, m, 1);
+    if (view === "decade") return new Date(y + delta * 10, m, 1);
+    if (view === "century") return new Date(y + delta * 100, m, 1);
+    return new Date(y, m + delta, 1);
+  };
+
+  // Drill zoom: when the view changes (month↔year↔decade), the new grid
+  // eases in from a scale — out (bigger → settle) when zooming to a
+  // broader view, in (smaller → settle) when drilling down. useLayoutEffect
+  // hides it before paint so there's no flash.
+  useLayoutEffect(() => {
+    const idx = VIEW_ORDER.indexOf(view);
+    const prev = prevViewIdx.current;
+    prevViewIdx.current = idx;
+    if (prev === null || prev === idx) return;
+    const grid = getDaysEl();
+    if (!grid) return;
+    const zoomOut = idx > prev; // broader scope = pull back
+    grid.style.transition = "none";
+    grid.style.opacity = "0";
+    grid.style.transform = `scale(${zoomOut ? 1.08 : 0.92})`;
+    const raf = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const g = getDaysEl() ?? grid;
+        g.style.transition = "transform 0.26s ease, opacity 0.26s ease";
+        g.style.opacity = "1";
+        g.style.transform = "scale(1)";
+      });
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [view]);
 
   // Finger-following swipe: drag the days grid in real time, then either snap
   // back (small swipe) or slide off and switch month (large swipe).
@@ -196,13 +245,7 @@ const AnimatedCalendar = forwardRef<
       days.style.transform = `translateX(${dir === "next" ? width : -width}px)`;
       days.style.opacity = "0";
 
-      setActiveStartDate(
-        new Date(
-          activeStartDate.getFullYear(),
-          activeStartDate.getMonth() + (dir === "next" ? 1 : -1),
-          1
-        )
-      );
+      setActiveStartDate(stepDate(activeStartDate, dir));
 
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
@@ -257,11 +300,10 @@ const AnimatedCalendar = forwardRef<
     }
 
     const dir = action === "next" ? "left" : "right";
-    const days = calendarRef.current?.querySelector(
-      ".react-calendar__month-view__days"
-    ) as HTMLElement;
+    // Whichever grid is mounted for the current view (days/months/years).
+    const days = getDaysEl();
 
-    // If there's no days grid visible (e.g. year view), just update
+    // If there's no grid visible, just update.
     if (!days) {
       setActiveStartDate(newDate);
       return;
@@ -325,7 +367,10 @@ const AnimatedCalendar = forwardRef<
         showNeighboringMonth={showNeighboringMonth}
         activeStartDate={activeStartDate}
         onActiveStartDateChange={handleActiveStartDateChange}
-        onViewChange={({ view }) => onViewChange?.(view)}
+        onViewChange={({ view }) => {
+          setView(view);
+          onViewChange?.(view);
+        }}
         className={className}
       />
     </div>
