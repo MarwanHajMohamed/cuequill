@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useState } from "react";
 import {
@@ -173,6 +174,10 @@ const FAQS: { q: string; a: string }[] = [
 
 export default function PricingPage() {
   const [cycle, setCycle] = useState<Cycle>("annual");
+  // When signed in, the global app navbar already renders — so skip the
+  // marketing header to avoid two stacked navbars.
+  const { status } = useSession();
+  const signedIn = status === "authenticated";
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -186,7 +191,7 @@ export default function PricingPage() {
             "radial-gradient(50% 50% at 50% 0%, rgba(20,184,166,0.14) 0%, rgba(20,184,166,0) 75%), radial-gradient(40% 45% at 80% 5%, rgba(99,102,241,0.10) 0%, rgba(99,102,241,0) 75%)",
         }}
       />
-      <SiteHeader />
+      {!signedIn && <SiteHeader />}
 
       <main className="flex-1 pt-20">
         <PricingHero />
