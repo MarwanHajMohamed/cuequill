@@ -1,35 +1,26 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  addMonths,
-  eachDayOfInterval,
-  endOfMonth,
-  endOfWeek,
-  format,
-  isSameMonth,
-  isToday,
-  parseISO,
-  startOfMonth,
-  startOfWeek,
-} from "date-fns";
+import { format, parseISO } from "date-fns";
+import "react-calendar/dist/Calendar.css";
+import "@/app/dashboard/components/calendar/calendar-custom.css";
+import AnimatedCalendar from "@/app/reusablecalendar/AnimatedCalendar";
 import { withAuth } from "@/lib/withAuth";
 import { useWatchlist } from "@/hooks/useWatchlist";
 import { useEarnings } from "@/hooks/useEarnings";
+import type { EarningsEntry } from "@/app/api/earnings/route";
 import { Spinner } from "@/components/Loaders";
-
-const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 function EarningsPage() {
   const { data: watchlist = [], save, saving, isLoading: wlLoading } =
     useWatchlist();
   const { data: earnings = [], isLoading: eLoading } = useEarnings(watchlist);
-  const [viewMonth, setViewMonth] = useState(() => startOfMonth(new Date()));
+  const [value, setValue] = useState<Date>(new Date());
   const [input, setInput] = useState("");
 
   // Map day → earnings reporting that day (only dated entries).
   const byDay = useMemo(() => {
-    const m = new Map<string, typeof earnings>();
+    const m = new Map<string, EarningsEntry[]>();
     for (const e of earnings) {
       if (!e.date) continue;
       const arr = m.get(e.date) ?? [];
@@ -46,12 +37,6 @@ function EarningsPage() {
       .sort((a, b) => (a.date! < b.date! ? -1 : a.date! > b.date! ? 1 : 0));
   }, [earnings]);
 
-  const grid = useMemo(() => {
-    const start = startOfWeek(startOfMonth(viewMonth), { weekStartsOn: 0 });
-    const end = endOfWeek(endOfMonth(viewMonth), { weekStartsOn: 0 });
-    return eachDayOfInterval({ start, end });
-  }, [viewMonth]);
-
   const addSymbol = () => {
     const s = input.trim().toUpperCase();
     if (!/^[A-Z0-9.\-]{1,10}$/.test(s)) return;
@@ -63,8 +48,38 @@ function EarningsPage() {
     setInput("");
   };
 
-  const removeSymbol = (s: string) =>
-    save(watchlist.filter((x) => x !== s));
+  const removeSymbol = (s: string) => save(watchlist.filter((x) => x !== s));
+
+  // Earnings chips for a day tile. Same teal accent as the app, via
+  // --color-teal-300 which globals flip to a dark teal in light mode so
+  // the pills stay readable on a light surface.
+  const renderTile = ({ date, view }: { date: Date; view: string }) => {
+    if (view !== "month") return null;
+    const events = byDay.get(format(date, "yyyy-MM-dd"));
+    if (!events || events.length === 0) return null;
+    return (
+      <div className="mt-1 flex flex-col items-center gap-0.5 w-full px-0.5">
+        {events.slice(0, 2).map((e) => (
+          <span
+            key={e.symbol}
+            title={`${e.symbol}${e.isEstimate ? " (estimated)" : ""}`}
+            className={`max-w-full truncate text-[9px] md:text-[10px] font-medium tabular-nums leading-tight px-1 py-0.5 rounded ${
+              e.isEstimate
+                ? "bg-white/[0.06] text-white/55"
+                : "bg-teal-500/15 text-teal-300"
+            }`}
+          >
+            {e.symbol}
+          </span>
+        ))}
+        {events.length > 2 && (
+          <span className="text-[9px] text-white/45 leading-none">
+            +{events.length - 2}
+          </span>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="w-full flex flex-col items-center min-h-screen pb-24">
@@ -149,88 +164,15 @@ function EarningsPage() {
         </div>
 
         <div className="grid lg:grid-cols-[1.6fr_1fr] gap-6 items-start">
-          {/* Calendar */}
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md p-4 md:p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-[15px] font-semibold tracking-tight tabular-nums">
-                {format(viewMonth, "MMMM yyyy")}
-              </h2>
-              <div className="flex items-center gap-1">
-                <CalNav
-                  dir="prev"
-                  onClick={() => setViewMonth((m) => addMonths(m, -1))}
-                />
-                <button
-                  type="button"
-                  onClick={() => setViewMonth(startOfMonth(new Date()))}
-                  className="px-2.5 py-1 rounded-full text-[11px] text-white/60 hover:text-white hover:bg-white/[0.06] transition cursor-pointer"
-                >
-                  Today
-                </button>
-                <CalNav
-                  dir="next"
-                  onClick={() => setViewMonth((m) => addMonths(m, 1))}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-7 gap-1 mb-1">
-              {WEEKDAYS.map((d) => (
-                <div
-                  key={d}
-                  className="text-center text-[10px] uppercase tracking-[0.12em] text-white/35 py-1"
-                >
-                  {d.slice(0, 1)}
-                </div>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-7 gap-1">
-              {grid.map((day) => {
-                const key = format(day, "yyyy-MM-dd");
-                const events = byDay.get(key) ?? [];
-                const muted = !isSameMonth(day, viewMonth);
-                const today = isToday(day);
-                return (
-                  <div
-                    key={key}
-                    className={`relative min-h-[58px] md:min-h-[68px] rounded-lg border p-1.5 flex flex-col gap-1 ${
-                      today
-                        ? "border-teal-500/40 bg-teal-500/[0.06]"
-                        : "border-white/[0.06] bg-white/[0.01]"
-                    } ${muted ? "opacity-35" : ""}`}
-                  >
-                    <span
-                      className={`text-[10px] tabular-nums ${
-                        today ? "text-teal-300 font-medium" : "text-white/45"
-                      }`}
-                    >
-                      {format(day, "d")}
-                    </span>
-                    <div className="flex flex-col gap-0.5">
-                      {events.slice(0, 2).map((e) => (
-                        <span
-                          key={e.symbol}
-                          title={`${e.symbol}${e.isEstimate ? " (estimated)" : ""}`}
-                          className={`text-[9.5px] md:text-[10px] font-medium tabular-nums leading-tight truncate px-1 py-0.5 rounded ${
-                            e.isEstimate
-                              ? "bg-white/[0.05] text-white/55"
-                              : "bg-teal-500/15 text-teal-200"
-                          }`}
-                        >
-                          {e.symbol}
-                        </span>
-                      ))}
-                      {events.length > 2 && (
-                        <span className="text-[9px] text-white/40 px-1">
-                          +{events.length - 2} more
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+          {/* Calendar — reuses AnimatedCalendar so it gets the same swipe
+              gestures and month-change animation as the trade calendar. */}
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-5">
+            <AnimatedCalendar
+              value={value}
+              onChange={(d) => setValue(d)}
+              tileContent={renderTile}
+              className="custom-calendar"
+            />
           </div>
 
           {/* Upcoming list */}
@@ -251,10 +193,7 @@ function EarningsPage() {
             ) : (
               <div className="flex flex-col divide-y divide-white/[0.06]">
                 {upcoming.map((e) => (
-                  <div
-                    key={e.symbol}
-                    className="flex items-center gap-3 py-2.5"
-                  >
+                  <div key={e.symbol} className="flex items-center gap-3 py-2.5">
                     <div className="w-[52px] shrink-0 text-center">
                       <div className="text-[11px] uppercase tracking-wide text-white/40 leading-none">
                         {format(parseISO(e.date!), "MMM")}
@@ -298,27 +237,6 @@ function EarningsPage() {
         </div>
       </div>
     </div>
-  );
-}
-
-function CalNav({
-  dir,
-  onClick,
-}: {
-  dir: "prev" | "next";
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={dir === "prev" ? "Previous month" : "Next month"}
-      className="w-7 h-7 rounded-full flex items-center justify-center text-white/55 hover:text-white hover:bg-white/[0.06] transition cursor-pointer"
-    >
-      <i
-        className={`fa-solid fa-chevron-${dir === "prev" ? "left" : "right"} text-[11px]`}
-      />
-    </button>
   );
 }
 
