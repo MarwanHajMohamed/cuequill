@@ -3,7 +3,6 @@
 import TimezoneDisplay from "@/helpers/TimezoneDisplay";
 import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
-import Link from "next/link";
 import React, { useState, useEffect } from "react";
 import { getMarketDay, isMarketOpenAt } from "@/lib/marketHolidays";
 
@@ -126,10 +125,6 @@ export default function Time() {
   }
 
   const hours = currentTime.getHours();
-  // Holiday-aware NYSE session check - matches the calendar's market-day
-  // badge so the dashboard pill, the countdown, and the calendar agree
-  // on what "Closed" means.
-  const marketOpen = isMarketOpenAt(currentTime);
 
   const greeting =
     hours < 12 ? "Good morning" : hours < 17 ? "Good afternoon" : "Good evening";
@@ -173,24 +168,11 @@ export default function Time() {
           <div className="text-[12px] uppercase tracking-[0.18em] text-white/40 font-medium">
             {greeting}
           </div>
-          <h1 className="text-4xl md:text-6xl font-semibold tracking-tight leading-[1.05]">
+          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight leading-[1.05]">
             <span className="bg-gradient-to-r from-teal-300 to-emerald-400 bg-clip-text text-transparent">
               {name}
             </span>
           </h1>
-          <p className="text-sm md:text-[15px] text-white/55 max-w-md leading-relaxed">
-            {marketOpen
-              ? "Markets are live. Stay disciplined - review your "
-              : "Markets are quiet. Use the time to review your "}
-            <Link
-              href="/affirmations"
-              prefetch
-              className="text-white/80 underline decoration-white/20 underline-offset-2 hover:decoration-teal-400 hover:text-white transition"
-            >
-              affirmations
-            </Link>
-            {marketOpen ? " before the next setup." : " and yesterday's trades."}
-          </p>
         </motion.div>
 
         {/* RIGHT - status card */}
@@ -198,39 +180,18 @@ export default function Time() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.06, ease: "easeOut" }}
-          className="w-full md:w-[340px] rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-5 shadow-[0_8px_40px_var(--shadow-soft)]"
+          className="w-full md:w-[340px] rounded-2xl bg-white/[0.03] p-5"
         >
-          {/* Top row: market status + countdown */}
-          <div className="flex items-center justify-between">
-            <div
-              className={`flex items-center gap-2 px-2.5 py-1 rounded-full text-[11px] font-medium border ${
-                marketOpen
-                  ? "bg-green-500/10 text-green-400 border-green-500/20"
-                  : "bg-red-500/10 text-red-400 border-red-500/20"
-              }`}
-            >
-              <span className="relative flex w-2 h-2">
-                {marketOpen && (
-                  <span className="absolute inset-0 rounded-full bg-green-400 animate-ping opacity-75" />
-                )}
-                <span
-                  className={`relative inline-flex w-2 h-2 rounded-full ${
-                    marketOpen ? "bg-green-400" : "bg-red-400"
-                  }`}
-                />
-              </span>
-              <span className="uppercase tracking-wider text-[10px]">
-                {marketOpen ? "Market open" : "Market closed"}
-              </span>
-            </div>
-            {countdown && (
+          {/* Top row: countdown */}
+          {countdown && (
+            <div className="flex items-center justify-end">
               <div className="text-[11px] text-white/50">{countdown}</div>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Big NY clock */}
           <div className="mt-3 flex items-baseline gap-2">
-            <div className="text-4xl md:text-5xl font-light tracking-tight tabular-nums text-white">
+            <div className="text-2xl md:text-3xl font-light tracking-tight tabular-nums text-white">
               <TimezoneDisplay showSeconds={false} />
             </div>
             <div className="text-[11px] text-white/40 uppercase tracking-wider">
@@ -238,8 +199,8 @@ export default function Time() {
             </div>
           </div>
 
-          {/* Date + premarket link */}
-          <div className="mt-3 flex items-center justify-between text-[12px] text-white/55">
+          {/* Date */}
+          <div className="mt-3 flex items-center text-[12px] text-white/55">
             <TimezoneDisplay
               showWeekDay
               showDay
@@ -249,14 +210,6 @@ export default function Time() {
               showMinutes={false}
               showSeconds={false}
             />
-            <a
-              href="https://www.marketwatch.com/investing/fund/spy"
-              className="text-white/55 hover:text-teal-400 transition inline-flex items-center gap-1"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Premarket <i className="fa-solid fa-arrow-up-right-from-square text-[9px]" />
-            </a>
           </div>
         </motion.div>
       </div>
