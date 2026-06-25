@@ -138,7 +138,7 @@ function EarningsPage() {
                 }}
                 placeholder="add ticker"
                 maxLength={10}
-                className="bg-transparent outline-none text-[12.5px] px-3 py-1 w-[110px] placeholder:text-white/35 uppercase"
+                className="bg-transparent outline-none text-[12.5px] px-3 py-1 w-[110px] placeholder:text-white/35 placeholder:normal-case uppercase"
               />
               <button
                 type="button"

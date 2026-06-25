@@ -70,7 +70,7 @@ export default function Login() {
         className="absolute top-6 left-6 inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-white/[0.03] backdrop-blur-md text-white/65 hover:bg-white/[0.06] hover:text-white transition text-[12px] font-medium"
       >
         <i className="fa-solid fa-chevron-left text-[10px]" />
-        Back
+        back
       </Link>
 
       <motion.div
@@ -81,12 +81,12 @@ export default function Login() {
       >
         {/* Header */}
         <div className="flex flex-col gap-1.5 mb-7 text-center">
-          <div className="text-[11px] uppercase tracking-[0.18em] text-white/40 font-medium">
-            Welcome back
+          <div className="text-[11px] tracking-[0.18em] text-white/40 font-medium">
+            welcome back
           </div>
           <h1 className="text-3xl md:text-4xl font-semibold tracking-tight leading-[1.05]">
             <span className="bg-gradient-to-r from-teal-300 to-emerald-400 bg-clip-text text-transparent">
-              Sign in
+              sign in
             </span>
           </h1>
           <p className="text-[13px] text-white/50 mt-1">
@@ -97,8 +97,8 @@ export default function Login() {
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
           {/* Email */}
           <label className="flex flex-col gap-1.5">
-            <span className="text-[11px] uppercase tracking-[0.14em] text-white/45 font-medium">
-              Email
+            <span className="text-[11px] tracking-[0.14em] text-white/45 font-medium">
+              email
             </span>
             <div className="relative">
               <i className="fa-solid fa-envelope absolute left-3 top-1/2 -translate-y-1/2 text-[12px] text-white/35" />
@@ -119,8 +119,8 @@ export default function Login() {
 
           {/* Password */}
           <label className="flex flex-col gap-1.5">
-            <span className="text-[11px] uppercase tracking-[0.14em] text-white/45 font-medium">
-              Password
+            <span className="text-[11px] tracking-[0.14em] text-white/45 font-medium">
+              password
             </span>
             <div className="relative">
               <i className="fa-solid fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-[12px] text-white/35" />
@@ -174,11 +174,11 @@ export default function Login() {
             {loading ? (
               <>
                 <i className="fa-solid fa-circle-notch animate-spin text-[12px]" />
-                Signing in…
+                signing in…
               </>
             ) : (
               <>
-                Sign in
+                sign in
                 <i className="fa-solid fa-chevron-right text-[10px]" />
               </>
             )}

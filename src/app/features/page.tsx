@@ -446,7 +446,7 @@ function ClosingCTA() {
   return (
     <section className="px-6 md:px-10 py-20 md:py-28">
       <div className="max-w-[1200px] mx-auto rounded-3xl border border-white/10 bg-white/[0.02] backdrop-blur-md shadow-[0_8px_40px_var(--shadow-soft)] p-8 md:p-14">
-        <SectionMark label="Get started" />
+        <SectionMark label="get started" />
         <h2 className="mt-6 text-[36px] sm:text-[48px] md:text-[60px] leading-[0.98] font-medium tracking-[-0.025em] max-w-3xl">
           That&apos;s the tour.{" "}
           <span className="italic text-teal-300">Open the journal.</span>

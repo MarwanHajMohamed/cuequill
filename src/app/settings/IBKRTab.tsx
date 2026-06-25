@@ -75,7 +75,7 @@ export default function IBKRTab() {
   }, [cooldownMsLeft]);
 
   const handleSave = async () => {
-    setSaveStatus("Saving…");
+    setSaveStatus("saving…");
     const body: Record<string, string> = { ibkrQueryId: queryId };
     if (token) body.ibkrToken = token;
 
@@ -86,13 +86,13 @@ export default function IBKRTab() {
     });
 
     if (res.ok) {
-      setSaveStatus("Saved");
+      setSaveStatus("saved");
       if (token) {
         setHasToken(true);
         setToken("");
       }
     } else {
-      setSaveStatus("Error saving");
+      setSaveStatus("error saving");
     }
   };
 

@@ -77,7 +77,7 @@ export default function ImportedTradesModal({
 
   const subtitle =
     trades === null
-      ? "Loading…"
+      ? "loading…"
       : `${count} trade${count === 1 ? "" : "s"} from the last sync`;
 
   return (
@@ -104,7 +104,7 @@ export default function ImportedTradesModal({
           <div className="px-5 py-4 flex items-start justify-between gap-3 shrink-0">
             <div className="min-w-0">
               <h2 className="text-[16px] font-semibold tracking-tight">
-                Imported trades
+                imported trades
               </h2>
               <p className="text-[12px] mt-0.5">
                 <span className="text-white/45">{subtitle}</span>
@@ -136,7 +136,7 @@ export default function ImportedTradesModal({
 
             {trades === null ? (
               <div className="text-[12px] text-white/40 px-3 py-10 text-center">
-                Loading…
+                loading…
               </div>
             ) : count === 0 ? (
               <div className="text-[12px] text-white/40 px-3 py-10 text-center">

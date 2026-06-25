@@ -52,8 +52,8 @@ export default function Filters({
     <div className="flex flex-col gap-5">
       {/* STATUS */}
       <div>
-        <div className="text-[10px] xl:text-xs text-white/40 mb-2 uppercase tracking-wider">
-          Status
+        <div className="text-[10px] xl:text-xs text-white/40 mb-2 tracking-wider">
+          status
         </div>
         <div className="flex gap-2">
           {(["All", "Win", "Loss"] as const).map((val) => (
@@ -80,8 +80,8 @@ export default function Filters({
 
       {/* STRATEGY */}
       <div>
-        <div className="text-[10px] xl:text-xs text-white/40 mb-2 uppercase tracking-wider">
-          Strategy
+        <div className="text-[10px] xl:text-xs text-white/40 mb-2 tracking-wider">
+          strategy
         </div>
         <select
           value={strategy}
@@ -100,8 +100,8 @@ export default function Filters({
 
       {/* SYMBOL */}
       <div>
-        <div className="text-[10px] xl:text-xs text-white/40 mb-2 uppercase tracking-wider">
-          Symbol
+        <div className="text-[10px] xl:text-xs text-white/40 mb-2 tracking-wider">
+          symbol
         </div>
         <select
           value={symbol}
@@ -120,8 +120,8 @@ export default function Filters({
 
       {/* OPTION */}
       <div>
-        <div className="text-[10px] xl:text-xs text-white/40 mb-2 uppercase tracking-wider">
-          Option
+        <div className="text-[10px] xl:text-xs text-white/40 mb-2 tracking-wider">
+          option
         </div>
         <div className="flex gap-2">
           {(["All", "CALL", "PUT"] as const).map((val) => (
@@ -148,8 +148,8 @@ export default function Filters({
 
       {/* DATE */}
       <div>
-        <div className="text-[10px] xl:text-xs text-white/40 mb-2 uppercase tracking-wider">
-          Date Range
+        <div className="text-[10px] xl:text-xs text-white/40 mb-2 tracking-wider">
+          date range
         </div>
         <DateRangeControl
           startDate={startDate}
@@ -171,7 +171,7 @@ export default function Filters({
       <button
         onClick={() => setIsPanelOpen(true)}
         aria-label="Open filters"
-        title="Filters"
+        title="filters"
         className={`cursor-pointer fixed left-0 top-1/2 -translate-y-1/2 z-40 inline-flex items-center justify-center gap-1 w-7 h-12 rounded-r-xl bg-[var(--surface)]/80 border border-l-0 border-white/10 text-white/50 hover:w-8 hover:text-white hover:bg-[var(--surface)] hover:border-white/25 opacity-60 hover:opacity-100 shadow-md transition-all duration-200 ${
           isPanelOpen
             ? "opacity-0 pointer-events-none -translate-x-4"
@@ -209,7 +209,7 @@ export default function Filters({
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/5 shrink-0">
           <div className="flex items-center gap-2">
             <i className="fa-solid fa-sliders text-sm text-white/60" />
-            <span className="text-sm font-medium text-white">Filters</span>
+            <span className="text-sm font-medium text-white">filters</span>
             {activeFilterCount > 0 && (
               <span className="min-w-5 h-5 px-1 flex items-center justify-center rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 text-[10px] font-semibold">
                 {activeFilterCount}
@@ -244,7 +244,7 @@ export default function Filters({
               }}
               className="w-full py-2 text-xs text-white/60 border border-white/15 rounded-lg hover:text-white hover:border-white/30 transition duration-150 cursor-pointer"
             >
-              Clear all filters
+              clear all filters
             </button>
           </div>
         )}
