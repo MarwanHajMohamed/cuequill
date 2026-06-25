@@ -24,7 +24,8 @@ function Page({ params }: { params: Promise<{ slug: string }> }) {
           href="/strategies"
           className="px-4 py-2 rounded-full border border-white/15 bg-white/[0.03] hover:bg-white/[0.06] transition text-sm"
         >
-          ← Back to strategies
+          <i className="fa-solid fa-chevron-left text-[10px] mr-1.5" />
+          Back to strategies
         </Link>
       </div>
     );
@@ -180,7 +181,7 @@ function Page({ params }: { params: Promise<{ slug: string }> }) {
                 className="group min-w-0 rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] transition p-4 flex flex-col"
               >
                 <div className="text-[11px] uppercase tracking-[0.15em] text-white/40 mb-1 flex items-center gap-1.5">
-                  <i className="fa-solid fa-arrow-left text-[10px] group-hover:-translate-x-0.5 transition" />
+                  <i className="fa-solid fa-chevron-left text-[10px] group-hover:-translate-x-0.5 transition" />
                   Previous
                 </div>
                 <div className="w-full text-[14px] font-medium truncate">
@@ -198,7 +199,7 @@ function Page({ params }: { params: Promise<{ slug: string }> }) {
               >
                 <div className="text-[11px] uppercase tracking-[0.15em] text-white/40 mb-1 flex items-center gap-1.5">
                   Next
-                  <i className="fa-solid fa-arrow-right text-[10px] group-hover:translate-x-0.5 transition" />
+                  <i className="fa-solid fa-chevron-right text-[10px] group-hover:translate-x-0.5 transition" />
                 </div>
                 <div className="w-full text-[14px] font-medium truncate">
                   {next.title}

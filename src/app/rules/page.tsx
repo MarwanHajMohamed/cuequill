@@ -175,7 +175,7 @@ function SectionRow({
           />
         </div>
       ) : (
-        <i className="fa-solid fa-arrow-right text-[12px] text-white/40 group-hover:text-white/80 group-hover:translate-x-0.5 transition" />
+        <i className="fa-solid fa-chevron-right text-[12px] text-white/40 group-hover:text-white/80 group-hover:translate-x-0.5 transition" />
       )}
     </div>
   );

@@ -541,7 +541,7 @@ function Page() {
             {streaming ? (
               <i className="fa-solid fa-circle-notch text-[12px] animate-spin" />
             ) : (
-              <i className="fa-solid fa-arrow-up text-[12px]" />
+              <i className="fa-solid fa-chevron-up text-[12px]" />
             )}
           </button>
         </form>

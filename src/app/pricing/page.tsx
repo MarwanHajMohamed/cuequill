@@ -417,7 +417,7 @@ function PlanColumn({
           }`}
         >
           {plan.cta}
-          <i className="fa-solid fa-arrow-right text-[9px]" />
+          <i className="fa-solid fa-chevron-right text-[9px]" />
         </Link>
       </div>
 
@@ -633,7 +633,7 @@ function Signoff() {
             className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 transition text-[13px] font-medium"
           >
             Open your journal
-            <i className="fa-solid fa-arrow-right text-[10px]" />
+            <i className="fa-solid fa-chevron-right text-[10px]" />
           </Link>
           <a
             href="mailto:hi@cuequill.app"
