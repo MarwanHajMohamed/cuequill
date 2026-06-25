@@ -164,7 +164,7 @@ function Hero() {
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 transition text-[13px] font-medium"
             >
               Open your journal
-              <i className="fa-solid fa-arrow-right text-[10px]" />
+              <i className="fa-solid fa-chevron-right text-[10px]" />
             </Link>
           </motion.div>
         </div>
@@ -308,7 +308,7 @@ function Signoff() {
             className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 transition text-[13px] font-medium"
           >
             Open your journal
-            <i className="fa-solid fa-arrow-right text-[10px]" />
+            <i className="fa-solid fa-chevron-right text-[10px]" />
           </Link>
           <Link
             href="/pricing"
@@ -492,7 +492,7 @@ function QuillAIPreview() {
           Ask about your last five losses…
         </span>
         <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25">
-          <i className="fa-solid fa-arrow-up text-[11px]" />
+          <i className="fa-solid fa-chevron-up text-[11px]" />
         </span>
       </div>
     </PreviewClipping>

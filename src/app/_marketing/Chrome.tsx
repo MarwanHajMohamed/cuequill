@@ -124,7 +124,7 @@ export function SiteHeader() {
                 className="px-5 py-3.5 text-[14px] font-medium text-teal-300 hover:bg-teal-500/[0.08] transition inline-flex items-center justify-between"
               >
                 Sign in
-                <i className="fa-solid fa-arrow-right text-[11px]" />
+                <i className="fa-solid fa-chevron-right text-[11px]" />
               </Link>
             </div>
           </motion.div>
