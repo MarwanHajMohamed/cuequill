@@ -776,7 +776,7 @@ function TradeCard({ id }: { id: string }) {
             <span className="text-white/20">·</span>
             <span className="tabular-nums">
               {entryDate}
-              {!isOpen && exitDate ? ` → ${exitDate}` : ""}
+              {!isOpen && exitDate ? ` › ${exitDate}` : ""}
             </span>
           </>
         )}

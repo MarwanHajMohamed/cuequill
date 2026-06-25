@@ -469,7 +469,7 @@ function ImportedRow({
         </div>
         <div className="text-[10.5px] text-white/40 tabular-nums">
           {day(trade.dateBought)}
-          {trade.dateClosed ? ` → ${day(trade.dateClosed)}` : " · open"}
+          {trade.dateClosed ? ` › ${day(trade.dateClosed)}` : " · open"}
         </div>
       </div>
 
