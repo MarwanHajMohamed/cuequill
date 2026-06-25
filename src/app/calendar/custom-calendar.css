@@ -216,7 +216,7 @@
   transition: background-color 120ms ease, border-color 120ms ease;
   /* Day-grid tiles have explicit height; month/year tiles use padding
      so they read like dashboard cards instead of squat buttons. */
-  min-height: 64px;
+  min-height: 124px;
 }
 .react-calendar.custom-calendar_full-view
   .react-calendar__year-view__months__month:enabled:hover,
