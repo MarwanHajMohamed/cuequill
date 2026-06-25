@@ -56,19 +56,19 @@ const DEFAULT_COLUMN_ORDER: TradeColumnKey[] = [
 ];
 
 const COLUMN_LABELS: Record<TradeColumnKey, string> = {
-  symbol: "Symbol",
+  symbol: "symbol",
   option: "PUT/CALL",
-  status: "Status",
-  netpl: "Net P/L",
-  change: "Change %",
-  contractPrice: "Contract Price",
-  qty: "Qty",
-  strike: "Strike",
-  dateBought: "Date Bought",
-  expiryDate: "Expiry Date",
-  closingContractPrice: "Closing Contract Price",
-  strategy: "Strategy",
-  notes: "Notes",
+  status: "status",
+  netpl: "net P/L",
+  change: "change %",
+  contractPrice: "contract price",
+  qty: "qty",
+  strike: "strike",
+  dateBought: "date bought",
+  expiryDate: "expiry date",
+  closingContractPrice: "closing contract price",
+  strategy: "strategy",
+  notes: "notes",
 };
 
 // Reconcile a stored order with the known columns: keep the saved order,
@@ -234,10 +234,10 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
         <div className="w-12 h-12 rounded-full bg-red-500/15 border border-red-500/25 flex items-center justify-center">
           <i className="fa-solid fa-triangle-exclamation text-red-300 text-lg" />
         </div>
-        <div className="text-[12px] uppercase tracking-[0.18em] text-white/40 font-medium">
-          Could not load
+        <div className="text-[12px] tracking-[0.18em] text-white/40 font-medium">
+          could not load
         </div>
-        <div className="text-lg font-semibold">Trades unavailable</div>
+        <div className="text-lg font-semibold">trades unavailable</div>
         <div className="text-sm text-white/55 max-w-sm text-center">
           We couldn&apos;t reach the journal. Check your connection and
           retry.
@@ -434,11 +434,11 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
 
       {!trades || trades.length === 0 ? (
         <div className="flex flex-col gap-3 items-center h-screen justify-center">
-          <div className="text-[11px] uppercase tracking-[0.18em] text-white/40 font-medium">
-            Journal
+          <div className="text-[11px] tracking-[0.18em] text-white/40 font-medium">
+            journal
           </div>
           <div className="text-2xl font-semibold tracking-tight">
-            No trades yet
+            no trades yet
           </div>
           <div className="text-sm text-white/55 max-w-sm text-center">
             Log your first trade to start tracking edge, streaks, and strategy
@@ -452,7 +452,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
             }}
           >
             <i className="fa-solid fa-plus text-[11px]" />
-            Add new trade
+            add new trade
           </button>
         </div>
       ) : (
@@ -484,7 +484,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
             <div className="relative flex justify-end mt-5 max-[1130px]:mt-3 mb-3">
               <button
                 onClick={() => setIsColumnsOpen((v) => !v)}
-                title="Customize columns"
+                title="customize columns"
                 aria-label="Customize columns"
                 aria-expanded={isColumnsOpen}
                 className={`inline-flex items-center justify-center w-9 h-9 rounded-full border transition cursor-pointer ${
@@ -516,14 +516,14 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                       transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
                     >
                       <div className="flex items-center justify-between px-2 py-1.5">
-                        <span className="text-[11px] uppercase tracking-[0.14em] text-white/40 font-medium">
-                          Columns
+                        <span className="text-[11px] tracking-[0.14em] text-white/40 font-medium">
+                          columns
                         </span>
                         <button
                           onClick={resetColumns}
                           className="text-[11px] text-teal-300/80 hover:text-teal-300 transition cursor-pointer"
                         >
-                          Reset
+                          reset
                         </button>
                       </div>
                       <div className="mt-1 flex flex-col">
@@ -579,8 +579,8 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                                   lastVisible
                                     ? "At least one column must stay visible"
                                     : visible
-                                      ? "Hide column"
-                                      : "Show column"
+                                      ? "hide column"
+                                      : "show column"
                                 }
                               >
                                 <span
@@ -681,7 +681,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                                 setDragOverKey(null);
                                 setDraggingKey(null);
                               }}
-                              className={`px-2 md:px-4 py-2 whitespace-nowrap w-full md:text-[11px] text-[10px] text-left uppercase tracking-[0.12em] font-medium cursor-grab active:cursor-grabbing select-none transition ${
+                              className={`px-2 md:px-4 py-2 whitespace-nowrap w-full md:text-[11px] text-[10px] text-left tracking-[0.12em] font-medium cursor-grab active:cursor-grabbing select-none transition ${
                                 isDragging
                                   ? "bg-white/[0.06] text-white"
                                   : isDragOver
@@ -763,7 +763,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                     }}
                   >
                     <i className="fa-solid fa-plus text-[11px]" />
-                    <span className="md:inline hidden">Add trade</span>
+                    <span className="md:inline hidden">add trade</span>
                   </button>
                   <button
                     className={`inline-flex items-center justify-center gap-2 px-3 md:px-4 py-2 rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-500/25 transition text-[12px] md:text-[13px] font-medium w-9 h-9 md:w-auto md:h-auto ${
@@ -781,7 +781,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                       }`}
                     />
                     <span className="md:inline hidden">
-                      {syncing ? "Syncing…" : "Sync IBKR"}
+                      {syncing ? "syncing…" : "sync IBKR"}
                     </span>
                   </button>
                   <button

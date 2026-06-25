@@ -48,9 +48,9 @@ export default function Home() {
           }
           body="A calendar tinted by your P/L. Click any day, see what you did and why. No CSV exports. No pivot tables. Just the part you were going to do in Excel anyway, except you'll open it."
           stats={[
-            ["Loads in", "2s"],
-            ["Click to detail", "Yes"],
-            ["Net of fees", "Yes"],
+            ["loads in", "2s"],
+            ["click to detail", "Yes"],
+            ["net of fees", "Yes"],
           ]}
           preview={<CalendarPreview />}
         />
@@ -68,9 +68,9 @@ export default function Home() {
           }
           body="Ask in plain English. Cuequill's AI answers from your trades, not the internet's. It can log a fresh fill in one sentence, then call it back when you ask."
           stats={[
-            ["Reads", "Every fill"],
-            ["Model", "Gemini"],
-            ["Avg reply", "1.4s"],
+            ["reads", "Every fill"],
+            ["model", "Gemini"],
+            ["avg reply", "1.4s"],
           ]}
           preview={<QuillAIPreview />}
         />
@@ -87,9 +87,9 @@ export default function Home() {
           }
           body="Expectancy. Profit factor. Win rate sliced by strategy, symbol, hour. A risk budget you can't bury. Numbers chosen by a trader, not picked off a finance API."
           stats={[
-            ["Expectancy", "$/trade"],
-            ["Risk budget", "Per day"],
-            ["Cuts by", "Strat/sym/hr"],
+            ["expectancy", "$/trade"],
+            ["risk budget", "Per day"],
+            ["cuts by", "Strat/sym/hr"],
           ]}
           preview={<NumbersPreview />}
         />
@@ -106,9 +106,9 @@ export default function Home() {
           }
           body="Drop a Flex Web Service token in settings. Cuequill imports every fill weeknight after close — commissions and taxes included. Manual entry still works."
           stats={[
-            ["Runs", "After close"],
-            ["Commissions", "Imported"],
-            ["Setup", "≈3 min"],
+            ["runs", "After close"],
+            ["commissions", "Imported"],
+            ["setup", "≈3 min"],
           ]}
           preview={<IBKRPreview />}
         />
@@ -163,7 +163,7 @@ function Hero() {
               href="/login"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 transition text-[13px] font-medium"
             >
-              Open your journal
+              open your journal
               <i className="fa-solid fa-chevron-right text-[10px]" />
             </Link>
           </motion.div>
@@ -217,7 +217,7 @@ function FeatureSpread({
           <dl className="mt-8 grid grid-cols-3 gap-x-4 gap-y-3 max-w-md border-t border-white/10 pt-5">
             {stats.map(([k, v]) => (
               <div key={k} className="flex flex-col gap-0.5">
-                <dt className="text-[10px] uppercase tracking-[0.18em] text-white/35">
+                <dt className="text-[10px] tracking-[0.18em] text-white/35">
                   {k}
                 </dt>
                 <dd className="text-[12px] text-white/80 tabular-nums">{v}</dd>
@@ -314,10 +314,10 @@ function Signoff() {
             href="/pricing"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-white/15 text-white/80 hover:text-white hover:border-white/30 transition text-[12.5px]"
           >
-            See pricing
+            see pricing
           </Link>
-          <span className="text-[11.5px] uppercase tracking-[0.18em] text-white/35 ml-1">
-            Three minutes to set up
+          <span className="text-[11.5px] tracking-[0.18em] text-white/35 ml-1">
+            three minutes to set up
           </span>
         </div>
       </div>
@@ -413,7 +413,7 @@ function PreviewClipping({
       <div className="relative rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md overflow-hidden shadow-[0_2px_24px_var(--shadow-soft)]">
         {children}
       </div>
-      <figcaption className="mt-3 flex items-baseline justify-between text-[10.5px] uppercase tracking-[0.22em] text-white/40">
+      <figcaption className="mt-3 flex items-baseline justify-between text-[10.5px] tracking-[0.22em] text-white/40">
         <span className="flex items-center gap-2">
           <span className="w-1 h-1 rounded-full bg-teal-400" />
           {caption}
@@ -602,12 +602,12 @@ function CalendarPreview() {
       : null;
 
   return (
-    <PreviewClipping caption="Day view" meta="Nov 2025">
+    <PreviewClipping caption="day view" meta="Nov 2025">
       {/* Header row - month label + month-to-date P/L */}
       <div className="px-5 md:px-6 py-5 border-b border-[var(--rule)] flex items-baseline justify-between gap-3 flex-wrap">
         <div>
-          <p className="text-[10px] uppercase tracking-[0.22em] text-white/40 mb-1.5">
-            November
+          <p className="text-[10px] tracking-[0.22em] text-white/40 mb-1.5">
+            november
           </p>
           <p className="text-[28px] md:text-[32px] leading-none tabular-nums text-green-300 tracking-[-0.02em] font-medium">
             +$2,666
@@ -628,10 +628,10 @@ function CalendarPreview() {
       <div className="px-3 md:px-4 py-4">
         {/* Weekday labels */}
         <div className="grid grid-cols-5 gap-1.5 mb-2 px-1">
-          {["MON", "TUE", "WED", "THU", "FRI"].map((d) => (
+          {["mon", "tue", "wed", "thu", "fri"].map((d) => (
             <div
               key={d}
-              className="text-[9px] uppercase tracking-[0.18em] text-white/35 text-left"
+              className="text-[9px] tracking-[0.18em] text-white/35 text-left"
             >
               {d}
             </div>
@@ -698,12 +698,12 @@ function CalendarPreview() {
                       <span className="text-[10px] text-white/55 tabular-nums">
                         {cell.day}
                       </span>
-                      <span className="absolute top-1 right-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-purple-500/35 text-purple-100 border border-purple-400/60 text-[7.5px] font-bold uppercase tracking-wide leading-none">
+                      <span className="absolute top-1 right-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-purple-500/35 text-purple-100 border border-purple-400/60 text-[7.5px] font-bold tracking-wide leading-none">
                         <span
                           className="w-1 h-1 rounded-full bg-purple-200"
                           aria-hidden
                         />
-                        Fed
+                        fed
                       </span>
                     </div>
                   );
@@ -717,8 +717,8 @@ function CalendarPreview() {
                       <span className="text-[10px] text-teal-200 tabular-nums">
                         {cell.day}
                       </span>
-                      <span className="mt-auto text-[10px] uppercase tracking-[0.18em] text-teal-300 leading-none font-medium">
-                        Today
+                      <span className="mt-auto text-[10px] tracking-[0.18em] text-teal-300 leading-none font-medium">
+                        today
                       </span>
                     </div>
                   );
@@ -740,9 +740,9 @@ function CalendarPreview() {
       </div>
 
       {/* Footer */}
-      <div className="px-5 md:px-6 py-3 border-t border-[var(--rule)] flex items-center justify-between text-[10.5px] text-white/45 uppercase tracking-[0.18em]">
+      <div className="px-5 md:px-6 py-3 border-t border-[var(--rule)] flex items-center justify-between text-[10.5px] text-white/45 tracking-[0.18em]">
         <span>
-          Best{" "}
+          best{" "}
           <span className="text-green-300 tabular-nums normal-case tracking-normal">
             +$847
           </span>
@@ -806,7 +806,7 @@ function DayTradesOverlay({
             {/* Modal header */}
             <div className="px-4 md:px-5 py-3.5 border-b border-[var(--rule)] flex items-baseline justify-between gap-3">
               <div className="flex items-baseline gap-2.5">
-                <p className="text-[10px] uppercase tracking-[0.22em] text-white/40">
+                <p className="text-[10px] tracking-[0.22em] text-white/40">
                   {weekday} · Nov {day}
                 </p>
               </div>
@@ -827,7 +827,7 @@ function DayTradesOverlay({
               >
                 {positive ? "+" : "−"}${Math.abs(netPL).toFixed(2)}
               </p>
-              <span className="text-[10.5px] uppercase tracking-[0.18em] text-white/40 tabular-nums">
+              <span className="text-[10.5px] tracking-[0.18em] text-white/40 tabular-nums">
                 {trades.length} {trades.length === 1 ? "trade" : "trades"}
               </span>
             </div>
@@ -881,113 +881,6 @@ function DayTradesOverlay({
         </motion.div>
       )}
     </AnimatePresence>
-  );
-}
-
-function DayPreview() {
-  return (
-    <PreviewClipping caption="Day view" meta="Mon · June 9">
-      <div className="px-5 md:px-6 py-5 border-b border-[var(--rule)] flex items-baseline justify-between gap-3 flex-wrap">
-        <div>
-          <p className="text-[10px] uppercase tracking-[0.22em] text-white/40 mb-1.5">
-            Net P/L
-          </p>
-          <p className="text-[38px] md:text-[46px] leading-none tabular-nums text-green-300 tracking-[-0.02em] font-medium">
-            +$847.23
-          </p>
-        </div>
-        <div className="flex items-center gap-2 text-[11px] tabular-nums">
-          <span className="px-2 py-0.5 rounded-full bg-green-500/10 text-green-300 border border-green-500/25">
-            3W
-          </span>
-          <span className="px-2 py-0.5 rounded-full bg-red-500/10 text-red-300 border border-red-500/25">
-            1L
-          </span>
-          <span className="text-white/40">75% win rate</span>
-        </div>
-      </div>
-      <div className="divide-y divide-[var(--rule)]">
-        {[
-          {
-            sym: "SPY",
-            opt: "CALL",
-            strike: 600,
-            qty: 5,
-            pl: 420.0,
-            strat: "MA 40",
-          },
-          {
-            sym: "AAPL",
-            opt: "PUT",
-            strike: 230,
-            qty: 3,
-            pl: 285.0,
-            strat: "First Red",
-          },
-          {
-            sym: "NVDA",
-            opt: "CALL",
-            strike: 140,
-            qty: 2,
-            pl: -57.77,
-            strat: "Bullish Gap",
-          },
-          {
-            sym: "TSLA",
-            opt: "CALL",
-            strike: 380,
-            qty: 4,
-            pl: 200.0,
-            strat: "Channel Brk",
-          },
-        ].map((t, i) => {
-          const w = t.pl >= 0;
-          return (
-            <div key={i} className="px-5 md:px-6 py-3 flex items-center gap-4">
-              <span
-                className={`w-0.5 h-8 rounded-full shrink-0 ${
-                  w ? "bg-green-400" : "bg-red-400"
-                }`}
-              />
-              <div className="flex items-baseline gap-2 min-w-0 flex-1">
-                <span className="font-semibold text-[13.5px]">{t.sym}</span>
-                <span
-                  className={`text-[9.5px] uppercase font-semibold px-1.5 py-0.5 rounded-full border ${
-                    t.opt === "CALL"
-                      ? "bg-green-500/10 text-green-300 border-green-500/25"
-                      : "bg-red-500/10 text-red-300 border-red-500/25"
-                  }`}
-                >
-                  {t.opt}
-                </span>
-                <span className="text-[11px] text-white/40 tabular-nums">
-                  {t.strike} × {t.qty}
-                </span>
-                <span className="text-[11px] text-white/30 truncate hidden sm:inline ml-1">
-                  · {t.strat}
-                </span>
-              </div>
-              <span
-                className={`tabular-nums text-[14px] font-medium ${
-                  w ? "text-green-300" : "text-red-300"
-                }`}
-              >
-                {w ? "+" : "−"}${Math.abs(t.pl).toFixed(2)}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-      <div className="px-5 md:px-6 py-3 border-t border-[var(--rule)] flex items-center justify-between text-[10.5px] text-white/45 uppercase tracking-[0.18em]">
-        <span>
-          Avg{" "}
-          <span className="text-white/75 tabular-nums normal-case tracking-normal">
-            +$211.81
-          </span>
-        </span>
-        <span className="tabular-nums">4 trades · 1 PUT · 3 CALLs</span>
-      </div>
-    </PreviewClipping>
   );
 }
 
@@ -1073,7 +966,7 @@ function QuillAIPreview() {
   return (
     <PreviewClipping caption="Quill AI" meta="347 trades read">
       <div ref={ref} className="px-5 md:px-6 pt-5 pb-3">
-        <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-teal-500/10 text-teal-300 border border-teal-500/25 text-[11px] uppercase tracking-[0.16em] font-medium">
+        <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-teal-500/10 text-teal-300 border border-teal-500/25 text-[11px] tracking-[0.16em] font-medium">
           <i className="fa-solid fa-wand-magic-sparkles text-[10px]" />
           Quill AI
         </div>
@@ -1195,16 +1088,16 @@ function NumbersPreview() {
   const barPct = (riskUsed / 200) * 100;
 
   return (
-    <PreviewClipping caption="Statistics" meta="MTD">
+    <PreviewClipping caption="statistics" meta="MTD">
       <div ref={ref} className="px-5 md:px-6 pt-5 pb-2">
-        <p className="text-[10px] uppercase tracking-[0.22em] text-white/40 mb-1">
-          Expectancy
+        <p className="text-[10px] tracking-[0.22em] text-white/40 mb-1">
+          expectancy
         </p>
         <div className="flex items-baseline gap-3">
           <span className="text-[54px] md:text-[68px] leading-none tabular-nums text-green-300 tracking-[-0.025em] font-medium">
             +${expectancy.toFixed(2)}
           </span>
-          <span className="text-[11px] uppercase tracking-[0.16em] text-white/45">
+          <span className="text-[11px] tracking-[0.16em] text-white/45">
             / trade
           </span>
         </div>
@@ -1213,17 +1106,17 @@ function NumbersPreview() {
       <div className="px-5 md:px-6 pb-5 pt-4 grid grid-cols-3 gap-3 border-b border-[var(--rule)]">
         {[
           {
-            k: "Win rate",
+            k: "win rate",
             v: `${Math.round(winRate)}%`,
             tone: "good" as const,
           },
           {
-            k: "Profit factor",
+            k: "profit factor",
             v: profitFactor.toFixed(2),
             tone: "good" as const,
           },
           {
-            k: "Max DD",
+            k: "max DD",
             v: `−$${Math.round(maxDD)}`,
             tone: "bad" as const,
           },
@@ -1232,7 +1125,7 @@ function NumbersPreview() {
             key={s.k}
             className="border border-[var(--rule)] bg-white/[0.025] p-3 rounded-xl"
           >
-            <p className="text-[10px] uppercase tracking-[0.16em] text-white/40 mb-1">
+            <p className="text-[10px] tracking-[0.16em] text-white/40 mb-1">
               {s.k}
             </p>
             <p
@@ -1248,13 +1141,13 @@ function NumbersPreview() {
 
       <div className="px-5 md:px-6 py-4">
         <div className="flex items-center justify-between mb-2 text-[11px]">
-          <span className="text-white/55 uppercase tracking-[0.14em]">
-            Daily risk budget
+          <span className="text-white/55 tracking-[0.14em]">
+            daily risk budget
           </span>
           <span className="tabular-nums">
             <span className="text-amber-300">${Math.round(riskUsed)}</span>
             <span className="text-white/30"> / $200</span>
-            <span className="text-white/40 ml-1.5 uppercase tracking-[0.12em] text-[10px]">
+            <span className="text-white/40 ml-1.5 tracking-[0.12em] text-[10px]">
               {Math.round(barPct)}% used
             </span>
           </span>
@@ -1270,9 +1163,9 @@ function NumbersPreview() {
             }}
           />
         </div>
-        <div className="mt-3 flex items-center justify-between text-[10.5px] uppercase tracking-[0.14em] text-white/35">
-          <span>Streak: 3W active</span>
-          <span>Best hour: 14:00 ET</span>
+        <div className="mt-3 flex items-center justify-between text-[10.5px] tracking-[0.14em] text-white/35">
+          <span>streak: 3W active</span>
+          <span>best hour: 14:00 ET</span>
         </div>
       </div>
     </PreviewClipping>
@@ -1314,7 +1207,7 @@ function IBKRPreview() {
   ];
 
   return (
-    <PreviewClipping caption="IBKR sync" meta="Last run 22:00 ET">
+    <PreviewClipping caption="IBKR sync" meta="last run 22:00 ET">
       {/* Header - icon spins while syncing, status pill flips when done */}
       <div
         ref={ref}
@@ -1333,8 +1226,8 @@ function IBKRPreview() {
             />
           </span>
           <div>
-            <p className="text-[10px] uppercase tracking-[0.22em] text-white/40">
-              IBKR Auto-sync
+            <p className="text-[10px] tracking-[0.22em] text-white/40">
+              IBKR auto-sync
             </p>
             <p className="text-[13px] text-white/80 tabular-nums">
               {phase === "syncing" ? "Pulling last session…" : "Synced just now"}
@@ -1348,10 +1241,10 @@ function IBKRPreview() {
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/25 text-[10.5px] uppercase tracking-[0.16em] font-medium"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/25 text-[10.5px] tracking-[0.16em] font-medium"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-amber-300 animate-pulse" />
-              Syncing
+              syncing
             </motion.span>
           ) : (
             <motion.span
@@ -1359,10 +1252,10 @@ function IBKRPreview() {
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-500/10 text-green-300 border border-green-500/25 text-[10.5px] uppercase tracking-[0.16em] font-medium"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-500/10 text-green-300 border border-green-500/25 text-[10.5px] tracking-[0.16em] font-medium"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-              Connected
+              connected
             </motion.span>
           )}
         </AnimatePresence>
@@ -1390,7 +1283,7 @@ function IBKRPreview() {
                   }}
                 />
               </div>
-              <div className="mt-1.5 text-[10px] uppercase tracking-[0.16em] text-white/35 tabular-nums">
+              <div className="mt-1.5 text-[10px] tracking-[0.16em] text-white/35 tabular-nums">
                 {Math.round(progress)}% · contacting IBKR Flex
               </div>
             </div>
@@ -1403,15 +1296,15 @@ function IBKRPreview() {
       <div className="px-5 md:px-6 py-4 grid grid-cols-3 gap-3 border-b border-[var(--rule)]">
         {[
           {
-            k: "Imported",
+            k: "imported",
             v: phase === "done" ? Math.round(imported).toString() : "—",
             tone: "good" as const,
           },
-          { k: "Skipped", v: phase === "done" ? "0" : "—", tone: "neutral" as const },
-          { k: "Next run", v: "22:00 ET", tone: "neutral" as const },
+          { k: "skipped", v: phase === "done" ? "0" : "—", tone: "neutral" as const },
+          { k: "next run", v: "22:00 ET", tone: "neutral" as const },
         ].map((s) => (
           <div key={s.k} className="flex flex-col gap-0.5">
-            <p className="text-[10px] uppercase tracking-[0.16em] text-white/40">
+            <p className="text-[10px] tracking-[0.16em] text-white/40">
               {s.k}
             </p>
             <p
@@ -1428,8 +1321,8 @@ function IBKRPreview() {
       {/* Last-run fills - stagger in one by one after sync, like a real
           tail of broker fills landing. */}
       <div>
-        <p className="px-5 md:px-6 pt-4 pb-2 text-[10px] uppercase tracking-[0.22em] text-white/40">
-          Last run · fills
+        <p className="px-5 md:px-6 pt-4 pb-2 text-[10px] tracking-[0.22em] text-white/40">
+          last run · fills
         </p>
         <div className="divide-y divide-[var(--rule)] min-h-[180px]">
           <AnimatePresence>

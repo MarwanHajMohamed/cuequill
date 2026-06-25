@@ -15,7 +15,7 @@ const Field = ({
   children: React.ReactNode;
 }) => (
   <label className="flex flex-col gap-1.5 w-full max-w-xs">
-    <span className="text-[11px] uppercase tracking-[0.15em] text-white/45 font-medium">
+    <span className="text-[11px] tracking-[0.15em] text-white/45 font-medium">
       {label}
     </span>
     {children}
@@ -187,11 +187,11 @@ const Account = () => {
     <form onSubmit={handleSave} className="p-5 md:p-7 flex flex-col gap-7">
       {/* Identity */}
       <section className="flex flex-col gap-4">
-        <div className="text-[11px] uppercase tracking-[0.18em] text-teal-400/80 font-medium">
-          Identity
+        <div className="text-[11px] tracking-[0.18em] text-teal-400/80 font-medium">
+          identity
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl">
-          <Field label="First name">
+          <Field label="first name">
             <input
               className={inputClass}
               type="text"
@@ -200,7 +200,7 @@ const Account = () => {
               onChange={(e) => setFirstname(e.target.value)}
             />
           </Field>
-          <Field label="Surname">
+          <Field label="surname">
             <input
               className={inputClass}
               type="text"
@@ -209,7 +209,7 @@ const Account = () => {
               onChange={(e) => setSurname(e.target.value)}
             />
           </Field>
-          <Field label="Email">
+          <Field label="email">
             <input
               className={inputClass}
               type="email"
@@ -225,11 +225,11 @@ const Account = () => {
 
       {/* Password */}
       <section className="flex flex-col gap-4">
-        <div className="text-[11px] uppercase tracking-[0.18em] text-teal-400/80 font-medium">
-          Password
+        <div className="text-[11px] tracking-[0.18em] text-teal-400/80 font-medium">
+          password
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl">
-          <Field label="Current password">
+          <Field label="current password">
             <input
               className={inputClass}
               type="password"
@@ -240,7 +240,7 @@ const Account = () => {
             />
           </Field>
           <div className="hidden sm:block" />
-          <Field label="New password" hint="At least 8 characters.">
+          <Field label="new password" hint="At least 8 characters.">
             <input
               className={inputClass}
               type="password"
@@ -250,7 +250,7 @@ const Account = () => {
               onChange={(e) => setNewPassword(e.target.value)}
             />
           </Field>
-          <Field label="Confirm new password">
+          <Field label="confirm new password">
             <input
               className={inputClass}
               type="password"
@@ -267,11 +267,11 @@ const Account = () => {
 
       {/* Locale */}
       <section className="flex flex-col gap-4">
-        <div className="text-[11px] uppercase tracking-[0.18em] text-teal-400/80 font-medium">
-          Locale
+        <div className="text-[11px] tracking-[0.18em] text-teal-400/80 font-medium">
+          locale
         </div>
         <Field
-          label="Timezone"
+          label="timezone"
           hint="Trades and the calendar use this for display."
         >
           <TimezoneSelect
@@ -340,7 +340,7 @@ const Account = () => {
           ) : (
             <i className="fa-solid fa-floppy-disk text-[11px]" />
           )}
-          {save.kind === "saving" ? "Saving…" : "Save changes"}
+          {save.kind === "saving" ? "saving…" : "save changes"}
         </button>
         {dirty && save.kind !== "saving" && (
           <button
@@ -348,12 +348,12 @@ const Account = () => {
             onClick={handleReset}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer"
           >
-            Discard
+            discard
           </button>
         )}
         {save.kind === "success" && (
           <span className="inline-flex items-center gap-1.5 text-[12px] text-green-300">
-            <i className="fa-solid fa-check text-[10px]" /> Saved
+            <i className="fa-solid fa-check text-[10px]" /> saved
           </span>
         )}
         {save.kind === "error" && (

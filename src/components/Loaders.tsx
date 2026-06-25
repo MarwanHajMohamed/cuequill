@@ -127,7 +127,7 @@ export function PageLoader({ label }: { label?: string }) {
         </motion.span>
       </span>
       {label && (
-        <div className="text-[12px] uppercase tracking-[0.18em] text-white/40 font-medium">
+        <div className="text-[12px] tracking-[0.18em] text-white/40 font-medium">
           {label}
         </div>
       )}

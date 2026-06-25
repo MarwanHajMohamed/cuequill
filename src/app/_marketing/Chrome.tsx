@@ -64,20 +64,20 @@ export function SiteHeader() {
             href="/features"
             className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-full text-white/55 hover:text-white transition text-[12.5px]"
           >
-            Features
+            features
           </Link>
           <Link
             href="/pricing"
             className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-full text-white/55 hover:text-white transition text-[12.5px]"
           >
-            Pricing
+            pricing
           </Link>
           <ThemeToggle />
           <Link
             href="/login"
             className="hidden sm:inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[12.5px] font-medium"
           >
-            Sign in
+            sign in
           </Link>
           <button
             type="button"
@@ -109,21 +109,21 @@ export function SiteHeader() {
                 onClick={() => setMenuOpen(false)}
                 className="px-5 py-3.5 text-[14px] text-white/80 hover:text-white hover:bg-white/[0.04] border-b border-[var(--rule)] transition"
               >
-                Features
+                features
               </Link>
               <Link
                 href="/pricing"
                 onClick={() => setMenuOpen(false)}
                 className="px-5 py-3.5 text-[14px] text-white/80 hover:text-white hover:bg-white/[0.04] border-b border-[var(--rule)] transition"
               >
-                Pricing
+                pricing
               </Link>
               <Link
                 href="/login"
                 onClick={() => setMenuOpen(false)}
                 className="px-5 py-3.5 text-[14px] font-medium text-teal-300 hover:bg-teal-500/[0.08] transition inline-flex items-center justify-between"
               >
-                Sign in
+                sign in
                 <i className="fa-solid fa-chevron-right text-[11px]" />
               </Link>
             </div>
@@ -153,33 +153,33 @@ export function SiteFooter() {
         </div>
 
         <FooterCol
-          title="Product"
+          title="product"
           links={[
-            { label: "Overview", href: "/" },
-            { label: "Features", href: "/features" },
-            { label: "Pricing", href: "/pricing" },
-            { label: "Sign in", href: "/login" },
+            { label: "overview", href: "/" },
+            { label: "features", href: "/features" },
+            { label: "pricing", href: "/pricing" },
+            { label: "sign in", href: "/login" },
           ]}
         />
         <FooterCol
-          title="Inside"
+          title="inside"
           links={[
-            { label: "The Day View", href: "/#day" },
+            { label: "the day view", href: "/#day" },
             { label: "Quill AI", href: "/#quill" },
-            { label: "Numbers", href: "/#numbers" },
+            { label: "numbers", href: "/#numbers" },
             { label: "IBKR sync", href: "/#ibkr" },
           ]}
         />
         <FooterCol
-          title="Contact"
+          title="contact"
           links={[{ label: "hi@cuequill.app", href: "mailto:hi@cuequill.app" }]}
         />
       </div>
 
       <div className="border-t border-white/10">
-        <div className="max-w-[1200px] mx-auto px-6 md:px-10 py-4 flex items-center justify-between text-[10.5px] uppercase tracking-[0.18em] text-white/35">
+        <div className="max-w-[1200px] mx-auto px-6 md:px-10 py-4 flex items-center justify-between text-[10.5px] tracking-[0.18em] text-white/35">
           <span>© {new Date().getFullYear()} Cuequill</span>
-          <span>Invite-only</span>
+          <span>invite-only</span>
         </div>
       </div>
     </footer>
@@ -195,7 +195,7 @@ function FooterCol({
 }) {
   return (
     <div className="md:col-span-2">
-      <h3 className="text-[10.5px] uppercase tracking-[0.2em] text-white/40 mb-3 font-medium">
+      <h3 className="text-[10.5px] tracking-[0.2em] text-white/40 mb-3 font-medium">
         {title}
       </h3>
       <ul className="flex flex-col gap-1.5 text-[12.5px]">
@@ -264,7 +264,7 @@ export function FaqRow({
 // across the signed-in app. (Replaced the old serif Roman-numeral mark.)
 export function SectionMark({ label }: { label: string }) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[10.5px] uppercase tracking-[0.2em] text-white/55">
+    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[10.5px] tracking-[0.2em] text-white/55">
       <span className="w-1.5 h-1.5 rounded-full bg-teal-400" />
       {label}
     </span>

@@ -27,110 +27,51 @@ type FeatureGroup = {
   items: Feature[];
 };
 
-// Features that have a dedicated video showcase at the top of the page.
-// Their titles are filtered out of the catalogue lists below so the same
-// item doesn't appear in two places.
-type VideoFeature = {
-  n: string;
-  label: string;
-  title: React.ReactNode;
-  body: string;
-  detail: string;
-  tiers: Tier[];
-  // Match key into the GROUPS data below - the rendered list filters
-  // these out so a feature doesn't appear in both surfaces.
-  excludesTitle: string;
-  // Path to the video that will eventually live here. Until you drop
-  // the file in, the player renders a tasteful placeholder.
-  videoSrc?: string;
-  // Optional poster image while the video buffers.
-  posterSrc?: string;
-};
-
-const VIDEO_FEATURES: VideoFeature[] = [
-  {
-    n: "01",
-    label: "Calendar",
-    title: (
-      <>
-        A calendar tinted by{" "}
-        <span className="italic text-teal-300">your daily P/L.</span>
-      </>
-    ),
-    body: "Each weekday is colored by your net P/L for that day. Click a day to see the trades behind the number.",
-    detail: "Mon–Fri grid · Click any day",
-    tiers: ["Free", "Pro"],
-    excludesTitle: "P/L calendar",
-  },
-  {
-    n: "02",
-    label: "Quill AI",
-    title: (
-      <>
-        Ask your trades anything,{" "}
-        <span className="italic text-teal-300">in plain English.</span>
-      </>
-    ),
-    body: "Ask questions about your own trades and get answers based on your own data. Useful for reviewing recent losses, comparing strategies, or checking patterns.",
-    detail: "Pro only",
-    tiers: ["Pro"],
-    excludesTitle: "Ask anything",
-  },
-  {
-    n: "03",
-    label: "Logging",
-    title: (
-      <>
-        Add a trade in{" "}
-        <span className="italic text-teal-300">a single sweep.</span>
-      </>
-    ),
-    body: "Symbol, direction, contract, qty, strike, and dates. The closing fields appear once you mark a trade as a win or loss.",
-    detail: "⌘+Enter to save",
-    tiers: ["Free", "Pro"],
-    excludesTitle: "Manual entry",
-  },
-];
-
 const GROUPS: FeatureGroup[] = [
   {
     n: "I",
-    label: "Logging",
+    label: "logging",
     heading: (
       <>
         Put a trade in once.{" "}
         <span className="italic text-teal-300">Keep it forever.</span>
       </>
     ),
-    lede: "Log trades by hand or sync them from your broker. Both end up in the same journal, with duplicates filtered out.",
+    lede: "Two ways in — by hand or from your broker. Both end up in the same journal, deduped, with commissions and taxes already counted.",
     items: [
       {
-        title: "Plain-English logging",
-        body: "Send Quill AI a sentence like \"log 3 SPY 600 calls at $1.20 expiring Friday\" and it creates the trade for you.",
-        detail: "Via Quill AI",
+        title: "manual entry",
+        body: "Symbol, direction, contract, qty, strike, dates, P/L. Fields validate as you type and the form remembers where you were the next time you open it.",
+        detail: "5 fields · ⌘+Enter to save",
+        tiers: ["Free", "Pro"],
+      },
+      {
+        title: "plain-English logging",
+        body: "Tell Quill AI a sentence — 'log 3 SPY 600 calls at $1.20 expiring Friday' — and the trade lands in your journal, ready to edit.",
+        detail: "via Quill AI · Pro",
         tiers: ["Pro"],
       },
       {
         title: "IBKR Flex auto-sync",
-        body: "Paste a Flex token in settings and your IBKR fills import each weeknight after close. Duplicates are filtered automatically.",
-        detail: "Nightly · ~3 min setup",
+        body: "Drop your Flex Web Service token in settings. Cuequill imports every fill weeknight after close, commissions and taxes folded in, duplicates flagged before they're saved.",
+        detail: "nightly · ~3 min setup",
         tiers: ["Pro"],
       },
       {
-        title: "Tags",
-        body: "Attach reusable tags to trades — your own mistakes, your own setups. Tags feed the per-tag stats and the mistake leaderboard.",
-        detail: "Per trade · multi-select",
+        title: "tags",
+        body: "Mark trades with the mistake you made or the thing you did right. Tags drive the mistake leaderboard and the per-tag stats on the statistics page.",
+        detail: "Mistake / good · per trade",
         tiers: ["Free", "Pro"],
       },
       {
-        title: "Trade notes",
-        body: "Free-text notes on any trade.",
-        detail: "Per trade",
+        title: "trade notes",
+        body: "A textarea per trade. ⌘+Enter saves; Esc closes. Word count and unsaved-state pill sit in the corner so you don't lose anything.",
+        detail: "Markdown supported",
         tiers: ["Free", "Pro"],
       },
       {
-        title: "Simulated mode",
-        body: "Mark a trade or your whole account as simulated. Simulated trades are excluded from stats unless you opt in.",
+        title: "simulated mode",
+        body: "A switch on every trade and a global toggle. Try a setup without polluting your real journal — simulated trades are filtered out of every stat by default.",
         detail: "Per-trade switch",
         tiers: ["Free", "Pro"],
       },
@@ -138,43 +79,49 @@ const GROUPS: FeatureGroup[] = [
   },
   {
     n: "II",
-    label: "Review",
+    label: "review",
     heading: (
       <>
         The part you{" "}
         <span className="italic text-teal-300">were going to do</span> in Excel.
       </>
     ),
-    lede: "A calendar, a per-day breakdown, and a stats page you can filter.",
+    lede: "A calendar that loads in two seconds, a day modal with every fill, and a statistics page that actually filters.",
     items: [
       {
-        title: "Day modal",
-        body: "Open any day in the calendar to see net P/L and every trade you took on that day. Trades open for editing from the same view.",
+        title: "P/L calendar",
+        body: "Every trading day tinted by net P/L. Weekends collapsed, Fed days flagged, mobile swipe between months. Open a day and see what you did and why.",
+        detail: "Mon–Fri grid · Net of fees",
+        tiers: ["Free", "Pro"],
+      },
+      {
+        title: "day modal",
+        body: "Big net P/L at the top, every fill underneath with direction chip, strike × qty, strategy, and a green/red gutter. One click to edit the trade in place.",
         detail: "Click any day",
         tiers: ["Free", "Pro"],
       },
       {
-        title: "Statistics page",
-        body: "Win rate, expectancy, profit factor, R:R, streaks. Pro adds per-symbol and per-strategy breakdowns plus an equity curve.",
+        title: "statistics page",
+        body: "Expectancy, profit factor, win rate, R:R, streaks — the headline stats are free. On Pro, slice them by symbol and strategy, with a monthly section and equity curve.",
         detail: "Core free · per-strategy & per-symbol on Pro",
         tiers: ["Free", "Pro"],
       },
       {
-        title: "Trades table",
-        body: "Reorder and hide columns. Filters live in the URL so you can share a view or come back to it later.",
-        detail: "Customisable columns",
+        title: "trades table",
+        body: "Reorder and hide columns. Filters slide in from the side and live in the URL — so you can share a view or come back to it. Pagination is keyboard-friendly.",
+        detail: "Customisable · URL-stateful",
         tiers: ["Free", "Pro"],
       },
       {
-        title: "Dashboard insights",
-        body: "Three tiles below the calendar: daily risk used, strategy ranking, and the tags costing you the most.",
+        title: "dashboard insights",
+        body: "Three at-a-glance tiles below the calendar: a daily-risk budget bar, a top/bottom strategy edge ranking, and a mistake leaderboard of your costliest tags.",
         detail: "Lives on the dashboard",
         tiers: ["Pro"],
       },
       {
-        title: "Equity curve",
-        body: "Cumulative net P/L over time, with a hover summary.",
-        detail: "All-time",
+        title: "equity curve",
+        body: "Cumulative net P/L over time, with hover totals. Shows the trajectory you wouldn't see by reading individual trades.",
+        detail: "All-time · in £/$",
         tiers: ["Pro"],
       },
     ],
@@ -188,35 +135,41 @@ const GROUPS: FeatureGroup[] = [
         <span className="italic text-teal-300">read your journal.</span>
       </>
     ),
-    lede: "Plain-English questions about your own trades. Quill AI reads your journal and answers from it.",
+    lede: "Plain-English questions against your own trades — analysis, comparisons, mistake-spotting, fresh fills.",
     items: [
       {
-        title: "Reads imported fills",
-        body: "IBKR-imported fills and your manual entries are treated the same. Quill reads both.",
+        title: "ask anything",
+        body: "Which strategy is leaking money this month? What did my last five losses have in common? Quill AI answers from your data, not the internet's.",
         detail: "Pro only",
         tiers: ["Pro"],
       },
       {
-        title: "Performance analysis",
-        body: "Group your trades by strategy, symbol, day of the week, or time of day.",
+        title: "reads imported fills",
+        body: "Quill AI sees every IBKR-imported fill alongside your manual entries. No copy-paste between tools.",
         detail: "Pro only",
         tiers: ["Pro"],
       },
       {
-        title: "Pattern & mistake spotting",
-        body: "Quill cross-references your tags, times, symbols, and strategies to surface what your losing trades have in common.",
+        title: "performance analysis",
+        body: "Group by strategy, symbol, day-of-week, time-of-day. Quill returns the cuts that matter, not a wall of numbers.",
         detail: "Pro only",
         tiers: ["Pro"],
       },
       {
-        title: "Rule-adherence checks",
-        body: "Ask whether a set of trades followed your rules. Quill compares them against your rules board.",
+        title: "pattern & mistake spotting",
+        body: "Ask 'what did my last five losses have in common' and Quill cross-references your tags, hour, symbol, and strategy to call out the pattern.",
+        detail: "Pro only",
+        tiers: ["Pro"],
+      },
+      {
+        title: "rule-adherence checks",
+        body: "Quill knows your rules board. Ask whether yesterday's trades followed them and it'll tell you which ones broke which rule.",
         detail: "Reads your rules",
         tiers: ["Pro"],
       },
       {
-        title: "Threads & history",
-        body: "Conversations are saved so you can come back and ask a follow-up.",
+        title: "threads & history",
+        body: "Conversations save automatically. Come back to a question, ask a follow-up. Trade context is re-read each time so answers stay current.",
         detail: "Pro only",
         tiers: ["Pro"],
       },
@@ -224,36 +177,36 @@ const GROUPS: FeatureGroup[] = [
   },
   {
     n: "IV",
-    label: "Reference",
+    label: "reference",
     heading: (
       <>
         The playbook you{" "}
         <span className="italic text-teal-300">stop forgetting.</span>
       </>
     ),
-    lede: "A strategy playbook, a rules board, and a goals page so the structure of how you trade lives somewhere.",
+    lede: "Strategy schematics, a rules board, and a daily affirmation page — the bits of trading discipline you keep meaning to write down.",
     items: [
       {
-        title: "Strategy playbook",
-        body: "Eleven discretionary US-options setups with schematics and entry rules. Tag your trades against them to get per-strategy stats.",
+        title: "strategy playbook",
+        body: "Eleven discretionary US-options setups with schematics, entry rules, and worked chart examples. Tag your trades against them.",
         detail: "11 setups · CALL & PUT",
         tiers: ["Free", "Pro"],
       },
       {
-        title: "Rules board",
-        body: "Write your own rules, grouped into sections. Quill AI reads them when you ask about rule-adherence.",
-        detail: "Inline editor",
+        title: "rules board",
+        body: "Your own rules, organized in sections. Edit inline, drag to reorder, link from Quill AI when you ask about rule-adherence.",
+        detail: "Sections · inline editor · Pro",
         tiers: ["Pro"],
       },
       {
-        title: "Affirmations",
-        body: "A short daily checklist you can run through before the open.",
-        detail: "Daily",
+        title: "affirmations",
+        body: "A short daily-discipline ritual. Tick through the affirmations before the open so the rules are fresh in your head, not just on paper.",
+        detail: "Daily ritual · Pro",
         tiers: ["Pro"],
       },
       {
-        title: "Goals",
-        body: "Set monthly and daily P/L targets. Progress is shown on the dashboard.",
+        title: "goals",
+        body: "Set monthly and daily P/L targets. Progress bars on the dashboard and an at-a-glance trajectory through the month.",
         detail: "Monthly + daily",
         tiers: ["Free", "Pro"],
       },
@@ -261,37 +214,37 @@ const GROUPS: FeatureGroup[] = [
   },
   {
     n: "V",
-    label: "Surface",
+    label: "surface",
     heading: (
       <>
         Feels right{" "}
         <span className="italic text-teal-300">where you trade.</span>
       </>
     ),
-    lede: "Works on phone and desktop. Dark by default, with a light mode that flips the whole app.",
+    lede: "Native-feeling on mobile, theme-aware, and built to stay out of the way when you're at the screen.",
     items: [
       {
-        title: "Light & dark themes",
-        body: "Switch between dark and light. The choice is remembered across sessions.",
+        title: "light & dark themes",
+        body: "Toggle between dark (default) and a true light theme — colors, hairlines, shadows, and accents all flip. Persists across sessions.",
         detail: "One-click switch",
         tiers: ["Free", "Pro"],
       },
       {
-        title: "Installable PWA",
-        body: "Add to your home screen on iOS or Android. The mobile build uses a floating tab bar and swipe gestures.",
+        title: "installable PWA",
+        body: "Add to your home screen on iOS or Android. Full-screen, floating bottom tab bar, swipe-to-change-month gestures, offline cache.",
         detail: "iOS · Android",
         tiers: ["Free", "Pro"],
       },
       {
-        title: "Keyboard shortcuts",
-        body: "⌘+Enter to save inside any modal, Esc to close.",
+        title: "keyboard shortcuts",
+        body: "⌘+Enter to save in any modal, Esc to close, slash-keys to jump between pages on desktop.",
         detail: "Modal-aware",
         tiers: ["Free", "Pro"],
       },
       {
-        title: "Private by default",
-        body: "Your trades are scoped to your account. The IBKR token is encrypted at rest. Quill AI only sees your own trades.",
-        detail: "Encrypted at rest",
+        title: "private by default",
+        body: "Trades scoped to your account. IBKR token encrypted at rest. Quill AI only reads your own trades.",
+        detail: "Bank-grade encryption",
         tiers: ["Free", "Pro"],
       },
     ],
@@ -316,19 +269,9 @@ export default function FeaturesPage() {
       <main className="flex-1 pt-20">
         <FeaturesHero />
 
-        <ShowcaseSection />
-
-        {GROUPS.map((g) => {
-          // Filter out any item that already has a dedicated video slot
-          // above, then skip the whole group if nothing's left.
-          const items = g.items.filter(
-            (it) => !VIDEO_FEATURES.some((v) => v.excludesTitle === it.title),
-          );
-          if (items.length === 0) return null;
-          return (
-            <FeatureGroupSection key={g.n} group={{ ...g, items }} />
-          );
-        })}
+        {GROUPS.map((g) => (
+          <FeatureGroupSection key={g.n} group={g} />
+        ))}
 
         <ClosingCTA />
       </main>
@@ -402,144 +345,6 @@ function FeaturesHero() {
         </motion.div>
       </div>
     </section>
-  );
-}
-
-// ─── Video showcase ──────────────────────────────────────────────────
-// Three large slots for the marquee features (Calendar, Quill AI,
-// Adding a trade). Each row alternates the video side so the page
-// reads as a sequence of spreads rather than a stack.
-
-function ShowcaseSection() {
-  return (
-    <section className="px-6 md:px-10 pb-8 md:pb-12">
-      <div className="max-w-[1200px] mx-auto flex flex-col gap-16 md:gap-28">
-        {VIDEO_FEATURES.map((v, i) => (
-          <VideoFeatureBlock key={v.n} feature={v} reverse={i % 2 === 1} />
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function VideoFeatureBlock({
-  feature,
-  reverse,
-}: {
-  feature: VideoFeature;
-  reverse: boolean;
-}) {
-  return (
-    <motion.article
-      initial={{ opacity: 0, y: 18 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-80px" }}
-      transition={{ duration: 0.55, ease: "easeOut" }}
-      className="grid md:grid-cols-12 gap-8 md:gap-12 items-center"
-    >
-      {/* Text column - sticky-feeling, sits next to the video.
-          Reverse flips it to the other side on alternating blocks. */}
-      <div
-        className={`md:col-span-5 ${reverse ? "md:order-2" : "md:order-1"}`}
-      >
-        <div className="flex items-baseline gap-3">
-          <span className="text-teal-300 font-display italic text-[18px] md:text-[20px] tabular-nums">
-            {feature.n}
-          </span>
-          <span className="h-px flex-1 bg-[var(--rule)] max-w-[80px] translate-y-[-2px]" />
-          <span className="text-[10.5px] uppercase tracking-[0.22em] text-white/45">
-            {feature.label}
-          </span>
-        </div>
-        <h2 className="mt-6 text-[28px] md:text-[40px] leading-[1.04] font-medium tracking-[-0.02em]">
-          {feature.title}
-        </h2>
-        <p className="mt-5 max-w-md text-[13.5px] text-white/60 leading-relaxed">
-          {feature.body}
-        </p>
-        <p className="mt-5 text-[10.5px] uppercase tracking-[0.18em] text-white/35 tabular-nums">
-          {feature.detail}
-        </p>
-        <div className="mt-5 flex items-center gap-1.5">
-          {feature.tiers.map((t) => (
-            <TierBadge key={t} tier={t} />
-          ))}
-        </div>
-      </div>
-
-      {/* Video column - placeholder card now, real <video> later */}
-      <div
-        className={`md:col-span-7 ${reverse ? "md:order-1" : "md:order-2"}`}
-      >
-        <VideoSlot
-          src={feature.videoSrc}
-          poster={feature.posterSrc}
-          label={feature.label}
-        />
-      </div>
-    </motion.article>
-  );
-}
-
-// Renders either a real <video> if `src` is set, or a tasteful 16:9
-// placeholder so the layout reads correctly while the videos are still
-// being recorded.
-function VideoSlot({
-  src,
-  poster,
-  label,
-}: {
-  src?: string;
-  poster?: string;
-  label: string;
-}) {
-  return (
-    <figure className="relative">
-      <div className="relative aspect-[16/10] w-full rounded-2xl overflow-hidden border border-white/10 bg-white/[0.02] backdrop-blur-md shadow-[0_8px_40px_var(--shadow-soft)]">
-        {src ? (
-          <video
-            src={src}
-            poster={poster}
-            className="absolute inset-0 w-full h-full object-cover"
-            autoPlay
-            muted
-            loop
-            playsInline
-          />
-        ) : (
-          // Placeholder: faint grid + center play-affordance + corner
-          // label so the slot reads as "video lives here" while you
-          // record the real footage.
-          <>
-            <div
-              aria-hidden
-              className="absolute inset-0 opacity-[0.35]"
-              style={{
-                backgroundImage:
-                  "linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px)",
-                backgroundSize: "32px 32px",
-              }}
-            />
-            <div
-              aria-hidden
-              className="absolute inset-0"
-              style={{
-                background:
-                  "radial-gradient(60% 50% at 50% 50%, rgba(20,184,166,0.10), transparent 70%)",
-              }}
-            />
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-white/55">
-              <span className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-white/[0.06] border border-white/15 backdrop-blur-md text-teal-300">
-                <i className="fa-solid fa-play text-[16px] ml-[2px]" />
-              </span>
-              <span className="text-[10.5px] uppercase tracking-[0.22em] text-white/40">
-                {label} · video coming soon
-              </span>
-            </div>
-          </>
-        )}
-      </div>
-    </figure>
   );
 }
 
@@ -641,7 +446,7 @@ function ClosingCTA() {
   return (
     <section className="px-6 md:px-10 py-20 md:py-28">
       <div className="max-w-[1200px] mx-auto rounded-3xl border border-white/10 bg-white/[0.02] backdrop-blur-md shadow-[0_8px_40px_var(--shadow-soft)] p-8 md:p-14">
-        <SectionMark label="Get started" />
+        <SectionMark label="get started" />
         <h2 className="mt-6 text-[36px] sm:text-[48px] md:text-[60px] leading-[0.98] font-medium tracking-[-0.025em] max-w-3xl">
           That&apos;s the tour.{" "}
           <span className="italic text-teal-300">Open the journal.</span>

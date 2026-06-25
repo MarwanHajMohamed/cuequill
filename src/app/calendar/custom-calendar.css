@@ -74,7 +74,6 @@
   .react-calendar__month-view__weekdays {
   font-size: 11px;
   letter-spacing: 0.05em;
-  text-transform: uppercase;
   color: rgb(var(--fg-rgb) / 0.4);
   margin-bottom: 6px;
   display: grid !important;
@@ -216,7 +215,7 @@
   transition: background-color 120ms ease, border-color 120ms ease;
   /* Day-grid tiles have explicit height; month/year tiles use padding
      so they read like dashboard cards instead of squat buttons. */
-  min-height: 124px;
+  min-height: 64px;
 }
 .react-calendar.custom-calendar_full-view
   .react-calendar__year-view__months__month:enabled:hover,

@@ -32,7 +32,7 @@ function Page() {
       <div className="w-full max-w-[1500px] mt-30 px-5 md:px-10">
         {sections === null ? (
           <div className="mt-10 text-center text-[13px] text-white/40">
-            Loading…
+            loading…
           </div>
         ) : (
           <>
@@ -50,7 +50,7 @@ function Page() {
                     editMode ? "fa-check" : "fa-pen"
                   } text-[10px]`}
                 />
-                {editMode ? "Done" : "Edit"}
+                {editMode ? "done" : "edit"}
               </button>
             </div>
 
@@ -78,7 +78,7 @@ function Page() {
                 className="mt-4 md:mt-6 w-full flex items-center justify-center gap-2 rounded-2xl border border-dashed border-white/15 bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/25 transition py-4 text-[13px] font-medium text-white/55 hover:text-white/80 cursor-pointer"
               >
                 <i className="fa-solid fa-plus text-[11px]" />
-                Add section
+                add section
               </button>
             )}
 

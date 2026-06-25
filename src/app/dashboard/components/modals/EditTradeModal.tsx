@@ -203,8 +203,8 @@ export default function EditTradeModal({
               <i className="fa-solid fa-xmark text-base"></i>
             </button>
 
-            <div className="text-[10px] uppercase tracking-wider text-white/40 mb-1">
-              {isEditing ? "Edit trade" : "New trade"}
+            <div className="text-[10px] tracking-wider text-white/40 mb-1">
+              {isEditing ? "edit trade" : "new trade"}
             </div>
             <div className="text-xl md:text-2xl font-bold tracking-tight">
               {symbol || "-"}
@@ -306,7 +306,7 @@ export default function EditTradeModal({
           {/* ── Body (scrollable, takes remaining space) ── */}
           <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-5 px-5 md:px-6 py-5 md:py-6">
             {/* Symbol */}
-            <Field label="Symbol" required>
+            <Field label="symbol" required>
               <input
                 type="text"
                 value={symbol}
@@ -328,7 +328,7 @@ export default function EditTradeModal({
 
             {/* Contract / Qty / Strike */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              <Field label="Contract" required>
+              <Field label="contract" required>
                 <NumberInput
                   value={contractPrice}
                   onChange={(v) => {
@@ -339,7 +339,7 @@ export default function EditTradeModal({
                   invalid={isInvalid("contractPrice")}
                 />
               </Field>
-              <Field label="Qty" required>
+              <Field label="qty" required>
                 <NumberInput
                   value={qty}
                   onChange={(v) => {
@@ -351,7 +351,7 @@ export default function EditTradeModal({
                 />
               </Field>
               <Field
-                label="Strike"
+                label="strike"
                 required
                 className="col-span-2 md:col-span-1"
               >
@@ -369,7 +369,7 @@ export default function EditTradeModal({
 
             {/* Dates */}
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Date Bought" required>
+              <Field label="date bought" required>
                 <DateInput
                   value={dateBought}
                   onChange={(v) => {
@@ -379,7 +379,7 @@ export default function EditTradeModal({
                   invalid={isInvalid("dateBought")}
                 />
               </Field>
-              <Field label="Expiry" required>
+              <Field label="expiry" required>
                 <DateInput
                   value={expiryDate}
                   min={dateBought}
@@ -393,7 +393,7 @@ export default function EditTradeModal({
             </div>
 
             {/* Strategy (Status lives in the hero next to direction). */}
-            <Field label="Strategy">
+            <Field label="strategy">
               <select
                 value={strategy}
                 onChange={(e) => {
@@ -413,7 +413,7 @@ export default function EditTradeModal({
             {isClosed && (
               <div className="flex flex-col gap-3 p-3 md:p-4 border border-white/10 rounded-lg bg-white/3">
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Closing Contract" required>
+                  <Field label="closing contract" required>
                     <NumberInput
                       value={closingContractPrice}
                       onChange={(v) => {
@@ -424,7 +424,7 @@ export default function EditTradeModal({
                       invalid={isInvalid("closingContractPrice")}
                     />
                   </Field>
-                  <Field label="Date Closed">
+                  <Field label="date closed">
                     <DateInput
                       value={dateClosed}
                       min={dateBought}
@@ -435,7 +435,7 @@ export default function EditTradeModal({
                     />
                   </Field>
                 </div>
-                <Field label="Fees / Commissions">
+                <Field label="fees / commissions">
                   <NumberInput
                     value={fees}
                     onChange={(v) => setFees(v)}
@@ -450,7 +450,7 @@ export default function EditTradeModal({
                 plus every tag the user has previously attached to any
                 trade. Anything new the user types becomes its own tag on
                 Enter/comma. */}
-            <Field label="Tags">
+            <Field label="tags">
               <TagsInput
                 value={tags}
                 onAdd={addTag}
@@ -461,7 +461,7 @@ export default function EditTradeModal({
             </Field>
 
             {/* Notes */}
-            <Field label="Notes">
+            <Field label="notes">
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
@@ -480,7 +480,7 @@ export default function EditTradeModal({
                 className="w-4 h-4 accent-orange-500 cursor-pointer"
               />
               <span className="text-sm text-white/70 group-hover:text-white transition">
-                Mark as simulated
+                mark as simulated
               </span>
             </label>
           </div>
@@ -505,7 +505,7 @@ export default function EditTradeModal({
                 onClick={onClose}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer"
               >
-                Cancel
+                cancel
               </button>
               <button
                 type="button"
@@ -537,7 +537,7 @@ export default function EditTradeModal({
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[13px] font-medium cursor-pointer"
               >
                 <i className="fa-solid fa-floppy-disk text-[11px]" />
-                {isEditing ? "Save" : "Create trade"}
+                {isEditing ? "save" : "create trade"}
               </button>
             </div>
           </div>
@@ -572,7 +572,7 @@ export default function EditTradeModal({
                 className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer"
                 onClick={() => setDelModal(false)}
               >
-                Cancel
+                cancel
               </button>
               <button
                 type="button"
@@ -582,7 +582,7 @@ export default function EditTradeModal({
                   toast(`Trade deleted successfully!`);
                 }}
               >
-                Delete
+                delete
               </button>
             </div>
           </motion.div>
@@ -609,7 +609,7 @@ function Field({
   return (
     <div className={`flex flex-col gap-1 min-w-0 ${className}`}>
       <div className="flex items-center justify-between gap-2">
-        <label className="text-[10px] uppercase tracking-wider text-white/40">
+        <label className="text-[10px] tracking-wider text-white/40">
           {label}
           {required && (
             <span aria-hidden className="ml-1">
@@ -826,7 +826,7 @@ function TagsInput({
             // dropdown unmounts.
             blurTimer.current = window.setTimeout(() => setFocused(false), 120);
           }}
-          placeholder={value.length === 0 ? "Add tag" : ""}
+          placeholder={value.length === 0 ? "add tag" : ""}
           className="flex-1 min-w-[140px] bg-transparent text-sm text-white placeholder-white/35 px-1.5 py-1 outline-none"
         />
       </div>

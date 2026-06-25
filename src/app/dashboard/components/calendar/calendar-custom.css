@@ -51,7 +51,7 @@
 .react-calendar .react-calendar__month-view__weekdays {
   font-size: 10px;
   letter-spacing: 0.05em;
-  text-transform: uppercase;
+  text-transform: none;
   color: rgb(var(--fg-rgb) / 0.4);
   margin-bottom: 4px;
 }
