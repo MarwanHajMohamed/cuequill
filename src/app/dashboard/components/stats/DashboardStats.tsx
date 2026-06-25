@@ -70,7 +70,7 @@ function PeriodTile({
         highlight ? "border-white/20 bg-white/5" : "border-[var(--hairline)]"
       }`}
     >
-      <div className="text-[10px] md:text-xs text-white/50 uppercase tracking-wide">
+      <div className="text-[10px] md:text-xs text-white/50 tracking-wide">
         {label}
       </div>
       <div
@@ -118,7 +118,7 @@ function MiniTile({
         : "text-white";
   return (
     <div className="border border-[var(--hairline)] rounded-lg p-2 md:p-3 flex flex-col gap-1 min-w-0 basis-[120px] md:basis-[180px] grow md:max-w-[240px]">
-      <div className="text-[10px] md:text-xs text-white/50 uppercase tracking-wide truncate">
+      <div className="text-[10px] md:text-xs text-white/50 tracking-wide truncate">
         {label}
       </div>
       <div
@@ -237,20 +237,20 @@ export default function DashboardStats({ userId }: { userId: string }) {
   return (
     <div className="w-full max-w-[1100px] mx-auto px-5 md:px-10 flex flex-col gap-4 md:gap-6">
       <div className="flex items-center gap-2">
-        <h2 className="md:text-xl text-sm font-bold">At a glance</h2>
+        <h2 className="md:text-xl text-sm font-bold">at a glance</h2>
       </div>
 
       {/* Period summaries */}
       <div className="flex flex-wrap gap-2 md:gap-3">
-        <PeriodTile label="Today" summary={s.today} highlight />
-        <PeriodTile label="This week" summary={s.week} />
-        <PeriodTile label="This month" summary={s.month} />
+        <PeriodTile label="today" summary={s.today} highlight />
+        <PeriodTile label="this week" summary={s.week} />
+        <PeriodTile label="this month" summary={s.month} />
       </div>
 
       {/* Mini tiles row */}
       <div className="flex flex-wrap gap-2 md:gap-3">
         <MiniTile
-          label="All-time Net P/L"
+          label="all-time net P/L"
           value={
             s.allTime.count === 0
               ? "-"
@@ -265,7 +265,7 @@ export default function DashboardStats({ userId }: { userId: string }) {
           }
         />
         <MiniTile
-          label="Current streak"
+          label="current streak"
           value={
             s.streakKind === null
               ? "-"
@@ -280,12 +280,12 @@ export default function DashboardStats({ userId }: { userId: string }) {
           }
         />
         <MiniTile
-          label="Open positions"
+          label="open positions"
           value={s.openCount > 0 ? `${s.openCount}` : "-"}
           tone={s.openCount > 0 ? "neutral" : "neutral"}
         />
         <MiniTile
-          label="Top strategy MTD"
+          label="top strategy MTD"
           value={
             s.topStrategy && s.topStrategy.n > 0 ? (
               <span className="flex items-center gap-1.5 truncate">
@@ -312,8 +312,8 @@ export default function DashboardStats({ userId }: { userId: string }) {
       {s.curve.length >= 2 && (
         <div className="border border-[var(--hairline)] rounded-lg p-3 md:p-4 flex flex-col gap-2">
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <div className="text-[10px] md:text-xs text-white/50 uppercase tracking-wide">
-              Recent equity ({s.curve.length} trades)
+            <div className="text-[10px] md:text-xs text-white/50 tracking-wide">
+              recent equity ({s.curve.length} trades)
             </div>
             <div
               className={`text-sm md:text-base font-normal ${
@@ -372,7 +372,7 @@ export default function DashboardStats({ userId }: { userId: string }) {
                   }
                   formatter={(v: number) => [
                     `${fmtMoneySignedCompact(v)}`,
-                    "Cumulative",
+                    "cumulative",
                   ]}
                 />
               </AreaChart>

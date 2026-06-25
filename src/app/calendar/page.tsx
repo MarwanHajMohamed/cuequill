@@ -52,10 +52,10 @@ const WeekSummary = ({
   return (
     <div className="border border-[var(--hairline)] rounded-lg p-3 flex flex-col gap-1.5">
       <div className="flex justify-between items-baseline">
-        <div className="text-xs text-white/60">Week {weekNum}</div>
+        <div className="text-xs text-white/60">week {weekNum}</div>
         {hasTrades && (
-          <div className="text-[10px] text-white/40 uppercase tracking-wide">
-            Total
+          <div className="text-[10px] text-white/40 tracking-wide">
+            total
           </div>
         )}
       </div>
@@ -415,27 +415,27 @@ function Page() {
     return (
       <>
         {isFed && (
-          <span className="absolute top-1 right-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-500/35 text-purple-100 border border-purple-400/60 shadow-[0_0_8px_rgba(168,85,247,0.35)] text-[9px] md:text-[10px] font-bold uppercase tracking-wide leading-none">
+          <span className="absolute top-1 right-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-500/35 text-purple-100 border border-purple-400/60 shadow-[0_0_8px_rgba(168,85,247,0.35)] text-[9px] md:text-[10px] font-bold tracking-wide leading-none">
             <span className="w-1 h-1 rounded-full bg-purple-200" aria-hidden />
-            Fed
+            fed
           </span>
         )}
         {marketDay &&
           (marketDay.early ? (
             <span
-              title={`Early close 1:00pm ET — ${marketDay.name}`}
-              className="absolute top-1 right-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-500/35 text-sky-100 border border-sky-400/60 shadow-[0_0_8px_rgba(56,189,248,0.35)] text-[9px] md:text-[10px] font-bold uppercase tracking-wide leading-none"
+              title={`early close 1:00pm ET — ${marketDay.name}`}
+              className="absolute top-1 right-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-500/35 text-sky-100 border border-sky-400/60 shadow-[0_0_8px_rgba(56,189,248,0.35)] text-[9px] md:text-[10px] font-bold tracking-wide leading-none"
             >
               <i className="fa-solid fa-clock text-[8px]" aria-hidden />
               1pm
             </span>
           ) : (
             <span
-              title={`Market closed — ${marketDay.name}`}
-              className="absolute top-1 right-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/35 text-amber-100 border border-amber-400/60 shadow-[0_0_8px_rgba(245,158,11,0.4)] text-[9px] md:text-[10px] font-bold uppercase tracking-wide leading-none"
+              title={`market closed — ${marketDay.name}`}
+              className="absolute top-1 right-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/35 text-amber-100 border border-amber-400/60 shadow-[0_0_8px_rgba(245,158,11,0.4)] text-[9px] md:text-[10px] font-bold tracking-wide leading-none"
             >
               <i className="fa-solid fa-lock text-[8px]" aria-hidden />
-              Closed
+              closed
             </span>
           ))}
         {isToday && (
@@ -672,7 +672,7 @@ function Page() {
                 const positive = summary.netPL >= 0;
                 return (
                   <div className="flex flex-col gap-0.5">
-                    <div className="text-[10px] md:text-[11px] uppercase tracking-[0.18em] text-white/40 font-medium">
+                    <div className="text-[10px] md:text-[11px] tracking-[0.18em] text-white/40 font-medium">
                       {label}
                     </div>
                     <div
@@ -695,10 +695,10 @@ function Page() {
                 <button
                   onClick={goToToday}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/75 hover:text-white transition text-[12px] font-medium cursor-pointer"
-                  title="Jump to today"
+                  title="jump to today"
                 >
                   <i className="fa-regular fa-calendar text-[10px]" />
-                  Today
+                  today
                 </button>
                 <div className="relative inline-flex rounded-full border border-white/10 bg-white/[0.03] p-1">
                   <span
@@ -718,7 +718,7 @@ function Page() {
                         : "text-white/55 hover:text-white"
                     }`}
                   >
-                    Month
+                    month
                   </button>
                   <button
                     type="button"
@@ -729,7 +729,7 @@ function Page() {
                         : "text-white/55 hover:text-white"
                     }`}
                   >
-                    Week
+                    week
                   </button>
                 </div>
               </div>

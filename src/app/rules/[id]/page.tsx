@@ -49,21 +49,21 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
             <Link
               href="/rules"
               prefetch
-              aria-label="Back to rules"
+              aria-label="back to rules"
               className="inline-flex items-center justify-center w-6 h-6 rounded-full border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/70 hover:text-white transition"
             >
               <i className="fa-solid fa-chevron-left text-[10px]" />
             </Link>
-            <div className="text-[11px] uppercase tracking-[0.18em] text-white/40 font-medium">
-              Playbook
+            <div className="text-[11px] tracking-[0.18em] text-white/40 font-medium">
+              playbook
             </div>
           </div>
           <div className="flex items-baseline justify-between gap-4 flex-wrap">
             <h1 className="text-3xl md:text-4xl font-semibold tracking-tight leading-[1.05]">
               <span className="bg-gradient-to-r from-teal-300 to-emerald-400 bg-clip-text text-transparent">
                 {sections === null
-                  ? "Loading…"
-                  : (section?.title ?? "Section not found")}
+                  ? "loading…"
+                  : (section?.title ?? "section not found")}
               </span>
             </h1>
             {section && (
@@ -95,7 +95,7 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
                     editMode ? "fa-check" : "fa-pen"
                   } text-[10px]`}
                 />
-                {editMode ? "Done" : "Edit"}
+                {editMode ? "done" : "edit"}
               </button>
             </div>
 
@@ -214,7 +214,7 @@ function RuleRow({
                 if (e.key === "Enter") save();
                 if (e.key === "Escape") setEditing(false);
               }}
-              placeholder="Rule"
+              placeholder="rule"
               className="w-full bg-transparent text-[14px] md:text-[15px] font-medium text-white border-b border-white/15 focus:outline-none focus:border-white/30 pb-0.5"
             />
             <input
@@ -224,7 +224,7 @@ function RuleRow({
                 if (e.key === "Enter") save();
                 if (e.key === "Escape") setEditing(false);
               }}
-              placeholder="Optional detail…"
+              placeholder="optional detail…"
               className="w-full bg-transparent text-[13px] md:text-[14px] text-white/70 focus:outline-none"
             />
             <div className="flex gap-3 mt-0.5">
@@ -232,13 +232,13 @@ function RuleRow({
                 onClick={save}
                 className="text-xs text-teal-300 hover:text-teal-200 transition cursor-pointer"
               >
-                Save
+                save
               </button>
               <button
                 onClick={() => setEditing(false)}
                 className="text-xs text-white/40 hover:text-white/70 transition cursor-pointer"
               >
-                Cancel
+                cancel
               </button>
             </div>
           </div>
@@ -258,13 +258,13 @@ function RuleRow({
             {editMode && (
               <div className="shrink-0 flex items-center gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition">
                 <IconBtn
-                  label="Move up"
+                  label="move up"
                   icon="fa-chevron-up"
                   disabled={isFirst}
                   onClick={() => onMove(-1)}
                 />
                 <IconBtn
-                  label="Move down"
+                  label="move down"
                   icon="fa-chevron-down"
                   disabled={isLast}
                   onClick={() => onMove(1)}
@@ -272,7 +272,7 @@ function RuleRow({
                 {otherSections.length > 0 && (
                   <div className="relative">
                     <IconBtn
-                      label="Move to section"
+                      label="move to section"
                       icon="fa-right-left"
                       onClick={() => setMenuOpen((v) => !v)}
                     />
@@ -283,8 +283,8 @@ function RuleRow({
                           onClick={() => setMenuOpen(false)}
                         />
                         <div className="absolute right-0 top-full mt-1 z-50 w-48 rounded-xl border border-white/10 bg-[var(--surface)] shadow-[0_20px_80px_var(--shadow)] p-1">
-                          <div className="px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-white/35 font-medium">
-                            Move to
+                          <div className="px-2 py-1 text-[10px] tracking-[0.14em] text-white/35 font-medium">
+                            move to
                           </div>
                           {otherSections.map((s) => (
                             <button
@@ -304,12 +304,12 @@ function RuleRow({
                   </div>
                 )}
                 <IconBtn
-                  label="Edit rule"
+                  label="edit rule"
                   icon="fa-pen"
                   onClick={() => setEditing(true)}
                 />
                 <IconBtn
-                  label="Delete rule"
+                  label="delete rule"
                   icon="fa-xmark"
                   danger
                   onClick={onDelete}
@@ -354,7 +354,7 @@ function AddRuleRow({
               setBody("");
             }
           }}
-          placeholder="Add a rule…"
+          placeholder="add a rule…"
           className="w-full bg-transparent text-[14px] md:text-[15px] font-medium placeholder:text-white/30 text-white focus:outline-none"
         />
         {title.trim() && (
@@ -369,14 +369,14 @@ function AddRuleRow({
                   setBody("");
                 }
               }}
-              placeholder="Optional detail…"
+              placeholder="optional detail…"
               className="flex-1 bg-transparent text-[13px] md:text-[14px] placeholder:text-white/25 text-white/70 focus:outline-none"
             />
             <button
               onClick={save}
               className="shrink-0 text-xs text-teal-300 hover:text-teal-200 transition cursor-pointer"
             >
-              Save
+              save
             </button>
           </div>
         )}

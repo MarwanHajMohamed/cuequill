@@ -48,9 +48,9 @@ export default function Home() {
           }
           body="A calendar tinted by your P/L. Click any day, see what you did and why. No CSV exports. No pivot tables. Just the part you were going to do in Excel anyway, except you'll open it."
           stats={[
-            ["Loads in", "2s"],
-            ["Click to detail", "Yes"],
-            ["Net of fees", "Yes"],
+            ["loads in", "2s"],
+            ["click to detail", "Yes"],
+            ["net of fees", "Yes"],
           ]}
           preview={<DayPreview />}
         />
@@ -68,9 +68,9 @@ export default function Home() {
           }
           body="Ask in plain English. Cuequill's AI answers from your trades, not the internet's. It can log a fresh fill in one sentence, then call it back when you ask."
           stats={[
-            ["Reads", "Every fill"],
-            ["Model", "Gemini"],
-            ["Avg reply", "1.4s"],
+            ["reads", "Every fill"],
+            ["model", "Gemini"],
+            ["avg reply", "1.4s"],
           ]}
           preview={<QuillAIPreview />}
         />
@@ -87,9 +87,9 @@ export default function Home() {
           }
           body="Expectancy. Profit factor. Win rate sliced by strategy, symbol, hour. A risk budget you can't bury. Numbers chosen by a trader, not picked off a finance API."
           stats={[
-            ["Expectancy", "$/trade"],
-            ["Risk budget", "Per day"],
-            ["Cuts by", "Strat/sym/hr"],
+            ["expectancy", "$/trade"],
+            ["risk budget", "Per day"],
+            ["cuts by", "Strat/sym/hr"],
           ]}
           preview={<NumbersPreview />}
         />
@@ -106,9 +106,9 @@ export default function Home() {
           }
           body="Drop a Flex Web Service token in settings. Cuequill imports every fill weeknight after close — commissions and taxes included. Manual entry still works."
           stats={[
-            ["Runs", "After close"],
-            ["Commissions", "Imported"],
-            ["Setup", "≈3 min"],
+            ["runs", "After close"],
+            ["commissions", "Imported"],
+            ["setup", "≈3 min"],
           ]}
           preview={<IBKRPreview />}
         />
@@ -163,7 +163,7 @@ function Hero() {
               href="/login"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 transition text-[13px] font-medium"
             >
-              Open your journal
+              open your journal
               <i className="fa-solid fa-chevron-right text-[10px]" />
             </Link>
           </motion.div>
@@ -217,7 +217,7 @@ function FeatureSpread({
           <dl className="mt-8 grid grid-cols-3 gap-x-4 gap-y-3 max-w-md border-t border-white/10 pt-5">
             {stats.map(([k, v]) => (
               <div key={k} className="flex flex-col gap-0.5">
-                <dt className="text-[10px] uppercase tracking-[0.18em] text-white/35">
+                <dt className="text-[10px] tracking-[0.18em] text-white/35">
                   {k}
                 </dt>
                 <dd className="text-[12px] text-white/80 tabular-nums">{v}</dd>
@@ -314,10 +314,10 @@ function Signoff() {
             href="/pricing"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-white/15 text-white/80 hover:text-white hover:border-white/30 transition text-[12.5px]"
           >
-            See pricing
+            see pricing
           </Link>
-          <span className="text-[11.5px] uppercase tracking-[0.18em] text-white/35 ml-1">
-            Three minutes to set up
+          <span className="text-[11.5px] tracking-[0.18em] text-white/35 ml-1">
+            three minutes to set up
           </span>
         </div>
       </div>
@@ -341,7 +341,7 @@ function PreviewClipping({
       <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md overflow-hidden shadow-[0_2px_24px_var(--shadow-soft)]">
         {children}
       </div>
-      <figcaption className="mt-3 flex items-baseline justify-between text-[10.5px] uppercase tracking-[0.22em] text-white/40">
+      <figcaption className="mt-3 flex items-baseline justify-between text-[10.5px] tracking-[0.22em] text-white/40">
         <span className="flex items-center gap-2">
           <span className="w-1 h-1 rounded-full bg-teal-400" />
           {caption}
@@ -354,11 +354,11 @@ function PreviewClipping({
 
 function DayPreview() {
   return (
-    <PreviewClipping caption="Day view" meta="Mon · June 9">
+    <PreviewClipping caption="day view" meta="Mon · June 9">
       <div className="px-5 md:px-6 py-5 border-b border-[var(--rule)] flex items-baseline justify-between gap-3 flex-wrap">
         <div>
-          <p className="text-[10px] uppercase tracking-[0.22em] text-white/40 mb-1.5">
-            Net P/L
+          <p className="text-[10px] tracking-[0.22em] text-white/40 mb-1.5">
+            net P/L
           </p>
           <p className="text-[38px] md:text-[46px] leading-none tabular-nums text-green-300 tracking-[-0.02em] font-medium">
             +$847.23
@@ -446,9 +446,9 @@ function DayPreview() {
           );
         })}
       </div>
-      <div className="px-5 md:px-6 py-3 border-t border-[var(--rule)] flex items-center justify-between text-[10.5px] text-white/45 uppercase tracking-[0.18em]">
+      <div className="px-5 md:px-6 py-3 border-t border-[var(--rule)] flex items-center justify-between text-[10.5px] text-white/45 tracking-[0.18em]">
         <span>
-          Avg{" "}
+          avg{" "}
           <span className="text-white/75 tabular-nums normal-case tracking-normal">
             +$211.81
           </span>
@@ -463,7 +463,7 @@ function QuillAIPreview() {
   return (
     <PreviewClipping caption="Quill AI" meta="347 trades read">
       <div className="px-5 md:px-6 pt-5 pb-3">
-        <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-teal-500/10 text-teal-300 border border-teal-500/25 text-[11px] uppercase tracking-[0.16em] font-medium">
+        <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-teal-500/10 text-teal-300 border border-teal-500/25 text-[11px] tracking-[0.16em] font-medium">
           <i className="fa-solid fa-wand-magic-sparkles text-[10px]" />
           Quill AI
         </div>
@@ -524,16 +524,16 @@ function Bubble({
 
 function NumbersPreview() {
   return (
-    <PreviewClipping caption="Statistics" meta="MTD">
+    <PreviewClipping caption="statistics" meta="MTD">
       <div className="px-5 md:px-6 pt-5 pb-2">
-        <p className="text-[10px] uppercase tracking-[0.22em] text-white/40 mb-1">
-          Expectancy
+        <p className="text-[10px] tracking-[0.22em] text-white/40 mb-1">
+          expectancy
         </p>
         <div className="flex items-baseline gap-3">
           <span className="text-[54px] md:text-[68px] leading-none tabular-nums text-green-300 tracking-[-0.025em] font-medium">
             +$24.18
           </span>
-          <span className="text-[11px] uppercase tracking-[0.16em] text-white/45">
+          <span className="text-[11px] tracking-[0.16em] text-white/45">
             / trade
           </span>
         </div>
@@ -541,15 +541,15 @@ function NumbersPreview() {
 
       <div className="px-5 md:px-6 pb-5 pt-4 grid grid-cols-3 gap-3 border-b border-[var(--rule)]">
         {[
-          { k: "Win rate", v: "58%", tone: "good" },
-          { k: "Profit factor", v: "2.14", tone: "good" },
-          { k: "Max DD", v: "−$612", tone: "bad" },
+          { k: "win rate", v: "58%", tone: "good" },
+          { k: "profit factor", v: "2.14", tone: "good" },
+          { k: "max DD", v: "−$612", tone: "bad" },
         ].map((s) => (
           <div
             key={s.k}
             className="border border-[var(--rule)] bg-white/[0.025] p-3 rounded-xl"
           >
-            <p className="text-[10px] uppercase tracking-[0.16em] text-white/40 mb-1">
+            <p className="text-[10px] tracking-[0.16em] text-white/40 mb-1">
               {s.k}
             </p>
             <p
@@ -565,13 +565,13 @@ function NumbersPreview() {
 
       <div className="px-5 md:px-6 py-4">
         <div className="flex items-center justify-between mb-2 text-[11px]">
-          <span className="text-white/55 uppercase tracking-[0.14em]">
-            Daily risk budget
+          <span className="text-white/55 tracking-[0.14em]">
+            daily risk budget
           </span>
           <span className="tabular-nums">
             <span className="text-amber-300">$120</span>
             <span className="text-white/30"> / $200</span>
-            <span className="text-white/40 ml-1.5 uppercase tracking-[0.12em] text-[10px]">
+            <span className="text-white/40 ml-1.5 tracking-[0.12em] text-[10px]">
               60% used
             </span>
           </span>
@@ -582,9 +582,9 @@ function NumbersPreview() {
             style={{ width: "60%" }}
           />
         </div>
-        <div className="mt-3 flex items-center justify-between text-[10.5px] uppercase tracking-[0.14em] text-white/35">
-          <span>Streak: 3W active</span>
-          <span>Best hour: 14:00 ET</span>
+        <div className="mt-3 flex items-center justify-between text-[10.5px] tracking-[0.14em] text-white/35">
+          <span>streak: 3W active</span>
+          <span>best hour: 14:00 ET</span>
         </div>
       </div>
     </PreviewClipping>
@@ -593,35 +593,35 @@ function NumbersPreview() {
 
 function IBKRPreview() {
   return (
-    <PreviewClipping caption="IBKR sync" meta="Last run 22:00 ET">
+    <PreviewClipping caption="IBKR sync" meta="last run 22:00 ET">
       <div className="px-5 md:px-6 py-4 border-b border-[var(--rule)] flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3">
           <span className="relative flex items-center justify-center w-9 h-9 rounded-xl border border-teal-500/25 bg-teal-500/10 text-teal-300">
             <i className="fa-solid fa-arrows-rotate text-[13px]" />
           </span>
           <div>
-            <p className="text-[10px] uppercase tracking-[0.22em] text-white/40">
-              IBKR Auto-sync
+            <p className="text-[10px] tracking-[0.22em] text-white/40">
+              IBKR auto-sync
             </p>
             <p className="text-[13px] text-white/80 tabular-nums">
               Synced 14m ago
             </p>
           </div>
         </div>
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-500/10 text-green-300 border border-green-500/25 text-[10.5px] uppercase tracking-[0.16em] font-medium">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-500/10 text-green-300 border border-green-500/25 text-[10.5px] tracking-[0.16em] font-medium">
           <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-          Connected
+          connected
         </span>
       </div>
 
       <div className="px-5 md:px-6 py-4 grid grid-cols-3 gap-3 border-b border-[var(--rule)]">
         {[
-          { k: "Imported", v: "4", tone: "good" },
-          { k: "Skipped", v: "0", tone: "neutral" },
-          { k: "Next run", v: "22:00 ET", tone: "neutral" },
+          { k: "imported", v: "4", tone: "good" },
+          { k: "skipped", v: "0", tone: "neutral" },
+          { k: "next run", v: "22:00 ET", tone: "neutral" },
         ].map((s) => (
           <div key={s.k} className="flex flex-col gap-0.5">
-            <p className="text-[10px] uppercase tracking-[0.16em] text-white/40">
+            <p className="text-[10px] tracking-[0.16em] text-white/40">
               {s.k}
             </p>
             <p
@@ -636,8 +636,8 @@ function IBKRPreview() {
       </div>
 
       <div>
-        <p className="px-5 md:px-6 pt-4 pb-2 text-[10px] uppercase tracking-[0.22em] text-white/40">
-          Last run · fills
+        <p className="px-5 md:px-6 pt-4 pb-2 text-[10px] tracking-[0.22em] text-white/40">
+          last run · fills
         </p>
         <div className="divide-y divide-[var(--rule)]">
           {[

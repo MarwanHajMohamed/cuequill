@@ -85,12 +85,12 @@ export default function DayTradesModal({
             </button>
 
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-[10px] uppercase tracking-[0.18em] text-white/40 font-medium">
+              <span className="text-[10px] tracking-[0.18em] text-white/40 font-medium">
                 {format(date, "EEE")}
               </span>
               {isToday && (
-                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-teal-500/15 text-teal-300 border border-teal-500/25">
-                  Today
+                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wider bg-teal-500/15 text-teal-300 border border-teal-500/25">
+                  today
                 </span>
               )}
             </div>
@@ -187,8 +187,8 @@ export default function DayTradesModal({
                         )}
                       </div>
                       <div className="text-[11.5px] text-white/45 truncate tabular-nums">
-                        Strike {t.strike} · Exp{" "}
-                        {format(new Date(t.expiryDate), "MMM d")} · Qty {t.qty}
+                        strike {t.strike} · exp{" "}
+                        {format(new Date(t.expiryDate), "MMM d")} · qty {t.qty}
                       </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
@@ -218,7 +218,7 @@ export default function DayTradesModal({
               className="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-full bg-teal-500/15 hover:bg-teal-500/25 text-teal-300 border border-teal-500/25 transition font-medium text-[13px] cursor-pointer"
             >
               <i className="fa-solid fa-plus text-[11px]" />
-              Add trade to this day
+              add trade to this day
             </button>
           </div>
         </motion.div>

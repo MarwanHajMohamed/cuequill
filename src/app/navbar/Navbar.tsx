@@ -163,13 +163,13 @@ export default function Navbar() {
   // Bottom navigation tabs on mobile - the four most-used routes.
   // Everything else lives behind the "More" tab.
   const bottomTabs = [
-    { icon: "fa-solid fa-house", label: "Home", slug: "/" },
+    { icon: "fa-solid fa-house", label: "home", slug: "/" },
     {
       icon: "fa-solid fa-chart-column",
-      label: "Trades",
+      label: "trades",
       slug: `trades/${userId}`,
     },
-    { icon: "fa-solid fa-calendar-days", label: "Calendar", slug: "calendar" },
+    { icon: "fa-solid fa-calendar-days", label: "calendar", slug: "calendar" },
     {
       icon: "fa-solid fa-wand-magic-sparkles",
       label: "Quill AI",
@@ -182,33 +182,33 @@ export default function Navbar() {
   const moreItems = [
     {
       icon: "fa-regular fa-circle-check",
-      label: "Affirmations",
+      label: "affirmations",
       slug: "affirmations",
     },
-    { icon: "fa-solid fa-bezier-curve", label: "Strategies", slug: "strategies" },
-    { icon: "fa-solid fa-coins", label: "Stocks & ETFs", slug: "stocks" },
+    { icon: "fa-solid fa-bezier-curve", label: "strategies", slug: "strategies" },
+    { icon: "fa-solid fa-coins", label: "stocks & ETFs", slug: "stocks" },
     {
       icon: "fa-regular fa-calendar-days",
-      label: "Earnings",
+      label: "earnings",
       slug: "earnings",
     },
-    { icon: "fa-solid fa-list-check", label: "Rules", slug: "rules" },
-    { icon: "fa-solid fa-tag", label: "Plans & pricing", slug: "pricing" },
-    { icon: "fa-solid fa-gear", label: "Settings", slug: "settings" },
+    { icon: "fa-solid fa-list-check", label: "rules", slug: "rules" },
+    { icon: "fa-solid fa-tag", label: "plans & pricing", slug: "pricing" },
+    { icon: "fa-solid fa-gear", label: "settings", slug: "settings" },
   ];
 
   const guideItems = [
-    { label: "Strategies", slug: "strategies" },
-    { label: "Stocks/ETFs", slug: "stocks" },
-    { label: "Earnings", slug: "earnings" },
-    { label: "Rules", slug: "rules" },
+    { label: "strategies", slug: "strategies" },
+    { label: "stocks/ETFs", slug: "stocks" },
+    { label: "earnings", slug: "earnings" },
+    { label: "rules", slug: "rules" },
   ];
 
   const navItems = [
-    { name: "Trades", slug: `trades/${userId}` },
-    { name: "Calendar", slug: "calendar" },
+    { name: "trades", slug: `trades/${userId}` },
+    { name: "calendar", slug: "calendar" },
     { name: "Quill AI", slug: "chat" },
-    { name: "Affirmations", slug: "affirmations" },
+    { name: "affirmations", slug: "affirmations" },
   ];
 
   const guideActive = guideItems.some((g) => isActive(g.slug));
@@ -510,7 +510,7 @@ export default function Navbar() {
                 }`}
               />
             </span>
-            <span>{marketOpen ? "Open" : "Closed"}</span>
+            <span>{marketOpen ? "open" : "closed"}</span>
           </div>
         </div>
 
@@ -628,7 +628,7 @@ export default function Navbar() {
                   guideActive ? "text-white" : "text-white/60 hover:text-white"
                 }`}
               >
-                <span className="relative">Guide</span>
+                <span className="relative">guide</span>
                 <i
                   className={`relative fa-solid fa-chevron-down text-[9px] transition-transform duration-200 ${
                     dropdown ? "-rotate-180" : ""
@@ -690,7 +690,7 @@ export default function Navbar() {
                 }`}
               />
               <span className="hidden lg:inline">
-                {marketOpen ? "Open" : "Closed"}
+                {marketOpen ? "open" : "closed"}
               </span>
             </div>
 
@@ -699,7 +699,7 @@ export default function Navbar() {
               <button
                 onClick={() => setOpen((o) => !o)}
                 className="w-9 h-9 rounded-full bg-gradient-to-br from-teal-500/80 to-emerald-600/80 border border-white/15 flex items-center justify-center text-[13px] font-semibold text-white cursor-pointer hover:brightness-110 transition"
-                aria-label="Account menu"
+                aria-label="account menu"
               >
                 {userInitial}
               </button>
@@ -743,7 +743,7 @@ export default function Navbar() {
                         }}
                       >
                         <i className="fa-solid fa-tag w-4 text-center text-white/60" />
-                        <span>Plans &amp; pricing</span>
+                        <span>plans &amp; pricing</span>
                       </button>
                       <button
                         className="w-full flex items-center gap-3 px-3 py-2 text-left text-[13px] rounded-lg cursor-pointer text-white/80 hover:bg-white/5 hover:text-white transition"
@@ -753,27 +753,27 @@ export default function Navbar() {
                         }}
                       >
                         <i className="fa-solid fa-gear w-4 text-center text-white/60" />
-                        <span>Settings</span>
+                        <span>settings</span>
                       </button>
                       <button
                         className="w-full flex items-center gap-3 px-3 py-2 text-left text-[13px] rounded-lg cursor-pointer text-white/80 hover:bg-white/5 hover:text-white transition"
                         onClick={() => signOut({ callbackUrl: "/" })}
                       >
                         <i className="fa-solid fa-right-from-bracket w-4 text-center text-white/60" />
-                        <span>Logout</span>
+                        <span>logout</span>
                       </button>
                     </div>
 
                     <div className="p-3 border-t border-white/10 flex items-center justify-between">
                       <span className="text-[12px] text-white/60">
-                        Appearance
+                        appearance
                       </span>
                       <ThemeToggle />
                     </div>
 
                     <div className="p-3 border-t border-white/10 flex items-center justify-between">
                       <span className="text-[12px] text-white/60">
-                        Simulated trading
+                        simulated trading
                       </span>
                       <label className="inline-flex items-center cursor-pointer">
                         <input
@@ -932,7 +932,7 @@ export default function Navbar() {
                     : "text-white/55"
                 }`}
               >
-                More
+                more
               </span>
             </button>
           </div>
@@ -956,11 +956,11 @@ export default function Navbar() {
               </div>
 
               <div className="px-4 pt-3 pb-4 flex items-center justify-between">
-                <span className="text-[11px] uppercase tracking-[0.18em] text-white/40 font-medium">
-                  More
+                <span className="text-[11px] tracking-[0.18em] text-white/40 font-medium">
+                  more
                 </span>
                 <button
-                  aria-label="Close"
+                  aria-label="close"
                   onClick={() => setOpenMore(false)}
                   className="w-8 h-8 rounded-full hover:bg-white/5 flex items-center justify-center text-white/60 hover:text-white transition"
                 >
@@ -1000,10 +1000,10 @@ export default function Navbar() {
               <div className="mx-4 mb-3 p-3 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-between">
                 <div className="flex flex-col">
                   <span className="text-[13px] text-white/85 font-medium">
-                    Appearance
+                    appearance
                   </span>
                   <span className="text-[11px] text-white/45">
-                    Light or dark theme
+                    light or dark theme
                   </span>
                 </div>
                 <ThemeToggle />
@@ -1012,10 +1012,10 @@ export default function Navbar() {
               <div className="mx-4 mb-3 p-3 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-between">
                 <div className="flex flex-col">
                   <span className="text-[13px] text-white/85 font-medium">
-                    Simulated trading
+                    simulated trading
                   </span>
                   <span className="text-[11px] text-white/45">
-                    Use paper-trade data
+                    use paper-trade data
                   </span>
                 </div>
                 <label className="inline-flex items-center cursor-pointer">
@@ -1045,7 +1045,7 @@ export default function Navbar() {
                   className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-red-500/10 text-red-300 border border-red-500/25 hover:bg-red-500/20 transition text-[13px] font-medium"
                 >
                   <i className="fa-solid fa-right-from-bracket text-[12px]" />
-                  Logout
+                  logout
                 </button>
               </div>
             </motion.div>

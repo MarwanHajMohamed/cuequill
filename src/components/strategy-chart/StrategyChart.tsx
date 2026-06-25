@@ -101,7 +101,7 @@ export function StrategyChart({
       <div className="w-full border border-white/10 rounded-lg overflow-hidden bg-[var(--surface)]">
         <div className="flex items-center justify-between px-4 py-2 border-b border-white/10">
           {title && (
-            <div className="text-xs text-white/50 uppercase tracking-wide">
+            <div className="text-xs text-white/50 tracking-wide">
               {title}
             </div>
           )}
@@ -109,14 +109,14 @@ export function StrategyChart({
             type="button"
             onClick={handlePlay}
             className="ml-auto text-xs text-white/70 hover:text-white border border-white/15 hover:border-white/30 rounded-md px-2.5 py-1 flex items-center gap-1.5 transition"
-            aria-label={playing ? "Pause schematic" : "Play schematic"}
+            aria-label={playing ? "pause schematic" : "play schematic"}
           >
             <i
               className={`fa-solid ${
                 playing ? "fa-pause" : "fa-play"
               } text-[10px]`}
             ></i>
-            {playing ? "Pause" : progressX >= CHART_WIDTH ? "Replay" : "Play"}
+            {playing ? "pause" : progressX >= CHART_WIDTH ? "replay" : "play"}
           </button>
         </div>
         <svg

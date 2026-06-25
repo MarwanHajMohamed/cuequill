@@ -129,7 +129,7 @@ export default function StrategyContent({ blocks }: Props) {
                     }`}
                   >
                     <i className="fa-solid fa-check text-[10px]" />
-                    Successful
+                    successful
                     <span className="text-[10px] text-white/40 tabular-nums">
                       {successful.length}
                     </span>
@@ -143,7 +143,7 @@ export default function StrategyContent({ blocks }: Props) {
                     }`}
                   >
                     <i className="fa-solid fa-xmark text-[10px]" />
-                    Unsuccessful
+                    unsuccessful
                     <span className="text-[10px] text-white/40 tabular-nums">
                       {unsuccessful.length}
                     </span>

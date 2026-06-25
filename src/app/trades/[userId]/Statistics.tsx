@@ -45,19 +45,19 @@ const DEFAULT_VISIBILITY: StatsVisibility = {
 };
 
 const TILE_OPTIONS: Array<{ key: keyof StatsVisibility; label: string }> = [
-  { key: "netPL", label: "Net P&L" },
-  { key: "profitFactor", label: "Profit Factor" },
-  { key: "winRate", label: "Win Rate" },
-  { key: "avgRR", label: "Avg R:R" },
-  { key: "winStreak", label: "Best Win Streak" },
+  { key: "netPL", label: "net P&L" },
+  { key: "profitFactor", label: "profit factor" },
+  { key: "winRate", label: "win rate" },
+  { key: "avgRR", label: "avg R:R" },
+  { key: "winStreak", label: "best win streak" },
 ];
 
 const SECTION_OPTIONS: Array<{ key: keyof StatsVisibility; label: string }> = [
-  { key: "equityCurve", label: "Equity Curve" },
-  { key: "tagStats", label: "Performance by Tag" },
-  { key: "filteredStats", label: "Filter Insights" },
-  { key: "totalStats", label: "Performance Breakdown" },
-  { key: "monthlyStats", label: "Monthly Stats" },
+  { key: "equityCurve", label: "equity curve" },
+  { key: "tagStats", label: "performance by tag" },
+  { key: "filteredStats", label: "filter insights" },
+  { key: "totalStats", label: "performance breakdown" },
+  { key: "monthlyStats", label: "monthly stats" },
 ];
 
 const CustomizeMenu = ({
@@ -105,7 +105,7 @@ const CustomizeMenu = ({
         key={key}
         type="button"
         onClick={() => toggle(key)}
-        title={on ? "Hide" : "Show"}
+        title={on ? "hide" : "show"}
         className="group flex items-center gap-2.5 w-full text-left px-2 py-1.5 rounded-lg hover:bg-white/[0.04] transition cursor-pointer"
       >
         <span
@@ -130,7 +130,7 @@ const CustomizeMenu = ({
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        title="Customize stats"
+        title="customize stats"
         aria-label="Customize stats"
         aria-expanded={open}
         className={`inline-flex items-center justify-center w-9 h-9 rounded-full border transition cursor-pointer ${
@@ -162,20 +162,20 @@ const CustomizeMenu = ({
               transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
             >
               <div className="flex items-center justify-between px-2 py-1.5">
-                <span className="text-[11px] uppercase tracking-[0.14em] text-white/40 font-medium">
-                  Summary tiles
+                <span className="text-[11px] tracking-[0.14em] text-white/40 font-medium">
+                  summary tiles
                 </span>
                 <button
                   onClick={resetAll}
                   className="text-[11px] text-teal-300/80 hover:text-teal-300 transition cursor-pointer"
                 >
-                  Reset
+                  reset
                 </button>
               </div>
               <div className="flex flex-col">{TILE_OPTIONS.map(renderRow)}</div>
               <div className="px-2 pt-3 pb-1">
-                <span className="text-[11px] uppercase tracking-[0.14em] text-white/40 font-medium">
-                  Sections
+                <span className="text-[11px] tracking-[0.14em] text-white/40 font-medium">
+                  sections
                 </span>
               </div>
               <div className="flex flex-col">
@@ -366,7 +366,7 @@ const SummaryTile = ({
   <div
     className={`rounded-xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4 flex flex-col gap-1.5 md:gap-2 min-w-0 ${className}`}
   >
-    <div className="text-[10px] md:text-[11px] uppercase tracking-[0.14em] text-white/45 font-medium flex items-center justify-between gap-1.5">
+    <div className="text-[10px] md:text-[11px] tracking-[0.14em] text-white/45 font-medium flex items-center justify-between gap-1.5">
       <span className="truncate">{label}</span>
       {info && <InfoTooltip text={info} />}
     </div>
@@ -470,7 +470,7 @@ function CompareCard({
 
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4 flex flex-col gap-1.5 md:gap-2 min-w-0 basis-[100px] md:basis-[200px] grow md:max-w-[280px]">
-      <div className="flex items-center justify-between gap-1 text-[10px] md:text-[11px] text-white/45 uppercase tracking-[0.14em] font-medium">
+      <div className="flex items-center justify-between gap-1 text-[10px] md:text-[11px] text-white/45 tracking-[0.14em] font-medium">
         <span className="truncate">{label}</span>
         {info && <InfoTooltip text={info} />}
       </div>
@@ -504,7 +504,7 @@ function MiniStat({
       : "text-white";
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4 flex flex-col gap-1.5 md:gap-2 min-w-0">
-      <div className="flex items-center justify-between gap-1 text-[10px] md:text-[11px] text-white/45 uppercase tracking-[0.14em] font-medium">
+      <div className="flex items-center justify-between gap-1 text-[10px] md:text-[11px] text-white/45 tracking-[0.14em] font-medium">
         <span className="truncate">{label}</span>
         {info && <InfoTooltip text={info} />}
       </div>
@@ -551,7 +551,7 @@ function MetricTile({
           >
             <i className={`fa-solid ${icon} text-[11px]`} />
           </div>
-          <span className="text-[10px] md:text-[11px] uppercase tracking-[0.14em] text-white/45 font-medium truncate">
+          <span className="text-[10px] md:text-[11px] tracking-[0.14em] text-white/45 font-medium truncate">
             {label}
           </span>
         </div>
@@ -592,7 +592,7 @@ function BreakdownTable({
   const maxAbs = Math.max(...rows.map((r) => Math.abs(r.netPL)), 1);
   return (
     <div className="flex flex-col gap-2.5">
-      <div className="flex items-center gap-1.5 text-[10px] md:text-[11px] uppercase tracking-[0.18em] text-white/45 font-medium">
+      <div className="flex items-center gap-1.5 text-[10px] md:text-[11px] tracking-[0.18em] text-white/45 font-medium">
         <span>{title}</span>
         {info && <InfoTooltip text={info} />}
       </div>
@@ -600,20 +600,20 @@ function BreakdownTable({
         <table className="w-full min-w-[480px] md:min-w-0 text-xs md:text-sm">
           <thead>
             <tr className="text-white/40 bg-white/[0.02] border-b border-white/[0.06]">
-              <th className="text-left font-medium py-2.5 px-3 text-[10px] uppercase tracking-[0.14em]">
-                Label
+              <th className="text-left font-medium py-2.5 px-3 text-[10px] tracking-[0.14em]">
+                label
               </th>
-              <th className="text-right font-medium py-2.5 px-3 text-[10px] uppercase tracking-[0.14em]">
+              <th className="text-right font-medium py-2.5 px-3 text-[10px] tracking-[0.14em]">
                 N
               </th>
-              <th className="text-right font-medium py-2.5 px-3 text-[10px] uppercase tracking-[0.14em]">
-                Win %
+              <th className="text-right font-medium py-2.5 px-3 text-[10px] tracking-[0.14em]">
+                win %
               </th>
-              <th className="text-right font-medium py-2.5 px-3 text-[10px] uppercase tracking-[0.14em]">
-                Net
+              <th className="text-right font-medium py-2.5 px-3 text-[10px] tracking-[0.14em]">
+                net
               </th>
-              <th className="text-right font-medium py-2.5 px-3 text-[10px] uppercase tracking-[0.14em]">
-                Avg
+              <th className="text-right font-medium py-2.5 px-3 text-[10px] tracking-[0.14em]">
+                avg
               </th>
               <th className="w-1/4 text-left font-normal py-2.5 px-3 hidden md:table-cell"></th>
             </tr>
@@ -1183,7 +1183,7 @@ export default function Statistics({
         <div className="flex flex-wrap justify-center gap-2 md:gap-3 w-full mb-10">
           {visibility.netPL && (
             <SummaryTile
-              label="Net P&L"
+              label="net P&L"
               info="Total profit/loss across all closed trades."
               className="basis-[100px] md:basis-[200px] grow max-w-[280px]"
             >
@@ -1199,7 +1199,7 @@ export default function Statistics({
 
           {visibility.profitFactor && (
             <SummaryTile
-              label="Profit Factor"
+              label="profit factor"
               info="Gross wins ÷ gross losses. Above 1.0 = profitable; above 2.0 = strong system."
               className="basis-[100px] md:basis-[200px] grow max-w-[280px]"
             >
@@ -1222,7 +1222,7 @@ export default function Statistics({
 
           {visibility.winRate && (
             <SummaryTile
-              label="Win Rate"
+              label="win rate"
               info="Percentage of closed trades that ended as wins."
               className="basis-[100px] md:basis-[200px] grow max-w-[280px]"
             >
@@ -1237,7 +1237,7 @@ export default function Statistics({
 
           {visibility.avgRR && (
             <SummaryTile
-              label="Avg R:R"
+              label="avg R:R"
               info="Average winner size ÷ average loser size. Above 1R means your wins are bigger than your losses on average."
               className="basis-[100px] md:basis-[200px] grow max-w-[280px]"
             >
@@ -1261,7 +1261,7 @@ export default function Statistics({
 
           {visibility.winStreak && (
             <SummaryTile
-              label="Best Win Streak"
+              label="best win streak"
               info="Longest run of consecutive winning trades in your history (open trades are skipped, losses break the streak)."
               className="basis-[100px] md:basis-[200px] grow max-w-[280px]"
             >
@@ -1288,21 +1288,21 @@ export default function Statistics({
       {visibility.tagStats && tagStats.length > 0 && (
         <div className="w-full mb-10 flex flex-col gap-4 md:gap-5">
           <SectionHeader
-            title="Performance by tag"
+            title="performance by tag"
             info="Net P/L grouped by the tags you've added to your trades. Highlights which mistakes are costing the most and which patterns are paying off."
           />
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4 overflow-x-auto">
             <table className="w-full text-sm min-w-[480px]">
               <thead>
-                <tr className="text-[10px] uppercase tracking-[0.14em] text-white/40 border-b border-white/[0.06]">
-                  <th className="text-left py-2.5 pr-3 font-medium">Tag</th>
-                  <th className="text-right py-2.5 px-3 font-medium">Trades</th>
+                <tr className="text-[10px] tracking-[0.14em] text-white/40 border-b border-white/[0.06]">
+                  <th className="text-left py-2.5 pr-3 font-medium">tag</th>
+                  <th className="text-right py-2.5 px-3 font-medium">trades</th>
                   <th className="text-right py-2.5 px-3 font-medium">
-                    Win rate
+                    win rate
                   </th>
-                  <th className="text-right py-2.5 px-3 font-medium">Avg P/L</th>
+                  <th className="text-right py-2.5 px-3 font-medium">avg P/L</th>
                   <th className="text-right py-2.5 pl-3 font-medium">
-                    Total P/L
+                    total P/L
                   </th>
                 </tr>
               </thead>
@@ -1359,7 +1359,7 @@ export default function Statistics({
       {visibility.filteredStats && (
         <div className="w-full mt-8 md:mt-16 flex flex-col gap-4 md:gap-5">
           <SectionHeader
-            title="Filter insights"
+            title="filter insights"
             info="Compares the trades currently matching your filters against your all-time baseline. Use it to ask: 'Is this subset of trades actually better than my average?'"
             right={
               <div className="flex items-center gap-2">
@@ -1403,7 +1403,7 @@ export default function Statistics({
 
           <div className="flex flex-wrap gap-2 md:gap-3">
             <CompareCard
-              label="Win Rate"
+              label="win rate"
               value={`${filteredSummary.winRate.toFixed(1)}%`}
               baseline={`${totalSummary.winRate.toFixed(1)}%`}
               delta={filteredSummary.winRate - totalSummary.winRate}
@@ -1470,7 +1470,7 @@ export default function Statistics({
       {visibility.totalStats && (
         <div className="w-full mt-8 md:mt-16 flex flex-col gap-4 md:gap-5">
           <SectionHeader
-            title="Performance breakdown"
+            title="performance breakdown"
             info="A bird's-eye view of where your edge is across your entire trading history - split by direction, strategy, symbol, streaks, and best/worst day."
           />
 
@@ -1552,7 +1552,7 @@ export default function Statistics({
           {/* By Strategy */}
           {byStrategy.length > 0 && (
             <BreakdownTable
-              title="By Strategy"
+              title="by strategy"
               rows={byStrategy.slice(0, 8)}
               info="Net P/L and win rate for each strategy, ranked by trade count. Highlights which setups consistently make money and which are net losers."
             />
@@ -1561,7 +1561,7 @@ export default function Statistics({
           {/* By Symbol */}
           {bySymbol.length > 0 && (
             <BreakdownTable
-              title="By Symbol"
+              title="by symbol"
               rows={bySymbol.slice(0, 8)}
               info="Net P/L by ticker. The horizontal bar's width is relative to your biggest mover, green for profit and red for loss."
             />
@@ -1570,7 +1570,7 @@ export default function Statistics({
           {/* Streaks & Risk */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
             <MetricTile
-              label="Current streak"
+              label="current streak"
               value={
                 curStreakKind === null
                   ? "-"
@@ -1596,7 +1596,7 @@ export default function Statistics({
               info="Your active streak - how many consecutive winners or losers your most recent trades are. A long loss streak can be a tilt warning."
             />
             <MetricTile
-              label="Best streak"
+              label="best streak"
               value={
                 longestWinStreakFiltered > 0
                   ? `${longestWinStreakFiltered}`
@@ -1612,7 +1612,7 @@ export default function Statistics({
               info="Most consecutive winning trades inside the current filter. Open trades are ignored."
             />
             <MetricTile
-              label="Worst streak"
+              label="worst streak"
               value={longestLossStreak > 0 ? `${longestLossStreak}` : "-"}
               sub={
                 longestLossStreak > 0 ? "consecutive losses" : undefined
@@ -1622,7 +1622,7 @@ export default function Statistics({
               info="Most consecutive losing trades. Useful for sizing - your risk per trade should survive a streak this long."
             />
             <MetricTile
-              label="Max drawdown"
+              label="max drawdown"
               value={maxDD < 0 ? `${fmtMoneyCompact(maxDD)}` : "$0.00"}
               sub="peak to trough"
               tone="bad"
@@ -1634,7 +1634,7 @@ export default function Statistics({
           {/* Best / Worst day + consistency */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-3">
             <MetricTile
-              label="Best day"
+              label="best day"
               value={
                 bestDayStr ? `+${fmtMoneyCompact(bestDayPL)}` : "-"
               }
@@ -1644,7 +1644,7 @@ export default function Statistics({
               info="Single calendar day with the highest net P/L across all your trades closed that day."
             />
             <MetricTile
-              label="Worst day"
+              label="worst day"
               value={
                 worstDayStr
                   ? `−${fmtMoneyCompact(Math.abs(worstDayPL))}`
@@ -1656,7 +1656,7 @@ export default function Statistics({
               info="Single calendar day with the largest net loss. Compare to your daily max-loss rule."
             />
             <MetricTile
-              label="Profitable days"
+              label="profitable days"
               value={
                 dayMap.size > 0 ? `${consistencyPct.toFixed(0)}%` : "-"
               }
@@ -1746,7 +1746,7 @@ export default function Statistics({
           <div className="w-full mt-8 md:mt-16 flex flex-col gap-4 md:gap-5">
             {/* Header */}
             <SectionHeader
-              title="Statistics per month"
+              title="statistics per month"
               right={
                 <VerdictPill
                   tone={monthVerdict.tone}
@@ -1773,11 +1773,11 @@ export default function Statistics({
                     onClick={jumpToToday}
                     className="text-[11px] text-teal-300/80 hover:text-teal-300 transition cursor-pointer"
                   >
-                    Jump to today
+                    jump to today
                   </button>
                 )}
                 {isCurrentMonth && (
-                  <div className="text-[11px] text-white/40">This month</div>
+                  <div className="text-[11px] text-white/40">this month</div>
                 )}
               </div>
               <button
@@ -1822,7 +1822,7 @@ export default function Statistics({
                         <i className="fa-regular fa-calendar-xmark" />
                       </div>
                       <div className="text-sm text-white/55">
-                        No trades for {currentMonth} {year}
+                        no trades for {currentMonth} {year}
                       </div>
                     </div>
                   ) : (
@@ -1837,8 +1837,8 @@ export default function Statistics({
                       >
                         <div className="flex items-start justify-between gap-4 flex-wrap">
                           <div className="flex flex-col gap-1 min-w-0">
-                            <div className="text-[10px] md:text-[11px] uppercase tracking-[0.18em] text-white/45 font-medium flex items-center gap-1.5">
-                              Net P/L
+                            <div className="text-[10px] md:text-[11px] tracking-[0.18em] text-white/45 font-medium flex items-center gap-1.5">
+                              net P/L
                               <InfoTooltip text="Total realized profit/loss for trades closed this month, after fees." />
                             </div>
                             <div
@@ -1871,8 +1871,8 @@ export default function Statistics({
                           {tradedDays > 0 && (
                             <div className="flex items-center gap-3">
                               <div className="flex flex-col items-end">
-                                <div className="text-[10px] uppercase tracking-[0.14em] text-white/40">
-                                  Days traded
+                                <div className="text-[10px] tracking-[0.14em] text-white/40">
+                                  days traded
                                 </div>
                                 <div className="text-xl md:text-2xl font-semibold tabular-nums">
                                   {tradedDays}
@@ -1904,8 +1904,8 @@ export default function Statistics({
                       {tradedDays > 0 && (
                         <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5">
                           <div className="flex items-center justify-between mb-3">
-                            <div className="text-[10px] md:text-[11px] uppercase tracking-[0.18em] text-white/45 font-medium flex items-center gap-1.5">
-                              Daily P/L
+                            <div className="text-[10px] md:text-[11px] tracking-[0.18em] text-white/45 font-medium flex items-center gap-1.5">
+                              daily P/L
                               <InfoTooltip text="Each bar is one calendar day's net P/L. Greyed = weekend, faint dash = no trades that day." />
                             </div>
                             <div className="text-[11px] text-white/40 flex items-center gap-3">
@@ -1970,7 +1970,7 @@ export default function Statistics({
                       {/* Detail tiles - extremes */}
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
                         <MetricTile
-                          label="Biggest win"
+                          label="biggest win"
                           value={
                             monthBiggestWin > 0
                               ? `+${fmtMoneyCompact(monthBiggestWin)}`
@@ -1981,7 +1981,7 @@ export default function Statistics({
                           info="Largest single winning trade closed this month."
                         />
                         <MetricTile
-                          label="Worst loss"
+                          label="worst loss"
                           value={
                             monthBiggestLoss < 0
                               ? `−${fmtMoneyCompact(Math.abs(monthBiggestLoss))}`
@@ -1992,7 +1992,7 @@ export default function Statistics({
                           info="Largest single losing trade closed this month."
                         />
                         <MetricTile
-                          label="Best day"
+                          label="best day"
                           value={
                             monthBestDay > 0
                               ? `+${fmtMoneyCompact(monthBestDay)}`
@@ -2003,7 +2003,7 @@ export default function Statistics({
                           info="Best single calendar day this month - sum of all trades closed that day."
                         />
                         <MetricTile
-                          label="Worst day"
+                          label="worst day"
                           value={
                             monthWorstDay < 0
                               ? `−${fmtMoneyCompact(Math.abs(monthWorstDay))}`

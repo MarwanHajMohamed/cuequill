@@ -97,12 +97,12 @@ function EarningsPage() {
         {/* Watchlist editor */}
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md p-4 md:p-5">
           <div className="flex items-center justify-between gap-3 mb-3">
-            <span className="text-[11px] uppercase tracking-[0.18em] text-white/45 font-medium">
-              Watchlist
+            <span className="text-[11px] tracking-[0.18em] text-white/45 font-medium">
+              watchlist
             </span>
             {saving && (
               <span className="text-[11px] text-white/40 inline-flex items-center gap-1.5">
-                <Spinner size={12} /> Saving
+                <Spinner size={12} /> saving
               </span>
             )}
           </div>
@@ -136,7 +136,7 @@ function EarningsPage() {
                 onKeyDown={(e) => {
                   if (e.key === "Enter") addSymbol();
                 }}
-                placeholder="Add ticker"
+                placeholder="add ticker"
                 maxLength={10}
                 className="bg-transparent outline-none text-[12.5px] px-3 py-1 w-[110px] placeholder:text-white/35 uppercase"
               />
@@ -168,7 +168,7 @@ function EarningsPage() {
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md p-4 md:p-5">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-[15px] font-semibold tracking-tight">
-                Upcoming
+                upcoming
               </h2>
               {eLoading && <Spinner size={14} />}
             </div>
@@ -184,7 +184,7 @@ function EarningsPage() {
                 {upcoming.map((e) => (
                   <div key={e.symbol} className="flex items-center gap-3 py-2.5">
                     <div className="w-[52px] shrink-0 text-center">
-                      <div className="text-[11px] uppercase tracking-wide text-white/40 leading-none">
+                      <div className="text-[11px] tracking-wide text-white/40 leading-none">
                         {format(parseISO(e.date!), "MMM")}
                       </div>
                       <div className="text-[17px] font-medium tabular-nums leading-tight">
@@ -197,8 +197,8 @@ function EarningsPage() {
                           {e.symbol}
                         </span>
                         {e.isEstimate && (
-                          <span className="text-[9px] uppercase tracking-wide text-white/40 border border-white/15 rounded px-1 py-0.5">
-                            Est.
+                          <span className="text-[9px] tracking-wide text-white/40 border border-white/15 rounded px-1 py-0.5">
+                            est.
                           </span>
                         )}
                       </div>
@@ -209,7 +209,7 @@ function EarningsPage() {
                       )}
                     </div>
                     <div className="shrink-0 text-right">
-                      <div className="text-[10px] uppercase tracking-wide text-white/35 leading-none">
+                      <div className="text-[10px] tracking-wide text-white/35 leading-none">
                         EPS est.
                       </div>
                       <div className="text-[13px] tabular-nums text-white/75">

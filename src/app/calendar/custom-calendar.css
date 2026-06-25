@@ -74,7 +74,6 @@
   .react-calendar__month-view__weekdays {
   font-size: 11px;
   letter-spacing: 0.05em;
-  text-transform: uppercase;
   color: rgb(var(--fg-rgb) / 0.4);
   margin-bottom: 6px;
   display: grid !important;

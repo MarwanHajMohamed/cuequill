@@ -30,7 +30,7 @@ type FeatureGroup = {
 const GROUPS: FeatureGroup[] = [
   {
     n: "I",
-    label: "Logging",
+    label: "logging",
     heading: (
       <>
         Put a trade in once.{" "}
@@ -40,37 +40,37 @@ const GROUPS: FeatureGroup[] = [
     lede: "Two ways in — by hand or from your broker. Both end up in the same journal, deduped, with commissions and taxes already counted.",
     items: [
       {
-        title: "Manual entry",
+        title: "manual entry",
         body: "Symbol, direction, contract, qty, strike, dates, P/L. Fields validate as you type and the form remembers where you were the next time you open it.",
         detail: "5 fields · ⌘+Enter to save",
         tiers: ["Free", "Pro"],
       },
       {
-        title: "Plain-English logging",
+        title: "plain-English logging",
         body: "Tell Quill AI a sentence — 'log 3 SPY 600 calls at $1.20 expiring Friday' — and the trade lands in your journal, ready to edit.",
-        detail: "Via Quill AI · Pro",
+        detail: "via Quill AI · Pro",
         tiers: ["Pro"],
       },
       {
         title: "IBKR Flex auto-sync",
         body: "Drop your Flex Web Service token in settings. Cuequill imports every fill weeknight after close, commissions and taxes folded in, duplicates flagged before they're saved.",
-        detail: "Nightly · ~3 min setup",
+        detail: "nightly · ~3 min setup",
         tiers: ["Pro"],
       },
       {
-        title: "Tags",
+        title: "tags",
         body: "Mark trades with the mistake you made or the thing you did right. Tags drive the mistake leaderboard and the per-tag stats on the statistics page.",
         detail: "Mistake / good · per trade",
         tiers: ["Free", "Pro"],
       },
       {
-        title: "Trade notes",
+        title: "trade notes",
         body: "A textarea per trade. ⌘+Enter saves; Esc closes. Word count and unsaved-state pill sit in the corner so you don't lose anything.",
         detail: "Markdown supported",
         tiers: ["Free", "Pro"],
       },
       {
-        title: "Simulated mode",
+        title: "simulated mode",
         body: "A switch on every trade and a global toggle. Try a setup without polluting your real journal — simulated trades are filtered out of every stat by default.",
         detail: "Per-trade switch",
         tiers: ["Free", "Pro"],
@@ -79,7 +79,7 @@ const GROUPS: FeatureGroup[] = [
   },
   {
     n: "II",
-    label: "Review",
+    label: "review",
     heading: (
       <>
         The part you{" "}
@@ -95,31 +95,31 @@ const GROUPS: FeatureGroup[] = [
         tiers: ["Free", "Pro"],
       },
       {
-        title: "Day modal",
+        title: "day modal",
         body: "Big net P/L at the top, every fill underneath with direction chip, strike × qty, strategy, and a green/red gutter. One click to edit the trade in place.",
         detail: "Click any day",
         tiers: ["Free", "Pro"],
       },
       {
-        title: "Statistics page",
+        title: "statistics page",
         body: "Expectancy, profit factor, win rate, R:R, streaks — the headline stats are free. On Pro, slice them by symbol and strategy, with a monthly section and equity curve.",
         detail: "Core free · per-strategy & per-symbol on Pro",
         tiers: ["Free", "Pro"],
       },
       {
-        title: "Trades table",
+        title: "trades table",
         body: "Reorder and hide columns. Filters slide in from the side and live in the URL — so you can share a view or come back to it. Pagination is keyboard-friendly.",
         detail: "Customisable · URL-stateful",
         tiers: ["Free", "Pro"],
       },
       {
-        title: "Dashboard insights",
+        title: "dashboard insights",
         body: "Three at-a-glance tiles below the calendar: a daily-risk budget bar, a top/bottom strategy edge ranking, and a mistake leaderboard of your costliest tags.",
         detail: "Lives on the dashboard",
         tiers: ["Pro"],
       },
       {
-        title: "Equity curve",
+        title: "equity curve",
         body: "Cumulative net P/L over time, with hover totals. Shows the trajectory you wouldn't see by reading individual trades.",
         detail: "All-time · in £/$",
         tiers: ["Pro"],
@@ -138,37 +138,37 @@ const GROUPS: FeatureGroup[] = [
     lede: "Plain-English questions against your own trades — analysis, comparisons, mistake-spotting, fresh fills.",
     items: [
       {
-        title: "Ask anything",
+        title: "ask anything",
         body: "Which strategy is leaking money this month? What did my last five losses have in common? Quill AI answers from your data, not the internet's.",
         detail: "Pro only",
         tiers: ["Pro"],
       },
       {
-        title: "Reads imported fills",
+        title: "reads imported fills",
         body: "Quill AI sees every IBKR-imported fill alongside your manual entries. No copy-paste between tools.",
         detail: "Pro only",
         tiers: ["Pro"],
       },
       {
-        title: "Performance analysis",
+        title: "performance analysis",
         body: "Group by strategy, symbol, day-of-week, time-of-day. Quill returns the cuts that matter, not a wall of numbers.",
         detail: "Pro only",
         tiers: ["Pro"],
       },
       {
-        title: "Pattern & mistake spotting",
+        title: "pattern & mistake spotting",
         body: "Ask 'what did my last five losses have in common' and Quill cross-references your tags, hour, symbol, and strategy to call out the pattern.",
         detail: "Pro only",
         tiers: ["Pro"],
       },
       {
-        title: "Rule-adherence checks",
+        title: "rule-adherence checks",
         body: "Quill knows your rules board. Ask whether yesterday's trades followed them and it'll tell you which ones broke which rule.",
         detail: "Reads your rules",
         tiers: ["Pro"],
       },
       {
-        title: "Threads & history",
+        title: "threads & history",
         body: "Conversations save automatically. Come back to a question, ask a follow-up. Trade context is re-read each time so answers stay current.",
         detail: "Pro only",
         tiers: ["Pro"],
@@ -177,7 +177,7 @@ const GROUPS: FeatureGroup[] = [
   },
   {
     n: "IV",
-    label: "Reference",
+    label: "reference",
     heading: (
       <>
         The playbook you{" "}
@@ -187,25 +187,25 @@ const GROUPS: FeatureGroup[] = [
     lede: "Strategy schematics, a rules board, and a daily affirmation page — the bits of trading discipline you keep meaning to write down.",
     items: [
       {
-        title: "Strategy playbook",
+        title: "strategy playbook",
         body: "Eleven discretionary US-options setups with schematics, entry rules, and worked chart examples. Tag your trades against them.",
         detail: "11 setups · CALL & PUT",
         tiers: ["Free", "Pro"],
       },
       {
-        title: "Rules board",
+        title: "rules board",
         body: "Your own rules, organized in sections. Edit inline, drag to reorder, link from Quill AI when you ask about rule-adherence.",
         detail: "Sections · inline editor · Pro",
         tiers: ["Pro"],
       },
       {
-        title: "Affirmations",
+        title: "affirmations",
         body: "A short daily-discipline ritual. Tick through the affirmations before the open so the rules are fresh in your head, not just on paper.",
         detail: "Daily ritual · Pro",
         tiers: ["Pro"],
       },
       {
-        title: "Goals",
+        title: "goals",
         body: "Set monthly and daily P/L targets. Progress bars on the dashboard and an at-a-glance trajectory through the month.",
         detail: "Monthly + daily",
         tiers: ["Free", "Pro"],
@@ -214,7 +214,7 @@ const GROUPS: FeatureGroup[] = [
   },
   {
     n: "V",
-    label: "Surface",
+    label: "surface",
     heading: (
       <>
         Feels right{" "}
@@ -224,25 +224,25 @@ const GROUPS: FeatureGroup[] = [
     lede: "Native-feeling on mobile, theme-aware, and built to stay out of the way when you're at the screen.",
     items: [
       {
-        title: "Light & dark themes",
+        title: "light & dark themes",
         body: "Toggle between dark (default) and a true light theme — colors, hairlines, shadows, and accents all flip. Persists across sessions.",
         detail: "One-click switch",
         tiers: ["Free", "Pro"],
       },
       {
-        title: "Installable PWA",
+        title: "installable PWA",
         body: "Add to your home screen on iOS or Android. Full-screen, floating bottom tab bar, swipe-to-change-month gestures, offline cache.",
         detail: "iOS · Android",
         tiers: ["Free", "Pro"],
       },
       {
-        title: "Keyboard shortcuts",
+        title: "keyboard shortcuts",
         body: "⌘+Enter to save in any modal, Esc to close, slash-keys to jump between pages on desktop.",
         detail: "Modal-aware",
         tiers: ["Free", "Pro"],
       },
       {
-        title: "Private by default",
+        title: "private by default",
         body: "Trades scoped to your account. IBKR token encrypted at rest. Quill AI only reads your own trades.",
         detail: "Bank-grade encryption",
         tiers: ["Free", "Pro"],
