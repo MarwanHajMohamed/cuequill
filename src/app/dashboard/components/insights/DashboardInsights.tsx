@@ -33,7 +33,7 @@ export default function DashboardInsights({ userId }: { userId: string }) {
   return (
     <div className="w-full max-w-[1100px] mx-auto px-5 md:px-10 flex flex-col gap-4 md:gap-6">
       <div className="flex items-center gap-2">
-        <h2 className="md:text-xl text-sm font-bold">insights</h2>
+        <h2 className="md:text-xl text-sm font-bold">Insights</h2>
       </div>
       <DailyRiskBudget trades={trades} />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
@@ -131,11 +131,11 @@ function DailyRiskBudget({ trades }: { trades: Trade[] }) {
       className={`rounded-2xl border md:backdrop-blur-md p-4 md:p-5 ${tone.ring} ${tone.bg}`}
     >
       <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
-        <div className={`text-[10px] md:text-[11px] tracking-[0.18em] font-medium ${tone.eyebrow}`}>
-          daily risk budget
+        <div className={`text-[10px] md:text-[11px] tracking-[0.1em] font-medium ${tone.eyebrow}`}>
+          Daily risk budget
         </div>
         <div className="flex items-center gap-2 text-[11px] text-white/45">
-          <span>max daily loss</span>
+          <span>Max daily loss</span>
           {editing ? (
             <span className="inline-flex items-center gap-1">
               <span className="text-white/60">$</span>
@@ -231,7 +231,7 @@ function EdgeRanking({ trades }: { trades: Trade[] }) {
 
   if (ranked.length === 0) {
     return (
-      <Section title="strategy edge">
+      <Section title="Strategy edge">
         <Empty text={`Need ≥${MIN_N_FOR_EDGE} closed trades per strategy to rank edge.`} />
       </Section>
     );
@@ -248,13 +248,13 @@ function EdgeRanking({ trades }: { trades: Trade[] }) {
   );
 
   return (
-    <Section title="strategy edge">
+    <Section title="Strategy edge">
       <div className="flex flex-col gap-2.5">
         {top.length > 0 && (
-          <RankGroup label="working" tone="good" rows={top} maxExp={maxExp} />
+          <RankGroup label="Working" tone="good" rows={top} maxExp={maxExp} />
         )}
         {bot.length > 0 && (
-          <RankGroup label="leaking" tone="bad" rows={bot} maxExp={maxExp} />
+          <RankGroup label="Leaking" tone="bad" rows={bot} maxExp={maxExp} />
         )}
       </div>
     </Section>
@@ -276,7 +276,7 @@ function RankGroup({
   const bar = tone === "good" ? "bg-green-500/60" : "bg-red-500/60";
   return (
     <div className="flex flex-col gap-1.5">
-      <div className={`text-[10px] tracking-[0.14em] font-medium ${accent}`}>
+      <div className={`text-[10px] tracking-[0.08em] font-medium ${accent}`}>
         {label}
       </div>
       {rows.map((r) => {
@@ -345,7 +345,7 @@ function MistakeLeaderboard({ trades }: { trades: Trade[] }) {
 
   if (top.length === 0) {
     return (
-      <Section title="mistake leaderboard">
+      <Section title="Mistake leaderboard">
         <Empty text="No mistake tags on closed trades yet." />
       </Section>
     );
@@ -354,7 +354,7 @@ function MistakeLeaderboard({ trades }: { trades: Trade[] }) {
   const maxDrag = Math.max(...top.map((r) => Math.abs(r.total)), 1);
 
   return (
-    <Section title="mistake leaderboard">
+    <Section title="Mistake leaderboard">
       <div className="flex flex-col gap-2.5">
         {totalDrag < 0 && (
           <div className="text-[11px] text-white/55">

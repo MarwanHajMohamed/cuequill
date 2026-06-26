@@ -66,7 +66,7 @@ export default function Page() {
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="search ticker…"
+              placeholder="Search ticker…"
               className="w-full pl-9 pr-3 py-2 rounded-full border border-white/10 bg-white/[0.03] text-[13px] text-white placeholder:text-white/40 focus:outline-none focus:border-white/20"
             />
           </div>
@@ -89,11 +89,11 @@ export default function Page() {
               </colgroup>
               <thead>
                 <tr className="text-left text-[11px] tracking-wider text-white/40 border-b border-white/10">
-                  <th className="py-3 px-5 font-medium">ticker</th>
-                  <th className="py-3 px-5 font-medium">cost ($)</th>
-                  <th className="py-3 px-5 font-medium">volume (M)</th>
+                  <th className="py-3 px-5 font-medium">Ticker</th>
+                  <th className="py-3 px-5 font-medium">Cost ($)</th>
+                  <th className="py-3 px-5 font-medium">Volume (M)</th>
                   <th className="py-3 px-5 font-medium">
-                    distance (spot – strike)
+                    Distance (spot – strike)
                   </th>
                 </tr>
               </thead>

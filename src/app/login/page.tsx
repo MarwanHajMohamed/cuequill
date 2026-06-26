@@ -81,7 +81,7 @@ export default function Login() {
       >
         {/* Header */}
         <div className="flex flex-col gap-1.5 mb-7 text-center">
-          <div className="text-[11px] tracking-[0.18em] text-white/40 font-medium">
+          <div className="text-[11px] tracking-[0.1em] text-white/40 font-medium">
             welcome back
           </div>
           <h1 className="text-3xl md:text-4xl font-semibold tracking-tight leading-[1.05]">
@@ -97,7 +97,7 @@ export default function Login() {
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
           {/* Email */}
           <label className="flex flex-col gap-1.5">
-            <span className="text-[11px] tracking-[0.14em] text-white/45 font-medium">
+            <span className="text-[11px] tracking-[0.08em] text-white/45 font-medium">
               email
             </span>
             <div className="relative">
@@ -119,7 +119,7 @@ export default function Login() {
 
           {/* Password */}
           <label className="flex flex-col gap-1.5">
-            <span className="text-[11px] tracking-[0.14em] text-white/45 font-medium">
+            <span className="text-[11px] tracking-[0.08em] text-white/45 font-medium">
               password
             </span>
             <div className="relative">

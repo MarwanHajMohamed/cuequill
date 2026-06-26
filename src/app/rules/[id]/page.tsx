@@ -54,16 +54,16 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
             >
               <i className="fa-solid fa-chevron-left text-[10px]" />
             </Link>
-            <div className="text-[11px] tracking-[0.18em] text-white/40 font-medium">
-              playbook
+            <div className="text-[11px] tracking-[0.1em] text-white/40 font-medium">
+              Playbook
             </div>
           </div>
           <div className="flex items-baseline justify-between gap-4 flex-wrap">
             <h1 className="text-3xl md:text-4xl font-semibold tracking-tight leading-[1.05]">
               <span className="bg-gradient-to-r from-teal-300 to-emerald-400 bg-clip-text text-transparent">
                 {sections === null
-                  ? "loading…"
-                  : (section?.title ?? "section not found")}
+                  ? "Loading…"
+                  : (section?.title ?? "Section not found")}
               </span>
             </h1>
             {section && (
@@ -95,7 +95,7 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
                     editMode ? "fa-check" : "fa-pen"
                   } text-[10px]`}
                 />
-                {editMode ? "done" : "edit"}
+                {editMode ? "Done" : "Edit"}
               </button>
             </div>
 
@@ -214,7 +214,7 @@ function RuleRow({
                 if (e.key === "Enter") save();
                 if (e.key === "Escape") setEditing(false);
               }}
-              placeholder="rule"
+              placeholder="Rule"
               className="w-full bg-transparent text-[14px] md:text-[15px] font-medium text-white border-b border-white/15 focus:outline-none focus:border-white/30 pb-0.5"
             />
             <input
@@ -224,7 +224,7 @@ function RuleRow({
                 if (e.key === "Enter") save();
                 if (e.key === "Escape") setEditing(false);
               }}
-              placeholder="optional detail…"
+              placeholder="Optional detail…"
               className="w-full bg-transparent text-[13px] md:text-[14px] text-white/70 focus:outline-none"
             />
             <div className="flex gap-3 mt-0.5">
@@ -232,13 +232,13 @@ function RuleRow({
                 onClick={save}
                 className="text-xs text-teal-300 hover:text-teal-200 transition cursor-pointer"
               >
-                save
+                Save
               </button>
               <button
                 onClick={() => setEditing(false)}
                 className="text-xs text-white/40 hover:text-white/70 transition cursor-pointer"
               >
-                cancel
+                Cancel
               </button>
             </div>
           </div>
@@ -283,8 +283,8 @@ function RuleRow({
                           onClick={() => setMenuOpen(false)}
                         />
                         <div className="absolute right-0 top-full mt-1 z-50 w-48 rounded-xl border border-white/10 bg-[var(--surface)] shadow-[0_20px_80px_var(--shadow)] p-1">
-                          <div className="px-2 py-1 text-[10px] tracking-[0.14em] text-white/35 font-medium">
-                            move to
+                          <div className="px-2 py-1 text-[10px] tracking-[0.08em] text-white/35 font-medium">
+                            Move to
                           </div>
                           {otherSections.map((s) => (
                             <button
@@ -369,7 +369,7 @@ function AddRuleRow({
                   setBody("");
                 }
               }}
-              placeholder="optional detail…"
+              placeholder="Optional detail…"
               className="flex-1 bg-transparent text-[13px] md:text-[14px] placeholder:text-white/25 text-white/70 focus:outline-none"
             />
             <button

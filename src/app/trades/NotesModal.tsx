@@ -92,12 +92,12 @@ export default function NotesModal({
                 <i className="fa-solid fa-book-open text-[13px]" />
               </div>
               <div className="flex flex-col gap-0.5 min-w-0">
-                <div className="text-[10px] tracking-[0.18em] text-white/40 font-medium">
-                  trade journal
+                <div className="text-[10px] tracking-[0.1em] text-white/40 font-medium">
+                  Trade journal
                 </div>
                 <div className="text-[15px] md:text-base font-semibold tracking-tight">
                   <span className="bg-gradient-to-r from-teal-300 to-emerald-400 bg-clip-text text-transparent">
-                    notes
+                    Notes
                   </span>
                 </div>
               </div>
@@ -157,12 +157,12 @@ export default function NotesModal({
               {dirty ? (
                 <span className="text-amber-300/80 inline-flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                  unsaved changes
+                  Unsaved changes
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1.5 text-white/40">
                   <i className="fa-solid fa-check text-[10px] text-teal-400/80" />
-                  up to date
+                  Up to date
                 </span>
               )}
             </div>
@@ -172,7 +172,7 @@ export default function NotesModal({
                 type="button"
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer"
               >
-                cancel
+                Cancel
               </button>
               <button
                 onClick={handleSave}
@@ -185,7 +185,7 @@ export default function NotesModal({
                 }`}
               >
                 <i className="fa-solid fa-check text-[11px]" />
-                save
+                Save
               </button>
             </div>
           </div>

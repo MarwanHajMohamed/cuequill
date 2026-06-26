@@ -163,13 +163,13 @@ export default function Navbar() {
   // Bottom navigation tabs on mobile - the four most-used routes.
   // Everything else lives behind the "More" tab.
   const bottomTabs = [
-    { icon: "fa-solid fa-house", label: "home", slug: "/" },
+    { icon: "fa-solid fa-house", label: "Home", slug: "/" },
     {
       icon: "fa-solid fa-chart-column",
-      label: "trades",
+      label: "Trades",
       slug: `trades/${userId}`,
     },
-    { icon: "fa-solid fa-calendar-days", label: "calendar", slug: "calendar" },
+    { icon: "fa-solid fa-calendar-days", label: "Calendar", slug: "calendar" },
     {
       icon: "fa-solid fa-wand-magic-sparkles",
       label: "Quill AI",
@@ -182,33 +182,33 @@ export default function Navbar() {
   const moreItems = [
     {
       icon: "fa-regular fa-circle-check",
-      label: "affirmations",
+      label: "Affirmations",
       slug: "affirmations",
     },
-    { icon: "fa-solid fa-bezier-curve", label: "strategies", slug: "strategies" },
-    { icon: "fa-solid fa-coins", label: "stocks & ETFs", slug: "stocks" },
+    { icon: "fa-solid fa-bezier-curve", label: "Strategies", slug: "strategies" },
+    { icon: "fa-solid fa-coins", label: "Stocks & ETFs", slug: "stocks" },
     {
       icon: "fa-regular fa-calendar-days",
-      label: "earnings",
+      label: "Earnings",
       slug: "earnings",
     },
-    { icon: "fa-solid fa-list-check", label: "rules", slug: "rules" },
-    { icon: "fa-solid fa-tag", label: "plans & pricing", slug: "pricing" },
-    { icon: "fa-solid fa-gear", label: "settings", slug: "settings" },
+    { icon: "fa-solid fa-list-check", label: "Rules", slug: "rules" },
+    { icon: "fa-solid fa-tag", label: "Plans & pricing", slug: "pricing" },
+    { icon: "fa-solid fa-gear", label: "Settings", slug: "settings" },
   ];
 
   const guideItems = [
-    { label: "strategies", slug: "strategies" },
-    { label: "stocks/ETFs", slug: "stocks" },
-    { label: "earnings", slug: "earnings" },
-    { label: "rules", slug: "rules" },
+    { label: "Strategies", slug: "strategies" },
+    { label: "Stocks/ETFs", slug: "stocks" },
+    { label: "Earnings", slug: "earnings" },
+    { label: "Rules", slug: "rules" },
   ];
 
   const navItems = [
-    { name: "trades", slug: `trades/${userId}` },
-    { name: "calendar", slug: "calendar" },
+    { name: "Trades", slug: `trades/${userId}` },
+    { name: "Calendar", slug: "calendar" },
     { name: "Quill AI", slug: "chat" },
-    { name: "affirmations", slug: "affirmations" },
+    { name: "Affirmations", slug: "affirmations" },
   ];
 
   const guideActive = guideItems.some((g) => isActive(g.slug));
@@ -510,7 +510,7 @@ export default function Navbar() {
                 }`}
               />
             </span>
-            <span>{marketOpen ? "open" : "closed"}</span>
+            <span>{marketOpen ? "Open" : "Closed"}</span>
           </div>
         </div>
 
@@ -628,7 +628,7 @@ export default function Navbar() {
                   guideActive ? "text-white" : "text-white/60 hover:text-white"
                 }`}
               >
-                <span className="relative">guide</span>
+                <span className="relative">Guide</span>
                 <i
                   className={`relative fa-solid fa-chevron-down text-[9px] transition-transform duration-200 ${
                     dropdown ? "-rotate-180" : ""
@@ -690,7 +690,7 @@ export default function Navbar() {
                 }`}
               />
               <span className="hidden lg:inline">
-                {marketOpen ? "open" : "closed"}
+                {marketOpen ? "Open" : "Closed"}
               </span>
             </div>
 
@@ -753,14 +753,14 @@ export default function Navbar() {
                         }}
                       >
                         <i className="fa-solid fa-gear w-4 text-center text-white/60" />
-                        <span>settings</span>
+                        <span>Settings</span>
                       </button>
                       <button
                         className="w-full flex items-center gap-3 px-3 py-2 text-left text-[13px] rounded-lg cursor-pointer text-white/80 hover:bg-white/5 hover:text-white transition"
                         onClick={() => signOut({ callbackUrl: "/" })}
                       >
                         <i className="fa-solid fa-right-from-bracket w-4 text-center text-white/60" />
-                        <span>logout</span>
+                        <span>Logout</span>
                       </button>
                     </div>
 
@@ -956,7 +956,7 @@ export default function Navbar() {
               </div>
 
               <div className="px-4 pt-3 pb-4 flex items-center justify-between">
-                <span className="text-[11px] tracking-[0.18em] text-white/40 font-medium">
+                <span className="text-[11px] tracking-[0.1em] text-white/40 font-medium">
                   more
                 </span>
                 <button

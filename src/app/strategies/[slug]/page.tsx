@@ -16,8 +16,8 @@ function Page({ params }: { params: Promise<{ slug: string }> }) {
   if (!strategy) {
     return (
       <div className="w-full min-h-screen flex flex-col items-center justify-center px-5">
-        <div className="text-white/40 text-sm tracking-[0.18em] mb-2">
-          not found
+        <div className="text-white/40 text-sm tracking-[0.1em] mb-2">
+          Not found
         </div>
         <div className="text-xl mb-6">No strategy at this slug.</div>
         <Link
@@ -25,7 +25,7 @@ function Page({ params }: { params: Promise<{ slug: string }> }) {
           className="px-4 py-2 rounded-full border border-white/15 bg-white/[0.03] hover:bg-white/[0.06] transition text-sm"
         >
           <i className="fa-solid fa-chevron-left text-[10px] mr-1.5" />
-          back to strategies
+          Back to strategies
         </Link>
       </div>
     );
@@ -55,7 +55,7 @@ function Page({ params }: { params: Promise<{ slug: string }> }) {
   const restBlocks = strategy.blocks.slice(splitAt);
 
   const isCall = strategy.options === "CALL";
-  const directionLabel = isCall ? "bullish" : "bearish";
+  const directionLabel = isCall ? "Bullish" : "Bearish";
   const directionAccent = isCall ? "from-green-400" : "from-red-400";
   const directionAccentTo = isCall ? "to-emerald-300" : "to-orange-300";
   const directionChip = isCall
@@ -97,8 +97,8 @@ function Page({ params }: { params: Promise<{ slug: string }> }) {
             >
               <i className="fa-solid fa-chevron-left text-[10px]" />
             </Link>
-            <div className="text-[11px] tracking-[0.18em] text-white/40 font-medium">
-              setup
+            <div className="text-[11px] tracking-[0.1em] text-white/40 font-medium">
+              Setup
             </div>
             <span
               className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium border ${directionChip}`}
@@ -118,7 +118,7 @@ function Page({ params }: { params: Promise<{ slug: string }> }) {
               </span>
             </h1>
             {timeframeText && (
-              <div className="text-[12px] text-white/45 tracking-[0.15em]">
+              <div className="text-[12px] text-white/45 tracking-[0.08em]">
                 {timeframeText} timeframe
               </div>
             )}
@@ -135,8 +135,8 @@ function Page({ params }: { params: Promise<{ slug: string }> }) {
           {/* Schematic card */}
           <div className="lg:col-span-3 rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5">
             <div className="flex items-center justify-between mb-3">
-              <div className="text-[11px] tracking-[0.18em] text-white/40 font-medium">
-                schematic
+              <div className="text-[11px] tracking-[0.1em] text-white/40 font-medium">
+                Schematic
               </div>
             </div>
             <div className="min-w-0">
@@ -147,8 +147,8 @@ function Page({ params }: { params: Promise<{ slug: string }> }) {
           {/* Entry block card */}
           {entryBlocks.length > 0 ? (
             <div className="lg:col-span-2 rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-5 md:p-6">
-              <div className="text-[11px] tracking-[0.18em] text-teal-400/80 font-medium mb-3">
-                setup
+              <div className="text-[11px] tracking-[0.1em] text-teal-400/80 font-medium mb-3">
+                Setup
               </div>
               <StrategyContent blocks={entryBlocks} />
             </div>
@@ -180,9 +180,9 @@ function Page({ params }: { params: Promise<{ slug: string }> }) {
                 prefetch
                 className="group min-w-0 rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] transition p-4 flex flex-col"
               >
-                <div className="text-[11px] tracking-[0.15em] text-white/40 mb-1 flex items-center gap-1.5">
+                <div className="text-[11px] tracking-[0.08em] text-white/40 mb-1 flex items-center gap-1.5">
                   <i className="fa-solid fa-chevron-left text-[10px] group-hover:-translate-x-0.5 transition" />
-                  previous
+                  Previous
                 </div>
                 <div className="w-full text-[14px] font-medium truncate">
                   {prev.title}
@@ -197,8 +197,8 @@ function Page({ params }: { params: Promise<{ slug: string }> }) {
                 prefetch
                 className="group rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] transition p-4 flex flex-col items-end text-right"
               >
-                <div className="text-[11px] tracking-[0.15em] text-white/40 mb-1 flex items-center gap-1.5">
-                  next
+                <div className="text-[11px] tracking-[0.08em] text-white/40 mb-1 flex items-center gap-1.5">
+                  Next
                   <i className="fa-solid fa-chevron-right text-[10px] group-hover:translate-x-0.5 transition" />
                 </div>
                 <div className="w-full text-[14px] font-medium truncate">

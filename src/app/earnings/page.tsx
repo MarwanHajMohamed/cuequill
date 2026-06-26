@@ -97,12 +97,12 @@ function EarningsPage() {
         {/* Watchlist editor */}
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md p-4 md:p-5">
           <div className="flex items-center justify-between gap-3 mb-3">
-            <span className="text-[11px] tracking-[0.18em] text-white/45 font-medium">
-              watchlist
+            <span className="text-[11px] tracking-[0.1em] text-white/45 font-medium">
+              Watchlist
             </span>
             {saving && (
               <span className="text-[11px] text-white/40 inline-flex items-center gap-1.5">
-                <Spinner size={12} /> saving
+                <Spinner size={12} /> Saving
               </span>
             )}
           </div>
@@ -136,7 +136,7 @@ function EarningsPage() {
                 onKeyDown={(e) => {
                   if (e.key === "Enter") addSymbol();
                 }}
-                placeholder="add ticker"
+                placeholder="Add ticker"
                 maxLength={10}
                 className="bg-transparent outline-none text-[12.5px] px-3 py-1 w-[110px] placeholder:text-white/35 placeholder:normal-case uppercase"
               />
@@ -168,7 +168,7 @@ function EarningsPage() {
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md p-4 md:p-5">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-[15px] font-semibold tracking-tight">
-                upcoming
+                Upcoming
               </h2>
               {eLoading && <Spinner size={14} />}
             </div>
@@ -198,7 +198,7 @@ function EarningsPage() {
                         </span>
                         {e.isEstimate && (
                           <span className="text-[9px] tracking-wide text-white/40 border border-white/15 rounded px-1 py-0.5">
-                            est.
+                            Est.
                           </span>
                         )}
                       </div>

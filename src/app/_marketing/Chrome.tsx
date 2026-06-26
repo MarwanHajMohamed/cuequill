@@ -153,33 +153,33 @@ export function SiteFooter() {
         </div>
 
         <FooterCol
-          title="product"
+          title="Product"
           links={[
-            { label: "overview", href: "/" },
-            { label: "features", href: "/features" },
-            { label: "pricing", href: "/pricing" },
-            { label: "sign in", href: "/login" },
+            { label: "Overview", href: "/" },
+            { label: "Features", href: "/features" },
+            { label: "Pricing", href: "/pricing" },
+            { label: "Sign in", href: "/login" },
           ]}
         />
         <FooterCol
-          title="inside"
+          title="Inside"
           links={[
-            { label: "the day view", href: "/#day" },
+            { label: "The day view", href: "/#day" },
             { label: "Quill AI", href: "/#quill" },
-            { label: "numbers", href: "/#numbers" },
+            { label: "Numbers", href: "/#numbers" },
             { label: "IBKR sync", href: "/#ibkr" },
           ]}
         />
         <FooterCol
-          title="contact"
+          title="Contact"
           links={[{ label: "hi@cuequill.app", href: "mailto:hi@cuequill.app" }]}
         />
       </div>
 
       <div className="border-t border-white/10">
-        <div className="max-w-[1200px] mx-auto px-6 md:px-10 py-4 flex items-center justify-between text-[10.5px] tracking-[0.18em] text-white/35">
+        <div className="max-w-[1200px] mx-auto px-6 md:px-10 py-4 flex items-center justify-between text-[10.5px] tracking-[0.1em] text-white/35">
           <span>© {new Date().getFullYear()} Cuequill</span>
-          <span>invite-only</span>
+          <span>Invite-only</span>
         </div>
       </div>
     </footer>
@@ -195,7 +195,7 @@ function FooterCol({
 }) {
   return (
     <div className="md:col-span-2">
-      <h3 className="text-[10.5px] tracking-[0.2em] text-white/40 mb-3 font-medium">
+      <h3 className="text-[10.5px] tracking-[0.1em] text-white/40 mb-3 font-medium">
         {title}
       </h3>
       <ul className="flex flex-col gap-1.5 text-[12.5px]">
@@ -264,7 +264,7 @@ export function FaqRow({
 // across the signed-in app. (Replaced the old serif Roman-numeral mark.)
 export function SectionMark({ label }: { label: string }) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[10.5px] tracking-[0.2em] text-white/55">
+    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[10.5px] tracking-[0.1em] text-white/55">
       <span className="w-1.5 h-1.5 rounded-full bg-teal-400" />
       {label}
     </span>
