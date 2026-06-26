@@ -1,32 +1,22 @@
 import mongoose, { Schema, Document, models } from "mongoose";
+import type {
+  Schematic,
+  SchematicElement,
+} from "@/lib/strategyConstants";
 
 // A user-owned custom strategy. The schematic is a small SVG-ish
 // scene the user composes by dragging candles, lines, arrows, zones,
 // and text labels around a canvas. We keep it as an opaque elements
 // array so adding new tools later doesn't require a migration.
-
-export type SchematicKind = "candle" | "line" | "arrow" | "zone" | "text";
-
-export interface SchematicElement {
-  id: string;
-  kind: SchematicKind;
-  x: number;
-  y: number;
-  w?: number;
-  h?: number;
-  x2?: number;
-  y2?: number;
-  bull?: boolean;
-  text?: string;
-  color?: string;
-  label?: string;
-}
-
-export interface Schematic {
-  width: number;
-  height: number;
-  elements: SchematicElement[];
-}
+//
+// Shared types and constants live in lib/strategyConstants so client
+// code can import them without dragging Mongoose into the browser
+// bundle.
+export type { SchematicKind, SchematicElement, Schematic } from "@/lib/strategyConstants";
+export {
+  FREE_STRATEGY_LIMIT,
+  SEED_STRATEGIES,
+} from "@/lib/strategyConstants";
 
 export interface IStrategy extends Document {
   userId: mongoose.Types.ObjectId;
@@ -105,25 +95,3 @@ const Strategy =
 
 export default Strategy;
 
-// Names + directions used to seed a brand-new user's library so the
-// trade-strategy picker isn't empty on day one. These mirror the old
-// static library so existing flows keep working.
-export const SEED_STRATEGIES: {
-  name: string;
-  direction: "CALL" | "PUT";
-  timeframes: string[];
-}[] = [
-  { name: "Moving Average 40", direction: "CALL", timeframes: ["Hourly"] },
-  { name: "Normal Fall & Hard Fall", direction: "CALL", timeframes: ["Daily"] },
-  { name: "Bearish Channel Break", direction: "CALL", timeframes: ["Daily"] },
-  { name: "Normal Bullish Gap", direction: "CALL", timeframes: ["Daily"] },
-  { name: "Bearish Gap Uptrend", direction: "CALL", timeframes: ["Daily"] },
-  { name: "Hard Floor", direction: "CALL", timeframes: ["Daily"] },
-  { name: "The First Uptrend Gap", direction: "CALL", timeframes: ["Daily"] },
-  { name: "First Red Opening Candle", direction: "PUT", timeframes: ["Hourly"] },
-  { name: "Gap Floor Break", direction: "PUT", timeframes: ["Daily"] },
-  { name: "Model of 4 Steps", direction: "PUT", timeframes: ["Daily"] },
-  { name: "Hanger in Daily", direction: "PUT", timeframes: ["Daily"] },
-];
-
-export const FREE_STRATEGY_LIMIT = 3;

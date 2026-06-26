@@ -9,7 +9,7 @@ import { withAuth } from "@/lib/withAuth";
 import { useIsPro } from "@/hooks/useIsPro";
 import { useStrategies, type StrategyDoc } from "@/hooks/useStrategies";
 import { SchematicPreview } from "@/components/SchematicEditor";
-import { FREE_STRATEGY_LIMIT } from "@/lib/models/Strategy";
+import { FREE_STRATEGY_LIMIT } from "@/lib/strategyConstants";
 
 type Direction = "CALL" | "PUT";
 

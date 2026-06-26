@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import type { SchematicElement } from "@/lib/models/Strategy";
+import type { SchematicElement } from "@/lib/strategyConstants";
 
 export type StrategyDirection = "CALL" | "PUT";
 

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import type { SchematicElement, SchematicKind } from "@/lib/models/Strategy";
+import type { SchematicElement, SchematicKind } from "@/lib/strategyConstants";
 
 // SVG-based schematic editor. The user clicks a tool in the left
 // palette and then drops elements onto the canvas. Elements can be
