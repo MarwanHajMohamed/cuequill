@@ -28,7 +28,9 @@ export interface Trade {
   expiryDate: string;
   dateClosed: string;
   option: "CALL" | "PUT";
-  strategy: StrategyList;
+  // Free-text now that strategies are user-owned. The legacy
+  // StrategyList union remains as a filter shape only.
+  strategy: string;
   closingContractPrice?: number | null;
   profitLoss?: number | null;
   // Total commission/fees for the trade (entry + exit legs, in USD).

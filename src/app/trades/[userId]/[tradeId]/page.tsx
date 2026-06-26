@@ -4,7 +4,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { Trade, StrategyList, TradeEventType } from "@/app/types/Trades";
+import { Trade, TradeEventType } from "@/app/types/Trades";
+import { useStrategies } from "@/hooks/useStrategies";
 import {
   TAG_KIND_BY_LABEL,
   TRADE_TAG_OPTIONS,
@@ -20,22 +21,6 @@ import { Skeleton } from "@/components/Loaders";
 // notes editor lives on the right. Replaces the row-click → modal
 // flow on the trades table; the modal is still available as a quick
 // edit via the pencil icon on each row.
-
-const CALL_STRATEGIES: StrategyList[] = [
-  "Moving Average 40",
-  "Normal Fall & Hard Fall",
-  "Bearish Channel Break",
-  "Normal Bullish Gap",
-  "Bearish Gap Uptrend",
-  "Hard Floor",
-  "The First Uptrend Gap",
-];
-const PUT_STRATEGIES: StrategyList[] = [
-  "First Red Opening Candle",
-  "Gap Floor Break",
-  "Model of 4 Steps",
-  "Hanger in Daily",
-];
 
 function fetchTrade(id: string): Promise<Trade> {
   return fetch(`/api/trades/${id}`).then((r) => {
@@ -82,13 +67,19 @@ function TradeDetailPage() {
   }, [form, notes, trade]);
 
   // Strategy list narrows to direction-relevant setups once a
-  // direction is chosen.
-  const strategies = useMemo<StrategyList[]>(() => {
-    if (!form?.option) return [...CALL_STRATEGIES, ...PUT_STRATEGIES, "Other"];
-    return form.option === "CALL"
-      ? [...CALL_STRATEGIES, "Other"]
-      : [...PUT_STRATEGIES, "Other"];
-  }, [form?.option]);
+  // direction is chosen, sourced from the user's custom library.
+  const { data: userStrategies = [] } = useStrategies();
+  const strategies = useMemo<string[]>(() => {
+    const names = userStrategies
+      .filter((s) => !form?.option || s.direction === form.option)
+      .map((s) => s.name);
+    // Keep the trade's saved strategy in the list even if it has since
+    // been renamed/deleted, so the field doesn't silently flip.
+    if (form?.strategy && !names.includes(form.strategy)) {
+      names.unshift(form.strategy);
+    }
+    return [...names, "Other"];
+  }, [userStrategies, form?.option, form?.strategy]);
 
   const setField = <K extends keyof Trade>(key: K, value: Trade[K]) => {
     setForm((prev) => (prev ? { ...prev, [key]: value } : prev));
@@ -331,7 +322,7 @@ function TradeDetailPage() {
             <select
               value={form.strategy}
               onChange={(e) =>
-                setField("strategy", e.target.value as StrategyList)
+                setField("strategy", e.target.value)
               }
               className="w-full p-2 text-base bg-white/[0.03] text-white rounded border border-white/10 focus:border-white/30 focus:outline-none cursor-pointer"
             >
