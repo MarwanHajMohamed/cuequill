@@ -14,6 +14,11 @@ type User = {
   isPro?: boolean;
 };
 
+// How long a token's isPro value is trusted before the jwt callback
+// re-reads it from the DB. Bounds how long a membership change can lag
+// in the client UI; server-side gates always read the live DB.
+const PRO_TTL_MS = 5 * 60 * 1000;
+
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -78,18 +83,27 @@ export const authOptions: NextAuthOptions = {
         if (session.email !== undefined) token.email = session.email;
         if (session.isPro !== undefined) token.isPro = !!session.isPro;
       }
-      // Keep the membership flag in sync with the DB on every token
-      // refresh. Without this, a session minted before an upgrade (or
-      // before the backfill ran) keeps a stale isPro forever and the
-      // client gates never unlock until the user logs out and back in.
-      // It's a single indexed-field read keyed on the user id.
-      if (token.id) {
+      // Keep the membership flag in sync with the DB so a session
+      // minted before an upgrade (or before the backfill ran) unlocks
+      // the client gates without a logout. The jwt callback runs on
+      // essentially every authenticated request, so rather than read
+      // the DB each time we stamp the token and only re-check past a
+      // TTL — bounding membership lag to PRO_TTL_MS while turning a
+      // per-request read into roughly one read per user per window.
+      const now = Date.now();
+      const lastChecked =
+        typeof token.proCheckedAt === "number" ? token.proCheckedAt : 0;
+      const forceCheck = !!user || (trigger === "update" && !!session);
+      if (token.id && (forceCheck || now - lastChecked > PRO_TTL_MS)) {
         try {
           await connectDb();
           const fresh = await User.findById(token.id)
             .select("isPro")
             .lean<{ isPro?: boolean }>();
-          if (fresh) token.isPro = !!fresh.isPro;
+          if (fresh) {
+            token.isPro = !!fresh.isPro;
+            token.proCheckedAt = now;
+          }
         } catch {
           // Leave the existing token value in place on a transient DB
           // error rather than flipping the user to free.
