@@ -755,13 +755,6 @@ export default function Navbar() {
                         <i className="fa-solid fa-gear w-4 text-center text-white/60" />
                         <span>Settings</span>
                       </button>
-                      <button
-                        className="w-full flex items-center gap-3 px-3 py-2 text-left text-[13px] rounded-lg cursor-pointer text-white/80 hover:bg-white/5 hover:text-white transition"
-                        onClick={() => signOut({ callbackUrl: "/" })}
-                      >
-                        <i className="fa-solid fa-right-from-bracket w-4 text-center text-white/60" />
-                        <span>Logout</span>
-                      </button>
                     </div>
 
                     <div className="p-3 border-t border-white/10 flex items-center justify-between">
@@ -794,6 +787,16 @@ export default function Navbar() {
                             peer-checked:bg-teal-500"
                         />
                       </label>
+                    </div>
+
+                    <div className="p-1 border-t border-white/10">
+                      <button
+                        className="w-full flex items-center gap-3 px-3 py-2 text-left text-[13px] rounded-lg cursor-pointer text-white/80 hover:bg-white/5 hover:text-white transition"
+                        onClick={() => signOut({ callbackUrl: "/" })}
+                      >
+                        <i className="fa-solid fa-right-from-bracket w-4 text-center text-white/60" />
+                        <span>Logout</span>
+                      </button>
                     </div>
                   </motion.div>
                 )}
