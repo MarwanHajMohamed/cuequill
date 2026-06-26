@@ -172,7 +172,7 @@ export function SiteFooter() {
         />
         <FooterCol
           title="Contact"
-          links={[{ label: "hi@cuequill.app", href: "mailto:hi@cuequill.app" }]}
+          links={[{ label: "info@cuequill.com", href: "mailto:info@cuequill.com" }]}
         />
       </div>
 
