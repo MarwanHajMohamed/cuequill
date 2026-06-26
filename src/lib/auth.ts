@@ -78,6 +78,23 @@ export const authOptions: NextAuthOptions = {
         if (session.email !== undefined) token.email = session.email;
         if (session.isPro !== undefined) token.isPro = !!session.isPro;
       }
+      // Keep the membership flag in sync with the DB on every token
+      // refresh. Without this, a session minted before an upgrade (or
+      // before the backfill ran) keeps a stale isPro forever and the
+      // client gates never unlock until the user logs out and back in.
+      // It's a single indexed-field read keyed on the user id.
+      if (token.id) {
+        try {
+          await connectDb();
+          const fresh = await User.findById(token.id)
+            .select("isPro")
+            .lean<{ isPro?: boolean }>();
+          if (fresh) token.isPro = !!fresh.isPro;
+        } catch {
+          // Leave the existing token value in place on a transient DB
+          // error rather than flipping the user to free.
+        }
+      }
       return token;
     },
     async session({ session, token }) {
