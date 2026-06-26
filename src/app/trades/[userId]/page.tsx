@@ -647,8 +647,8 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                         {/* Fixed quick-edit column — sits outside the
                             user-customisable column set so it can't be
                             reordered or hidden. */}
-                        <th className="px-2 md:px-3 py-2 w-9" aria-label="Quick edit" />
-                        {visibleColumns.map((key) => {
+                        <th className="pl-2 md:pl-3 pr-0 py-2 w-7" aria-label="Quick edit" />
+                        {visibleColumns.map((key, ci) => {
                           const isDragging = draggingKey === key;
                           const isDragOver =
                             dragOverKey === key && draggingKey !== key;
@@ -687,7 +687,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                                 setDragOverKey(null);
                                 setDraggingKey(null);
                               }}
-                              className={`px-2 md:px-4 py-2 whitespace-nowrap w-full md:text-[11px] text-[10px] text-left tracking-[0.12em] font-medium cursor-grab active:cursor-grabbing select-none transition ${
+                              className={`${ci === 0 ? "pl-1 md:pl-1.5 pr-2 md:pr-4" : "px-2 md:px-4"} py-2 whitespace-nowrap w-full md:text-[11px] text-[10px] text-left tracking-[0.12em] font-medium cursor-grab active:cursor-grabbing select-none transition ${
                                 isDragging
                                   ? "bg-white/[0.06] text-white"
                                   : isDragOver
@@ -736,7 +736,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                             {/* Pencil icon — quick-edit modal. Stops
                                 propagation so the row's row-click
                                 navigation doesn't fire. */}
-                            <td className="px-2 md:px-3 py-1 w-9 align-middle">
+                            <td className="pl-2 md:pl-3 pr-0 py-1 w-7 align-middle">
                               <button
                                 type="button"
                                 aria-label="Quick edit"
@@ -751,10 +751,10 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                                 <i className="fa-solid fa-pen text-[11px]" />
                               </button>
                             </td>
-                            {visibleColumns.map((key) => (
+                            {visibleColumns.map((key, ci) => (
                               <td
                                 key={key}
-                                className={`px-2 md:px-4 py-1 whitespace-nowrap w-full transition ${
+                                className={`${ci === 0 ? "pl-1 md:pl-1.5 pr-2 md:pr-4" : "px-2 md:px-4"} py-1 whitespace-nowrap w-full transition ${
                                   key === "notes" ? "text-center" : ""
                                 } ${
                                   draggingKey === key
