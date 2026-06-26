@@ -275,10 +275,10 @@ function FaqSection() {
             More on the pricing page, or write directly.
           </p>
           <a
-            href="mailto:hi@cuequill.app"
+            href="mailto:info@cuequill.com"
             className="mt-6 inline-flex items-center gap-2 text-[12.5px] text-teal-300 hover:text-teal-200 transition"
           >
-            hi@cuequill.app
+            info@cuequill.com
             <i className="fa-solid fa-arrow-up-right-from-square text-[10px]" />
           </a>
         </div>

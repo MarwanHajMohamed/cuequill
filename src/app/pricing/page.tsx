@@ -597,10 +597,10 @@ function FaqSection() {
             Or write to me directly — I usually reply same day.
           </p>
           <a
-            href="mailto:hi@cuequill.app"
+            href="mailto:info@cuequill.com"
             className="mt-6 inline-flex items-center gap-2 text-[12.5px] text-teal-300 hover:text-teal-200 transition"
           >
-            hi@cuequill.app
+            info@cuequill.com
             <i className="fa-solid fa-arrow-up-right-from-square text-[10px]" />
           </a>
         </div>
@@ -636,7 +636,7 @@ function Signoff() {
             <i className="fa-solid fa-chevron-right text-[10px]" />
           </Link>
           <a
-            href="mailto:hi@cuequill.app"
+            href="mailto:info@cuequill.com"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-white/15 text-white/80 hover:text-white hover:border-white/30 transition text-[12.5px]"
           >
             get in touch

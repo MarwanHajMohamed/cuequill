@@ -189,7 +189,7 @@ export default function Login() {
         <div className="mt-6 text-center text-[11.5px] text-white/40">
           Currently invite-only. Need access?{" "}
           <a
-            href="mailto:hi@cuequill.app"
+            href="mailto:info@cuequill.com"
             className="text-white/70 hover:text-white underline decoration-white/20 underline-offset-2 hover:decoration-teal-400 transition"
           >
             Get in touch
