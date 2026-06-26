@@ -3,7 +3,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
-import { TradeEventType, StrategyList, Trade } from "@/app/types/Trades";
+import { TradeEventType, Trade } from "@/app/types/Trades";
+import { useStrategies } from "@/hooks/useStrategies";
 import {
   TAG_KIND_BY_LABEL,
   TRADE_TAG_OPTIONS,
@@ -59,8 +60,8 @@ export default function EditTradeModal({
   const [status, setStatus] = useState<TradeEventType>(
     initialTrade?.status ?? "OPEN",
   );
-  const [strategy, setStrategy] = useState<StrategyList>(
-    initialTrade?.strategy ?? "Moving Average 40",
+  const [strategy, setStrategy] = useState<string>(
+    initialTrade?.strategy ?? "",
   );
   const [closingContractPrice, setClosingContractPrice] = useState<
     number | null
@@ -107,32 +108,27 @@ export default function EditTradeModal({
   const toast = useToast();
   useScrollLock();
 
-  // Strategy ↔ direction mapping (matches data/strategies.ts so the
-  // schematic pages stay aligned). "Other" is direction-agnostic.
-  const CALL_STRATEGIES: StrategyList[] = [
-    "Moving Average 40",
-    "Normal Fall & Hard Fall",
-    "Bearish Channel Break",
-    "Normal Bullish Gap",
-    "Bearish Gap Uptrend",
-    "Hard Floor",
-    "The First Uptrend Gap",
-  ];
-  const PUT_STRATEGIES: StrategyList[] = [
-    "First Red Opening Candle",
-    "Gap Floor Break",
-    "Model of 4 Steps",
-    "Hanger in Daily",
-  ];
-  // Filtered list shown in the dropdown — only setups relevant to the
+  // Pull the user's custom strategy library and filter to the
   // currently selected direction. Until a direction is picked, show
   // every strategy so the dropdown isn't empty.
-  const strategies: StrategyList[] =
+  const { data: userStrategies = [] } = useStrategies();
+  const callStrategies = userStrategies
+    .filter((s) => s.direction === "CALL")
+    .map((s) => s.name);
+  const putStrategies = userStrategies
+    .filter((s) => s.direction === "PUT")
+    .map((s) => s.name);
+  const strategies: string[] =
     selectedOption === "CALL"
-      ? [...CALL_STRATEGIES, "Other"]
+      ? [...callStrategies, "Other"]
       : selectedOption === "PUT"
-        ? [...PUT_STRATEGIES, "Other"]
-        : [...CALL_STRATEGIES, ...PUT_STRATEGIES, "Other"];
+        ? [...putStrategies, "Other"]
+        : [...callStrategies, ...putStrategies, "Other"];
+  // Preserve the trade's saved value even if the matching strategy was
+  // renamed or deleted later.
+  if (strategy && !strategies.includes(strategy)) {
+    strategies.unshift(strategy);
+  }
 
   // If the user flips CALL ↔ PUT and the previously chosen strategy
   // doesn't belong to the new direction, swap it for the first valid
@@ -141,14 +137,12 @@ export default function EditTradeModal({
     if (selectedOption === null) return;
     const valid =
       selectedOption === "CALL"
-        ? new Set<string>([...CALL_STRATEGIES, "Other"])
-        : new Set<string>([...PUT_STRATEGIES, "Other"]);
-    if (!valid.has(strategy)) {
-      setStrategy(
-        (selectedOption === "CALL"
-          ? CALL_STRATEGIES[0]
-          : PUT_STRATEGIES[0]) as StrategyList,
-      );
+        ? new Set<string>([...callStrategies, "Other"])
+        : new Set<string>([...putStrategies, "Other"]);
+    if (strategy && !valid.has(strategy)) {
+      const first =
+        selectedOption === "CALL" ? callStrategies[0] : putStrategies[0];
+      setStrategy(first ?? "Other");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedOption]);
@@ -397,7 +391,7 @@ export default function EditTradeModal({
               <select
                 value={strategy}
                 onChange={(e) => {
-                  setStrategy(e.target.value as StrategyList);
+                  setStrategy(e.target.value);
                 }}
                 className="w-full p-2 text-base bg-white/[0.03] text-white rounded border border-white/10 focus:border-white/30 focus:outline-none cursor-pointer"
               >

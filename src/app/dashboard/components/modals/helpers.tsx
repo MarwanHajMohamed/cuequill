@@ -1,4 +1,4 @@
-import { StrategyList, Trade, TradeEventType } from "@/app/types/Trades";
+import { Trade, TradeEventType } from "@/app/types/Trades";
 import { format } from "date-fns";
 
 // Field keys we mark invalid. Mirrors the input keys used in
@@ -58,7 +58,7 @@ export const handleSave = (
   expiryDate: string,
   status: TradeEventType,
   closingContractPrice: number | null,
-  strategy: StrategyList,
+  strategy: string,
   dateClosed: string,
   notes: string,
   tags: string[],
