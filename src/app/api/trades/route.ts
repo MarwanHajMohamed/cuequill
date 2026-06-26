@@ -3,7 +3,14 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import connectDB from "@/lib/db";
 import Trade from "@/lib/models/Trade";
+import { User } from "@/lib/models/User";
 import mongoose from "mongoose";
+
+// Free tier sees 90 days of history; Pro is unlimited. Closed trades
+// attribute on dateClosed (falling back to dateBought), open trades on
+// dateBought. Computed as a single Mongo filter so the cap applies
+// before the DB ships rows back.
+const FREE_HISTORY_DAYS = 90;
 
 // All handlers in this file derive the user identity from the
 // authenticated session — any `userId` value the client sends is
@@ -31,6 +38,23 @@ export async function GET(req: NextRequest) {
     if (simulated === "true") query.simulated = true;
     if (simulated === "false") query.simulated = false;
 
+    const proUser = await User.findById(session.user.id)
+      .select("isPro")
+      .lean<{ isPro?: boolean }>();
+    const isPro = !!proUser?.isPro;
+
+    if (!isPro) {
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - FREE_HISTORY_DAYS);
+      // A trade is in-window if any of its attribution dates falls
+      // within the cap. Matches what users see on the calendar.
+      const recencyClauses = [
+        { dateClosed: { $gte: cutoff } },
+        { dateBought: { $gte: cutoff } },
+      ];
+      query.$and = [{ $or: recencyClauses }];
+    }
+
     if (month && year) {
       const m = Number(month);
       const y = Number(year);
@@ -41,7 +65,7 @@ export async function GET(req: NextRequest) {
       // Closed trades attribute to their EXIT month (matches broker P/L
       // accounting). Open trades attribute to their ENTRY month. Closed
       // trades with no dateClosed fall back to dateBought.
-      query.$or = [
+      const monthClauses = [
         {
           status: { $in: ["WIN", "LOSS"] },
           dateClosed: { $gte: startDate, $lte: endDate },
@@ -56,6 +80,10 @@ export async function GET(req: NextRequest) {
           dateBought: { $gte: startDate, $lte: endDate },
         },
       ];
+      // If the recency cap is already on query.$and, fold the month
+      // window in as another $and clause so both filters apply.
+      const existingAnd = Array.isArray(query.$and) ? query.$and : [];
+      query.$and = [...existingAnd, { $or: monthClauses }];
     }
 
     const trades = await Trade.find(query).sort({ dateBought: -1 });

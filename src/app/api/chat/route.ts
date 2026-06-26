@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import connectDb from "@/lib/db";
 import Trade from "@/lib/models/Trade";
+import { User } from "@/lib/models/User";
 import mongoose from "mongoose";
 import {
   GoogleGenerativeAI,
@@ -31,6 +32,16 @@ export async function POST(req: Request) {
   if (!session?.user?.id) {
     return new Response("Unauthorized", { status: 401 });
   }
+  // Pro gate. Read the live DB flag so a Pro who upgraded mid-session
+  // can use chat without re-logging-in, and a downgrade kicks in
+  // immediately for stale JWTs.
+  await connectDb();
+  const proCheck = await User.findById(session.user.id)
+    .select("isPro")
+    .lean<{ isPro?: boolean }>();
+  if (!proCheck?.isPro) {
+    return new Response("Pro membership required", { status: 403 });
+  }
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return new Response("GEMINI_API_KEY not set", { status: 500 });
@@ -50,7 +61,6 @@ export async function POST(req: Request) {
   }
 
   // ── Load trades context for this user ───────────────────────────────
-  await connectDb();
   const userId = new mongoose.Types.ObjectId(session.user.id);
   // Pull a wide history. Gemini 2.5 Flash has a 1M-token context window;
   // 1000 compact trade rows is ~80KB - trivial to ship.

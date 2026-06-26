@@ -32,9 +32,13 @@ function isAuthorized(req: Request): boolean {
 
 async function runSync() {
   await connectDb();
+  // Auto-sync is Pro-only. Free users with IBKR creds saved still get
+  // the manual import button in settings — they're just not in the
+  // nightly job.
   const users = await User.find({
     ibkrToken: { $exists: true, $ne: "" },
     ibkrQueryId: { $exists: true, $ne: "" },
+    isPro: true,
   }).select("_id");
 
   const results: Array<{

@@ -7,6 +7,7 @@ declare module "next-auth" {
     surname: string;
     email: string;
     timezone: string;
+    isPro: boolean;
   }
 
   interface Session {
@@ -16,6 +17,7 @@ declare module "next-auth" {
       surname: string;
       email: string;
       timezone: string;
+      isPro: boolean;
     };
   }
 }
@@ -27,5 +29,6 @@ declare module "next-auth/jwt" {
     surname: string;
     email: string;
     timezone: string;
+    isPro: boolean;
   }
 }

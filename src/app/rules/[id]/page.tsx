@@ -1,6 +1,7 @@
 "use client";
 
 import { withAuth } from "@/lib/withAuth";
+import ProGate from "@/components/ProGate";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import React, { use, useEffect, useState } from "react";
@@ -385,4 +386,16 @@ function AddRuleRow({
   );
 }
 
-export default withAuth(Page);
+function GatedPage(props: { params: Promise<{ id: string }> }) {
+  return (
+    <ProGate
+      feature="Rules board"
+      description="Your trading rules and section structure, saved across devices. Available on Pro."
+      className="min-h-screen"
+    >
+      <Page {...props} />
+    </ProGate>
+  );
+}
+
+export default withAuth(GatedPage);

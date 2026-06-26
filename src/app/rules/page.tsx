@@ -1,6 +1,7 @@
 "use client";
 
 import { withAuth } from "@/lib/withAuth";
+import ProGate from "@/components/ProGate";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
@@ -205,4 +206,16 @@ function SectionRow({
   );
 }
 
-export default withAuth(Page);
+function GatedPage() {
+  return (
+    <ProGate
+      feature="Rules board"
+      description="Your trading rules and section structure, saved across devices. Available on Pro."
+      className="min-h-screen"
+    >
+      <Page />
+    </ProGate>
+  );
+}
+
+export default withAuth(GatedPage);

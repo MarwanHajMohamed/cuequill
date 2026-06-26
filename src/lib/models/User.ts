@@ -17,6 +17,12 @@ export interface IUser extends Document {
   ibkrLastSyncTradeIds: mongoose.Types.ObjectId[];
   // Tickers the user tracks on the earnings calendar.
   watchlist: string[];
+  // Pro membership flag. Gates Quill AI, IBKR auto-sync, the rules
+  // board / affirmations, per-strategy + per-symbol stats, and
+  // unlimited trade history. Free users see blurred previews behind
+  // an upgrade prompt. Flipped manually until a real billing
+  // integration ships.
+  isPro: boolean;
 }
 
 const UserSchema = new Schema<IUser>({
@@ -32,6 +38,7 @@ const UserSchema = new Schema<IUser>({
   ibkrLastSyncSkipped: { type: Number },
   ibkrLastSyncTradeIds: [{ type: Schema.Types.ObjectId, ref: "Trade", default: [] }],
   watchlist: { type: [String], default: [] },
+  isPro: { type: Boolean, default: false },
 });
 
 export const User = models.User || mongoose.model<IUser>("User", UserSchema);
