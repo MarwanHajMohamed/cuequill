@@ -194,10 +194,10 @@ function TradeDetailPage() {
   const isPut = form.option === "PUT";
 
   return (
-    <div className="w-full max-w-[1500px] mx-auto px-4 md:px-8 pt-20 pb-8 md:pb-12 flex flex-col gap-5">
+    <div className="w-full max-w-[1500px] mx-auto px-4 md:px-8 pt-20 pb-6 flex flex-col gap-4 md:h-[100dvh]">
       {/* Page header */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-3 min-w-0">
+      <div className="flex items-center justify-between gap-3 flex-wrap shrink-0">
+        <div className="flex items-center gap-2.5 min-w-0">
           <Link
             href={`/trades/${userId}`}
             className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-white/10 bg-white/[0.03] text-white/65 hover:text-white hover:bg-white/[0.06] transition cursor-pointer"
@@ -210,7 +210,7 @@ function TradeDetailPage() {
               {form.symbol || "Trade"}
             </h1>
             <span
-              className={`text-[10.5px] uppercase tracking-[0.16em] font-semibold px-2 py-0.5 rounded-full border ${
+              className={`text-[10.5px] uppercase tracking-[0.1em] font-semibold px-2 py-0.5 rounded-full border ${
                 form.option === "CALL"
                   ? "bg-green-500/10 text-green-300 border-green-500/25"
                   : "bg-red-500/10 text-red-300 border-red-500/25"
@@ -219,7 +219,7 @@ function TradeDetailPage() {
               {form.option}
             </span>
             {form.simulated && (
-              <span className="text-[10.5px] uppercase tracking-[0.16em] font-medium px-2 py-0.5 rounded-full border border-orange-500/25 text-orange-300 bg-orange-500/10">
+              <span className="text-[10.5px] tracking-[0.1em] font-medium px-2 py-0.5 rounded-full border border-orange-500/25 text-orange-300 bg-orange-500/10">
                 Simulated
               </span>
             )}
@@ -256,10 +256,11 @@ function TradeDetailPage() {
         </div>
       </div>
 
-      {/* Two-column grid */}
-      <div className="grid md:grid-cols-2 gap-5 md:gap-6 items-start">
+      {/* One container — trade fields on the left, the wider notes
+          editor on the right, filling the viewport height. */}
+      <div className="md:flex-1 md:min-h-0 grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1.7fr)] rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md shadow-[0_2px_24px_var(--shadow-soft)] overflow-hidden">
         {/* LEFT — Trade fields */}
-        <section className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md shadow-[0_2px_24px_var(--shadow-soft)] p-5 md:p-6 flex flex-col gap-5">
+        <div className="md:overflow-y-auto p-5 md:p-6 flex flex-col gap-5 border-b md:border-b-0 md:border-r border-white/10">
           {/* Direction + status */}
           <div className="flex flex-col gap-2">
             <Label>Direction</Label>
@@ -446,11 +447,11 @@ function TradeDetailPage() {
               Mark as simulated
             </span>
           </label>
-        </section>
+        </div>
 
-        {/* RIGHT — Notes editor */}
-        <section className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md shadow-[0_2px_24px_var(--shadow-soft)] p-5 md:p-6 flex flex-col gap-3 md:sticky md:top-24">
-          <div className="flex items-center gap-3">
+        {/* RIGHT — Notes editor (wider than the fields) */}
+        <div className="flex flex-col min-h-0 p-5 md:p-6 gap-3">
+          <div className="flex items-center gap-3 shrink-0">
             <div className="shrink-0 w-9 h-9 rounded-xl border border-teal-500/25 bg-teal-500/10 text-teal-300 flex items-center justify-center">
               <i className="fa-solid fa-book-open text-[13px]" />
             </div>
@@ -460,19 +461,21 @@ function TradeDetailPage() {
               </span>
             </h2>
             {trade && notes !== (trade.notes ?? "") && (
-              <span className="ml-auto text-[10.5px] uppercase tracking-[0.16em] text-amber-300/80 inline-flex items-center gap-1.5">
+              <span className="ml-auto text-[10.5px] tracking-[0.1em] text-amber-300/80 inline-flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
                 Unsaved
               </span>
             )}
           </div>
-          <RichNotesEditor
-            value={notes}
-            onChange={setNotes}
-            className="min-h-[520px] max-h-[calc(100vh-220px)]"
-          />
+          <div className="flex-1 min-h-0">
+            <RichNotesEditor
+              value={notes}
+              onChange={setNotes}
+              className="min-h-[55vh] md:min-h-0"
+            />
+          </div>
           {format && form.dateBought && (
-            <p className="text-[10.5px] uppercase tracking-[0.16em] text-white/35 tabular-nums">
+            <p className="text-[10.5px] tracking-[0.1em] text-white/35 tabular-nums shrink-0">
               Trade opened{" "}
               {(() => {
                 try {
@@ -483,7 +486,7 @@ function TradeDetailPage() {
               })()}
             </p>
           )}
-        </section>
+        </div>
       </div>
 
       {/* Delete confirmation */}
@@ -529,7 +532,7 @@ export default withAuth(TradeDetailPage);
 
 function Label({ children }: { children: React.ReactNode }) {
   return (
-    <label className="text-[10px] uppercase tracking-wider text-white/40">
+    <label className="text-[11px] tracking-[0.04em] text-white/45">
       {children}
     </label>
   );
