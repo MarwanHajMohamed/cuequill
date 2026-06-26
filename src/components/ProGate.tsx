@@ -78,12 +78,12 @@ function UpgradeCard({
   description?: string;
 }) {
   return (
-    <div className="max-w-sm w-full rounded-2xl border border-teal-500/25 bg-[var(--surface)]/95 backdrop-blur-md shadow-[0_8px_40px_var(--shadow)] p-6 md:p-7 flex flex-col items-center text-center gap-3">
+    <div className="max-w-sm w-full rounded-2xl border border-white/10 bg-[var(--surface)]/95 backdrop-blur-md shadow-[0_8px_40px_var(--shadow)] p-6 md:p-7 flex flex-col items-center text-center gap-3">
       <div className="w-11 h-11 rounded-xl border border-teal-500/30 bg-teal-500/10 text-teal-300 flex items-center justify-center">
         <i className="fa-solid fa-lock text-[15px]" />
       </div>
-      <div className="text-[11px] tracking-[0.12em] uppercase text-teal-300">
-        Pro feature
+      <div className="text-[11px] tracking-[0.12em] text-teal-300">
+        Pro Feature
       </div>
       <h3 className="text-[17px] md:text-[18px] font-semibold tracking-tight text-white">
         {feature}
