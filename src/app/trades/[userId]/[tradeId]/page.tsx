@@ -4,7 +4,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { format } from "date-fns";
 import { Trade, StrategyList, TradeEventType } from "@/app/types/Trades";
 import {
   TAG_KIND_BY_LABEL,
@@ -396,48 +395,18 @@ function TradeDetailPage() {
 
         </div>
 
-        {/* RIGHT — Notes editor (wider than the fields) */}
-        <div className="flex flex-col min-h-0 p-5 md:p-6 gap-3">
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="shrink-0 w-9 h-9 rounded-xl border border-teal-500/25 bg-teal-500/10 text-teal-300 flex items-center justify-center">
-              <i className="fa-solid fa-book-open text-[13px]" />
-            </div>
-            <h2 className="text-[15px] md:text-base font-semibold tracking-tight">
-              <span className="bg-gradient-to-r from-teal-300 to-emerald-400 bg-clip-text text-transparent">
-                Notes
-              </span>
-            </h2>
-            {trade && notes !== (trade.notes ?? "") && (
-              <span className="ml-auto text-[10.5px] tracking-[0.1em] text-amber-300/80 inline-flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                Unsaved
-              </span>
-            )}
-          </div>
-          <div className="flex-1 min-h-0">
-            <RichNotesEditor
-              value={notes}
-              onChange={setNotes}
-              className="min-h-[55vh] md:min-h-0"
-            />
-          </div>
-          {format && form.dateBought && (
-            <p className="text-[10.5px] tracking-[0.1em] text-white/35 tabular-nums shrink-0">
-              Trade opened{" "}
-              {(() => {
-                try {
-                  return format(new Date(form.dateBought), "EEE d LLL yyyy");
-                } catch {
-                  return form.dateBought;
-                }
-              })()}
-            </p>
-          )}
+        {/* RIGHT — Notes editor fills the panel */}
+        <div className="flex flex-col min-h-0">
+          <RichNotesEditor
+            value={notes}
+            onChange={setNotes}
+            className="flex-1 min-h-[55vh] md:min-h-0 h-full w-full"
+          />
         </div>
        </div>
 
         {/* Actions — full-width row pinned to the bottom of the card */}
-        <div className="shrink-0 px-5 md:px-6 py-3 flex items-center justify-between gap-2 border-t border-white/10 bg-[var(--background)]">
+        <div className="shrink-0 px-5 md:px-6 py-3 flex items-center justify-between gap-2 border-t border-white/10">
           <button
             type="button"
             onClick={() => setDelConfirm(true)}
