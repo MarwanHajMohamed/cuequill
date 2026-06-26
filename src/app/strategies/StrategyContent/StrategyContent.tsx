@@ -76,7 +76,7 @@ export default function StrategyContent({ blocks }: Props) {
               return (
                 <div
                   key={idx}
-                  className="text-[11px] uppercase tracking-[0.18em] text-teal-400/80 font-medium mt-2 first:mt-0"
+                  className="text-[11px] tracking-[0.1em] text-teal-400/80 font-medium mt-2 first:mt-0"
                 >
                   {label}
                 </div>
@@ -129,7 +129,7 @@ export default function StrategyContent({ blocks }: Props) {
                     }`}
                   >
                     <i className="fa-solid fa-check text-[10px]" />
-                    successful
+                    Successful
                     <span className="text-[10px] text-white/40 tabular-nums">
                       {successful.length}
                     </span>
@@ -143,7 +143,7 @@ export default function StrategyContent({ blocks }: Props) {
                     }`}
                   >
                     <i className="fa-solid fa-xmark text-[10px]" />
-                    unsuccessful
+                    Unsuccessful
                     <span className="text-[10px] text-white/40 tabular-nums">
                       {unsuccessful.length}
                     </span>

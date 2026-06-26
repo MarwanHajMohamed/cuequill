@@ -49,8 +49,8 @@ export default function TradesTab({
     <div className="p-5 md:p-7 flex flex-col gap-6">
       {/* Header */}
       <section className="flex flex-col gap-2">
-        <div className="text-[11px] tracking-[0.18em] text-teal-400/80 font-medium">
-          import trades
+        <div className="text-[11px] tracking-[0.1em] text-teal-400/80 font-medium">
+          Import trades
         </div>
         <p className="text-[13px] md:text-[14px] text-white/70 leading-relaxed">
           One-time CSV import from your IBKR Flex Query. For ongoing automated
@@ -60,8 +60,8 @@ export default function TradesTab({
 
       {/* Steps */}
       <section className="flex flex-col gap-3">
-        <div className="text-[11px] tracking-[0.18em] text-white/45 font-medium">
-          setup
+        <div className="text-[11px] tracking-[0.1em] text-white/45 font-medium">
+          Setup
         </div>
         <ol className="flex flex-col gap-2.5 text-[13px] text-white/75 leading-relaxed">
           {[
@@ -102,8 +102,8 @@ export default function TradesTab({
 
       {/* Upload */}
       <section className="flex flex-col gap-3">
-        <div className="text-[11px] tracking-[0.18em] text-white/45 font-medium">
-          upload
+        <div className="text-[11px] tracking-[0.1em] text-white/45 font-medium">
+          Upload
         </div>
 
         <input
@@ -122,7 +122,7 @@ export default function TradesTab({
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/80 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer"
           >
             <i className="fa-solid fa-file-arrow-up text-[11px]" />
-            choose CSV
+            Choose CSV
           </button>
           <button
             onClick={handleUpload}
@@ -134,7 +134,7 @@ export default function TradesTab({
             }`}
           >
             <i className="fa-solid fa-arrow-up-from-bracket text-[11px]" />
-            import
+            Import
           </button>
         </div>
 
@@ -174,13 +174,13 @@ export default function TradesTab({
 
       {/* Danger zone */}
       <section className="flex flex-col gap-3 mt-2">
-        <div className="text-[11px] tracking-[0.18em] text-red-300/80 font-medium">
-          danger zone
+        <div className="text-[11px] tracking-[0.1em] text-red-300/80 font-medium">
+          Danger zone
         </div>
         <div className="rounded-xl border border-red-500/20 bg-red-500/[0.04] p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div className="flex flex-col gap-1">
             <div className="text-[13px] font-medium text-white">
-              delete all trades
+              Delete all trades
             </div>
             <div className="text-[12px] text-white/55 leading-relaxed">
               Permanently removes every {simulated ? "simulated" : "live"}{" "}
@@ -196,7 +196,7 @@ export default function TradesTab({
             className="self-start md:self-auto inline-flex items-center gap-2 px-4 py-2 rounded-full bg-red-500/15 text-red-300 border border-red-500/25 hover:bg-red-500/25 transition cursor-pointer text-[13px] font-medium"
           >
             <i className="fa-solid fa-trash-can text-[11px]" />
-            delete all
+            Delete all
           </button>
         </div>
       </section>
@@ -222,8 +222,8 @@ export default function TradesTab({
               </div>
             </div>
             <label className="w-full flex flex-col gap-1.5 text-left">
-              <span className="text-[11px] tracking-[0.15em] text-white/45 font-medium">
-                type &quot;delete&quot; to confirm
+              <span className="text-[11px] tracking-[0.08em] text-white/45 font-medium">
+                Type &quot;delete&quot; to confirm
               </span>
               <input
                 autoFocus
@@ -239,7 +239,7 @@ export default function TradesTab({
                 className="flex-1 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/80 hover:bg-white/[0.06] hover:text-white transition cursor-pointer text-[13px]"
                 onClick={() => setConfirmOpen(false)}
               >
-                cancel
+                Cancel
               </button>
               <button
                 disabled={!canDelete}
@@ -260,7 +260,7 @@ export default function TradesTab({
                   setConfirmText("");
                 }}
               >
-                delete
+                Delete
               </button>
             </div>
           </div>

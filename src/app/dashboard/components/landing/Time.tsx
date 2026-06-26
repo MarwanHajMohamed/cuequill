@@ -165,7 +165,7 @@ export default function Time() {
           transition={{ duration: 0.4, ease: "easeOut" }}
           className="flex flex-col gap-3 md:max-w-[60%]"
         >
-          <div className="text-[12px] uppercase tracking-[0.18em] text-white/40 font-medium">
+          <div className="text-[12px] tracking-[0.1em] text-white/40 font-medium">
             {greeting}
           </div>
           <h1 className="text-2xl md:text-3xl font-semibold tracking-tight leading-[1.05]">

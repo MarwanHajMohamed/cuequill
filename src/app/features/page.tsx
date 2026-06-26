@@ -30,7 +30,7 @@ type FeatureGroup = {
 const GROUPS: FeatureGroup[] = [
   {
     n: "I",
-    label: "logging",
+    label: "Logging",
     heading: (
       <>
         Put a trade in once.{" "}
@@ -40,37 +40,37 @@ const GROUPS: FeatureGroup[] = [
     lede: "Two ways in — by hand or from your broker. Both end up in the same journal, deduped, with commissions and taxes already counted.",
     items: [
       {
-        title: "manual entry",
+        title: "Manual entry",
         body: "Symbol, direction, contract, qty, strike, dates, P/L. Fields validate as you type and the form remembers where you were the next time you open it.",
         detail: "5 fields · ⌘+Enter to save",
         tiers: ["Free", "Pro"],
       },
       {
-        title: "plain-English logging",
+        title: "Plain-English logging",
         body: "Tell Quill AI a sentence — 'log 3 SPY 600 calls at $1.20 expiring Friday' — and the trade lands in your journal, ready to edit.",
-        detail: "via Quill AI · Pro",
+        detail: "Via Quill AI · Pro",
         tiers: ["Pro"],
       },
       {
         title: "IBKR Flex auto-sync",
         body: "Drop your Flex Web Service token in settings. Cuequill imports every fill weeknight after close, commissions and taxes folded in, duplicates flagged before they're saved.",
-        detail: "nightly · ~3 min setup",
+        detail: "Nightly · ~3 min setup",
         tiers: ["Pro"],
       },
       {
-        title: "tags",
+        title: "Tags",
         body: "Mark trades with the mistake you made or the thing you did right. Tags drive the mistake leaderboard and the per-tag stats on the statistics page.",
         detail: "Mistake / good · per trade",
         tiers: ["Free", "Pro"],
       },
       {
-        title: "trade notes",
+        title: "Trade notes",
         body: "A textarea per trade. ⌘+Enter saves; Esc closes. Word count and unsaved-state pill sit in the corner so you don't lose anything.",
         detail: "Markdown supported",
         tiers: ["Free", "Pro"],
       },
       {
-        title: "simulated mode",
+        title: "Simulated mode",
         body: "A switch on every trade and a global toggle. Try a setup without polluting your real journal — simulated trades are filtered out of every stat by default.",
         detail: "Per-trade switch",
         tiers: ["Free", "Pro"],
@@ -79,7 +79,7 @@ const GROUPS: FeatureGroup[] = [
   },
   {
     n: "II",
-    label: "review",
+    label: "Review",
     heading: (
       <>
         The part you{" "}
@@ -95,31 +95,31 @@ const GROUPS: FeatureGroup[] = [
         tiers: ["Free", "Pro"],
       },
       {
-        title: "day modal",
+        title: "Day modal",
         body: "Big net P/L at the top, every fill underneath with direction chip, strike × qty, strategy, and a green/red gutter. One click to edit the trade in place.",
         detail: "Click any day",
         tiers: ["Free", "Pro"],
       },
       {
-        title: "statistics page",
+        title: "Statistics page",
         body: "Expectancy, profit factor, win rate, R:R, streaks — the headline stats are free. On Pro, slice them by symbol and strategy, with a monthly section and equity curve.",
         detail: "Core free · per-strategy & per-symbol on Pro",
         tiers: ["Free", "Pro"],
       },
       {
-        title: "trades table",
+        title: "Trades table",
         body: "Reorder and hide columns. Filters slide in from the side and live in the URL — so you can share a view or come back to it. Pagination is keyboard-friendly.",
         detail: "Customisable · URL-stateful",
         tiers: ["Free", "Pro"],
       },
       {
-        title: "dashboard insights",
+        title: "Dashboard insights",
         body: "Three at-a-glance tiles below the calendar: a daily-risk budget bar, a top/bottom strategy edge ranking, and a mistake leaderboard of your costliest tags.",
         detail: "Lives on the dashboard",
         tiers: ["Pro"],
       },
       {
-        title: "equity curve",
+        title: "Equity curve",
         body: "Cumulative net P/L over time, with hover totals. Shows the trajectory you wouldn't see by reading individual trades.",
         detail: "All-time · in £/$",
         tiers: ["Pro"],
@@ -138,37 +138,37 @@ const GROUPS: FeatureGroup[] = [
     lede: "Plain-English questions against your own trades — analysis, comparisons, mistake-spotting, fresh fills.",
     items: [
       {
-        title: "ask anything",
+        title: "Ask anything",
         body: "Which strategy is leaking money this month? What did my last five losses have in common? Quill AI answers from your data, not the internet's.",
         detail: "Pro only",
         tiers: ["Pro"],
       },
       {
-        title: "reads imported fills",
+        title: "Reads imported fills",
         body: "Quill AI sees every IBKR-imported fill alongside your manual entries. No copy-paste between tools.",
         detail: "Pro only",
         tiers: ["Pro"],
       },
       {
-        title: "performance analysis",
+        title: "Performance analysis",
         body: "Group by strategy, symbol, day-of-week, time-of-day. Quill returns the cuts that matter, not a wall of numbers.",
         detail: "Pro only",
         tiers: ["Pro"],
       },
       {
-        title: "pattern & mistake spotting",
+        title: "Pattern & mistake spotting",
         body: "Ask 'what did my last five losses have in common' and Quill cross-references your tags, hour, symbol, and strategy to call out the pattern.",
         detail: "Pro only",
         tiers: ["Pro"],
       },
       {
-        title: "rule-adherence checks",
+        title: "Rule-adherence checks",
         body: "Quill knows your rules board. Ask whether yesterday's trades followed them and it'll tell you which ones broke which rule.",
         detail: "Reads your rules",
         tiers: ["Pro"],
       },
       {
-        title: "threads & history",
+        title: "Threads & history",
         body: "Conversations save automatically. Come back to a question, ask a follow-up. Trade context is re-read each time so answers stay current.",
         detail: "Pro only",
         tiers: ["Pro"],
@@ -177,7 +177,7 @@ const GROUPS: FeatureGroup[] = [
   },
   {
     n: "IV",
-    label: "reference",
+    label: "Reference",
     heading: (
       <>
         The playbook you{" "}
@@ -187,25 +187,25 @@ const GROUPS: FeatureGroup[] = [
     lede: "Strategy schematics, a rules board, and a daily affirmation page — the bits of trading discipline you keep meaning to write down.",
     items: [
       {
-        title: "strategy playbook",
+        title: "Strategy playbook",
         body: "Eleven discretionary US-options setups with schematics, entry rules, and worked chart examples. Tag your trades against them.",
         detail: "11 setups · CALL & PUT",
         tiers: ["Free", "Pro"],
       },
       {
-        title: "rules board",
+        title: "Rules board",
         body: "Your own rules, organized in sections. Edit inline, drag to reorder, link from Quill AI when you ask about rule-adherence.",
         detail: "Sections · inline editor · Pro",
         tiers: ["Pro"],
       },
       {
-        title: "affirmations",
+        title: "Affirmations",
         body: "A short daily-discipline ritual. Tick through the affirmations before the open so the rules are fresh in your head, not just on paper.",
         detail: "Daily ritual · Pro",
         tiers: ["Pro"],
       },
       {
-        title: "goals",
+        title: "Goals",
         body: "Set monthly and daily P/L targets. Progress bars on the dashboard and an at-a-glance trajectory through the month.",
         detail: "Monthly + daily",
         tiers: ["Free", "Pro"],
@@ -214,7 +214,7 @@ const GROUPS: FeatureGroup[] = [
   },
   {
     n: "V",
-    label: "surface",
+    label: "Surface",
     heading: (
       <>
         Feels right{" "}
@@ -224,25 +224,25 @@ const GROUPS: FeatureGroup[] = [
     lede: "Native-feeling on mobile, theme-aware, and built to stay out of the way when you're at the screen.",
     items: [
       {
-        title: "light & dark themes",
+        title: "Light & dark themes",
         body: "Toggle between dark (default) and a true light theme — colors, hairlines, shadows, and accents all flip. Persists across sessions.",
         detail: "One-click switch",
         tiers: ["Free", "Pro"],
       },
       {
-        title: "installable PWA",
+        title: "Installable PWA",
         body: "Add to your home screen on iOS or Android. Full-screen, floating bottom tab bar, swipe-to-change-month gestures, offline cache.",
         detail: "iOS · Android",
         tiers: ["Free", "Pro"],
       },
       {
-        title: "keyboard shortcuts",
+        title: "Keyboard shortcuts",
         body: "⌘+Enter to save in any modal, Esc to close, slash-keys to jump between pages on desktop.",
         detail: "Modal-aware",
         tiers: ["Free", "Pro"],
       },
       {
-        title: "private by default",
+        title: "Private by default",
         body: "Trades scoped to your account. IBKR token encrypted at rest. Quill AI only reads your own trades.",
         detail: "Bank-grade encryption",
         tiers: ["Free", "Pro"],
@@ -293,7 +293,7 @@ function FeaturesHero() {
           transition={{ duration: 0.4 }}
           className="mb-8"
         >
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[10.5px] uppercase tracking-[0.2em] text-white/55">
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[10.5px] tracking-[0.1em] text-white/55">
             <span className="w-1.5 h-1.5 rounded-full bg-teal-400" />
             Features
           </span>
@@ -363,7 +363,7 @@ function FeatureGroupSection({ group }: { group: FeatureGroup }) {
           <p className="mt-5 max-w-sm text-[13px] text-white/55 leading-relaxed">
             {group.lede}
           </p>
-          <p className="mt-6 text-[10.5px] uppercase tracking-[0.2em] text-white/35 tabular-nums">
+          <p className="mt-6 text-[10.5px] tracking-[0.1em] text-white/35 tabular-nums">
             {group.items.length} entries
           </p>
         </div>
@@ -389,7 +389,7 @@ function FeatureRow({ feature, index }: { feature: Feature; index: number }) {
       className="grid grid-cols-12 gap-4 py-6 md:py-7"
     >
       {/* Counter */}
-      <span className="col-span-2 md:col-span-1 text-[11px] uppercase tracking-[0.16em] text-teal-300 tabular-nums pt-1">
+      <span className="col-span-2 md:col-span-1 text-[11px] uppercase tracking-[0.08em] text-teal-300 tabular-nums pt-1">
         {String(index + 1).padStart(2, "0")}
       </span>
 
@@ -402,7 +402,7 @@ function FeatureRow({ feature, index }: { feature: Feature; index: number }) {
           {feature.body}
         </p>
         {feature.detail && (
-          <p className="mt-3 text-[10.5px] uppercase tracking-[0.18em] text-white/35 tabular-nums">
+          <p className="mt-3 text-[10.5px] tracking-[0.1em] text-white/35 tabular-nums">
             {feature.detail}
           </p>
         )}
@@ -429,7 +429,7 @@ function TierBadge({ tier }: { tier: Tier }) {
   const pro = tier === "Pro";
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 rounded-full border text-[10px] uppercase tracking-[0.18em] font-medium tabular-nums ${
+      className={`inline-flex items-center px-2 py-0.5 rounded-full border text-[10px] tracking-[0.1em] font-medium tabular-nums ${
         pro
           ? "bg-teal-500/15 text-teal-300 border-teal-500/30"
           : "border-white/15 text-white/55"
@@ -446,7 +446,7 @@ function ClosingCTA() {
   return (
     <section className="px-6 md:px-10 py-20 md:py-28">
       <div className="max-w-[1200px] mx-auto rounded-3xl border border-white/10 bg-white/[0.02] backdrop-blur-md shadow-[0_8px_40px_var(--shadow-soft)] p-8 md:p-14">
-        <SectionMark label="get started" />
+        <SectionMark label="Get started" />
         <h2 className="mt-6 text-[36px] sm:text-[48px] md:text-[60px] leading-[0.98] font-medium tracking-[-0.025em] max-w-3xl">
           That&apos;s the tour.{" "}
           <span className="italic text-teal-300">Open the journal.</span>
@@ -465,7 +465,7 @@ function ClosingCTA() {
           >
             See pricing
           </Link>
-          <span className="text-[11.5px] uppercase tracking-[0.18em] text-white/35 ml-1">
+          <span className="text-[11.5px] tracking-[0.1em] text-white/35 ml-1">
             Free forever to start
           </span>
         </div>

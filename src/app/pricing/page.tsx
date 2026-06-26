@@ -35,45 +35,45 @@ type Plan = {
 
 const PLANS: Plan[] = [
   {
-    name: "starter",
+    name: "Starter",
     tagline: "For the journal you keep meaning to read.",
     monthly: 0,
     annual: 0,
-    cta: "start free",
+    cta: "Start free",
     href: "/login",
     included: [
-      "manual trade logging, unlimited",
-      "calendar with P&L",
-      "up to 3 custom strategies",
-      "manual IBKR import",
-      "win rate & core stats",
+      "Manual trade logging, unlimited",
+      "Calendar with P&L",
+      "Up to 3 custom strategies",
+      "Manual IBKR import",
+      "Win rate & core stats",
       "90-day history",
     ],
     excluded: [
       "Quill AI",
-      "auto IBKR sync",
-      "unlimited strategies",
-      "per-strategy & per-symbol stats",
-      "rules board & affirmations",
-      "unlimited history",
+      "Auto IBKR sync",
+      "Unlimited strategies",
+      "Per-strategy & per-symbol stats",
+      "Rules board & affirmations",
+      "Unlimited history",
     ],
   },
   {
-    name: "pro",
+    name: "Pro",
     tagline: "The whole thing, working for you nightly.",
     monthly: 39,
     annual: 31,
-    cta: "go pro",
+    cta: "Go pro",
     href: "/login",
     featured: true,
-    leadIn: "everything in starter, plus",
+    leadIn: "Everything in Starter, plus",
     included: [
       "Quill AI over your own trades",
-      "auto IBKR sync after close",
-      "unlimited strategies",
-      "per-strategy & per-symbol stats",
-      "rules board & affirmations",
-      "unlimited history retained",
+      "Auto IBKR sync after close",
+      "Unlimited strategies",
+      "Per-strategy & per-symbol stats",
+      "Rules board & affirmations",
+      "Unlimited history retained",
     ],
   },
 ];
@@ -89,38 +89,38 @@ type CompareGroup = { title: string; rows: CompareRow[] };
 
 const COMPARE: CompareGroup[] = [
   {
-    title: "journaling",
+    title: "Journaling",
     rows: [
-      { feature: "manual trade logging", starter: "unlimited", pro: "unlimited" },
+      { feature: "Manual trade logging", starter: "Unlimited", pro: "Unlimited" },
       {
-        feature: "calendar P&L",
-        note: "net of commissions",
+        feature: "Calendar P&L",
+        note: "Net of commissions",
         starter: true,
         pro: true,
       },
-      { feature: "custom strategies", starter: "up to 3", pro: "unlimited" },
-      { feature: "rules board & affirmations", starter: false, pro: true },
+      { feature: "Custom strategies", starter: "Up to 3", pro: "Unlimited" },
+      { feature: "Rules board & affirmations", starter: false, pro: true },
     ],
   },
   {
-    title: "imports & sync",
+    title: "Imports & sync",
     rows: [
-      { feature: "manual IBKR import", starter: true, pro: true },
+      { feature: "Manual IBKR import", starter: true, pro: true },
       {
         feature: "IBKR auto-sync",
-        note: "every weeknight after close",
+        note: "Every weeknight after close",
         starter: false,
         pro: true,
       },
-      { feature: "history retained", starter: "90 days", pro: "unlimited" },
+      { feature: "History retained", starter: "90 days", pro: "Unlimited" },
     ],
   },
   {
-    title: "stats",
+    title: "Stats",
     rows: [
-      { feature: "win rate & core stats", starter: true, pro: true },
-      { feature: "per-strategy stats", starter: false, pro: true },
-      { feature: "per-symbol stats", starter: false, pro: true },
+      { feature: "Win rate & core stats", starter: true, pro: true },
+      { feature: "Per-strategy stats", starter: false, pro: true },
+      { feature: "Per-symbol stats", starter: false, pro: true },
     ],
   },
   {
@@ -128,13 +128,13 @@ const COMPARE: CompareGroup[] = [
     rows: [
       {
         feature: "Quill AI over your trades",
-        note: "ask questions in plain English",
+        note: "Ask questions in plain English",
         starter: false,
         pro: true,
       },
-      { feature: "reads imported IBKR fills", starter: false, pro: true },
-      { feature: "pattern & mistake spotting", starter: false, pro: true },
-      { feature: "rule-adherence checks", starter: false, pro: true },
+      { feature: "Reads imported IBKR fills", starter: false, pro: true },
+      { feature: "Pattern & mistake spotting", starter: false, pro: true },
+      { feature: "Rule-adherence checks", starter: false, pro: true },
     ],
   },
 ];
@@ -223,9 +223,9 @@ function PricingHero() {
             transition={{ duration: 0.4 }}
             className="mb-8"
           >
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[10.5px] tracking-[0.2em] text-white/55">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[10.5px] tracking-[0.1em] text-white/55">
               <span className="w-1.5 h-1.5 rounded-full bg-teal-400" />
-              pricing · two tiers
+              Pricing · two tiers
             </span>
           </motion.div>
 
@@ -269,24 +269,24 @@ function BillingToggle({
       <button
         type="button"
         onClick={() => onChange("monthly")}
-        className={`px-4 py-1.5 rounded-full text-[12px] tracking-[0.16em] font-medium transition cursor-pointer ${
+        className={`px-4 py-1.5 rounded-full text-[12px] tracking-[0.08em] font-medium transition cursor-pointer ${
           cycle === "monthly"
             ? "bg-white/[0.08] text-white"
             : "text-white/55 hover:text-white"
         }`}
       >
-        monthly
+        Monthly
       </button>
       <button
         type="button"
         onClick={() => onChange("annual")}
-        className={`px-4 py-1.5 rounded-full text-[12px] tracking-[0.16em] font-medium transition cursor-pointer inline-flex items-center gap-2 ${
+        className={`px-4 py-1.5 rounded-full text-[12px] tracking-[0.08em] font-medium transition cursor-pointer inline-flex items-center gap-2 ${
           cycle === "annual"
             ? "bg-white/[0.08] text-white"
             : "text-white/55 hover:text-white"
         }`}
       >
-        yearly
+        Yearly
         <span className="text-[9.5px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25">
           −20%
         </span>
@@ -307,7 +307,7 @@ function PlansSpread({
   return (
     <section className="px-6 md:px-10 py-20 md:py-28">
       <div className="max-w-[1100px] mx-auto">
-        <SectionMark label="plans" />
+        <SectionMark label="Plans" />
 
         <div className="mt-6 flex flex-col md:flex-row md:items-end md:justify-between gap-6 md:gap-10">
           <h2 className="text-[32px] md:text-[48px] leading-[1.04] font-medium tracking-[-0.02em] max-w-3xl">
@@ -362,8 +362,8 @@ function PlanColumn({
           {plan.name}
         </h3>
         {plan.featured && (
-          <span className="text-[9.5px] tracking-[0.22em] text-teal-300 border border-teal-500/30 rounded-full px-2 py-0.5">
-            recommended
+          <span className="text-[9.5px] tracking-[0.12em] text-teal-300 border border-teal-500/30 rounded-full px-2 py-0.5">
+            Recommended
           </span>
         )}
       </div>
@@ -383,8 +383,8 @@ function PlanColumn({
               <span className="text-[34px] md:text-[38px] leading-none tracking-[-0.025em] font-medium">
                 £0
               </span>
-              <span className="text-[10.5px] tracking-[0.18em] text-white/45">
-                forever
+              <span className="text-[10.5px] tracking-[0.1em] text-white/45">
+                Forever
               </span>
             </div>
           ) : (
@@ -392,25 +392,25 @@ function PlanColumn({
               <span className="text-[34px] md:text-[38px] leading-none tracking-[-0.025em] font-medium tabular-nums">
                 £{price}
               </span>
-              <span className="text-[10.5px] tracking-[0.18em] text-white/45">
+              <span className="text-[10.5px] tracking-[0.1em] text-white/45">
                 /mo
               </span>
             </div>
           )}
-          <p className="mt-1.5 text-[10px] tracking-[0.18em] text-white/40 tabular-nums">
+          <p className="mt-1.5 text-[10px] tracking-[0.1em] text-white/40 tabular-nums">
             {isContact
-              ? "one-time · invite-only"
+              ? "One-time · invite-only"
               : price === 0
-                ? "no card required"
+                ? "No card required"
                 : cycle === "annual"
                   ? `£${(plan.annual ?? 0) * 12}/yr`
-                  : "cancel any time"}
+                  : "Cancel any time"}
           </p>
         </div>
 
         <Link
           href={plan.href}
-          className={`shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-full transition text-[11px] font-semibold tracking-[0.16em] ${
+          className={`shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-full transition text-[11px] font-semibold tracking-[0.08em] ${
             plan.featured
               ? "bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25"
               : "border border-white/15 text-white/85 hover:bg-white/[0.06]"
@@ -425,7 +425,7 @@ function PlanColumn({
           with strike = explicitly not included on this tier. */}
       <div className="mt-6 pt-5 border-t border-[var(--rule)]">
         {plan.leadIn && (
-          <p className="mb-3 text-[10.5px] tracking-[0.22em] text-teal-300">
+          <p className="mb-3 text-[10.5px] tracking-[0.12em] text-teal-300">
             {plan.leadIn}
           </p>
         )}
@@ -446,8 +446,8 @@ function PlanColumn({
 
         {plan.excluded && plan.excluded.length > 0 && (
           <>
-            <p className="mt-5 mb-3 text-[10px] tracking-[0.22em] text-white/35">
-              not on this tier
+            <p className="mt-5 mb-3 text-[10px] tracking-[0.12em] text-white/35">
+              Not on this tier
             </p>
             <ul className="flex flex-col gap-2">
               {plan.excluded.map((f) => (
@@ -476,7 +476,7 @@ function CompareSection({ cycle }: { cycle: Cycle }) {
   return (
     <section className="px-6 md:px-10 py-20 md:py-28">
       <div className="max-w-[1200px] mx-auto">
-        <SectionMark label="compare" />
+        <SectionMark label="Compare" />
         <h2 className="mt-6 text-[32px] md:text-[40px] leading-[1.04] font-medium tracking-[-0.02em]">
           What sits inside each tier.
         </h2>
@@ -485,12 +485,12 @@ function CompareSection({ cycle }: { cycle: Cycle }) {
           <table className="w-full text-left min-w-[640px]">
             <thead>
               <tr className="border-b border-[var(--rule)]">
-                <th className="font-normal px-5 md:px-6 py-5 text-[10.5px] tracking-[0.22em] text-white/40 align-bottom">
-                  feature
+                <th className="font-normal px-5 md:px-6 py-5 text-[10.5px] tracking-[0.12em] text-white/40 align-bottom">
+                  Feature
                 </th>
-                <PlanColHeader name="starter" sub="free" />
+                <PlanColHeader name="Starter" sub="Free" />
                 <PlanColHeader
-                  name="pro"
+                  name="Pro"
                   sub={cycle === "annual" ? "£31/mo" : "£39/mo"}
                   accent
                 />
@@ -501,7 +501,7 @@ function CompareSection({ cycle }: { cycle: Cycle }) {
                 <tr>
                   <td
                     colSpan={3}
-                    className="px-5 md:px-6 py-2.5 text-[10.5px] tracking-[0.22em] text-teal-300 border-y border-[var(--rule)] bg-teal-500/[0.05]"
+                    className="px-5 md:px-6 py-2.5 text-[10.5px] tracking-[0.12em] text-teal-300 border-y border-[var(--rule)] bg-teal-500/[0.05]"
                   >
                     {group.title}
                   </td>
@@ -552,7 +552,7 @@ function PlanColHeader({
       >
         {name}
       </div>
-      <div className="text-[10.5px] tracking-[0.18em] text-white/40 mt-1 tabular-nums">
+      <div className="text-[10.5px] tracking-[0.1em] text-white/40 mt-1 tabular-nums">
         {sub}
       </div>
     </th>

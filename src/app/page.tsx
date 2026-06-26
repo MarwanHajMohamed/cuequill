@@ -48,9 +48,9 @@ export default function Home() {
           }
           body="A calendar tinted by your P/L. Click any day, see what you did and why. No CSV exports. No pivot tables. Just the part you were going to do in Excel anyway, except you'll open it."
           stats={[
-            ["loads in", "2s"],
-            ["click to detail", "Yes"],
-            ["net of fees", "Yes"],
+            ["Loads in", "2s"],
+            ["Click to detail", "Yes"],
+            ["Net of fees", "Yes"],
           ]}
           preview={<CalendarPreview />}
         />
@@ -68,9 +68,9 @@ export default function Home() {
           }
           body="Ask in plain English. Cuequill's AI answers from your trades, not the internet's. It can log a fresh fill in one sentence, then call it back when you ask."
           stats={[
-            ["reads", "Every fill"],
-            ["model", "Gemini"],
-            ["avg reply", "1.4s"],
+            ["Reads", "Every fill"],
+            ["Model", "Gemini"],
+            ["Avg reply", "1.4s"],
           ]}
           preview={<QuillAIPreview />}
         />
@@ -87,9 +87,9 @@ export default function Home() {
           }
           body="Expectancy. Profit factor. Win rate sliced by strategy, symbol, hour. A risk budget you can't bury. Numbers chosen by a trader, not picked off a finance API."
           stats={[
-            ["expectancy", "$/trade"],
-            ["risk budget", "Per day"],
-            ["cuts by", "Strat/sym/hr"],
+            ["Expectancy", "$/trade"],
+            ["Risk budget", "Per day"],
+            ["Cuts by", "Strat/sym/hr"],
           ]}
           preview={<NumbersPreview />}
         />
@@ -106,9 +106,9 @@ export default function Home() {
           }
           body="Drop a Flex Web Service token in settings. Cuequill imports every fill weeknight after close — commissions and taxes included. Manual entry still works."
           stats={[
-            ["runs", "After close"],
-            ["commissions", "Imported"],
-            ["setup", "≈3 min"],
+            ["Runs", "After close"],
+            ["Commissions", "Imported"],
+            ["Setup", "≈3 min"],
           ]}
           preview={<IBKRPreview />}
         />
@@ -163,7 +163,7 @@ function Hero() {
               href="/login"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 transition text-[13px] font-medium"
             >
-              open your journal
+              Open your journal
               <i className="fa-solid fa-chevron-right text-[10px]" />
             </Link>
           </motion.div>
@@ -217,7 +217,7 @@ function FeatureSpread({
           <dl className="mt-8 grid grid-cols-3 gap-x-4 gap-y-3 max-w-md border-t border-white/10 pt-5">
             {stats.map(([k, v]) => (
               <div key={k} className="flex flex-col gap-0.5">
-                <dt className="text-[10px] tracking-[0.18em] text-white/35">
+                <dt className="text-[10px] tracking-[0.1em] text-white/35">
                   {k}
                 </dt>
                 <dd className="text-[12px] text-white/80 tabular-nums">{v}</dd>
@@ -314,10 +314,10 @@ function Signoff() {
             href="/pricing"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-white/15 text-white/80 hover:text-white hover:border-white/30 transition text-[12.5px]"
           >
-            see pricing
+            See pricing
           </Link>
-          <span className="text-[11.5px] tracking-[0.18em] text-white/35 ml-1">
-            three minutes to set up
+          <span className="text-[11.5px] tracking-[0.1em] text-white/35 ml-1">
+            Three minutes to set up
           </span>
         </div>
       </div>
@@ -413,7 +413,7 @@ function PreviewClipping({
       <div className="relative rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md overflow-hidden shadow-[0_2px_24px_var(--shadow-soft)]">
         {children}
       </div>
-      <figcaption className="mt-3 flex items-baseline justify-between text-[10.5px] tracking-[0.22em] text-white/40">
+      <figcaption className="mt-3 flex items-baseline justify-between text-[10.5px] tracking-[0.12em] text-white/40">
         <span className="flex items-center gap-2">
           <span className="w-1 h-1 rounded-full bg-teal-400" />
           {caption}
@@ -602,12 +602,12 @@ function CalendarPreview() {
       : null;
 
   return (
-    <PreviewClipping caption="day view" meta="Nov 2025">
+    <PreviewClipping caption="Day view" meta="Nov 2025">
       {/* Header row - month label + month-to-date P/L */}
       <div className="px-5 md:px-6 py-5 border-b border-[var(--rule)] flex items-baseline justify-between gap-3 flex-wrap">
         <div>
-          <p className="text-[10px] tracking-[0.22em] text-white/40 mb-1.5">
-            november
+          <p className="text-[10px] tracking-[0.12em] text-white/40 mb-1.5">
+            November
           </p>
           <p className="text-[28px] md:text-[32px] leading-none tabular-nums text-green-300 tracking-[-0.02em] font-medium">
             +$2,666
@@ -620,7 +620,7 @@ function CalendarPreview() {
           <span className="px-2 py-0.5 rounded-full bg-red-500/10 text-red-300 border border-red-500/25">
             3L
           </span>
-          <span className="text-white/40">77% win rate</span>
+          <span className="text-white/40">77% Win rate</span>
         </div>
       </div>
 
@@ -628,10 +628,10 @@ function CalendarPreview() {
       <div className="px-3 md:px-4 py-4">
         {/* Weekday labels */}
         <div className="grid grid-cols-5 gap-1.5 mb-2 px-1">
-          {["mon", "tue", "wed", "thu", "fri"].map((d) => (
+          {["Mon", "Tue", "Wed", "Thu", "Fri"].map((d) => (
             <div
               key={d}
-              className="text-[9px] tracking-[0.18em] text-white/35 text-left"
+              className="text-[9px] tracking-[0.1em] text-white/35 text-left"
             >
               {d}
             </div>
@@ -703,7 +703,7 @@ function CalendarPreview() {
                           className="w-1 h-1 rounded-full bg-purple-200"
                           aria-hidden
                         />
-                        fed
+                        Fed
                       </span>
                     </div>
                   );
@@ -717,8 +717,8 @@ function CalendarPreview() {
                       <span className="text-[10px] text-teal-200 tabular-nums">
                         {cell.day}
                       </span>
-                      <span className="mt-auto text-[10px] tracking-[0.18em] text-teal-300 leading-none font-medium">
-                        today
+                      <span className="mt-auto text-[10px] tracking-[0.1em] text-teal-300 leading-none font-medium">
+                        Today
                       </span>
                     </div>
                   );
@@ -740,9 +740,9 @@ function CalendarPreview() {
       </div>
 
       {/* Footer */}
-      <div className="px-5 md:px-6 py-3 border-t border-[var(--rule)] flex items-center justify-between text-[10.5px] text-white/45 tracking-[0.18em]">
+      <div className="px-5 md:px-6 py-3 border-t border-[var(--rule)] flex items-center justify-between text-[10.5px] text-white/45 tracking-[0.1em]">
         <span>
-          best{" "}
+          Best{" "}
           <span className="text-green-300 tabular-nums normal-case tracking-normal">
             +$847
           </span>
@@ -806,7 +806,7 @@ function DayTradesOverlay({
             {/* Modal header */}
             <div className="px-4 md:px-5 py-3.5 border-b border-[var(--rule)] flex items-baseline justify-between gap-3">
               <div className="flex items-baseline gap-2.5">
-                <p className="text-[10px] tracking-[0.22em] text-white/40">
+                <p className="text-[10px] tracking-[0.12em] text-white/40">
                   {weekday} · Nov {day}
                 </p>
               </div>
@@ -827,7 +827,7 @@ function DayTradesOverlay({
               >
                 {positive ? "+" : "−"}${Math.abs(netPL).toFixed(2)}
               </p>
-              <span className="text-[10.5px] tracking-[0.18em] text-white/40 tabular-nums">
+              <span className="text-[10.5px] tracking-[0.1em] text-white/40 tabular-nums">
                 {trades.length} {trades.length === 1 ? "trade" : "trades"}
               </span>
             </div>
@@ -966,7 +966,7 @@ function QuillAIPreview() {
   return (
     <PreviewClipping caption="Quill AI" meta="347 trades read">
       <div ref={ref} className="px-5 md:px-6 pt-5 pb-3">
-        <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-teal-500/10 text-teal-300 border border-teal-500/25 text-[11px] tracking-[0.16em] font-medium">
+        <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-teal-500/10 text-teal-300 border border-teal-500/25 text-[11px] tracking-[0.08em] font-medium">
           <i className="fa-solid fa-wand-magic-sparkles text-[10px]" />
           Quill AI
         </div>
@@ -1088,16 +1088,16 @@ function NumbersPreview() {
   const barPct = (riskUsed / 200) * 100;
 
   return (
-    <PreviewClipping caption="statistics" meta="MTD">
+    <PreviewClipping caption="Statistics" meta="MTD">
       <div ref={ref} className="px-5 md:px-6 pt-5 pb-2">
-        <p className="text-[10px] tracking-[0.22em] text-white/40 mb-1">
-          expectancy
+        <p className="text-[10px] tracking-[0.12em] text-white/40 mb-1">
+          Expectancy
         </p>
         <div className="flex items-baseline gap-3">
           <span className="text-[54px] md:text-[68px] leading-none tabular-nums text-green-300 tracking-[-0.025em] font-medium">
             +${expectancy.toFixed(2)}
           </span>
-          <span className="text-[11px] tracking-[0.16em] text-white/45">
+          <span className="text-[11px] tracking-[0.08em] text-white/45">
             / trade
           </span>
         </div>
@@ -1106,17 +1106,17 @@ function NumbersPreview() {
       <div className="px-5 md:px-6 pb-5 pt-4 grid grid-cols-3 gap-3 border-b border-[var(--rule)]">
         {[
           {
-            k: "win rate",
+            k: "Win rate",
             v: `${Math.round(winRate)}%`,
             tone: "good" as const,
           },
           {
-            k: "profit factor",
+            k: "Profit factor",
             v: profitFactor.toFixed(2),
             tone: "good" as const,
           },
           {
-            k: "max DD",
+            k: "Max DD",
             v: `−$${Math.round(maxDD)}`,
             tone: "bad" as const,
           },
@@ -1125,7 +1125,7 @@ function NumbersPreview() {
             key={s.k}
             className="border border-[var(--rule)] bg-white/[0.025] p-3 rounded-xl"
           >
-            <p className="text-[10px] tracking-[0.16em] text-white/40 mb-1">
+            <p className="text-[10px] tracking-[0.08em] text-white/40 mb-1">
               {s.k}
             </p>
             <p
@@ -1141,8 +1141,8 @@ function NumbersPreview() {
 
       <div className="px-5 md:px-6 py-4">
         <div className="flex items-center justify-between mb-2 text-[11px]">
-          <span className="text-white/55 tracking-[0.14em]">
-            daily risk budget
+          <span className="text-white/55 tracking-[0.08em]">
+            Daily risk budget
           </span>
           <span className="tabular-nums">
             <span className="text-amber-300">${Math.round(riskUsed)}</span>
@@ -1163,9 +1163,9 @@ function NumbersPreview() {
             }}
           />
         </div>
-        <div className="mt-3 flex items-center justify-between text-[10.5px] tracking-[0.14em] text-white/35">
-          <span>streak: 3W active</span>
-          <span>best hour: 14:00 ET</span>
+        <div className="mt-3 flex items-center justify-between text-[10.5px] tracking-[0.08em] text-white/35">
+          <span>Streak: 3W active</span>
+          <span>Best hour: 14:00 ET</span>
         </div>
       </div>
     </PreviewClipping>
@@ -1226,7 +1226,7 @@ function IBKRPreview() {
             />
           </span>
           <div>
-            <p className="text-[10px] tracking-[0.22em] text-white/40">
+            <p className="text-[10px] tracking-[0.12em] text-white/40">
               IBKR auto-sync
             </p>
             <p className="text-[13px] text-white/80 tabular-nums">
@@ -1241,10 +1241,10 @@ function IBKRPreview() {
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/25 text-[10.5px] tracking-[0.16em] font-medium"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/25 text-[10.5px] tracking-[0.08em] font-medium"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-amber-300 animate-pulse" />
-              syncing
+              Syncing
             </motion.span>
           ) : (
             <motion.span
@@ -1252,10 +1252,10 @@ function IBKRPreview() {
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-500/10 text-green-300 border border-green-500/25 text-[10.5px] tracking-[0.16em] font-medium"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-500/10 text-green-300 border border-green-500/25 text-[10.5px] tracking-[0.08em] font-medium"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-              connected
+              Connected
             </motion.span>
           )}
         </AnimatePresence>
@@ -1283,7 +1283,7 @@ function IBKRPreview() {
                   }}
                 />
               </div>
-              <div className="mt-1.5 text-[10px] tracking-[0.16em] text-white/35 tabular-nums">
+              <div className="mt-1.5 text-[10px] tracking-[0.08em] text-white/35 tabular-nums">
                 {Math.round(progress)}% · contacting IBKR Flex
               </div>
             </div>
@@ -1296,15 +1296,15 @@ function IBKRPreview() {
       <div className="px-5 md:px-6 py-4 grid grid-cols-3 gap-3 border-b border-[var(--rule)]">
         {[
           {
-            k: "imported",
+            k: "Imported",
             v: phase === "done" ? Math.round(imported).toString() : "—",
             tone: "good" as const,
           },
-          { k: "skipped", v: phase === "done" ? "0" : "—", tone: "neutral" as const },
-          { k: "next run", v: "22:00 ET", tone: "neutral" as const },
+          { k: "Skipped", v: phase === "done" ? "0" : "—", tone: "neutral" as const },
+          { k: "Next run", v: "22:00 ET", tone: "neutral" as const },
         ].map((s) => (
           <div key={s.k} className="flex flex-col gap-0.5">
-            <p className="text-[10px] tracking-[0.16em] text-white/40">
+            <p className="text-[10px] tracking-[0.08em] text-white/40">
               {s.k}
             </p>
             <p
@@ -1321,8 +1321,8 @@ function IBKRPreview() {
       {/* Last-run fills - stagger in one by one after sync, like a real
           tail of broker fills landing. */}
       <div>
-        <p className="px-5 md:px-6 pt-4 pb-2 text-[10px] tracking-[0.22em] text-white/40">
-          last run · fills
+        <p className="px-5 md:px-6 pt-4 pb-2 text-[10px] tracking-[0.12em] text-white/40">
+          Last run · fills
         </p>
         <div className="divide-y divide-[var(--rule)] min-h-[180px]">
           <AnimatePresence>

@@ -62,25 +62,25 @@ const SUGGESTIONS: {
 }[] = [
   {
     icon: "fa-solid fa-chart-line",
-    title: "how am I doing?",
+    title: "How am I doing?",
     body: "Performance this month vs the last.",
     prompt: "How am I doing this month?",
   },
   {
     icon: "fa-solid fa-trophy",
-    title: "best strategy",
+    title: "Best strategy",
     body: "Which setup wins most for me?",
     prompt: "Which strategy is performing best for me?",
   },
   {
     icon: "fa-solid fa-pen-to-square",
-    title: "log a trade",
+    title: "Log a trade",
     body: "Add a new trade in plain English.",
     prompt: "Help me log a trade",
   },
   {
     icon: "fa-solid fa-magnifying-glass",
-    title: "review my losses",
+    title: "Review my losses",
     body: "Last 5 losses - what they had in common.",
     prompt:
       "Show me my last 5 losing trades and what they had in common.",
@@ -384,12 +384,12 @@ function Page() {
     () => (
       <div className="flex flex-col items-center gap-8 w-full max-w-xl mx-auto">
         <div className="flex flex-col items-center text-center gap-2">
-          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-teal-500/10 text-teal-300 border border-teal-500/25 text-[11px] tracking-[0.15em] font-medium">
+          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-teal-500/10 text-teal-300 border border-teal-500/25 text-[11px] tracking-[0.08em] font-medium">
             <i className="fa-solid fa-wand-magic-sparkles text-[10px]" />
             QuillAI
           </div>
           <h2 className="text-2xl md:text-3xl font-semibold tracking-tight">
-            ask anything about your trades
+            Ask anything about your trades
           </h2>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
@@ -461,7 +461,7 @@ function Page() {
               aria-label="Clear conversation"
             >
               <i className="fa-regular fa-trash-can text-[10px]" />
-              clear
+              Clear
             </button>
             <div
               ref={scrollRef}
@@ -525,7 +525,7 @@ function Page() {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={onKeyDown}
             rows={1}
-            placeholder="ask about your trades..."
+            placeholder="Ask about your trades..."
             className="flex-1 resize-none bg-transparent text-[14px] text-white placeholder:text-white/35 placeholder:text-[12px] focus:outline-none py-1.5 max-h-[160px]"
           />
           <button

@@ -255,8 +255,8 @@ const WeekView = forwardRef<WeekViewHandle, WeekViewProps>(function WeekView(
           <i className="fa-solid fa-chevron-left text-[11px]" />
         </button>
         <div className="flex flex-col items-center">
-          <div className="text-[10px] tracking-[0.18em] text-white/40 font-medium">
-            week of
+          <div className="text-[10px] tracking-[0.1em] text-white/40 font-medium">
+            Week of
           </div>
           <div className="md:text-[14px] text-[13px] font-semibold tracking-tight tabular-nums">
             {format(weekStart, "MMM d")} –{" "}

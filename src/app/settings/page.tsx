@@ -8,7 +8,7 @@ import Account from "./Account";
 import IBKRTab from "./IBKRTab";
 
 function Page() {
-  const [selectedSetting, setSelectedSetting] = useState<string>("account");
+  const [selectedSetting, setSelectedSetting] = useState<string>("Account");
 
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<string>("");
@@ -55,9 +55,9 @@ function Page() {
   };
 
   const settingsTabs = [
-    { title: "account", icon: "fa-solid fa-user", content: <Account /> },
+    { title: "Account", icon: "fa-solid fa-user", content: <Account /> },
     {
-      title: "trades",
+      title: "Trades",
       icon: "fa-solid fa-file-import",
       content: (
         <TradesTab

@@ -75,7 +75,7 @@ export default function IBKRTab() {
   }, [cooldownMsLeft]);
 
   const handleSave = async () => {
-    setSaveStatus("saving…");
+    setSaveStatus("Saving…");
     const body: Record<string, string> = { ibkrQueryId: queryId };
     if (token) body.ibkrToken = token;
 
@@ -86,13 +86,13 @@ export default function IBKRTab() {
     });
 
     if (res.ok) {
-      setSaveStatus("saved");
+      setSaveStatus("Saved");
       if (token) {
         setHasToken(true);
         setToken("");
       }
     } else {
-      setSaveStatus("error saving");
+      setSaveStatus("Error saving");
     }
   };
 
@@ -167,8 +167,8 @@ export default function IBKRTab() {
     <div className="p-5 md:p-7 flex flex-col gap-6">
       {/* Intro */}
       <section className="flex flex-col gap-2">
-        <div className="text-[11px] tracking-[0.18em] text-teal-400/80 font-medium">
-          auto-sync
+        <div className="text-[11px] tracking-[0.1em] text-teal-400/80 font-medium">
+          Auto-sync
         </div>
         <p className="text-[13px] md:text-[14px] text-white/70 leading-relaxed">
           Trades import automatically every weekday at 10 PM UTC. You can also
@@ -178,8 +178,8 @@ export default function IBKRTab() {
 
       {/* Setup steps */}
       <section className="flex flex-col gap-3">
-        <div className="text-[11px] tracking-[0.18em] text-white/45 font-medium">
-          setup
+        <div className="text-[11px] tracking-[0.1em] text-white/45 font-medium">
+          Setup
         </div>
         <ol className="flex flex-col gap-2.5 text-[13px] text-white/75 leading-relaxed">
           {[
@@ -227,15 +227,15 @@ export default function IBKRTab() {
 
       {/* Credentials */}
       <section className="flex flex-col gap-4 max-w-sm">
-        <div className="text-[11px] tracking-[0.18em] text-white/45 font-medium">
-          credentials
+        <div className="text-[11px] tracking-[0.1em] text-white/45 font-medium">
+          Credentials
         </div>
         <label className="flex flex-col gap-1.5">
-          <span className="text-[11px] tracking-[0.15em] text-white/45 font-medium flex items-center gap-2">
+          <span className="text-[11px] tracking-[0.08em] text-white/45 font-medium flex items-center gap-2">
             Flex web service token
             {hasToken && (
               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-green-500/10 text-green-300 border border-green-500/25 text-[10px] tracking-normal normal-case font-medium">
-                <i className="fa-solid fa-check text-[8px]" /> saved
+                <i className="fa-solid fa-check text-[8px]" /> Saved
               </span>
             )}
           </span>
@@ -249,8 +249,8 @@ export default function IBKRTab() {
         </label>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-[11px] tracking-[0.15em] text-white/45 font-medium">
-            query ID
+          <span className="text-[11px] tracking-[0.08em] text-white/45 font-medium">
+            Query ID
           </span>
           <input
             className={inputClass}
@@ -267,7 +267,7 @@ export default function IBKRTab() {
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[13px] font-medium cursor-pointer"
           >
             <i className="fa-solid fa-floppy-disk text-[11px]" />
-            save credentials
+            Save credentials
           </button>
           {saveStatus && (
             <span className="text-[12px] text-white/60">{saveStatus}</span>
@@ -279,8 +279,8 @@ export default function IBKRTab() {
 
       {/* Manual sync */}
       <section className="flex flex-col gap-3">
-        <div className="text-[11px] tracking-[0.18em] text-white/45 font-medium">
-          manual sync
+        <div className="text-[11px] tracking-[0.1em] text-white/45 font-medium">
+          Manual sync
         </div>
         {lastSync && (
           <div className="text-[12px] text-white/55">
@@ -314,10 +314,10 @@ export default function IBKRTab() {
               className={`fa-solid fa-rotate text-[11px] ${syncing ? "animate-spin" : ""}`}
             />
             {syncing
-              ? "syncing…"
+              ? "Syncing…"
               : cooldownActive
-                ? `wait ${cooldownLabel}`
-                : "sync now"}
+                ? `Wait ${cooldownLabel}`
+                : "Sync now"}
           </button>
           {syncStatus && (
             <span className="text-[12px] text-white/60">{syncStatus}</span>
@@ -335,7 +335,7 @@ export default function IBKRTab() {
               <i
                 className={`fa-solid fa-chevron-right text-[9px] transition-transform ${importedOpen ? "rotate-90" : ""}`}
               />
-              {importedOpen ? "hide" : "view"} imported trades
+              {importedOpen ? "Hide" : "View"} imported trades
               {lastInserted != null && lastInserted > 0 && (
                 <span className="ml-1 text-white/40 tabular-nums">
                   ({lastInserted})
@@ -463,7 +463,7 @@ function ImportedRow({
               className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/25 text-[9.5px] font-medium tracking-wide"
             >
               <i className="fa-solid fa-triangle-exclamation text-[8px]" />
-              possible dup
+              Possible dup
             </span>
           )}
         </div>

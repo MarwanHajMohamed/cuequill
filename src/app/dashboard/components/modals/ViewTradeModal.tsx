@@ -113,7 +113,7 @@ export default function ViewTradeModal({
             </span>
             {initialTrade.simulated && (
               <span className="text-[10px] tracking-wider px-1.5 py-0.5 rounded bg-white/10 text-white/60">
-                sim
+                Sim
               </span>
             )}
           </div>
@@ -128,7 +128,7 @@ export default function ViewTradeModal({
                 >
                   {fmtMoneySignedCompact(netPL)}
                 </span>
-                <span className="text-xs text-white/40">net</span>
+                <span className="text-xs text-white/40">Net</span>
               </>
             ) : (
               <span className="text-2xl md:text-3xl font-bold text-orange-400">
@@ -139,8 +139,8 @@ export default function ViewTradeModal({
 
           {isClosed && (gross !== netPL || fees > 0) && (
             <div className="mt-1.5 text-[11px] text-white/40 flex gap-3 flex-wrap">
-              <span>gross ${gross.toFixed(2)}</span>
-              {fees > 0 && <span>fees −${fees.toFixed(2)}</span>}
+              <span>Gross ${gross.toFixed(2)}</span>
+              {fees > 0 && <span>Fees −${fees.toFixed(2)}</span>}
             </div>
           )}
         </div>
@@ -149,15 +149,15 @@ export default function ViewTradeModal({
         <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-4 px-5 md:px-6 py-4 md:py-5">
           {/* Stat tiles */}
           <div className="grid grid-cols-3 gap-2">
-            <StatTile label="strike" value={`$${initialTrade.strike}`} />
-            <StatTile label="qty" value={`×${initialTrade.qty}`} />
+            <StatTile label="Strike" value={`$${initialTrade.strike}`} />
+            <StatTile label="Qty" value={`×${initialTrade.qty}`} />
             <StatTile
-              label="contract"
+              label="Contract"
               value={`$${initialTrade.contractPrice}`}
             />
             {isClosed && (
               <StatTile
-                label="close"
+                label="Close"
                 value={
                   initialTrade.closingContractPrice != null
                     ? `$${initialTrade.closingContractPrice}`
@@ -167,7 +167,7 @@ export default function ViewTradeModal({
             )}
             {isClosed && (
               <StatTile
-                label="change"
+                label="Change"
                 value={
                   initialTrade.closingContractPrice != null &&
                   initialTrade.contractPrice
@@ -191,34 +191,34 @@ export default function ViewTradeModal({
               />
             )}
             {isClosed && fees > 0 && (
-              <StatTile label="fees" value={`$${fees.toFixed(2)}`} />
+              <StatTile label="Fees" value={`$${fees.toFixed(2)}`} />
             )}
           </div>
 
           {/* Timeline */}
           <div className="flex flex-col gap-2">
             <div className="text-[10px] tracking-wider text-white/40">
-              timeline
+              Timeline
             </div>
             <div className="border border-white/10 rounded-lg divide-y divide-white/5">
               <TimelineRow
                 icon="fa-arrow-down-to-line"
                 color="text-green-500"
-                label="bought"
+                label="Bought"
                 value={bought ? format(bought, "EEE, MMM d yyyy") : "-"}
               />
               {isClosed && (
                 <TimelineRow
                   icon="fa-arrow-up-from-line"
                   color="text-red-500"
-                  label="closed"
+                  label="Closed"
                   value={closed ? format(closed, "EEE, MMM d yyyy") : "-"}
                 />
               )}
               <TimelineRow
                 icon="fa-calendar-xmark"
                 color="text-white/50"
-                label="expiry"
+                label="Expiry"
                 value={expiry ? format(expiry, "EEE, MMM d yyyy") : "-"}
               />
             </div>
@@ -228,7 +228,7 @@ export default function ViewTradeModal({
           {initialTrade.strategy && initialTrade.strategy !== "All" && (
             <div className="flex items-center gap-2">
               <span className="text-[10px] tracking-wider text-white/40">
-                strategy
+                Strategy
               </span>
               <span className="text-xs px-2 py-0.5 rounded-full bg-white/5 border border-white/10">
                 {initialTrade.strategy}
@@ -240,7 +240,7 @@ export default function ViewTradeModal({
           {initialTrade.tags && initialTrade.tags.length > 0 && (
             <div className="flex flex-col gap-1.5">
               <div className="text-[10px] tracking-wider text-white/40">
-                tags
+                Tags
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {initialTrade.tags.map((tag) => {
@@ -268,7 +268,7 @@ export default function ViewTradeModal({
           {initialTrade.notes && (
             <div className="flex flex-col gap-1.5">
               <div className="text-[10px] tracking-wider text-white/40">
-                notes
+                Notes
               </div>
               <div className="text-sm text-white/80 bg-white/3 border border-white/5 rounded-md p-3 whitespace-pre-wrap">
                 {initialTrade.notes}
@@ -283,7 +283,7 @@ export default function ViewTradeModal({
             onClick={onClose}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer"
           >
-            close
+            Close
           </button>
           {onEdit && (
             <button
@@ -291,7 +291,7 @@ export default function ViewTradeModal({
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[13px] font-medium cursor-pointer"
             >
               <i className="fa-regular fa-pen-to-square text-[11px]" />
-              edit
+              Edit
             </button>
           )}
         </div>

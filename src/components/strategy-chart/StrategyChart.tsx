@@ -116,7 +116,7 @@ export function StrategyChart({
                 playing ? "fa-pause" : "fa-play"
               } text-[10px]`}
             ></i>
-            {playing ? "pause" : progressX >= CHART_WIDTH ? "replay" : "play"}
+            {playing ? "Pause" : progressX >= CHART_WIDTH ? "Replay" : "Play"}
           </button>
         </div>
         <svg
