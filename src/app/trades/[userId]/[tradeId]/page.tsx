@@ -194,7 +194,7 @@ function TradeDetailPage() {
   const isPut = form.option === "PUT";
 
   return (
-    <div className="w-full max-w-[1500px] mx-auto px-4 md:px-8 pt-20 pb-6 flex flex-col gap-4 md:h-[100dvh]">
+    <div className="w-full max-w-[1500px] mx-auto px-4 md:px-8 pt-24 pb-0 flex flex-col gap-4 md:h-[100dvh]">
       {/* One container — trade fields on the left, the wider notes
           editor on the right, filling the viewport height. */}
       <div className="md:flex-1 md:min-h-0 grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1.7fr)] rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md shadow-[0_2px_24px_var(--shadow-soft)] overflow-hidden">
@@ -393,7 +393,7 @@ function TradeDetailPage() {
           </label>
 
           {/* Actions — pinned to the bottom of the left panel */}
-          <div className="mt-auto md:sticky md:bottom-0 -mx-5 md:-mx-6 -mb-5 md:-mb-6 px-5 md:px-6 py-3 flex items-center justify-between gap-2 border-t border-white/10 bg-[var(--surface)]/95 backdrop-blur-md">
+          <div className="mt-auto md:sticky md:bottom-0 -mx-5 md:-mx-6 -mb-5 md:-mb-6 px-5 md:px-6 py-3 flex items-center justify-between gap-2 border-t border-white/10 bg-white/[0.03] backdrop-blur-md">
             <button
               type="button"
               onClick={() => setDelConfirm(true)}
