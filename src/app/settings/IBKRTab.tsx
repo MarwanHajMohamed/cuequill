@@ -1,6 +1,8 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
+import { useIsPro } from "@/hooks/useIsPro";
 
 const COOLDOWN_MS = 15 * 60 * 1000;
 
@@ -25,6 +27,7 @@ type ImportedTrade = {
 };
 
 export default function IBKRTab() {
+  const { isPro } = useIsPro();
   const [token, setToken] = useState("");
   const [queryId, setQueryId] = useState("");
   const [hasToken, setHasToken] = useState(false);
@@ -167,13 +170,32 @@ export default function IBKRTab() {
     <div className="p-5 md:p-7 flex flex-col gap-6">
       {/* Intro */}
       <section className="flex flex-col gap-2">
-        <div className="text-[11px] tracking-[0.1em] text-teal-400/80 font-medium">
+        <div className="text-[11px] tracking-[0.1em] text-teal-400/80 font-medium flex items-center gap-2">
           Auto-sync
+          {!isPro && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-teal-500/10 text-teal-300 border border-teal-500/25 text-[9.5px] tracking-[0.1em] font-semibold uppercase">
+              <i className="fa-solid fa-lock text-[8px]" /> Pro
+            </span>
+          )}
         </div>
-        <p className="text-[13px] md:text-[14px] text-white/70 leading-relaxed">
-          Trades import automatically every weekday at 10 PM UTC. You can also
-          trigger a sync manually below.
-        </p>
+        {isPro ? (
+          <p className="text-[13px] md:text-[14px] text-white/70 leading-relaxed">
+            Trades import automatically every weekday at 10 PM UTC. You can also
+            trigger a sync manually below.
+          </p>
+        ) : (
+          <p className="text-[13px] md:text-[14px] text-white/70 leading-relaxed">
+            Nightly auto-sync is a Pro feature. You can still import manually
+            below as often as you like.{" "}
+            <Link
+              href="/pricing"
+              className="text-teal-300 hover:text-teal-200 underline-offset-4 hover:underline"
+            >
+              Upgrade to Pro
+            </Link>
+            .
+          </p>
+        )}
       </section>
 
       {/* Setup steps */}

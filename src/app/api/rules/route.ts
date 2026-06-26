@@ -1,7 +1,28 @@
 import { randomUUID } from "crypto";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import connectDb from "@/lib/db";
 import RulesBoard from "@/lib/models/RulesBoard";
+import { User } from "@/lib/models/User";
 import { NextRequest, NextResponse } from "next/server";
+
+async function requirePro(): Promise<
+  | { ok: true; userId: string }
+  | { ok: false; status: number; error: string }
+> {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return { ok: false, status: 401, error: "Unauthorized" };
+  }
+  await connectDb();
+  const u = await User.findById(session.user.id)
+    .select("isPro")
+    .lean<{ isPro?: boolean }>();
+  if (!u?.isPro) {
+    return { ok: false, status: 403, error: "Pro membership required" };
+  }
+  return { ok: true, userId: session.user.id };
+}
 
 type RuleInput = { id?: string; title?: unknown; body?: unknown };
 type SectionInput = { id?: string; title?: unknown; rules?: unknown };
@@ -92,14 +113,12 @@ function sanitize(sections: unknown) {
 }
 
 // Get the user's board, seeding the defaults on first visit.
-export async function GET(req: NextRequest) {
-  await connectDb();
-
-  const { searchParams } = new URL(req.url);
-  const userId = searchParams.get("userId");
-  if (!userId) {
-    return NextResponse.json({ error: "Missing userId" }, { status: 400 });
+export async function GET(_req: NextRequest) {
+  const gate = await requirePro();
+  if (!gate.ok) {
+    return NextResponse.json({ error: gate.error }, { status: gate.status });
   }
+  const { userId } = gate;
 
   try {
     let board = await RulesBoard.findOne({ userId });
@@ -119,14 +138,14 @@ export async function GET(req: NextRequest) {
 
 // Replace the whole board (used for every add/edit/move/reorder).
 export async function PUT(req: NextRequest) {
-  await connectDb();
+  const gate = await requirePro();
+  if (!gate.ok) {
+    return NextResponse.json({ error: gate.error }, { status: gate.status });
+  }
+  const { userId } = gate;
 
   try {
     const body = await req.json();
-    const { userId } = body;
-    if (!userId) {
-      return NextResponse.json({ error: "Missing userId" }, { status: 400 });
-    }
     const sections = sanitize(body.sections);
     const board = await RulesBoard.findOneAndUpdate(
       { userId },

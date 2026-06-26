@@ -1,6 +1,7 @@
 "use client";
 
 import { withAuth } from "@/lib/withAuth";
+import ProGate from "@/components/ProGate";
 import { AnimatePresence, motion } from "framer-motion";
 import React, {
   createContext,
@@ -935,4 +936,16 @@ function TypingDots() {
   );
 }
 
-export default withAuth(Page);
+function GatedPage() {
+  return (
+    <ProGate
+      feature="Quill AI"
+      description="Ask questions about your own trades in plain English. Spot patterns, compare strategies, log trades by chat."
+      className="min-h-screen"
+    >
+      <Page />
+    </ProGate>
+  );
+}
+
+export default withAuth(GatedPage);

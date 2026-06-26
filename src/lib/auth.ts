@@ -11,6 +11,7 @@ type User = {
   email: string;
   password: string;
   timezone: string;
+  isPro?: boolean;
 };
 
 export const authOptions: NextAuthOptions = {
@@ -44,6 +45,7 @@ export const authOptions: NextAuthOptions = {
           firstname: user.firstname,
           surname: user.surname,
           timezone: user.timezone,
+          isPro: !!user.isPro,
         };
       },
     }),
@@ -63,6 +65,7 @@ export const authOptions: NextAuthOptions = {
         token.surname = user.surname;
         token.email = user.email;
         token.timezone = user.timezone;
+        token.isPro = !!user.isPro;
       }
       // Profile updates from /api/user/profile flow back through
       // session.update({ ... }) - propagate them onto the JWT so future
@@ -73,6 +76,7 @@ export const authOptions: NextAuthOptions = {
           token.firstname = session.firstname;
         if (session.surname !== undefined) token.surname = session.surname;
         if (session.email !== undefined) token.email = session.email;
+        if (session.isPro !== undefined) token.isPro = !!session.isPro;
       }
       return token;
     },
@@ -83,6 +87,7 @@ export const authOptions: NextAuthOptions = {
         session.user.surname = token.surname as string;
         session.user.email = token.email as string;
         session.user.timezone = token.timezone as string;
+        session.user.isPro = !!token.isPro;
       }
       return session;
     },

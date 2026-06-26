@@ -16,6 +16,7 @@ import { createPortal } from "react-dom";
 import EquityCurve from "./EquityCurve";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
 import { motion, AnimatePresence } from "framer-motion";
+import ProGate from "@/components/ProGate";
 
 import { fmtMoneyCompact, fmtMoneySignedCompact } from "@/lib/helpers/fmt";
 type StatsVisibility = {
@@ -1551,22 +1552,29 @@ export default function Statistics({
             })}
           </div>
 
-          {/* By Strategy */}
-          {byStrategy.length > 0 && (
-            <BreakdownTable
-              title="By strategy"
-              rows={byStrategy.slice(0, 8)}
-              info="Net P/L and win rate for each strategy, ranked by trade count. Highlights which setups consistently make money and which are net losers."
-            />
-          )}
+          {/* By Strategy + By Symbol — Pro-only. Wrapped together so a
+              single upgrade card spans both tables. */}
+          {(byStrategy.length > 0 || bySymbol.length > 0) && (
+            <ProGate
+              feature="Per-strategy & per-symbol stats"
+              description="See net P/L and win rate broken down by setup and ticker. Available on Pro."
+            >
+              {byStrategy.length > 0 && (
+                <BreakdownTable
+                  title="By strategy"
+                  rows={byStrategy.slice(0, 8)}
+                  info="Net P/L and win rate for each strategy, ranked by trade count. Highlights which setups consistently make money and which are net losers."
+                />
+              )}
 
-          {/* By Symbol */}
-          {bySymbol.length > 0 && (
-            <BreakdownTable
-              title="By symbol"
-              rows={bySymbol.slice(0, 8)}
-              info="Net P/L by ticker. The horizontal bar's width is relative to your biggest mover, green for profit and red for loss."
-            />
+              {bySymbol.length > 0 && (
+                <BreakdownTable
+                  title="By symbol"
+                  rows={bySymbol.slice(0, 8)}
+                  info="Net P/L by ticker. The horizontal bar's width is relative to your biggest mover, green for profit and red for loss."
+                />
+              )}
+            </ProGate>
           )}
 
           {/* Streaks & Risk */}

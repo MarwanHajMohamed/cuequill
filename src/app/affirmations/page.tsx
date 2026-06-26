@@ -1,6 +1,7 @@
 "use client";
 
 import { withAuth } from "@/lib/withAuth";
+import ProGate from "@/components/ProGate";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import React, { useEffect, useMemo, useState } from "react";
@@ -203,4 +204,16 @@ function AffirmationsPage() {
   );
 }
 
-export default withAuth(AffirmationsPage);
+function GatedAffirmationsPage() {
+  return (
+    <ProGate
+      feature="Affirmations"
+      description="Pin the lines you need to read before you click buy. Available on Pro."
+      className="min-h-screen"
+    >
+      <AffirmationsPage />
+    </ProGate>
+  );
+}
+
+export default withAuth(GatedAffirmationsPage);
