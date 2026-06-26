@@ -712,22 +712,22 @@ export default function Navbar() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -4, scale: 0.98 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute right-0 top-[calc(100%+8px)] flex flex-col bg-[var(--surface-2)]/95 backdrop-blur-md rounded-xl border border-white/10 shadow-xl min-w-[240px] z-50 overflow-hidden"
+                    className="absolute right-0 top-[calc(100%+10px)] flex flex-col bg-[var(--surface-2)]/95 backdrop-blur-md rounded-2xl border border-white/10 shadow-[0_24px_60px_var(--shadow)] min-w-[260px] z-50 overflow-hidden"
                   >
                     {/* Identity header */}
                     {session?.user && (
-                      <div className="px-4 py-3 border-b border-white/10 flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-teal-500/80 to-emerald-600/80 border border-white/15 flex items-center justify-center text-[13px] font-semibold">
+                      <div className="px-4 py-3.5 border-b border-white/10 flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500/80 to-emerald-600/80 border border-white/15 flex items-center justify-center text-[14px] font-semibold shrink-0">
                           {userInitial}
                         </div>
                         <div className="min-w-0 flex-1">
                           {userFullName && (
-                            <div className="text-[13px] font-medium truncate">
+                            <div className="text-[13.5px] font-medium truncate leading-tight">
                               {userFullName}
                             </div>
                           )}
                           {session.user.email && (
-                            <div className="text-[11px] text-white/50 truncate">
+                            <div className="text-[11px] text-white/50 truncate leading-tight mt-0.5">
                               {session.user.email}
                             </div>
                           )}
@@ -735,41 +735,46 @@ export default function Navbar() {
                       </div>
                     )}
 
-                    <div className="p-1">
+                    {/* Account section - navigation links */}
+                    <div className="px-2 pt-2 pb-1">
                       <button
-                        className="w-full flex items-center gap-3 px-3 py-2 text-left text-[13px] rounded-lg cursor-pointer text-white/80 hover:bg-white/5 hover:text-white transition"
-                        onClick={() => {
-                          handleRoute("pricing");
-                          setOpen(false);
-                        }}
-                      >
-                        <i className="fa-solid fa-tag w-4 text-center text-white/60" />
-                        <span>Plans &amp; Pricing</span>
-                      </button>
-                      <button
-                        className="w-full flex items-center gap-3 px-3 py-2 text-left text-[13px] rounded-lg cursor-pointer text-white/80 hover:bg-white/5 hover:text-white transition"
+                        className="group w-full flex items-center gap-3 px-2.5 py-2 text-left text-[13px] rounded-lg cursor-pointer text-white/85 hover:bg-white/[0.06] hover:text-white transition"
                         onClick={() => {
                           handleRoute("settings");
                           setOpen(false);
                         }}
                       >
-                        <i className="fa-solid fa-gear w-4 text-center text-white/60" />
-                        <span>Settings</span>
+                        <i className="fa-solid fa-gear w-4 text-center text-white/55 group-hover:text-white transition" />
+                        <span className="flex-1">Settings</span>
+                        <i className="fa-solid fa-chevron-right text-[9px] text-white/30 group-hover:text-white/55 transition" />
+                      </button>
+                      <button
+                        className="group w-full flex items-center gap-3 px-2.5 py-2 text-left text-[13px] rounded-lg cursor-pointer text-white/85 hover:bg-white/[0.06] hover:text-white transition"
+                        onClick={() => {
+                          handleRoute("pricing");
+                          setOpen(false);
+                        }}
+                      >
+                        <i className="fa-solid fa-tag w-4 text-center text-white/55 group-hover:text-white transition" />
+                        <span className="flex-1">Plans &amp; pricing</span>
+                        <i className="fa-solid fa-chevron-right text-[9px] text-white/30 group-hover:text-white/55 transition" />
                       </button>
                     </div>
 
-                    <div className="p-3 border-t border-white/10 flex items-center justify-between">
-                      <span className="text-[12px] text-white/60">
-                        Appearance
-                      </span>
-                      <ThemeToggle />
-                    </div>
-
-                    <div className="p-3 border-t border-white/10 flex items-center justify-between">
-                      <span className="text-[12px] text-white/60">
-                        Simulated Trading
-                      </span>
-                      <label className="inline-flex items-center cursor-pointer">
+                    {/* Preferences section - inline controls */}
+                    <div className="px-2 pt-2 pb-1 border-t border-white/[0.06]">
+                      <div className="flex items-center gap-3 px-2.5 py-1.5 rounded-lg">
+                        <i className="fa-solid fa-circle-half-stroke w-4 text-center text-white/55" />
+                        <span className="flex-1 text-[13px] text-white/85">
+                          Appearance
+                        </span>
+                        <ThemeToggle />
+                      </div>
+                      <label className="flex items-center gap-3 px-2.5 py-1.5 rounded-lg cursor-pointer hover:bg-white/[0.04] transition">
+                        <i className="fa-solid fa-flask w-4 text-center text-white/55" />
+                        <span className="flex-1 text-[13px] text-white/85">
+                          Simulated trading
+                        </span>
                         <input
                           type="checkbox"
                           checked={simulated}
@@ -785,18 +790,19 @@ export default function Navbar() {
                             after:content-[''] after:absolute after:top-[2px]
                             after:start-[2px] after:bg-white after:rounded-full
                             after:h-4 after:w-4 after:transition-all
-                            peer-checked:bg-teal-500"
+                            peer-checked:bg-teal-500 transition-colors"
                         />
                       </label>
                     </div>
 
-                    <div className="p-1 border-t border-white/10">
+                    {/* Sign-out - visually separated, slightly louder hover */}
+                    <div className="p-2 border-t border-white/[0.06]">
                       <button
-                        className="w-full flex items-center gap-3 px-3 py-2 text-left text-[13px] rounded-lg cursor-pointer text-white/80 hover:bg-white/5 hover:text-white transition"
+                        className="group w-full flex items-center gap-3 px-2.5 py-2 text-left text-[13px] rounded-lg cursor-pointer text-white/75 hover:bg-red-500/[0.08] hover:text-red-200 transition"
                         onClick={() => signOut({ callbackUrl: "/" })}
                       >
-                        <i className="fa-solid fa-right-from-bracket w-4 text-center text-white/60" />
-                        <span>Logout</span>
+                        <i className="fa-solid fa-right-from-bracket w-4 text-center text-white/55 group-hover:text-red-300 transition" />
+                        <span>Sign out</span>
                       </button>
                     </div>
                   </motion.div>

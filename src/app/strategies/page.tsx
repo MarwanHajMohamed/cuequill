@@ -10,14 +10,12 @@ type Direction = "CALL" | "PUT";
 
 const directionStyle = {
   CALL: {
-    eyebrow: "Bullish",
     color: "text-green-400",
     accent: "from-green-500/30 to-emerald-500/0",
     chip: "bg-green-500/10 text-green-300 border-green-500/25",
     icon: "fa-arrow-trend-up",
   },
   PUT: {
-    eyebrow: "Bearish",
     color: "text-red-400",
     accent: "from-red-500/30 to-orange-500/0",
     chip: "bg-red-500/10 text-red-300 border-red-500/25",
@@ -88,13 +86,7 @@ const Column = ({
           <h2 className={`text-xl md:text-2xl font-semibold ${style.color}`}>
             {direction}
           </h2>
-          <span className="text-[11px] tracking-[0.08em] text-white/40">
-            {style.eyebrow}
-          </span>
         </div>
-        <span className="text-[12px] text-white/40 tabular-nums">
-          {items.length}
-        </span>
       </div>
       <div className="flex flex-col gap-2.5">
         {items.map((s, i) => (

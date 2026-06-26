@@ -1,7 +1,8 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
+import RichNotesEditor from "@/components/RichNotesEditor";
 
 type NotesModalProps = {
   onClose: () => void;
@@ -10,10 +11,10 @@ type NotesModalProps = {
   tradeId?: string;
 };
 
-const isMac =
-  typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform);
-const modKey = isMac ? "⌘" : "Ctrl";
-
+// Quick-edit notes modal. The full edit view (trade fields + notes
+// side-by-side) lives at /trades/[userId]/[tradeId] - this modal stays
+// around as a one-shot "open just the notes" surface so users don't
+// have to navigate away when they just want to add a quick line.
 export default function NotesModal({
   onClose,
   onSave,
@@ -21,16 +22,8 @@ export default function NotesModal({
   tradeId,
 }: NotesModalProps) {
   const [value, setValue] = useState(notes);
-  const taRef = useRef<HTMLTextAreaElement>(null);
-
   const dirty = value !== notes;
   const canSave = !!tradeId && dirty;
-
-  const wordCount = useMemo(
-    () => (value.trim() ? value.trim().split(/\s+/).length : 0),
-    [value],
-  );
-  const charCount = value.length;
 
   const handleSave = () => {
     if (!canSave || !tradeId) return;
@@ -38,18 +31,7 @@ export default function NotesModal({
     onClose();
   };
 
-  // Autofocus on open + place cursor at end (so editing an existing
-  // note doesn't reset the caret).
-  useEffect(() => {
-    const ta = taRef.current;
-    if (!ta) return;
-    ta.focus();
-    const len = ta.value.length;
-    ta.setSelectionRange(len, len);
-  }, []);
-
-  // Keybindings: Esc closes, ⌘/Ctrl+Enter saves (skip if textarea hasn't
-  // been touched - prevents accidental empty-save).
+  // Esc closes, ⌘/Ctrl+Enter saves.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -92,9 +74,6 @@ export default function NotesModal({
                 <i className="fa-solid fa-book-open text-[13px]" />
               </div>
               <div className="flex flex-col gap-0.5 min-w-0">
-                <div className="text-[10px] tracking-[0.1em] text-white/40 font-medium">
-                  Trade journal
-                </div>
                 <div className="text-[15px] md:text-base font-semibold tracking-tight">
                   <span className="bg-gradient-to-r from-teal-300 to-emerald-400 bg-clip-text text-transparent">
                     Notes
@@ -112,47 +91,17 @@ export default function NotesModal({
             </button>
           </div>
 
-          {/* Body */}
-          <div className="px-5 md:px-6 pt-5 pb-3">
-            <textarea
-              ref={taRef}
+          {/* Editor */}
+          <div className="px-5 md:px-6 pt-4 pb-4">
+            <RichNotesEditor
               value={value}
-              onChange={(e) => setValue(e.target.value)}
-              rows={10}
-              spellCheck
-              className="w-full p-3.5 rounded-xl bg-white/[0.03] border border-white/10 focus:border-teal-500/30 focus:outline-none focus:ring-2 focus:ring-teal-500/10 text-[14px] text-white/90 placeholder:text-white/30 resize-none leading-relaxed transition"
-              placeholder={`What did you see? What did you miss?\n\nWhat would you do differently next time?`}
+              onChange={setValue}
+              className="min-h-[200px] max-h-[55vh]"
             />
-            <div className="mt-2 flex items-center justify-between text-[11px] text-white/35 tabular-nums">
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1">
-                  <kbd className="px-1.5 py-0.5 rounded border border-white/10 bg-white/[0.04] text-[10px] text-white/55 font-sans">
-                    {modKey}
-                  </kbd>
-                  <span className="text-white/30">+</span>
-                  <kbd className="px-1.5 py-0.5 rounded border border-white/10 bg-white/[0.04] text-[10px] text-white/55 font-sans">
-                    ↵
-                  </kbd>
-                  <span className="text-white/40 normal-case">to save</span>
-                </span>
-                <span className="text-white/15">·</span>
-                <span className="inline-flex items-center gap-1">
-                  <kbd className="px-1.5 py-0.5 rounded border border-white/10 bg-white/[0.04] text-[10px] text-white/55 font-sans">
-                    Esc
-                  </kbd>
-                  <span className="text-white/40">to cancel</span>
-                </span>
-              </div>
-              <div className="text-white/40">
-                {wordCount} word{wordCount === 1 ? "" : "s"} ·{" "}
-                {charCount.toLocaleString()} char
-                {charCount === 1 ? "" : "s"}
-              </div>
-            </div>
           </div>
 
           {/* Footer */}
-          <div className="px-5 md:px-6 pb-5 pt-2 flex items-center justify-between gap-2">
+          <div className="px-5 md:px-6 pb-5 pt-1 flex items-center justify-between gap-2">
             <div className="text-[11px] text-white/40">
               {dirty ? (
                 <span className="text-amber-300/80 inline-flex items-center gap-1.5">

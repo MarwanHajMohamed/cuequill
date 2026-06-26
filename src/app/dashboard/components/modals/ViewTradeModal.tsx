@@ -264,15 +264,35 @@ export default function ViewTradeModal({
             </div>
           )}
 
-          {/* Notes */}
+          {/* Notes - stored as HTML by the rich-text editor in
+              NotesModal. Rendered with dangerouslySetInnerHTML; the only
+              author is the trade's owner, so XSS risk is self-inflicted. */}
           {initialTrade.notes && (
             <div className="flex flex-col gap-1.5">
               <div className="text-[10px] tracking-wider text-white/40">
                 Notes
               </div>
-              <div className="text-sm text-white/80 bg-white/3 border border-white/5 rounded-md p-3 whitespace-pre-wrap">
-                {initialTrade.notes}
-              </div>
+              <div
+                className="notes-display text-sm text-white/80 bg-white/3 border border-white/5 rounded-md p-3 leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: initialTrade.notes }}
+              />
+              <style>{`
+                .notes-display h3 {
+                  font-size: 15px;
+                  font-weight: 600;
+                  margin: 0.5em 0 0.25em;
+                }
+                .notes-display ul,
+                .notes-display ol { padding-left: 1.4em; margin: 0.25em 0; }
+                .notes-display ul { list-style: disc; }
+                .notes-display ol { list-style: decimal; }
+                .notes-display img {
+                  max-width: 100%; height: auto; border-radius: 8px;
+                  margin: 0.5em 0; display: block;
+                }
+                .notes-display a { color: #5eead4; text-decoration: underline; }
+                .notes-display p { margin: 0.25em 0; }
+              `}</style>
             </div>
           )}
         </div>

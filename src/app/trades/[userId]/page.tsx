@@ -7,6 +7,7 @@ import { useTrades } from "@/hooks/useTrades";
 import { withAuth } from "@/lib/withAuth";
 import { useQueryClient } from "@tanstack/react-query";
 import React, { use, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import NotesModal from "../NotesModal";
 import ImportedTradesModal from "../ImportedTradesModal";
 import { useToast } from "@/hooks/useToast";
@@ -92,6 +93,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
   const toast = useToast();
   const today = new Date();
   const queryClient = useQueryClient();
+  const router = useRouter();
   const { userId } = use(params);
   const { data: trades, isLoading, isError } = useTrades(userId, simulated);
 
@@ -642,6 +644,10 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                   <table className="border-collapse table-auto min-w-full">
                     <thead>
                       <tr>
+                        {/* Fixed quick-edit column — sits outside the
+                            user-customisable column set so it can't be
+                            reordered or hidden. */}
+                        <th className="px-2 md:px-3 py-2 w-9" aria-label="Quick edit" />
                         {visibleColumns.map((key) => {
                           const isDragging = draggingKey === key;
                           const isDragOver =
@@ -722,12 +728,29 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                         {currentTrades?.map((trade, index) => (
                           <tr
                             key={index}
-                            className="text-xs md:text-[13.5px] border-t border-white/[0.06] hover:bg-white/[0.02] transition cursor-pointer"
-                            onClick={() => {
-                              setEditingTrade(trade);
-                              setIsModalOpen(true);
-                            }}
+                            className="group text-xs md:text-[13.5px] border-t border-white/[0.06] hover:bg-white/[0.02] transition cursor-pointer"
+                            onClick={() =>
+                              router.push(`/trades/${userId}/${trade._id}`)
+                            }
                           >
+                            {/* Pencil icon — quick-edit modal. Stops
+                                propagation so the row's row-click
+                                navigation doesn't fire. */}
+                            <td className="px-2 md:px-3 py-1 w-9 align-middle">
+                              <button
+                                type="button"
+                                aria-label="Quick edit"
+                                title="Quick edit"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingTrade(trade);
+                                  setIsModalOpen(true);
+                                }}
+                                className="w-7 h-7 rounded-md inline-flex items-center justify-center text-white/35 group-hover:text-white/65 hover:text-white hover:bg-white/[0.08] transition cursor-pointer"
+                              >
+                                <i className="fa-solid fa-pen text-[11px]" />
+                              </button>
+                            </td>
                             {visibleColumns.map((key) => (
                               <td
                                 key={key}
