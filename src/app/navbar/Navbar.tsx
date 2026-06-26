@@ -78,7 +78,12 @@ export default function Navbar() {
   // brand on the left and the nav items in the middle.
   const desktopBarRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<Record<string, HTMLElement | null>>({});
-  const [pill, setPill] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  const [pill, setPill] = useState<{
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  } | null>(null);
   const [pillReady, setPillReady] = useState(false);
 
   // Bottom tab bar - its own pill so the sliding indicator can move
@@ -185,7 +190,11 @@ export default function Navbar() {
       label: "Affirmations",
       slug: "affirmations",
     },
-    { icon: "fa-solid fa-bezier-curve", label: "Strategies", slug: "strategies" },
+    {
+      icon: "fa-solid fa-bezier-curve",
+      label: "Strategies",
+      slug: "strategies",
+    },
     { icon: "fa-solid fa-coins", label: "Stocks & ETFs", slug: "stocks" },
     {
       icon: "fa-regular fa-calendar-days",
@@ -474,7 +483,6 @@ export default function Navbar() {
 
         {/* -------- MOBILE NAV -------- */}
 
-
         {/* MOBILE TOP - no chrome. Just the brand mark on the left and
             the market-status pill on the right, floating over the page. */}
         <div className="md:hidden flex justify-between items-center w-full px-4 mt-3 pointer-events-none">
@@ -543,8 +551,6 @@ export default function Navbar() {
           )}
         </AnimatePresence>
 
-
-
         {/* -------- DESKTOP NAV -------- */}
         <div
           ref={desktopBarRef}
@@ -604,9 +610,7 @@ export default function Navbar() {
                     navigate(item.slug);
                   }}
                   className={`relative px-4 py-2 rounded-full cursor-pointer transition-colors ${
-                    active
-                      ? "text-white"
-                      : "text-white/60 hover:text-white"
+                    active ? "text-white" : "text-white/60 hover:text-white"
                   }`}
                 >
                   <span className="relative">{item.name}</span>
@@ -615,10 +619,7 @@ export default function Navbar() {
             })}
 
             {/* Guide dropdown */}
-            <div
-              ref={guideDropdownRef}
-              className="relative"
-            >
+            <div ref={guideDropdownRef} className="relative">
               <button
                 ref={(el) => {
                   itemRefs.current["__guide__"] = el;
@@ -743,7 +744,7 @@ export default function Navbar() {
                         }}
                       >
                         <i className="fa-solid fa-tag w-4 text-center text-white/60" />
-                        <span>plans &amp; pricing</span>
+                        <span>Plans &amp; Pricing</span>
                       </button>
                       <button
                         className="w-full flex items-center gap-3 px-3 py-2 text-left text-[13px] rounded-lg cursor-pointer text-white/80 hover:bg-white/5 hover:text-white transition"
@@ -755,25 +756,18 @@ export default function Navbar() {
                         <i className="fa-solid fa-gear w-4 text-center text-white/60" />
                         <span>Settings</span>
                       </button>
-                      <button
-                        className="w-full flex items-center gap-3 px-3 py-2 text-left text-[13px] rounded-lg cursor-pointer text-white/80 hover:bg-white/5 hover:text-white transition"
-                        onClick={() => signOut({ callbackUrl: "/" })}
-                      >
-                        <i className="fa-solid fa-right-from-bracket w-4 text-center text-white/60" />
-                        <span>Logout</span>
-                      </button>
                     </div>
 
                     <div className="p-3 border-t border-white/10 flex items-center justify-between">
                       <span className="text-[12px] text-white/60">
-                        appearance
+                        Appearance
                       </span>
                       <ThemeToggle />
                     </div>
 
                     <div className="p-3 border-t border-white/10 flex items-center justify-between">
                       <span className="text-[12px] text-white/60">
-                        simulated trading
+                        Simulated Trading
                       </span>
                       <label className="inline-flex items-center cursor-pointer">
                         <input
@@ -795,6 +789,16 @@ export default function Navbar() {
                         />
                       </label>
                     </div>
+
+                    <div className="p-1 border-t border-white/10">
+                      <button
+                        className="w-full flex items-center gap-3 px-3 py-2 text-left text-[13px] rounded-lg cursor-pointer text-white/80 hover:bg-white/5 hover:text-white transition"
+                        onClick={() => signOut({ callbackUrl: "/" })}
+                      >
+                        <i className="fa-solid fa-right-from-bracket w-4 text-center text-white/60" />
+                        <span>Logout</span>
+                      </button>
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -808,249 +812,249 @@ export default function Navbar() {
           another position:fixed (the inner one scrolls away with the
           page), so these render at the fragment root as their own
           fixed layers pinned to the viewport bottom. */}
-        {/* Glossy scroll-blend behind the mobile tab bar - mirror of the
+      {/* Glossy scroll-blend behind the mobile tab bar - mirror of the
             top scrim so content melts down into the floating bar. */}
-        <div
-          aria-hidden
-          className="md:hidden fixed bottom-0 inset-x-0 z-40 pointer-events-none"
-          style={{
-            height: "calc(env(safe-area-inset-bottom) + 100px)",
-            background:
-              "linear-gradient(to top, rgb(var(--bg-rgb)) 0%, rgb(var(--bg-rgb) / 0.55) 42%, rgb(var(--bg-rgb) / 0) 100%)",
-            backdropFilter: "blur(10px)",
-            WebkitBackdropFilter: "blur(10px)",
-            maskImage:
-              "linear-gradient(to top, black 0%, black 52%, transparent 100%)",
-            WebkitMaskImage:
-              "linear-gradient(to top, black 0%, black 52%, transparent 100%)",
-          }}
-        />
-        {/* "More" sheet backdrop */}
-        <div
-          onClick={() => setOpenMore(false)}
-          className={`md:hidden fixed inset-0 bg-black/70 z-40 transition-opacity duration-300 ${
-            openMore
-              ? "opacity-100 pointer-events-auto"
-              : "opacity-0 pointer-events-none"
-          }`}
-        />
+      <div
+        aria-hidden
+        className="md:hidden fixed bottom-0 inset-x-0 z-40 pointer-events-none"
+        style={{
+          height: "calc(env(safe-area-inset-bottom) + 100px)",
+          background:
+            "linear-gradient(to top, rgb(var(--bg-rgb)) 0%, rgb(var(--bg-rgb) / 0.55) 42%, rgb(var(--bg-rgb) / 0) 100%)",
+          backdropFilter: "blur(10px)",
+          WebkitBackdropFilter: "blur(10px)",
+          maskImage:
+            "linear-gradient(to top, black 0%, black 52%, transparent 100%)",
+          WebkitMaskImage:
+            "linear-gradient(to top, black 0%, black 52%, transparent 100%)",
+        }}
+      />
+      {/* "More" sheet backdrop */}
+      <div
+        onClick={() => setOpenMore(false)}
+        className={`md:hidden fixed inset-0 bg-black/70 z-40 transition-opacity duration-300 ${
+          openMore
+            ? "opacity-100 pointer-events-auto"
+            : "opacity-0 pointer-events-none"
+        }`}
+      />
 
-        {/* MOBILE BOTTOM TAB BAR - floating glass pill with a sliding
+      {/* MOBILE BOTTOM TAB BAR - floating glass pill with a sliding
             active indicator. */}
-        <nav
-          className="md:hidden fixed bottom-0 inset-x-0 z-50 flex justify-center pointer-events-none"
-          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      <nav
+        className="md:hidden fixed bottom-0 inset-x-0 z-50 flex justify-center pointer-events-none"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
+        <div
+          ref={bottomBarRef}
+          className="pointer-events-auto relative flex items-stretch w-[calc(100%-24px)] max-w-[440px] mx-3 mb-3 px-1.5 py-1 bg-white/[0.06] backdrop-blur-xl border border-white/15 rounded-full shadow-[0_8px_32px_var(--shadow)]"
         >
-          <div
-            ref={bottomBarRef}
-            className="pointer-events-auto relative flex items-stretch w-[calc(100%-24px)] max-w-[440px] mx-3 mb-3 px-1.5 py-1 bg-white/[0.06] backdrop-blur-xl border border-white/15 rounded-full shadow-[0_8px_32px_var(--shadow)]"
-          >
-            {/* Single sliding indicator pill - measured from each tab's
+          {/* Single sliding indicator pill - measured from each tab's
                 offsetLeft / width relative to the bar. Draggable: hold
                 and slide it across to another tab and it snaps + jumps
                 you there. */}
-            {bottomPill && activeBottomKey && (
-              <motion.span
-                aria-hidden
-                className="absolute top-1 bottom-1 rounded-full bg-white/15 backdrop-blur-md border border-white/25 shadow-[0_2px_10px_var(--shadow-soft)] cursor-grab active:cursor-grabbing"
-                style={{
-                  left: 0,
-                  x: pillX,
-                  width: pillWidth,
-                  touchAction: "pan-y",
-                }}
-                drag="x"
-                dragMomentum={false}
-                dragElastic={0.06}
-                dragConstraints={{
-                  left:
-                    Object.values(tabPositions).reduce(
-                      (min, p) => Math.min(min, p.x),
-                      Infinity,
-                    ) || 0,
-                  right:
-                    Object.values(tabPositions).reduce(
-                      (max, p) => Math.max(max, p.x),
-                      0,
-                    ) || 0,
-                }}
-                onDragEnd={handlePillDragEnd}
-              />
-            )}
-
-            {bottomTabs.map((tab) => {
-              const active = isActive(tab.slug);
-              return (
-                <Link
-                  key={tab.slug}
-                  ref={(el) => {
-                    bottomTabRefs.current[tab.slug] = el;
-                  }}
-                  href={hrefFor(tab.slug)}
-                  prefetch
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleNavClick(tab.slug);
-                  }}
-                  className="relative flex flex-col items-center justify-center flex-1 py-2 cursor-pointer"
-                >
-                  <i
-                    className={`relative ${tab.icon} text-[15px] transition-colors ${
-                      active ? "text-teal-300" : "text-white/55"
-                    }`}
-                  />
-                  <span
-                    className={`relative text-[10px] mt-0.5 transition-colors ${
-                      active ? "text-teal-300" : "text-white/55"
-                    }`}
-                  >
-                    {tab.label}
-                  </span>
-                </Link>
-              );
-            })}
-
-            <button
-              type="button"
-              ref={(el) => {
-                bottomTabRefs.current["__more__"] = el;
+          {bottomPill && activeBottomKey && (
+            <motion.span
+              aria-hidden
+              className="absolute top-1 bottom-1 rounded-full bg-white/15 backdrop-blur-md border border-white/25 shadow-[0_2px_10px_var(--shadow-soft)] cursor-grab active:cursor-grabbing"
+              style={{
+                left: 0,
+                x: pillX,
+                width: pillWidth,
+                touchAction: "pan-y",
               }}
-              onClick={() => setOpenMore((v) => !v)}
-              className="relative flex flex-col items-center justify-center flex-1 py-2 cursor-pointer"
-            >
-              <i
-                className={`relative fa-solid fa-ellipsis text-[15px] transition-colors ${
-                  activeBottomKey === "__more__"
-                    ? "text-teal-300"
-                    : "text-white/55"
-                }`}
-              />
-              <span
-                className={`relative text-[10px] mt-0.5 transition-colors ${
-                  activeBottomKey === "__more__"
-                    ? "text-teal-300"
-                    : "text-white/55"
-                }`}
+              drag="x"
+              dragMomentum={false}
+              dragElastic={0.06}
+              dragConstraints={{
+                left:
+                  Object.values(tabPositions).reduce(
+                    (min, p) => Math.min(min, p.x),
+                    Infinity,
+                  ) || 0,
+                right:
+                  Object.values(tabPositions).reduce(
+                    (max, p) => Math.max(max, p.x),
+                    0,
+                  ) || 0,
+              }}
+              onDragEnd={handlePillDragEnd}
+            />
+          )}
+
+          {bottomTabs.map((tab) => {
+            const active = isActive(tab.slug);
+            return (
+              <Link
+                key={tab.slug}
+                ref={(el) => {
+                  bottomTabRefs.current[tab.slug] = el;
+                }}
+                href={hrefFor(tab.slug)}
+                prefetch
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleNavClick(tab.slug);
+                }}
+                className="relative flex flex-col items-center justify-center flex-1 py-2 cursor-pointer"
               >
+                <i
+                  className={`relative ${tab.icon} text-[15px] transition-colors ${
+                    active ? "text-teal-300" : "text-white/55"
+                  }`}
+                />
+                <span
+                  className={`relative text-[10px] mt-0.5 transition-colors ${
+                    active ? "text-teal-300" : "text-white/55"
+                  }`}
+                >
+                  {tab.label}
+                </span>
+              </Link>
+            );
+          })}
+
+          <button
+            type="button"
+            ref={(el) => {
+              bottomTabRefs.current["__more__"] = el;
+            }}
+            onClick={() => setOpenMore((v) => !v)}
+            className="relative flex flex-col items-center justify-center flex-1 py-2 cursor-pointer"
+          >
+            <i
+              className={`relative fa-solid fa-ellipsis text-[15px] transition-colors ${
+                activeBottomKey === "__more__"
+                  ? "text-teal-300"
+                  : "text-white/55"
+              }`}
+            />
+            <span
+              className={`relative text-[10px] mt-0.5 transition-colors ${
+                activeBottomKey === "__more__"
+                  ? "text-teal-300"
+                  : "text-white/55"
+              }`}
+            >
+              more
+            </span>
+          </button>
+        </div>
+      </nav>
+
+      {/* MOBILE "More" BOTTOM SHEET */}
+      <AnimatePresence>
+        {openMore && (
+          <motion.div
+            key="more-sheet"
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ type: "spring", stiffness: 380, damping: 36 }}
+            className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-[var(--surface-2)] border-t border-white/10 rounded-t-3xl shadow-[0_-12px_40px_var(--shadow)]"
+            style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+          >
+            {/* Grab handle */}
+            <div className="flex justify-center pt-2">
+              <span className="w-10 h-1 rounded-full bg-white/20" />
+            </div>
+
+            <div className="px-4 pt-3 pb-4 flex items-center justify-between">
+              <span className="text-[11px] tracking-[0.1em] text-white/40 font-medium">
                 more
               </span>
-            </button>
-          </div>
-        </nav>
+              <button
+                aria-label="close"
+                onClick={() => setOpenMore(false)}
+                className="w-8 h-8 rounded-full hover:bg-white/5 flex items-center justify-center text-white/60 hover:text-white transition"
+              >
+                <i className="fa-solid fa-xmark text-[13px]" />
+              </button>
+            </div>
 
-        {/* MOBILE "More" BOTTOM SHEET */}
-        <AnimatePresence>
-          {openMore && (
-            <motion.div
-              key="more-sheet"
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", stiffness: 380, damping: 36 }}
-              className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-[var(--surface-2)] border-t border-white/10 rounded-t-3xl shadow-[0_-12px_40px_var(--shadow)]"
-              style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-            >
-              {/* Grab handle */}
-              <div className="flex justify-center pt-2">
-                <span className="w-10 h-1 rounded-full bg-white/20" />
-              </div>
-
-              <div className="px-4 pt-3 pb-4 flex items-center justify-between">
-                <span className="text-[11px] tracking-[0.1em] text-white/40 font-medium">
-                  more
-                </span>
-                <button
-                  aria-label="close"
-                  onClick={() => setOpenMore(false)}
-                  className="w-8 h-8 rounded-full hover:bg-white/5 flex items-center justify-center text-white/60 hover:text-white transition"
-                >
-                  <i className="fa-solid fa-xmark text-[13px]" />
-                </button>
-              </div>
-
-              <div className="px-3 pb-3 grid grid-cols-1 gap-1">
-                {moreItems.map((item) => {
-                  const active = isActive(item.slug);
-                  return (
-                    <Link
-                      key={item.slug}
-                      href={hrefFor(item.slug)}
-                      prefetch
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleNavClick(item.slug);
-                      }}
-                      className={`flex items-center gap-4 px-4 py-3 rounded-xl transition ${
-                        active
-                          ? "bg-teal-500/10 text-white"
-                          : "text-white/80 hover:bg-white/5"
-                      }`}
-                    >
-                      <i
-                        className={`${item.icon} w-5 text-center text-[15px] ${active ? "text-teal-300" : "text-white/55"}`}
-                      />
-                      <span className="text-[14px] font-medium">
-                        {item.label}
-                      </span>
-                    </Link>
-                  );
-                })}
-              </div>
-
-              <div className="mx-4 mb-3 p-3 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-between">
-                <div className="flex flex-col">
-                  <span className="text-[13px] text-white/85 font-medium">
-                    appearance
-                  </span>
-                  <span className="text-[11px] text-white/45">
-                    light or dark theme
-                  </span>
-                </div>
-                <ThemeToggle />
-              </div>
-
-              <div className="mx-4 mb-3 p-3 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-between">
-                <div className="flex flex-col">
-                  <span className="text-[13px] text-white/85 font-medium">
-                    simulated trading
-                  </span>
-                  <span className="text-[11px] text-white/45">
-                    use paper-trade data
-                  </span>
-                </div>
-                <label className="inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={simulated}
-                    onChange={(e) => {
-                      setSimulated(e.target.checked);
-                      window.location.reload();
+            <div className="px-3 pb-3 grid grid-cols-1 gap-1">
+              {moreItems.map((item) => {
+                const active = isActive(item.slug);
+                return (
+                  <Link
+                    key={item.slug}
+                    href={hrefFor(item.slug)}
+                    prefetch
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleNavClick(item.slug);
                     }}
-                    className="sr-only peer"
-                  />
-                  <div
-                    className="relative w-10 h-5 bg-white/10 rounded-full peer
+                    className={`flex items-center gap-4 px-4 py-3 rounded-xl transition ${
+                      active
+                        ? "bg-teal-500/10 text-white"
+                        : "text-white/80 hover:bg-white/5"
+                    }`}
+                  >
+                    <i
+                      className={`${item.icon} w-5 text-center text-[15px] ${active ? "text-teal-300" : "text-white/55"}`}
+                    />
+                    <span className="text-[14px] font-medium">
+                      {item.label}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+
+            <div className="mx-4 mb-3 p-3 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-between">
+              <div className="flex flex-col">
+                <span className="text-[13px] text-white/85 font-medium">
+                  appearance
+                </span>
+                <span className="text-[11px] text-white/45">
+                  light or dark theme
+                </span>
+              </div>
+              <ThemeToggle />
+            </div>
+
+            <div className="mx-4 mb-3 p-3 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-between">
+              <div className="flex flex-col">
+                <span className="text-[13px] text-white/85 font-medium">
+                  simulated trading
+                </span>
+                <span className="text-[11px] text-white/45">
+                  use paper-trade data
+                </span>
+              </div>
+              <label className="inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={simulated}
+                  onChange={(e) => {
+                    setSimulated(e.target.checked);
+                    window.location.reload();
+                  }}
+                  className="sr-only peer"
+                />
+                <div
+                  className="relative w-10 h-5 bg-white/10 rounded-full peer
                       peer-checked:after:translate-x-full
                       after:content-[''] after:absolute after:top-[2px]
                       after:start-[2px] after:bg-white after:rounded-full
                       after:h-4 after:w-4 after:transition-all
                       peer-checked:bg-teal-500"
-                  />
-                </label>
-              </div>
+                />
+              </label>
+            </div>
 
-              <div className="px-3 pb-4">
-                <button
-                  onClick={() => signOut({ callbackUrl: "/" })}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-red-500/10 text-red-300 border border-red-500/25 hover:bg-red-500/20 transition text-[13px] font-medium"
-                >
-                  <i className="fa-solid fa-right-from-bracket text-[12px]" />
-                  logout
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            <div className="px-3 pb-4">
+              <button
+                onClick={() => signOut({ callbackUrl: "/" })}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-red-500/10 text-red-300 border border-red-500/25 hover:bg-red-500/20 transition text-[13px] font-medium"
+              >
+                <i className="fa-solid fa-right-from-bracket text-[12px]" />
+                logout
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }
