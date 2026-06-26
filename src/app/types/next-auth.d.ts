@@ -30,5 +30,8 @@ declare module "next-auth/jwt" {
     email: string;
     timezone: string;
     isPro: boolean;
+    // Epoch ms of the last DB read of isPro; drives the TTL-bounded
+    // refresh in the jwt callback.
+    proCheckedAt?: number;
   }
 }
