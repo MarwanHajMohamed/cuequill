@@ -83,8 +83,7 @@ export default function TradeCalendar({ userId }: { userId: string }) {
     if (!trades) return map;
     for (const t of trades) {
       const isClosed = t.status === "WIN" || t.status === "LOSS";
-      const dateStr =
-        isClosed && t.dateClosed ? t.dateClosed : t.dateBought;
+      const dateStr = isClosed && t.dateClosed ? t.dateClosed : t.dateBought;
       const d = new Date(dateStr);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
       const prev = map.get(key) ?? {
@@ -157,8 +156,7 @@ export default function TradeCalendar({ userId }: { userId: string }) {
   const handleDateClick = (date: Date) => {
     setSelectedDate(date);
     const dayStr = format(date, "yyyy-MM-dd");
-    const dayTrades =
-      trades?.filter((t) => bucketDateFor(t) === dayStr) ?? [];
+    const dayTrades = trades?.filter((t) => bucketDateFor(t) === dayStr) ?? [];
     if (dayTrades.length > 0) {
       setDayListOpen(true);
     } else {
@@ -189,13 +187,7 @@ export default function TradeCalendar({ userId }: { userId: string }) {
     };
   };
 
-  const renderTileContent = ({
-    date,
-    view,
-  }: {
-    date: Date;
-    view: string;
-  }) => {
+  const renderTileContent = ({ date, view }: { date: Date; view: string }) => {
     // Year drill-up view: each tile is a month - show monthly P/L + count.
     if (view === "year") {
       const { total, closedCount, netPL } = getMonthSummary(date);
@@ -350,17 +342,7 @@ export default function TradeCalendar({ userId }: { userId: string }) {
   return (
     <>
       <div className="w-full max-w-[1100px] mx-auto px-5 md:px-10 flex flex-col gap-4 md:gap-6">
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="md:text-xl text-sm font-bold">Calendar</h2>
-          <button
-            onClick={() => router.push("/calendar")}
-            className="text-xs text-white/60 hover:text-white flex items-center gap-1 transition cursor-pointer"
-            aria-label="Open full calendar"
-          >
-            Full view
-            <i className="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
-          </button>
-        </div>
+        <div className="flex items-center justify-between gap-2"></div>
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-5">
           <AnimatedCalendar
             onChange={(val) => handleDateClick(val as Date)}

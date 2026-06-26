@@ -156,14 +156,12 @@ function OpenPositions({
                         {t.symbol}
                       </span>
                       <span className="text-xs text-white/40">
-                        ${t.strike} · ×{t.qty}
+                        ${t.strike} ×{t.qty}
                       </span>
                     </div>
                     <div className="text-[11px] text-white/40">
-                      Held {heldDays}d
                       {daysToExpiry !== null && (
                         <>
-                          {" · "}
                           <span
                             className={
                               expirySoon
@@ -234,11 +232,6 @@ function RecentCloses({
                     <div className="flex items-baseline gap-2">
                       <span className="text-sm md:text-base font-medium text-white truncate">
                         {t.symbol}
-                      </span>
-                      <span className="text-[10px] text-white/40 truncate">
-                        {t.strategy && t.strategy !== "All"
-                          ? t.strategy
-                          : t.option}
                       </span>
                     </div>
                     <div className="text-[11px] text-white/40">
