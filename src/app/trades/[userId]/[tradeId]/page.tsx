@@ -183,7 +183,7 @@ function TradeDetailPage() {
           href={`/trades/${userId}`}
           className="mt-4 inline-flex items-center gap-1.5 text-[13px] text-white/65 hover:text-white"
         >
-          <i className="fa-solid fa-arrow-left text-[11px]" />
+          <i className="fa-solid fa-chevron-left text-[11px]" />
           Back to trades
         </Link>
       </div>
@@ -195,72 +195,32 @@ function TradeDetailPage() {
 
   return (
     <div className="w-full max-w-[1500px] mx-auto px-4 md:px-8 pt-20 pb-6 flex flex-col gap-4 md:h-[100dvh]">
-      {/* Page header */}
-      <div className="flex items-center justify-between gap-3 flex-wrap shrink-0">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <Link
-            href={`/trades/${userId}`}
-            className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-white/10 bg-white/[0.03] text-white/65 hover:text-white hover:bg-white/[0.06] transition cursor-pointer"
-            aria-label="Back to trades"
-          >
-            <i className="fa-solid fa-arrow-left text-[12px]" />
-          </Link>
-          <div className="flex items-baseline gap-2 min-w-0">
-            <h1 className="text-xl md:text-2xl font-semibold tracking-tight truncate">
-              {form.symbol || "Trade"}
-            </h1>
-            <span
-              className={`text-[10.5px] uppercase tracking-[0.1em] font-semibold px-2 py-0.5 rounded-full border ${
-                form.option === "CALL"
-                  ? "bg-green-500/10 text-green-300 border-green-500/25"
-                  : "bg-red-500/10 text-red-300 border-red-500/25"
-              }`}
-            >
-              {form.option}
-            </span>
-            {form.simulated && (
-              <span className="text-[10.5px] tracking-[0.1em] font-medium px-2 py-0.5 rounded-full border border-orange-500/25 text-orange-300 bg-orange-500/10">
-                Simulated
-              </span>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setDelConfirm(true)}
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full border border-red-500/25 bg-red-500/[0.08] text-red-300 hover:bg-red-500/15 transition text-[12.5px] font-medium cursor-pointer"
-          >
-            <i className="fa-solid fa-trash text-[11px]" />
-            Delete
-          </button>
-          <Link
-            href={`/trades/${userId}`}
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[12.5px] font-medium cursor-pointer"
-          >
-            Cancel
-          </Link>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={!dirty || saving}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border transition text-[12.5px] font-medium ${
-              dirty && !saving
-                ? "bg-teal-500/15 text-teal-300 border-teal-500/30 hover:bg-teal-500/25 cursor-pointer"
-                : "bg-white/[0.02] text-white/30 border-white/10 cursor-not-allowed"
-            }`}
-          >
-            <i className="fa-solid fa-check text-[11px]" />
-            {saving ? "Saving…" : dirty ? "Save changes" : "Saved"}
-          </button>
-        </div>
-      </div>
-
       {/* One container — trade fields on the left, the wider notes
           editor on the right, filling the viewport height. */}
       <div className="md:flex-1 md:min-h-0 grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1.7fr)] rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md shadow-[0_2px_24px_var(--shadow-soft)] overflow-hidden">
         {/* LEFT — Trade fields */}
         <div className="md:overflow-y-auto p-5 md:p-6 flex flex-col gap-5 border-b md:border-b-0 md:border-r border-white/10">
+          {/* Top row — back chevron + symbol input */}
+          <div className="flex items-center gap-2.5">
+            <Link
+              href={`/trades/${userId}`}
+              aria-label="Back to trades"
+              className="shrink-0 inline-flex items-center justify-center text-white/55 hover:text-white transition cursor-pointer"
+            >
+              <i className="fa-solid fa-chevron-left text-[15px]" />
+            </Link>
+            <input
+              type="text"
+              value={form.symbol}
+              onChange={(e) => setField("symbol", e.target.value.toUpperCase())}
+              placeholder="e.g. SPY"
+              autoCapitalize="characters"
+              autoCorrect="off"
+              spellCheck={false}
+              className="flex-1 min-w-0 p-2 text-base font-semibold text-white bg-white/[0.03] rounded border border-white/10 focus:border-white/30 focus:outline-none uppercase placeholder:normal-case placeholder:font-normal placeholder:text-white/30"
+            />
+          </div>
+
           {/* Direction + status */}
           <div className="flex flex-col gap-2">
             <Label>Direction</Label>
@@ -320,22 +280,6 @@ function TradeDetailPage() {
               })}
             </div>
           </div>
-
-          {/* Symbol */}
-          <FieldGroup label="Symbol" required>
-            <input
-              type="text"
-              value={form.symbol}
-              onChange={(e) =>
-                setField("symbol", e.target.value.toUpperCase())
-              }
-              placeholder="e.g. SPY"
-              autoCapitalize="characters"
-              autoCorrect="off"
-              spellCheck={false}
-              className="w-full p-2 text-base text-white bg-white/[0.03] rounded border border-white/10 focus:border-white/30 focus:outline-none uppercase placeholder:normal-case placeholder:text-white/30"
-            />
-          </FieldGroup>
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <FieldGroup label="Contract" required>
@@ -447,6 +391,39 @@ function TradeDetailPage() {
               Mark as simulated
             </span>
           </label>
+
+          {/* Actions — pinned to the bottom of the left panel */}
+          <div className="mt-auto md:sticky md:bottom-0 -mx-5 md:-mx-6 -mb-5 md:-mb-6 px-5 md:px-6 py-3 flex items-center justify-between gap-2 border-t border-white/10 bg-[var(--surface)]/95 backdrop-blur-md">
+            <button
+              type="button"
+              onClick={() => setDelConfirm(true)}
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full border border-red-500/25 bg-red-500/[0.08] text-red-300 hover:bg-red-500/15 transition text-[12.5px] font-medium cursor-pointer"
+            >
+              <i className="fa-solid fa-trash text-[11px]" />
+              Delete
+            </button>
+            <div className="flex items-center gap-2">
+              <Link
+                href={`/trades/${userId}`}
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[12.5px] font-medium cursor-pointer"
+              >
+                Cancel
+              </Link>
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={!dirty || saving}
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border transition text-[12.5px] font-medium ${
+                  dirty && !saving
+                    ? "bg-teal-500/15 text-teal-300 border-teal-500/30 hover:bg-teal-500/25 cursor-pointer"
+                    : "bg-white/[0.02] text-white/30 border-white/10 cursor-not-allowed"
+                }`}
+              >
+                <i className="fa-solid fa-check text-[11px]" />
+                {saving ? "Saving…" : dirty ? "Save changes" : "Saved"}
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* RIGHT — Notes editor (wider than the fields) */}
