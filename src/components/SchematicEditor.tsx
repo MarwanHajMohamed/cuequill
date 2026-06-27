@@ -225,15 +225,20 @@ export default function SchematicEditor({ value, onChange }: Props) {
         ))}
       </div>
 
-      {/* Canvas */}
-      <div className="rounded-xl border border-white/10 bg-[#0c0c11] overflow-hidden">
+      {/* Canvas. The scene is landscape (800×480), so on a portrait
+          phone the only way to show it larger than the screen width is
+          to render it wider and let the wrapper scroll horizontally.
+          On md+ it just fits the column. touchAction:pan-x lets a
+          horizontal swipe pan the oversized canvas; vertical drags
+          still move elements. */}
+      <div className="rounded-xl border border-white/10 bg-[#0c0c11] overflow-x-auto md:overflow-hidden">
         <svg
           ref={svgRef}
           viewBox={`0 0 ${value.width} ${value.height}`}
-          className="w-full h-auto block select-none"
+          className="h-auto block select-none w-[170%] min-w-[560px] max-w-none md:w-full md:min-w-0"
           style={{
             cursor: tool === "select" ? "default" : "crosshair",
-            touchAction: "none",
+            touchAction: "pan-x",
           }}
         >
           {/* Grid background */}
