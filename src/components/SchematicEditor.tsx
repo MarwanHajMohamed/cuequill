@@ -544,9 +544,10 @@ export default function SchematicEditor({ value, onChange }: Props) {
   // Document-level move/up so we don't lose the drag if the cursor
   // leaves the element.
   useEffect(() => {
-    const onMove = (e: MouseEvent) => {
+    const onMove = (e: PointerEvent) => {
       // Marquee selection in progress: just track the rectangle.
       if (marquee.current) {
+        e.preventDefault();
         const { x, y } = toSvg(e.clientX, e.clientY);
         marquee.current.x1 = x;
         marquee.current.y1 = y;
@@ -556,6 +557,7 @@ export default function SchematicEditor({ value, onChange }: Props) {
 
       const d = drag.current;
       if (!d) return;
+      e.preventDefault();
       const { x, y } = toSvg(e.clientX, e.clientY);
       const dx = x - d.startX;
       const dy = y - d.startY;
@@ -657,11 +659,13 @@ export default function SchematicEditor({ value, onChange }: Props) {
         forceRender();
       }
     };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
+    window.addEventListener("pointermove", onMove, { passive: false });
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
     return () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
     };
   }, [toSvg, updateElement, onChange]);
 
@@ -761,7 +765,7 @@ export default function SchematicEditor({ value, onChange }: Props) {
   // A mousedown inside the menu is ignored so item clicks still fire.
   useEffect(() => {
     if (!menu) return;
-    const onDown = (e: MouseEvent) => {
+    const onDown = (e: PointerEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setMenu(null);
       }
@@ -770,20 +774,21 @@ export default function SchematicEditor({ value, onChange }: Props) {
       if (e.key === "Escape") setMenu(null);
     };
     const onScroll = () => setMenu(null);
-    window.addEventListener("mousedown", onDown);
+    window.addEventListener("pointerdown", onDown);
     window.addEventListener("keydown", onEsc);
     window.addEventListener("scroll", onScroll, true);
     return () => {
-      window.removeEventListener("mousedown", onDown);
+      window.removeEventListener("pointerdown", onDown);
       window.removeEventListener("keydown", onEsc);
       window.removeEventListener("scroll", onScroll, true);
     };
   }, [menu]);
 
   return (
-    <div className="grid grid-cols-[40px_minmax(0,1fr)_220px] gap-3 rounded-2xl border border-white/10 bg-white/[0.02] p-3">
-      {/* Tool palette */}
-      <div className="flex flex-col items-center gap-1.5">
+    <div className="flex flex-col md:grid md:grid-cols-[40px_minmax(0,1fr)_220px] gap-3 rounded-2xl border border-white/10 bg-white/[0.02] p-3">
+      {/* Tool palette — horizontal scroll strip on mobile, vertical
+          column on md+. */}
+      <div className="flex flex-row md:flex-col items-center gap-1.5 overflow-x-auto md:overflow-visible -mx-1 px-1 md:mx-0 md:px-0">
         {TOOLS.map((t) => (
           <button
             key={t.id}
@@ -791,7 +796,7 @@ export default function SchematicEditor({ value, onChange }: Props) {
             aria-label={t.label}
             title={t.label}
             onClick={() => setTool(t.id)}
-            className={`w-8 h-8 rounded-lg border flex items-center justify-center transition cursor-pointer ${
+            className={`shrink-0 w-8 h-8 rounded-lg border flex items-center justify-center transition cursor-pointer ${
               tool === t.id
                 ? "border-teal-500/40 bg-teal-500/15 text-teal-300"
                 : "border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white"
@@ -805,7 +810,7 @@ export default function SchematicEditor({ value, onChange }: Props) {
           </button>
         ))}
 
-        <div className="w-6 h-px bg-white/10 my-1" />
+        <div className="shrink-0 h-6 w-px md:w-6 md:h-px bg-white/10 mx-1 md:my-1 md:mx-0" />
 
         <HistoryButton
           icon="fa-rotate-left"
@@ -821,13 +826,20 @@ export default function SchematicEditor({ value, onChange }: Props) {
         />
       </div>
 
-      {/* Canvas */}
-      <div className="relative rounded-xl border border-white/10 bg-[#0c0c11] overflow-hidden">
+      {/* Canvas. The scene is landscape, so on a portrait phone we
+          render it wider than the screen and let the wrapper scroll
+          horizontally — touchAction:pan-x pans the oversized canvas
+          while vertical drags still move elements. On md+ it fits the
+          column. */}
+      <div className="relative rounded-xl border border-white/10 bg-[#0c0c11] overflow-x-auto md:overflow-hidden">
         <svg
           ref={svgRef}
           viewBox={`0 0 ${value.width} ${value.height}`}
-          className="w-full h-auto block select-none"
-          style={{ cursor: tool === "select" ? "default" : "crosshair" }}
+          className="h-auto block select-none w-[170%] min-w-[560px] max-w-none md:w-full md:min-w-0"
+          style={{
+            cursor: tool === "select" ? "default" : "crosshair",
+            touchAction: "pan-x",
+          }}
         >
           {/* Grid background */}
           <defs>
@@ -862,7 +874,7 @@ export default function SchematicEditor({ value, onChange }: Props) {
             width={value.width}
             height={value.height}
             fill="url(#grid)"
-            onMouseDown={handleBackgroundDown}
+            onPointerDown={handleBackgroundDown}
             onContextMenu={(e) => openMenu(e, null)}
           />
 
@@ -879,7 +891,7 @@ export default function SchematicEditor({ value, onChange }: Props) {
                       <SchematicEl
                         el={el}
                         selected={false}
-                        onMouseDown={() => {}}
+                        onPointerDown={() => {}}
                       />
                     </g>
                   ) : null,
@@ -892,7 +904,7 @@ export default function SchematicEditor({ value, onChange }: Props) {
                   selected={selectedSet.has(el.id)}
                   // Resize handles only make sense for a single selection.
                   resizable={single?.id === el.id}
-                  onMouseDown={(e) => handleElementDown(e, el)}
+                  onPointerDown={(e) => handleElementDown(e, el)}
                   onHandleDown={(e, handle) => handleHandleDown(e, el, handle)}
                   onContextMenu={(e) => openMenu(e, el.id)}
                 />
@@ -1170,7 +1182,7 @@ function SchematicEl({
   el,
   selected,
   resizable = false,
-  onMouseDown,
+  onPointerDown,
   onHandleDown,
   onContextMenu,
 }: {
@@ -1178,7 +1190,7 @@ function SchematicEl({
   selected: boolean;
   // Show resize handles (only the single-selected element in the editor).
   resizable?: boolean;
-  onMouseDown: (e: React.MouseEvent) => void;
+  onPointerDown: (e: React.MouseEvent) => void;
   // Provided only in the editor; previews omit it so no handles render.
   onHandleDown?: (e: React.MouseEvent, handle: ResizeHandle) => void;
   onContextMenu?: (e: React.MouseEvent) => void;
@@ -1203,7 +1215,7 @@ function SchematicEl({
       return (
         <g>
           <g
-            onMouseDown={onMouseDown}
+            onPointerDown={onPointerDown}
             onContextMenu={onContextMenu}
             style={{ cursor: "move" }}
           >
@@ -1269,7 +1281,7 @@ function SchematicEl({
       return (
         <g>
           <g
-            onMouseDown={onMouseDown}
+            onPointerDown={onPointerDown}
             onContextMenu={onContextMenu}
             style={{ cursor: "move" }}
           >
@@ -1305,7 +1317,7 @@ function SchematicEl({
       return (
         <g>
           <g
-            onMouseDown={onMouseDown}
+            onPointerDown={onPointerDown}
             onContextMenu={onContextMenu}
             style={{ cursor: "move", color }}
           >
@@ -1348,7 +1360,7 @@ function SchematicEl({
       return (
         <g>
           <g
-            onMouseDown={onMouseDown}
+            onPointerDown={onPointerDown}
             onContextMenu={onContextMenu}
             style={{ cursor: "move" }}
           >
@@ -1404,7 +1416,7 @@ function SchematicEl({
       return (
         <g>
           <g
-            onMouseDown={onMouseDown}
+            onPointerDown={onPointerDown}
             onContextMenu={onContextMenu}
             style={{ cursor: "move" }}
           >
@@ -1468,7 +1480,7 @@ function Handle({
       stroke="#14b8a6"
       strokeWidth={1.5}
       style={{ cursor }}
-      onMouseDown={onDown}
+      onPointerDown={onDown}
     />
   );
 }
@@ -1902,7 +1914,7 @@ function HistoryButton({
       title={label}
       disabled={disabled}
       onClick={onClick}
-      className={`w-8 h-8 rounded-lg border flex items-center justify-center transition ${
+      className={`shrink-0 w-8 h-8 rounded-lg border flex items-center justify-center transition ${
         disabled
           ? "border-white/5 bg-white/[0.02] text-white/25 cursor-not-allowed"
           : "border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white cursor-pointer"
@@ -1978,7 +1990,7 @@ export function SchematicPreview({
           key={el.id}
           el={el}
           selected={false}
-          onMouseDown={() => {}}
+          onPointerDown={() => {}}
         />
       ))}
     </svg>
@@ -2063,7 +2075,7 @@ export function SchematicPlayer({
               key={el.id}
               style={{ animation: "schemReveal 320ms ease-out both" }}
             >
-              <SchematicEl el={el} selected={false} onMouseDown={() => {}} />
+              <SchematicEl el={el} selected={false} onPointerDown={() => {}} />
             </g>
           ) : null,
         )}
