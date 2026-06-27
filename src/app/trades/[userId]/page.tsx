@@ -687,7 +687,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                                 setDragOverKey(null);
                                 setDraggingKey(null);
                               }}
-                              className={`${ci === 0 ? "pl-1 md:pl-1.5 pr-2 md:pr-4" : "px-2 md:px-4"} py-2 whitespace-nowrap w-full md:text-[11px] text-[10px] text-left tracking-[0.12em] font-medium cursor-grab active:cursor-grabbing select-none transition ${
+                              className={`${ci === 0 ? "pl-1 md:pl-1.5 pr-1.5 md:pr-2.5" : "px-1.5 md:px-2.5"} py-2 whitespace-nowrap md:text-[11px] text-[10px] text-left tracking-[0.04em] font-medium cursor-grab active:cursor-grabbing select-none transition ${
                                 isDragging
                                   ? "bg-white/[0.06] text-white"
                                   : isDragOver
@@ -754,7 +754,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                             {visibleColumns.map((key, ci) => (
                               <td
                                 key={key}
-                                className={`${ci === 0 ? "pl-1 md:pl-1.5 pr-2 md:pr-4" : "px-2 md:px-4"} py-1 whitespace-nowrap w-full transition ${
+                                className={`${ci === 0 ? "pl-1 md:pl-1.5 pr-1.5 md:pr-2.5" : "px-1.5 md:px-2.5"} py-1 whitespace-nowrap transition ${
                                   key === "notes" ? "text-center" : ""
                                 } ${
                                   draggingKey === key

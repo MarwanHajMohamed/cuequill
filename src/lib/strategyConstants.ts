@@ -17,7 +17,11 @@ export const SEED_STRATEGIES: {
   { name: "Bearish Gap Uptrend", direction: "CALL", timeframes: ["Daily"] },
   { name: "Hard Floor", direction: "CALL", timeframes: ["Daily"] },
   { name: "The First Uptrend Gap", direction: "CALL", timeframes: ["Daily"] },
-  { name: "First Red Opening Candle", direction: "PUT", timeframes: ["Hourly"] },
+  {
+    name: "First Red Opening Candle",
+    direction: "PUT",
+    timeframes: ["Hourly"],
+  },
   { name: "Gap Floor Break", direction: "PUT", timeframes: ["Daily"] },
   { name: "Model of 4 Steps", direction: "PUT", timeframes: ["Daily"] },
   { name: "Hanger in Daily", direction: "PUT", timeframes: ["Daily"] },
@@ -37,6 +41,13 @@ export interface SchematicElement {
   x2?: number;
   y2?: number;
   bull?: boolean;
+  // Candle wick lengths above (wickUp) and below (wickDown) the body.
+  // Omitted falls back to a default so legacy candles still render.
+  wickUp?: number;
+  wickDown?: number;
+  // Playback time (seconds) at which this element appears during the
+  // animation. Omitted falls back to an auto left-to-right sequence.
+  appearAt?: number;
   text?: string;
   color?: string;
   label?: string;

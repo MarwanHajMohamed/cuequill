@@ -63,7 +63,8 @@ function Page() {
         return;
       }
       await queryClient.invalidateQueries({ queryKey: ["strategies"] });
-      router.push(`/strategies/${data.strategy._id}`);
+      // Open a freshly created strategy straight in edit mode.
+      router.push(`/strategies/${data.strategy._id}?edit=1`);
     } finally {
       setCreating(false);
     }
@@ -96,8 +97,7 @@ function Page() {
           <div className="flex items-center gap-2">
             {!isPro && (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/[0.04] border border-white/10 text-[11px] text-white/65">
-                <i className="fa-solid fa-lock text-[9px] text-teal-300" />
-                {strategies.length} / {FREE_STRATEGY_LIMIT} on Free
+                {strategies.length} / {FREE_STRATEGY_LIMIT}
               </span>
             )}
           </div>

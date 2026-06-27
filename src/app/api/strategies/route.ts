@@ -2,11 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import connectDb from "@/lib/db";
-import Strategy, {
-  FREE_STRATEGY_LIMIT,
-  SEED_STRATEGIES,
-} from "@/lib/models/Strategy";
+import Strategy, { FREE_STRATEGY_LIMIT } from "@/lib/models/Strategy";
 import { User } from "@/lib/models/User";
+import { STRATEGY_SEED_CONTENT } from "@/lib/strategySeed";
 import mongoose from "mongoose";
 import { randomUUID } from "crypto";
 
@@ -18,27 +16,43 @@ async function requireAuth() {
   return { ok: true as const, userId: session.user.id };
 }
 
-// Seed the user's library with the legacy strategy names on first
-// access so brand-new accounts have something to pick from in the
-// trade strategy dropdown. Safe to call repeatedly — only runs when
-// the user has zero strategies.
-async function seedIfEmpty(userId: string) {
-  const count = await Strategy.countDocuments({ userId });
-  if (count > 0) return;
-  await Strategy.insertMany(
-    SEED_STRATEGIES.map((s) => ({
-      userId: new mongoose.Types.ObjectId(userId),
-      name: s.name,
-      direction: s.direction,
-      timeframes: s.timeframes,
-      description: "",
-      tags: [],
-      schematic: { width: 800, height: 480, elements: [] },
-    })),
-    { ordered: false },
-  ).catch(() => {
-    // Unique-index races between two parallel first-loads can land
-    // here; the next read still returns the seeded set.
+// Backfill the ported description + examples onto strategies that
+// predate this content (seeded before the migration). Idempotent: each
+// field is filled only when it's still empty, so user edits are never
+// clobbered. Matching is by name, the same key the seed dataset uses.
+async function backfillSeedContent(userId: string) {
+  const names = Object.keys(STRATEGY_SEED_CONTENT);
+  const stale = await Strategy.find({
+    userId,
+    name: { $in: names },
+    $or: [
+      { description: { $in: ["", null] } },
+      { examples: { $exists: false } },
+      { examples: { $size: 0 } },
+    ],
+  })
+    .select("_id name description examples")
+    .lean<
+      {
+        _id: mongoose.Types.ObjectId;
+        name: string;
+        description?: string;
+        examples?: unknown[];
+      }[]
+    >();
+  if (stale.length === 0) return;
+  const ops = stale.flatMap((s) => {
+    const seed = STRATEGY_SEED_CONTENT[s.name];
+    if (!seed) return [];
+    const set: Record<string, unknown> = {};
+    if (!s.description) set.description = seed.description;
+    if (!s.examples || s.examples.length === 0) set.examples = seed.examples;
+    if (Object.keys(set).length === 0) return [];
+    return [{ updateOne: { filter: { _id: s._id }, update: { $set: set } } }];
+  });
+  if (ops.length === 0) return;
+  await Strategy.bulkWrite(ops).catch(() => {
+    // Best-effort; a failed backfill just means the next read retries.
   });
 }
 
@@ -48,8 +62,15 @@ export async function GET() {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
   await connectDb();
-  await seedIfEmpty(auth.userId);
+  // Note: accounts start with an empty library — no default strategies
+  // are seeded. Existing seeded strategies still get their ported
+  // content backfilled below.
+  await backfillSeedContent(auth.userId);
+  // Exclude the heavy description (inline images) and examples from the
+  // list payload; they're only needed on the detail page, which fetches
+  // the full doc.
   const strategies = await Strategy.find({ userId: auth.userId })
+    .select("-description -examples")
     .sort({ direction: 1, name: 1 })
     .lean();
   return NextResponse.json({ strategies });
