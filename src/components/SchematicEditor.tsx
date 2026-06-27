@@ -123,9 +123,10 @@ export default function SchematicEditor({ value, onChange }: Props) {
     [onChange, value],
   );
 
-  // Background click: either drop a new element (when a non-select
-  // tool is active) or clear the selection.
-  const handleBackgroundDown = (e: React.MouseEvent<SVGRectElement>) => {
+  // Background press: either drop a new element (when a non-select
+  // tool is active) or clear the selection. Pointer events unify
+  // mouse, touch and pen so this works on phones too.
+  const handleBackgroundDown = (e: React.PointerEvent<SVGRectElement>) => {
     const { x, y } = toSvg(e.clientX, e.clientY);
     if (tool === "select") {
       setSelectedId(null);
@@ -135,8 +136,8 @@ export default function SchematicEditor({ value, onChange }: Props) {
     setTool("select");
   };
 
-  // Begin drag on element mouse-down.
-  const handleElementDown = (e: React.MouseEvent, el: SchematicElement) => {
+  // Begin drag on element press.
+  const handleElementDown = (e: React.PointerEvent, el: SchematicElement) => {
     e.stopPropagation();
     setSelectedId(el.id);
     const { x, y } = toSvg(e.clientX, e.clientY);
@@ -151,12 +152,15 @@ export default function SchematicEditor({ value, onChange }: Props) {
     };
   };
 
-  // Document-level move/up so we don't lose the drag if the cursor
-  // leaves the element.
+  // Document-level move/up so we don't lose the drag if the pointer
+  // leaves the element. Pointer events cover touch dragging; the SVG
+  // sets touch-action:none so the browser doesn't hijack the gesture
+  // for scrolling.
   useEffect(() => {
-    const onMove = (e: MouseEvent) => {
+    const onMove = (e: PointerEvent) => {
       const d = drag.current;
       if (!d) return;
+      e.preventDefault();
       const { x, y } = toSvg(e.clientX, e.clientY);
       const dx = x - d.startX;
       const dy = y - d.startY;
@@ -168,11 +172,13 @@ export default function SchematicEditor({ value, onChange }: Props) {
     const onUp = () => {
       drag.current = null;
     };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
+    window.addEventListener("pointermove", onMove, { passive: false });
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
     return () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
     };
   }, [toSvg, updateElement]);
 
@@ -194,9 +200,10 @@ export default function SchematicEditor({ value, onChange }: Props) {
   }, [selectedId, removeElement]);
 
   return (
-    <div className="grid grid-cols-[64px_minmax(0,1fr)_220px] gap-3 rounded-2xl border border-white/10 bg-white/[0.02] p-3">
-      {/* Tool palette */}
-      <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col md:grid md:grid-cols-[64px_minmax(0,1fr)_220px] gap-3 rounded-2xl border border-white/10 bg-white/[0.02] p-3">
+      {/* Tool palette — a horizontal scroll strip on mobile, a vertical
+          column on md+. */}
+      <div className="flex flex-row md:flex-col gap-1.5 overflow-x-auto md:overflow-visible -mx-1 px-1 md:mx-0 md:px-0">
         {TOOLS.map((t) => (
           <button
             key={t.id}
@@ -204,7 +211,7 @@ export default function SchematicEditor({ value, onChange }: Props) {
             aria-label={t.label}
             title={t.label}
             onClick={() => setTool(t.id)}
-            className={`h-11 rounded-xl border flex flex-col items-center justify-center gap-0.5 transition cursor-pointer ${
+            className={`shrink-0 w-14 md:w-auto h-11 rounded-xl border flex flex-col items-center justify-center gap-0.5 transition cursor-pointer ${
               tool === t.id
                 ? "border-teal-500/40 bg-teal-500/15 text-teal-300"
                 : "border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white"
@@ -224,7 +231,10 @@ export default function SchematicEditor({ value, onChange }: Props) {
           ref={svgRef}
           viewBox={`0 0 ${value.width} ${value.height}`}
           className="w-full h-auto block select-none"
-          style={{ cursor: tool === "select" ? "default" : "crosshair" }}
+          style={{
+            cursor: tool === "select" ? "default" : "crosshair",
+            touchAction: "none",
+          }}
         >
           {/* Grid background */}
           <defs>
@@ -259,7 +269,7 @@ export default function SchematicEditor({ value, onChange }: Props) {
             width={value.width}
             height={value.height}
             fill="url(#grid)"
-            onMouseDown={handleBackgroundDown}
+            onPointerDown={handleBackgroundDown}
           />
 
           {value.elements.map((el) => (
@@ -267,7 +277,7 @@ export default function SchematicEditor({ value, onChange }: Props) {
               key={el.id}
               el={el}
               selected={el.id === selectedId}
-              onMouseDown={(e) => handleElementDown(e, el)}
+              onPointerDown={(e) => handleElementDown(e, el)}
             />
           ))}
         </svg>
@@ -298,11 +308,11 @@ export default function SchematicEditor({ value, onChange }: Props) {
 function SchematicEl({
   el,
   selected,
-  onMouseDown,
+  onPointerDown,
 }: {
   el: SchematicElement;
   selected: boolean;
-  onMouseDown: (e: React.MouseEvent) => void;
+  onPointerDown: (e: React.PointerEvent) => void;
 }) {
   const stroke = selected ? "#14b8a6" : "transparent";
   const sw = selected ? 2 : 0;
@@ -316,7 +326,7 @@ function SchematicEl({
       // Wick is a thin vertical line through the body; body is a
       // filled rect. Both pieces share the drag handler.
       return (
-        <g onMouseDown={onMouseDown} style={{ cursor: "move" }}>
+        <g onPointerDown={onPointerDown} style={{ cursor: "move" }}>
           <line
             x1={el.x + w / 2}
             y1={el.y - 12}
@@ -352,7 +362,7 @@ function SchematicEl({
     case "line": {
       const color = el.color ?? "#9ca3af";
       return (
-        <g onMouseDown={onMouseDown} style={{ cursor: "move" }}>
+        <g onPointerDown={onPointerDown} style={{ cursor: "move" }}>
           <line
             x1={el.x}
             y1={el.y}
@@ -385,7 +395,7 @@ function SchematicEl({
       const color = el.color ?? "#14b8a6";
       return (
         <g
-          onMouseDown={onMouseDown}
+          onPointerDown={onPointerDown}
           style={{ cursor: "move", color }}
         >
           <line
@@ -421,7 +431,7 @@ function SchematicEl({
       const w = el.w ?? 160;
       const h = el.h ?? 60;
       return (
-        <g onMouseDown={onMouseDown} style={{ cursor: "move" }}>
+        <g onPointerDown={onPointerDown} style={{ cursor: "move" }}>
           <rect
             x={el.x}
             y={el.y}
@@ -457,7 +467,7 @@ function SchematicEl({
     }
     case "text":
       return (
-        <g onMouseDown={onMouseDown} style={{ cursor: "move" }}>
+        <g onPointerDown={onPointerDown} style={{ cursor: "move" }}>
           <text
             x={el.x}
             y={el.y}
@@ -713,7 +723,7 @@ export function SchematicPreview({
         fill="#0c0c11"
       />
       {schematic.elements.map((el) => (
-        <SchematicEl key={el.id} el={el} selected={false} onMouseDown={() => {}} />
+        <SchematicEl key={el.id} el={el} selected={false} onPointerDown={() => {}} />
       ))}
     </svg>
   );
