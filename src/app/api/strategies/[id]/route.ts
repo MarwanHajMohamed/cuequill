@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import connectDb from "@/lib/db";
 import Strategy from "@/lib/models/Strategy";
 import mongoose from "mongoose";
+import { randomUUID } from "crypto";
 
 async function requireAuth() {
   const session = await getServerSession(authOptions);
@@ -56,7 +57,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (typeof body.name === "string") {
     const n = body.name.trim();
     if (!n) {
-      return NextResponse.json({ error: "Name cannot be empty" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Name cannot be empty" },
+        { status: 400 },
+      );
     }
     patch.name = n;
   }
@@ -74,6 +78,22 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   }
   if (body.schematic && typeof body.schematic === "object") {
     patch.schematic = body.schematic;
+  }
+  if (Array.isArray(body.examples)) {
+    // Keep only well-formed example entries.
+    patch.examples = (body.examples as unknown[])
+      .filter((e): e is Record<string, unknown> => !!e && typeof e === "object")
+      .filter(
+        (e) =>
+          typeof e.src === "string" &&
+          (e.outcome === "Successful" || e.outcome === "Unsuccessful"),
+      )
+      .map((e) => ({
+        id: typeof e.id === "string" ? e.id : randomUUID(),
+        src: e.src as string,
+        outcome: e.outcome as "Successful" | "Unsuccessful",
+        ...(typeof e.caption === "string" ? { caption: e.caption } : {}),
+      }));
   }
 
   if (Object.keys(patch).length === 0) {

@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import React, { useEffect, useMemo, useState } from "react";
 import { GroupBase, InputProps, components } from "react-select";
 import TimezoneSelect, { type ITimezone } from "react-timezone-select";
+import ProTag from "@/components/ProTag";
 
 const Field = ({
   label,
@@ -187,9 +188,11 @@ const Account = () => {
     <form onSubmit={handleSave} className="p-5 md:p-7 flex flex-col gap-7">
       {/* Identity */}
       <section className="flex flex-col gap-4">
-        <div className="text-[11px] tracking-[0.1em] text-teal-400/80 font-medium">
-          Identity
-        </div>
+        {session?.user?.isPro && (
+          <div>
+            <ProTag />
+          </div>
+        )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl">
           <Field label="First name">
             <input
@@ -225,9 +228,6 @@ const Account = () => {
 
       {/* Password */}
       <section className="flex flex-col gap-4">
-        <div className="text-[11px] tracking-[0.1em] text-teal-400/80 font-medium">
-          Password
-        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl">
           <Field label="Current password">
             <input
@@ -267,9 +267,6 @@ const Account = () => {
 
       {/* Locale */}
       <section className="flex flex-col gap-4">
-        <div className="text-[11px] tracking-[0.1em] text-teal-400/80 font-medium">
-          Locale
-        </div>
         <Field
           label="Timezone"
           hint="Trades and the calendar use this for display."

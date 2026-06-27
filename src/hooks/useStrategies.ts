@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import type { SchematicElement } from "@/lib/strategyConstants";
+import type { StrategyExample } from "@/lib/strategySeed";
 
 export type StrategyDirection = "CALL" | "PUT";
 
@@ -20,6 +21,7 @@ export type StrategyDoc = {
   description: string;
   tags: string[];
   schematic: Schematic;
+  examples?: StrategyExample[];
   createdAt: string;
   updatedAt: string;
 };

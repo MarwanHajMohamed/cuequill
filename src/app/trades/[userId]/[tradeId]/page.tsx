@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import { format } from "date-fns";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
@@ -27,6 +28,17 @@ function fetchTrade(id: string): Promise<Trade> {
     if (!r.ok) throw new Error("Failed to fetch trade");
     return r.json();
   });
+}
+
+// Coerce a stored date into the `yyyy-MM-dd` a <DateField> expects.
+// Stored values arrive as ISO timestamps (local midnight persisted as
+// UTC), so slicing on "T" would read the UTC day and drift back one day
+// in zones ahead of UTC. Convert through the local zone instead — the
+// same thing the trades table does with toLocaleDateString — while
+// passing through values the user has already edited to plain dates.
+function toDateInput(value?: string): string {
+  if (!value) return "";
+  return value.includes("T") ? format(new Date(value), "yyyy-MM-dd") : value;
 }
 
 function TradeDetailPage() {
@@ -305,14 +317,14 @@ function TradeDetailPage() {
           <div className="grid grid-cols-2 gap-3">
             <FieldGroup label="Date bought" required>
               <DateField
-                value={form.dateBought?.split("T")[0] ?? ""}
+                value={toDateInput(form.dateBought)}
                 onChange={(v) => setField("dateBought", v)}
               />
             </FieldGroup>
             <FieldGroup label="Expiry" required>
               <DateField
-                value={form.expiryDate?.split("T")[0] ?? ""}
-                min={form.dateBought?.split("T")[0]}
+                value={toDateInput(form.expiryDate)}
+                min={toDateInput(form.dateBought)}
                 onChange={(v) => setField("expiryDate", v)}
               />
             </FieldGroup>
@@ -347,9 +359,9 @@ function TradeDetailPage() {
                 </FieldGroup>
                 <FieldGroup label="Date closed">
                   <DateField
-                    value={form.dateClosed?.split("T")[0] ?? ""}
-                    min={form.dateBought?.split("T")[0]}
-                    max={form.expiryDate?.split("T")[0]}
+                    value={toDateInput(form.dateClosed)}
+                    min={toDateInput(form.dateBought)}
+                    max={toDateInput(form.expiryDate)}
                     onChange={(v) => setField("dateClosed", v)}
                   />
                 </FieldGroup>

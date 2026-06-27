@@ -19,6 +19,7 @@ import {
 } from "framer-motion";
 import TimezoneDisplay from "@/helpers/TimezoneDisplay";
 import ThemeToggle from "@/components/ThemeToggle";
+import ProTag from "@/components/ProTag";
 import { isMarketOpenAt } from "@/lib/marketHolidays";
 
 const CuequillLogo = ({ className = "" }: { className?: string }) => (
@@ -721,11 +722,14 @@ export default function Navbar() {
                           {userInitial}
                         </div>
                         <div className="min-w-0 flex-1">
-                          {userFullName && (
-                            <div className="text-[13.5px] font-medium truncate leading-tight">
-                              {userFullName}
-                            </div>
-                          )}
+                          <div className="flex items-center gap-2 min-w-0">
+                            {userFullName && (
+                              <div className="text-[13.5px] font-medium truncate leading-tight">
+                                {userFullName}
+                              </div>
+                            )}
+                            {session.user.isPro && <ProTag className="shrink-0" />}
+                          </div>
                           {session.user.email && (
                             <div className="text-[11px] text-white/50 truncate leading-tight mt-0.5">
                               {session.user.email}
