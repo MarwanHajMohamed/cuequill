@@ -11,7 +11,7 @@ import { useTrades } from "@/hooks/useTrades";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useRouter } from "next/navigation";
-import { handleSaveTrade } from "@/handlers/tradeHandlers";
+import { handleSaveTrade, handleDeleteTrade } from "@/handlers/tradeHandlers";
 import { useFedDates } from "@/hooks/useFedDates";
 import { useMarketHolidays } from "@/hooks/useMarketHolidays";
 import AnimatedCalendar from "@/app/reusablecalendar/AnimatedCalendar";
@@ -385,6 +385,15 @@ export default function TradeCalendar({ userId }: { userId: string }) {
             }}
             onSave={(e) =>
               handleSaveTrade(e, userId, setIsModalOpen, queryClient)
+            }
+            onDelete={(tradeId) =>
+              handleDeleteTrade(
+                tradeId,
+                userId,
+                setIsModalOpen,
+                setEditingTrade,
+                queryClient,
+              )
             }
             initialTrade={editingTrade ?? undefined}
           />

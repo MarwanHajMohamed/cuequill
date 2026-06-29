@@ -178,7 +178,7 @@ export default function EditTradeModal({
       >
         <motion.div
           onClick={(e) => e.stopPropagation()}
-          className="relative flex flex-col bg-[var(--surface)] border border-white/10 rounded-2xl md:w-[90%] md:max-w-lg w-full max-h-full md:max-h-[90vh] overflow-hidden"
+          className="relative flex flex-col bg-[var(--surface)] border border-white/10 rounded-2xl md:w-[90%] md:max-w-lg w-full max-h-[88vh] md:max-h-[90vh] overflow-hidden"
           initial={{ opacity: 0, scale: 0.96, y: 16 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: 16 }}
@@ -186,7 +186,7 @@ export default function EditTradeModal({
         >
           {/* ── Hero header (fixed) ── */}
           <div
-            className={`relative shrink-0 px-5 md:px-6 pt-5 md:pt-6 pb-5 md:pb-6 border-b border-white/5 ${heroGradient}`}
+            className={`relative shrink-0 px-5 md:px-6 pt-4 md:pt-6 pb-4 md:pb-6 border-b border-white/5 ${heroGradient}`}
           >
             <button
               onClick={onClose}
@@ -208,7 +208,7 @@ export default function EditTradeModal({
                 direction selected, both buttons get the same red outline
                 so the missing choice is unambiguous. */}
             <div
-              className={`mt-4 grid grid-cols-2 gap-2 ${
+              className={`mt-3 md:mt-4 grid grid-cols-2 gap-2 ${
                 isInvalid("option")
                   ? "rounded-lg ring-2 ring-red-500/40 ring-offset-2 ring-offset-[var(--surface)] transition-shadow duration-150"
                   : ""
@@ -298,7 +298,7 @@ export default function EditTradeModal({
           </div>
 
           {/* ── Body (scrollable, takes remaining space) ── */}
-          <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-5 px-5 md:px-6 py-5 md:py-6">
+          <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-3.5 md:gap-5 px-5 md:px-6 py-4 md:py-6">
             {/* Symbol */}
             <Field label="Symbol" required>
               <input
