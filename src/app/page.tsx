@@ -920,6 +920,40 @@ function QuillAIPreview() {
     },
     {
       kind: "typing-user",
+      text: "Compare my Hard Floor win rate before vs after 11am ET.",
+      durMs: 2000,
+    },
+    {
+      kind: "sent-user",
+      text: "Compare my Hard Floor win rate before vs after 11am ET.",
+      durMs: 350,
+    },
+    { kind: "thinking", durMs: 1100 },
+    {
+      kind: "ai-answer",
+      text:
+        "Before 11am: 62% over 21 trades, +$34/trade. After 11am: 38% over 16, −$21/trade. The edge is all in the first 90 minutes.",
+      durMs: 2900,
+    },
+    {
+      kind: "typing-user",
+      text: "Does that hold for First Red Opening Candle too?",
+      durMs: 1700,
+    },
+    {
+      kind: "sent-user",
+      text: "Does that hold for First Red Opening Candle too?",
+      durMs: 350,
+    },
+    { kind: "thinking", durMs: 900 },
+    {
+      kind: "ai-answer",
+      text:
+        "Partly — FROC is 58% before 11am and 47% after, but it stays net-positive in both windows (+$12 vs +$4/trade).",
+      durMs: 2800,
+    },
+    {
+      kind: "typing-user",
       text: "Log 3 SPY 600 CALL at $1.20 expiring Friday.",
       durMs: 1700,
     },
@@ -972,9 +1006,11 @@ function QuillAIPreview() {
         </div>
       </div>
 
-      {/* Chat transcript - fixed-height window so the composer doesn't
-          jump as bubbles fade in. */}
-      <div className="px-5 md:px-6 py-3 flex flex-col gap-2 min-h-[260px] md:min-h-[280px]">
+      {/* Chat transcript - fixed-height window, bottom-anchored so the
+          newest bubbles stay in frame and older ones scroll up out of
+          view as the (now longer) conversation builds. Keeps the card
+          height stable and the composer from jumping. */}
+      <div className="px-5 md:px-6 py-3 flex flex-col gap-2 justify-end h-[260px] md:h-[280px] overflow-hidden">
         {history.map((b, i) => (
           <Bubble key={i} side={b.side}>
             {b.text}
