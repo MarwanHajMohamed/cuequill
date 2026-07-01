@@ -11,11 +11,12 @@ export type NormalizedFill = {
   expiry: Date;
   // Signed quantity: > 0 is a buy, < 0 is a sell. 0 is ignored.
   signedQty: number;
-  price: number; // execution price per contract
+  price: number; // execution price per contract (per-share premium)
   time: Date; // execution time
-  // FIFO realized P/L reported for this whole sell fill. Only meaningful
-  // on sells; ignored on buys.
-  realizedPnl: number;
+  // FIFO realized P/L reported for this whole sell fill, when the broker
+  // provides it (e.g. IBKR). Only meaningful on sells. When omitted, the
+  // matcher derives P/L from the buy/sell prices instead.
+  realizedPnl?: number;
   // Total commission + taxes for this whole fill, as a positive number.
   // Divided across matched portions per contract.
   fee: number;
@@ -67,6 +68,11 @@ function round4(n: number): number {
   return Math.round(n * 10000) / 10000;
 }
 
+// Equity-option contract multiplier. Used to derive realized P/L from
+// per-share prices when the broker doesn't report it directly. Matches
+// the app's convention elsewhere (profitLoss = (close - open) * 100 * qty).
+const CONTRACT_MULTIPLIER = 100;
+
 function groupKey(f: NormalizedFill): string {
   return `${f.symbol}|${f.strike}|${f.expiry.getTime()}|${f.option}`;
 }
@@ -111,10 +117,14 @@ export function matchFills(fills: NormalizedFill[]): TradeDraft[] {
           const lot = openQueue[0];
           const matchQty = Math.min(lot.remainingQty, remainingSell);
           const buy = lot.fill;
-          const pnl = (fill.realizedPnl / qty) * matchQty;
-          const fees = round4(
-            (lot.commissionPerContract + sellCpc) * matchQty,
-          );
+          // Prefer the broker's reported realized P/L (IBKR); otherwise
+          // derive it from the round-trip prices, gross of fees (which
+          // are stored separately) to match the IBKR convention.
+          const pnl =
+            fill.realizedPnl !== undefined
+              ? (fill.realizedPnl / qty) * matchQty
+              : (fill.price - buy.price) * CONTRACT_MULTIPLIER * matchQty;
+          const fees = round4((lot.commissionPerContract + sellCpc) * matchQty);
 
           drafts.push({
             symbol: buy.symbol,

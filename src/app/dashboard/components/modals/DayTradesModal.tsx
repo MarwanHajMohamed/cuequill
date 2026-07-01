@@ -94,7 +94,7 @@ export default function DayTradesModal({
                 </span>
               )}
             </div>
-            <div className="text-xl md:text-2xl font-semibold tracking-tight">
+            <div className="text-lg md:text-xl font-semibold tracking-tight">
               {format(date, "MMMM d, yyyy")}
             </div>
 
@@ -118,22 +118,22 @@ export default function DayTradesModal({
             )}
 
             {/* Mini stats */}
-            <div className="mt-4 flex items-center gap-2 flex-wrap text-[11px] font-medium">
+            <div className="mt-4 flex items-center gap-4 text-[12.5px] font-medium">
               {wins > 0 && (
-                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-green-500/10 text-green-300 border border-green-500/25">
-                  <i className="fa-solid fa-arrow-trend-up text-[9px]" />
+                <span className="inline-flex items-center gap-1.5 text-green-300">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
                   {wins} {wins === 1 ? "win" : "wins"}
                 </span>
               )}
               {losses > 0 && (
-                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-red-500/10 text-red-300 border border-red-500/25">
-                  <i className="fa-solid fa-arrow-trend-down text-[9px]" />
+                <span className="inline-flex items-center gap-1.5 text-red-300">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
                   {losses} {losses === 1 ? "loss" : "losses"}
                 </span>
               )}
               {opens > 0 && (
-                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-orange-500/10 text-orange-300 border border-orange-500/25">
-                  <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
+                <span className="inline-flex items-center gap-1.5 text-orange-300">
+                  <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
                   {opens} open
                 </span>
               )}
@@ -166,29 +166,24 @@ export default function DayTradesModal({
                     <span
                       className={`absolute left-0 top-2 bottom-2 w-[3px] rounded-full ${accent}`}
                     />
-                    <div className="flex flex-col gap-1 min-w-0 pl-2">
-                      <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex flex-col gap-0.5 min-w-0 pl-2">
+                      <div className="flex items-baseline gap-1.5">
                         <span className="font-semibold tracking-tight">
                           {t.symbol}
                         </span>
                         <span
-                          className={`text-[10px] uppercase font-semibold px-1.5 py-0.5 rounded-full border ${
+                          className={`text-[11px] font-semibold ${
                             t.option === "CALL"
-                              ? "bg-green-500/10 text-green-300 border-green-500/25"
-                              : "bg-red-500/10 text-red-300 border-red-500/25"
+                              ? "text-green-300"
+                              : "text-red-300"
                           }`}
                         >
                           {t.option}
                         </span>
-                        {t.status === "OPEN" && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-orange-500/10 text-orange-300 border border-orange-500/25 font-semibold uppercase tracking-wider">
-                            Open
-                          </span>
-                        )}
                       </div>
                       <div className="text-[11.5px] text-white/45 truncate tabular-nums">
-                        Strike {t.strike} · exp{" "}
-                        {format(new Date(t.expiryDate), "MMM d")} · qty {t.qty}
+                        ${t.strike} · {t.qty} qty ·{" "}
+                        {format(new Date(t.expiryDate), "MMM d")}
                       </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
@@ -201,7 +196,9 @@ export default function DayTradesModal({
                           {fmtMoneySignedCompact(pl)}
                         </div>
                       ) : (
-                        <div className="text-white/35 text-[13px]">-</div>
+                        <div className="text-[12px] font-medium text-orange-300/80">
+                          Open
+                        </div>
                       )}
                       <i className="fa-solid fa-chevron-right text-[10px] text-white/30 group-hover:text-white/70 group-hover:translate-x-0.5 transition" />
                     </div>
@@ -218,7 +215,7 @@ export default function DayTradesModal({
               className="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-full bg-teal-500/15 hover:bg-teal-500/25 text-teal-300 border border-teal-500/25 transition font-medium text-[13px] cursor-pointer"
             >
               <i className="fa-solid fa-plus text-[11px]" />
-              Add trade to this day
+              Add trade
             </button>
           </div>
         </motion.div>
