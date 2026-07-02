@@ -12,7 +12,7 @@ import { tradeNetPL } from "@/lib/helpers/tradeNet";
 // in light mode — the exported image must look identical in any theme.
 
 export const CARD_W = 600;
-export const CARD_H = 168;
+export const CARD_H = 140;
 
 const fmtMoneySigned = (n: number) => {
   const sign = n >= 0 ? "+" : "-";
@@ -40,7 +40,6 @@ const PALETTE: Record<ShareOutcome, { accent: string; hue: string }> = {
 };
 
 const INK = "#f4f4f5";
-const MUTED = "#8b8b96";
 const HAIR = "rgba(255,255,255,0.09)";
 
 const TradeShareCard = forwardRef<HTMLDivElement, { trade: Trade }>(
@@ -53,7 +52,6 @@ const TradeShareCard = forwardRef<HTMLDivElement, { trade: Trade }>(
     const net = tradeNetPL(trade);
     const pct = tradeReturnPct(trade);
     const isClosed = outcome !== "OPEN";
-    const isCall = trade.option === "CALL";
 
     return (
       <div
@@ -63,12 +61,10 @@ const TradeShareCard = forwardRef<HTMLDivElement, { trade: Trade }>(
           height: CARD_H,
           boxSizing: "border-box",
           fontFamily:
-            "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-          // The hue: a broad diagonal wash plus a corner glow in the
-          // outcome colour over a near-black base.
+            "ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+          // Hue lives only on the left, fading out by ~60% across.
           background:
-            `radial-gradient(90% 120% at 100% 0%, ${c.hue} 0%, rgba(12,12,17,0) 55%), ` +
-            `linear-gradient(135deg, ${c.hue} 0%, rgba(12,12,17,0) 45%), ` +
+            `radial-gradient(80% 130% at 0% 50%, ${c.hue} 0%, rgba(12,12,17,0) 60%), ` +
             "linear-gradient(180deg, #14141b 0%, #0b0b0f 100%)",
           borderRadius: 0,
           border: `1px solid ${HAIR}`,
@@ -82,59 +78,43 @@ const TradeShareCard = forwardRef<HTMLDivElement, { trade: Trade }>(
         <div
           style={{
             flex: 1,
-            padding: "20px 24px",
+            padding: "16px 24px",
             display: "flex",
             alignItems: "stretch",
             justifyContent: "space-between",
             gap: 20,
           }}
         >
-          {/* LEFT — brand + symbol */}
+          {/* LEFT — symbol centered, brand pinned to bottom */}
           <div
             style={{
+              position: "relative",
               display: "flex",
               flexDirection: "column",
-              justifyContent: "flex-start",
-              gap: 14,
+              justifyContent: "center",
               minWidth: 0,
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <QuillMark color={c.accent} />
-              <span
-                style={{
-                  fontSize: 13,
-                  fontWeight: 600,
-                  letterSpacing: "0.02em",
-                  color: INK,
-                }}
-              >
-                Cuequill
-              </span>
+            <div
+              style={{
+                fontSize: 22,
+                fontWeight: 700,
+                letterSpacing: "-0.01em",
+                lineHeight: 1.1,
+              }}
+            >
+              {trade.symbol || "—"}
             </div>
 
-            <div>
-              <div
-                style={{
-                  fontSize: 22,
-                  fontWeight: 700,
-                  letterSpacing: "-0.01em",
-                  lineHeight: 1.1,
-                }}
-              >
-                {trade.symbol || "—"}
-              </div>
-              <div
-                style={{
-                  marginTop: 4,
-                  fontSize: 14,
-                  fontWeight: 600,
-                  color: isCall ? "#4ade80" : "#f87171",
-                }}
-              >
-                {trade.strike ? `${trade.strike} ` : ""}
-                {trade.option}
-              </div>
+            <div
+              style={{
+                position: "absolute",
+                left: 0,
+                top: 0,
+                opacity: 0.45,
+              }}
+            >
+              <QuillMark color={INK} size={18} />
             </div>
           </div>
 
@@ -163,12 +143,16 @@ const TradeShareCard = forwardRef<HTMLDivElement, { trade: Trade }>(
                   : "Open"
                 : `${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%`}
             </div>
-            {(pct != null || isClosed) && (
-              <div style={{ marginTop: 6, fontSize: 14, fontWeight: 600 }}>
-                <span style={{ color: pct != null ? INK : c.accent }}>
-                  {fmtMoneySigned(net)}
-                </span>
-                <span style={{ color: MUTED, fontWeight: 500 }}> P/L</span>
+            {pct != null && isClosed && (
+              <div
+                style={{
+                  marginTop: 6,
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: INK,
+                }}
+              >
+                {fmtMoneySigned(net)}
               </div>
             )}
           </div>
@@ -182,9 +166,9 @@ export default TradeShareCard;
 
 // Inline quill mark (simplified from the marketing logo) so the capture
 // doesn't depend on an icon font.
-function QuillMark({ color }: { color: string }) {
+function QuillMark({ color, size = 18 }: { color: string; size?: number }) {
   return (
-    <svg width="18" height="18" viewBox="16 25 30 52" fill="none" aria-hidden>
+    <svg width={size} height={size} viewBox="16 25 30 52" fill="none" aria-hidden>
       <path
         d="M31 27.2C37 39.8 43.5 61.2 40.5 62.6C37.5 64 31 75.2 31 75.2C31 75.2 24.5 64.5 21.5 62.6C18.5 60.7 25 39.8 31 27.2Z"
         fill={color}

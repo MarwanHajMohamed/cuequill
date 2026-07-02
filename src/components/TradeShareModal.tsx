@@ -68,6 +68,7 @@ export default function TradeShareModal({
       backgroundColor: "#0b0b0f",
       width: CARD_W,
       height: CARD_H,
+      skipFonts: true,
     });
   };
 
