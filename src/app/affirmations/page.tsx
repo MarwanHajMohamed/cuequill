@@ -193,7 +193,12 @@ function AffirmationsPage() {
                     delay: hydrated ? 0.02 * i : 0,
                     ease: "easeOut",
                   }}
-                  className={`group relative rounded-2xl border p-5 md:p-6 transition ${
+                  className={`group relative rounded-2xl border px-5 md:px-6 py-3 md:py-4 transition ${
+                    // A lone last card (odd count) spans the full row.
+                    i === affirmations.length - 1 && affirmations.length % 2 === 1
+                      ? "md:col-span-2"
+                      : ""
+                  } ${
                     isRead
                       ? "bg-teal-500/[0.06] border-teal-500/25 hover:bg-teal-500/[0.1]"
                       : "bg-white/[0.02] border-white/10 hover:bg-white/[0.04] hover:border-white/20"
@@ -203,7 +208,7 @@ function AffirmationsPage() {
                     onClick={() => toggle(text)}
                     className="w-full text-left cursor-pointer"
                   >
-                    <div className="flex items-start gap-4">
+                    <div className="flex items-center gap-4">
                       <div
                         className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center font-semibold text-[13px] tabular-nums transition ${
                           isRead
