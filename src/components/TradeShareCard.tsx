@@ -2,14 +2,17 @@ import React, { forwardRef } from "react";
 import { Trade } from "@/app/types/Trades";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
 
-// A self-contained, always-dark share card for a single trade. Rendered
-// at a fixed 360px width and snapshotted at a higher pixelRatio to
-// produce a crisp, aesthetically appealing PNG.
+// A self-contained, always-dark, wide share card for a single trade.
+// Symbol on the left, return % and P/L on the right, tinted with a hue
+// that reflects the outcome. Rendered at a fixed size and snapshotted at
+// a higher pixelRatio for a crisp PNG.
 //
-// Every colour is hard-coded (not Tailwind `white`/opacity utilities or
+// Colours are hard-coded (not Tailwind `white`/opacity utilities or
 // theme vars) because the app remaps --color-white and the surface vars
-// in light mode — the exported image must look identical regardless of
-// the user's theme.
+// in light mode — the exported image must look identical in any theme.
+
+export const CARD_W = 600;
+export const CARD_H = 300;
 
 const fmtMoneySigned = (n: number) => {
   const sign = n >= 0 ? "+" : "-";
@@ -19,25 +22,10 @@ const fmtMoneySigned = (n: number) => {
   })}`;
 };
 
-const fmtDate = (v?: string | null) => {
-  if (!v) return "—";
-  const d = new Date(v);
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString(undefined, {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-};
-
-const fmtPrice = (n?: number | null) =>
-  n == null ? "—" : `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-
 export type ShareOutcome = "WIN" | "LOSS" | "OPEN";
 
 // Per-contract return %, the natural win/loss percentage for an option
-// trade: (exit − entry) / entry. Null when it can't be computed (open,
-// or no entry price).
+// trade: (exit − entry) / entry. Null when it can't be computed.
 export function tradeReturnPct(t: Trade): number | null {
   if (t.status === "OPEN") return null;
   if (t.contractPrice == null || t.contractPrice === 0) return null;
@@ -47,25 +35,25 @@ export function tradeReturnPct(t: Trade): number | null {
 
 const PALETTE: Record<
   ShareOutcome,
-  { accent: string; glow: string; pill: string; pillText: string; label: string }
+  { accent: string; hue: string; pill: string; pillText: string; label: string }
 > = {
   WIN: {
     accent: "#22c55e",
-    glow: "rgba(34,197,94,0.22)",
+    hue: "rgba(34,197,94,0.28)",
     pill: "rgba(34,197,94,0.15)",
     pillText: "#4ade80",
     label: "WIN",
   },
   LOSS: {
     accent: "#ef4444",
-    glow: "rgba(239,68,68,0.20)",
+    hue: "rgba(239,68,68,0.26)",
     pill: "rgba(239,68,68,0.15)",
     pillText: "#f87171",
     label: "LOSS",
   },
   OPEN: {
     accent: "#2dd4bf",
-    glow: "rgba(45,212,191,0.18)",
+    hue: "rgba(45,212,191,0.24)",
     pill: "rgba(45,212,191,0.14)",
     pillText: "#5eead4",
     label: "OPEN",
@@ -74,7 +62,7 @@ const PALETTE: Record<
 
 const INK = "#f4f4f5";
 const MUTED = "#8b8b96";
-const HAIR = "rgba(255,255,255,0.08)";
+const HAIR = "rgba(255,255,255,0.09)";
 
 const TradeShareCard = forwardRef<HTMLDivElement, { trade: Trade }>(
   function TradeShareCard({ trade }, ref) {
@@ -92,83 +80,121 @@ const TradeShareCard = forwardRef<HTMLDivElement, { trade: Trade }>(
       <div
         ref={ref}
         style={{
-          width: 360,
+          width: CARD_W,
+          height: CARD_H,
+          boxSizing: "border-box",
           fontFamily:
             "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+          // The hue: a broad diagonal wash plus a corner glow in the
+          // outcome colour over a near-black base.
           background:
-            `radial-gradient(120% 80% at 50% -10%, ${c.glow} 0%, rgba(12,12,17,0) 60%), ` +
-            "linear-gradient(180deg, #131319 0%, #0c0c11 100%)",
-          borderRadius: 24,
+            `radial-gradient(90% 120% at 100% 0%, ${c.hue} 0%, rgba(12,12,17,0) 55%), ` +
+            `linear-gradient(135deg, ${c.hue} 0%, rgba(12,12,17,0) 45%), ` +
+            "linear-gradient(180deg, #14141b 0%, #0b0b0f 100%)",
+          borderRadius: 26,
           border: `1px solid ${HAIR}`,
           overflow: "hidden",
           color: INK,
           position: "relative",
+          display: "flex",
+          flexDirection: "column",
         }}
       >
-        {/* Accent hairline at the very top */}
         <div style={{ height: 3, width: "100%", background: c.accent }} />
 
-        <div style={{ padding: "22px 24px 24px" }}>
-          {/* Brand + status pill */}
+        <div
+          style={{
+            flex: 1,
+            padding: "26px 30px",
+            display: "flex",
+            alignItems: "stretch",
+            justifyContent: "space-between",
+            gap: 24,
+          }}
+        >
+          {/* LEFT — brand + symbol */}
           <div
             style={{
               display: "flex",
-              alignItems: "center",
+              flexDirection: "column",
               justifyContent: "space-between",
+              minWidth: 0,
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <QuillMark color={c.accent} />
               <span
                 style={{
-                  fontSize: 13,
+                  fontSize: 15,
                   fontWeight: 600,
-                  letterSpacing: "0.14em",
+                  letterSpacing: "0.02em",
                   color: INK,
                 }}
               >
-                CUEQUILL
+                Cuequill
               </span>
             </div>
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                letterSpacing: "0.12em",
-                color: c.pillText,
-                background: c.pill,
-                border: `1px solid ${c.accent}55`,
-                borderRadius: 999,
-                padding: "4px 10px",
-              }}
-            >
-              {c.label}
-            </span>
+
+            <div>
+              <div
+                style={{
+                  fontSize: 68,
+                  fontWeight: 800,
+                  letterSpacing: "-0.03em",
+                  lineHeight: 1,
+                }}
+              >
+                {trade.symbol || "—"}
+              </div>
+              <div
+                style={{
+                  marginTop: 12,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: 16,
+                    fontWeight: 600,
+                    color: isCall ? "#4ade80" : "#f87171",
+                  }}
+                >
+                  {trade.strike ? `${trade.strike} ` : ""}
+                  {trade.option}
+                </span>
+                <span
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 700,
+                    letterSpacing: "0.12em",
+                    color: c.pillText,
+                    background: c.pill,
+                    border: `1px solid ${c.accent}55`,
+                    borderRadius: 999,
+                    padding: "3px 10px",
+                  }}
+                >
+                  {c.label}
+                </span>
+              </div>
+            </div>
           </div>
 
-          {/* Symbol + contract */}
-          <div style={{ marginTop: 22, display: "flex", alignItems: "baseline", gap: 10 }}>
-            <span style={{ fontSize: 40, fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1 }}>
-              {trade.symbol || "—"}
-            </span>
-            <span
-              style={{
-                fontSize: 13,
-                fontWeight: 600,
-                letterSpacing: "0.02em",
-                color: isCall ? "#4ade80" : "#f87171",
-              }}
-            >
-              {trade.strike ? `${trade.strike} ` : ""}
-              {trade.option}
-            </span>
-          </div>
-
-          {/* Hero: return % (or status for open) + net $ */}
-          <div style={{ marginTop: 18 }}>
+          {/* RIGHT — return % + P/L */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "flex-end",
+              justifyContent: "flex-end",
+              textAlign: "right",
+            }}
+          >
             <div
               style={{
-                fontSize: 56,
+                fontSize: 72,
                 fontWeight: 800,
                 letterSpacing: "-0.03em",
                 lineHeight: 1,
@@ -181,76 +207,17 @@ const TradeShareCard = forwardRef<HTMLDivElement, { trade: Trade }>(
                   : "Open"
                 : `${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%`}
             </div>
-            {pct != null && (
-              <div style={{ marginTop: 8, fontSize: 16, fontWeight: 600, color: INK }}>
-                {fmtMoneySigned(net)}
-                <span style={{ color: MUTED, fontWeight: 500 }}> net P/L</span>
+            {(pct != null || isClosed) && (
+              <div style={{ marginTop: 10, fontSize: 20, fontWeight: 600 }}>
+                <span style={{ color: pct != null ? INK : c.accent }}>
+                  {fmtMoneySigned(net)}
+                </span>
+                <span style={{ color: MUTED, fontWeight: 500, fontSize: 15 }}>
+                  {" "}
+                  P/L
+                </span>
               </div>
             )}
-          </div>
-
-          {/* Stats grid */}
-          <div
-            style={{
-              marginTop: 22,
-              paddingTop: 18,
-              borderTop: `1px solid ${HAIR}`,
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              rowGap: 16,
-              columnGap: 12,
-            }}
-          >
-            <Stat label="Entry" value={fmtPrice(trade.contractPrice)} />
-            <Stat
-              label="Exit"
-              value={isClosed ? fmtPrice(trade.closingContractPrice) : "—"}
-            />
-            <Stat label="Qty" value={trade.qty ? `${trade.qty}` : "—"} />
-            <Stat label="Strategy" value={trade.strategy || "—"} />
-            <Stat label="Opened" value={fmtDate(trade.dateBought)} />
-            <Stat
-              label="Closed"
-              value={isClosed ? fmtDate(trade.dateClosed) : "—"}
-            />
-          </div>
-
-          {/* Tags */}
-          {trade.tags && trade.tags.length > 0 && (
-            <div style={{ marginTop: 16, display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {trade.tags.slice(0, 4).map((t) => (
-                <span
-                  key={t}
-                  style={{
-                    fontSize: 11,
-                    color: "#c7c7d1",
-                    background: "rgba(255,255,255,0.05)",
-                    border: `1px solid ${HAIR}`,
-                    borderRadius: 999,
-                    padding: "3px 9px",
-                  }}
-                >
-                  {t}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* Footer */}
-          <div
-            style={{
-              marginTop: 22,
-              paddingTop: 14,
-              borderTop: `1px solid ${HAIR}`,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <span style={{ fontSize: 11, color: MUTED, letterSpacing: "0.04em" }}>
-              Journaled with Cuequill
-            </span>
-            <span style={{ fontSize: 11, color: MUTED }}>cuequill.com</span>
           </div>
         </div>
       </div>
@@ -259,36 +226,6 @@ const TradeShareCard = forwardRef<HTMLDivElement, { trade: Trade }>(
 );
 
 export default TradeShareCard;
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div style={{ minWidth: 0 }}>
-      <div
-        style={{
-          fontSize: 10,
-          textTransform: "uppercase",
-          letterSpacing: "0.12em",
-          color: MUTED,
-          marginBottom: 3,
-        }}
-      >
-        {label}
-      </div>
-      <div
-        style={{
-          fontSize: 14,
-          fontWeight: 600,
-          color: INK,
-          whiteSpace: "nowrap",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-        }}
-      >
-        {value}
-      </div>
-    </div>
-  );
-}
 
 // Inline quill mark (simplified from the marketing logo) so the capture
 // doesn't depend on an icon font.
