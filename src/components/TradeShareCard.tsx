@@ -12,7 +12,7 @@ import { tradeNetPL } from "@/lib/helpers/tradeNet";
 // in light mode — the exported image must look identical in any theme.
 
 export const CARD_W = 600;
-export const CARD_H = 300;
+export const CARD_H = 168;
 
 const fmtMoneySigned = (n: number) => {
   const sign = n >= 0 ? "+" : "-";
@@ -33,31 +33,10 @@ export function tradeReturnPct(t: Trade): number | null {
   return ((t.closingContractPrice - t.contractPrice) / t.contractPrice) * 100;
 }
 
-const PALETTE: Record<
-  ShareOutcome,
-  { accent: string; hue: string; pill: string; pillText: string; label: string }
-> = {
-  WIN: {
-    accent: "#22c55e",
-    hue: "rgba(34,197,94,0.28)",
-    pill: "rgba(34,197,94,0.15)",
-    pillText: "#4ade80",
-    label: "WIN",
-  },
-  LOSS: {
-    accent: "#ef4444",
-    hue: "rgba(239,68,68,0.26)",
-    pill: "rgba(239,68,68,0.15)",
-    pillText: "#f87171",
-    label: "LOSS",
-  },
-  OPEN: {
-    accent: "#2dd4bf",
-    hue: "rgba(45,212,191,0.24)",
-    pill: "rgba(45,212,191,0.14)",
-    pillText: "#5eead4",
-    label: "OPEN",
-  },
+const PALETTE: Record<ShareOutcome, { accent: string; hue: string }> = {
+  WIN: { accent: "#22c55e", hue: "rgba(34,197,94,0.28)" },
+  LOSS: { accent: "#ef4444", hue: "rgba(239,68,68,0.26)" },
+  OPEN: { accent: "#2dd4bf", hue: "rgba(45,212,191,0.24)" },
 };
 
 const INK = "#f4f4f5";
@@ -100,16 +79,14 @@ const TradeShareCard = forwardRef<HTMLDivElement, { trade: Trade }>(
           flexDirection: "column",
         }}
       >
-        <div style={{ height: 3, width: "100%", background: c.accent }} />
-
         <div
           style={{
             flex: 1,
-            padding: "26px 30px",
+            padding: "20px 24px",
             display: "flex",
             alignItems: "stretch",
             justifyContent: "space-between",
-            gap: 24,
+            gap: 20,
           }}
         >
           {/* LEFT — brand + symbol */}
@@ -121,11 +98,11 @@ const TradeShareCard = forwardRef<HTMLDivElement, { trade: Trade }>(
               minWidth: 0,
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <QuillMark color={c.accent} />
               <span
                 style={{
-                  fontSize: 15,
+                  fontSize: 13,
                   fontWeight: 600,
                   letterSpacing: "0.02em",
                   color: INK,
@@ -138,46 +115,24 @@ const TradeShareCard = forwardRef<HTMLDivElement, { trade: Trade }>(
             <div>
               <div
                 style={{
-                  fontSize: 68,
-                  fontWeight: 800,
-                  letterSpacing: "-0.03em",
-                  lineHeight: 1,
+                  fontSize: 22,
+                  fontWeight: 700,
+                  letterSpacing: "-0.01em",
+                  lineHeight: 1.1,
                 }}
               >
                 {trade.symbol || "—"}
               </div>
               <div
                 style={{
-                  marginTop: 12,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
+                  marginTop: 4,
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: isCall ? "#4ade80" : "#f87171",
                 }}
               >
-                <span
-                  style={{
-                    fontSize: 16,
-                    fontWeight: 600,
-                    color: isCall ? "#4ade80" : "#f87171",
-                  }}
-                >
-                  {trade.strike ? `${trade.strike} ` : ""}
-                  {trade.option}
-                </span>
-                <span
-                  style={{
-                    fontSize: 12,
-                    fontWeight: 700,
-                    letterSpacing: "0.12em",
-                    color: c.pillText,
-                    background: c.pill,
-                    border: `1px solid ${c.accent}55`,
-                    borderRadius: 999,
-                    padding: "3px 10px",
-                  }}
-                >
-                  {c.label}
-                </span>
+                {trade.strike ? `${trade.strike} ` : ""}
+                {trade.option}
               </div>
             </div>
           </div>
@@ -194,9 +149,9 @@ const TradeShareCard = forwardRef<HTMLDivElement, { trade: Trade }>(
           >
             <div
               style={{
-                fontSize: 72,
-                fontWeight: 800,
-                letterSpacing: "-0.03em",
+                fontSize: 30,
+                fontWeight: 700,
+                letterSpacing: "-0.02em",
                 lineHeight: 1,
                 color: c.accent,
               }}
@@ -208,14 +163,11 @@ const TradeShareCard = forwardRef<HTMLDivElement, { trade: Trade }>(
                 : `${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%`}
             </div>
             {(pct != null || isClosed) && (
-              <div style={{ marginTop: 10, fontSize: 20, fontWeight: 600 }}>
+              <div style={{ marginTop: 6, fontSize: 14, fontWeight: 600 }}>
                 <span style={{ color: pct != null ? INK : c.accent }}>
                   {fmtMoneySigned(net)}
                 </span>
-                <span style={{ color: MUTED, fontWeight: 500, fontSize: 15 }}>
-                  {" "}
-                  P/L
-                </span>
+                <span style={{ color: MUTED, fontWeight: 500 }}> P/L</span>
               </div>
             )}
           </div>
