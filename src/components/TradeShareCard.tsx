@@ -70,7 +70,7 @@ const TradeShareCard = forwardRef<HTMLDivElement, { trade: Trade }>(
             `radial-gradient(90% 120% at 100% 0%, ${c.hue} 0%, rgba(12,12,17,0) 55%), ` +
             `linear-gradient(135deg, ${c.hue} 0%, rgba(12,12,17,0) 45%), ` +
             "linear-gradient(180deg, #14141b 0%, #0b0b0f 100%)",
-          borderRadius: 26,
+          borderRadius: 0,
           border: `1px solid ${HAIR}`,
           overflow: "hidden",
           color: INK,
@@ -94,7 +94,8 @@ const TradeShareCard = forwardRef<HTMLDivElement, { trade: Trade }>(
             style={{
               display: "flex",
               flexDirection: "column",
-              justifyContent: "space-between",
+              justifyContent: "flex-start",
+              gap: 14,
               minWidth: 0,
             }}
           >
@@ -143,7 +144,7 @@ const TradeShareCard = forwardRef<HTMLDivElement, { trade: Trade }>(
               display: "flex",
               flexDirection: "column",
               alignItems: "flex-end",
-              justifyContent: "flex-end",
+              justifyContent: "center",
               textAlign: "right",
             }}
           >
