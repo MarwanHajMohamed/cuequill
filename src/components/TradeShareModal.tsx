@@ -1,14 +1,15 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toBlob } from "html-to-image";
 import { Trade } from "@/app/types/Trades";
-import TradeShareCard from "@/components/TradeShareCard";
+import TradeShareCard, { CARD_W, CARD_H } from "@/components/TradeShareCard";
 
 // Modal that previews the shareable trade card and lets the user save it
 // as a PNG or share it via the native share sheet (which, on mobile,
-// offers "Save to Photos"). The card is captured at 3× for a crisp
-// ~1080px-wide image.
+// offers "Save to Photos"). The card is a fixed-size 600×300 node; we
+// scale it down to fit the viewport for the preview but capture the
+// unscaled node at 3× for a crisp ~1800px-wide image.
 
 export default function TradeShareModal({
   trade,
@@ -18,13 +19,24 @@ export default function TradeShareModal({
   onClose: () => void;
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
+  const measureRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [canShareFiles, setCanShareFiles] = useState(false);
 
+  // Fit the fixed-width card into the available modal width.
+  useLayoutEffect(() => {
+    const fit = () => {
+      const avail = measureRef.current?.clientWidth ?? CARD_W;
+      setScale(Math.min(1, avail / CARD_W));
+    };
+    fit();
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  }, []);
+
   useEffect(() => {
-    // Feature-detect file sharing (mobile Safari/Chrome). Guarded because
-    // navigator.canShare with files throws/returns false on desktop.
     try {
       const testFile = new File([""], "t.png", { type: "image/png" });
       setCanShareFiles(
@@ -49,11 +61,13 @@ export default function TradeShareModal({
 
   const capture = async (): Promise<Blob | null> => {
     if (!cardRef.current) return null;
-    // pixelRatio 3 → the 360px card exports at ~1080px wide.
+    // Capture the unscaled node (600×300) at 3× → ~1800px wide.
     return toBlob(cardRef.current, {
       pixelRatio: 3,
       cacheBust: true,
-      backgroundColor: "#0c0c11",
+      backgroundColor: "#0b0b0f",
+      width: CARD_W,
+      height: CARD_H,
     });
   };
 
@@ -89,13 +103,12 @@ export default function TradeShareModal({
         await navigator.share({
           files: [file],
           title: `${trade.symbol} trade`,
-          text: `My ${trade.symbol} ${trade.option} trade — journaled with Cuequill`,
+          text: `My ${trade.symbol} ${trade.option} trade — Cuequill`,
         });
       } else {
         await handleSave();
       }
     } catch (e) {
-      // A user cancelling the share sheet throws AbortError — not an error.
       if ((e as Error)?.name !== "AbortError") {
         setError("Couldn't share the image. Try saving instead.");
       }
@@ -111,18 +124,37 @@ export default function TradeShareModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-sm flex flex-col items-center gap-4 my-auto"
+        className="w-full max-w-xl flex flex-col items-center gap-4 my-auto"
       >
-        {/* Live preview — the exact node that gets captured. */}
-        <TradeShareCard ref={cardRef} trade={trade} />
+        {/* Measures the available width; the card is scaled to fit it. */}
+        <div ref={measureRef} className="w-full">
+          <div
+            style={{
+              width: CARD_W * scale,
+              height: CARD_H * scale,
+              margin: "0 auto",
+            }}
+          >
+            <div
+              style={{
+                width: CARD_W,
+                height: CARD_H,
+                transform: `scale(${scale})`,
+                transformOrigin: "top left",
+              }}
+            >
+              <TradeShareCard ref={cardRef} trade={trade} />
+            </div>
+          </div>
+        </div>
 
         {error && (
-          <div className="w-full rounded-xl border border-red-500/25 bg-red-500/[0.06] px-3 py-2 text-[12.5px] text-red-300 text-center">
+          <div className="w-full max-w-md rounded-xl border border-red-500/25 bg-red-500/[0.06] px-3 py-2 text-[12.5px] text-red-300 text-center">
             {error}
           </div>
         )}
 
-        <div className="w-full flex items-center gap-2">
+        <div className="w-full max-w-md flex items-center gap-2">
           <button
             type="button"
             onClick={onClose}
