@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/useToast";
 import { withAuth } from "@/lib/withAuth";
 import RichNotesEditor from "@/components/RichNotesEditor";
 import { Skeleton } from "@/components/Loaders";
+import TradeShareModal from "@/components/TradeShareModal";
 
 // Full-page trade editor. Trade fields live on the left, the rich
 // notes editor lives on the right. Replaces the row-click → modal
@@ -61,6 +62,7 @@ function TradeDetailPage() {
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [delConfirm, setDelConfirm] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   useEffect(() => {
     if (trade) {
@@ -410,14 +412,24 @@ function TradeDetailPage() {
 
         {/* Actions — full-width row pinned to the bottom of the card */}
         <div className="shrink-0 px-5 md:px-6 py-3 flex items-center justify-between gap-2 border-t border-white/10">
-          <button
-            type="button"
-            onClick={() => setDelConfirm(true)}
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full border border-red-500/25 bg-red-500/[0.08] text-red-300 hover:bg-red-500/15 transition text-[12.5px] font-medium cursor-pointer"
-          >
-            <i className="fa-solid fa-trash text-[11px]" />
-            Delete
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setDelConfirm(true)}
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full border border-red-500/25 bg-red-500/[0.08] text-red-300 hover:bg-red-500/15 transition text-[12.5px] font-medium cursor-pointer"
+            >
+              <i className="fa-solid fa-trash text-[11px]" />
+              <span className="hidden sm:inline">Delete</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setShareOpen(true)}
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[12.5px] font-medium cursor-pointer"
+            >
+              <i className="fa-solid fa-share-nodes text-[11px]" />
+              Share
+            </button>
+          </div>
           <div className="flex items-center gap-2">
             <Link
               href={`/trades/${userId}`}
@@ -441,6 +453,11 @@ function TradeDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Share as image */}
+      {shareOpen && (
+        <TradeShareModal trade={form} onClose={() => setShareOpen(false)} />
+      )}
 
       {/* Delete confirmation */}
       {delConfirm && (
