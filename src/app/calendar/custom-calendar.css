@@ -303,3 +303,21 @@
     font-size: 12px;
   }
 }
+
+/* ─── Mobile: detailed mode ──────────────────────────────────────────
+   In detailed mode the tiles carry earnings / expiry chips, so the
+   "fit the whole month into the viewport" sizing crams everything
+   together and there's nothing to scroll. Switch to taller, natural
+   rows and let the grid grow past the viewport so the page scrolls. */
+@media (max-width: 767px) {
+  .react-calendar.custom-calendar_full-view.calendar-detailed
+    .react-calendar__month-view__days {
+    height: auto !important;
+    grid-auto-rows: minmax(96px, auto) !important;
+    overflow: visible !important;
+  }
+  .react-calendar.custom-calendar_full-view.calendar-detailed
+    .react-calendar__month-view {
+    overflow: visible !important;
+  }
+}
