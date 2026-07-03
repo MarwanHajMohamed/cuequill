@@ -5,6 +5,8 @@ import { useFedDates } from "@/hooks/useFedDates";
 import { useMarketHolidays } from "@/hooks/useMarketHolidays";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useTrades } from "@/hooks/useTrades";
+import { useWatchlist } from "@/hooks/useWatchlist";
+import { useEarnings } from "@/hooks/useEarnings";
 import {
   addDays,
   endOfMonth,
@@ -122,6 +124,43 @@ function Page() {
   const { data: trades } = useTrades(userId, simulated);
   const fedDates = useFedDates();
   const holidays = useMarketHolidays();
+
+  // Detailed mode — overlays watchlist earnings dates and open-trade
+  // expiries on the month grid. Persisted so the preference sticks.
+  const [detailed, setDetailed] = useLocalStorage<boolean>(
+    "calendar:detailed",
+    false,
+  );
+  const { data: watchlist = [] } = useWatchlist();
+  // Only fetch earnings while detailed mode is on — the hook no-ops on
+  // an empty symbol list.
+  const { data: earnings = [] } = useEarnings(detailed ? watchlist : []);
+
+  // "yyyy-MM-dd" → symbols reporting that day (watchlist only).
+  const earningsByDay = useMemo(() => {
+    const map = new Map<string, { symbol: string; isEstimate: boolean }[]>();
+    for (const e of earnings) {
+      if (!e.date) continue;
+      const list = map.get(e.date) ?? [];
+      list.push({ symbol: e.symbol, isEstimate: e.isEstimate });
+      map.set(e.date, list);
+    }
+    return map;
+  }, [earnings]);
+
+  // "yyyy-MM-dd" → open positions expiring that day. Expiry is the other
+  // date an options trader cares about seeing coming.
+  const expiriesByDay = useMemo(() => {
+    const map = new Map<string, string[]>();
+    for (const t of trades ?? []) {
+      if (t.status !== "OPEN" || !t.expiryDate) continue;
+      const day = t.expiryDate.split("T")[0];
+      const list = map.get(day) ?? [];
+      list.push(t.symbol);
+      map.set(day, list);
+    }
+    return map;
+  }, [trades]);
 
   // Measure the actual y-offset of the calendar's days grid (nav + weekday
   // header height) so the sidebar starts at the same vertical position as
@@ -410,10 +449,56 @@ function Page() {
       isFed,
       marketDay,
     } = getDaySummary(date);
-    if (tradeCount === 0 && !isToday && !isFed && !marketDay) return null;
+    const dayStr = format(date, "yyyy-MM-dd");
+    const dayEarnings = detailed ? (earningsByDay.get(dayStr) ?? []) : [];
+    const dayExpiries = detailed ? (expiriesByDay.get(dayStr) ?? []) : [];
+    if (
+      tradeCount === 0 &&
+      !isToday &&
+      !isFed &&
+      !marketDay &&
+      dayEarnings.length === 0 &&
+      dayExpiries.length === 0
+    )
+      return null;
 
     return (
       <>
+        {/* Detailed mode — earnings + expiry chips, stacked top-left so
+            they don't collide with the Fed/holiday badges top-right. */}
+        {(dayEarnings.length > 0 || dayExpiries.length > 0) && (
+          <div className="absolute top-7 left-1.5 flex flex-col items-start gap-0.5 max-w-[80%]">
+            {dayEarnings.length > 0 && (
+              <span
+                title={`Earnings: ${dayEarnings
+                  .map((e) => e.symbol + (e.isEstimate ? " (est.)" : ""))
+                  .join(", ")}`}
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-teal-500/25 text-teal-100 border border-teal-400/50 text-[8.5px] md:text-[9.5px] font-bold tracking-wide leading-none max-w-full"
+              >
+                <i className="fa-solid fa-bullhorn text-[7px]" aria-hidden />
+                <span className="truncate">
+                  {dayEarnings
+                    .slice(0, 2)
+                    .map((e) => e.symbol)
+                    .join(" ")}
+                  {dayEarnings.length > 2 && ` +${dayEarnings.length - 2}`}
+                </span>
+              </span>
+            )}
+            {dayExpiries.length > 0 && (
+              <span
+                title={`Open positions expiring: ${dayExpiries.join(", ")}`}
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-orange-500/25 text-orange-100 border border-orange-400/50 text-[8.5px] md:text-[9.5px] font-bold tracking-wide leading-none max-w-full"
+              >
+                <i className="fa-solid fa-hourglass-end text-[7px]" aria-hidden />
+                <span className="truncate">
+                  {dayExpiries.slice(0, 2).join(" ")}
+                  {dayExpiries.length > 2 && ` +${dayExpiries.length - 2}`}
+                </span>
+              </span>
+            )}
+          </div>
+        )}
         {isFed && (
           <span className="absolute top-1 right-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-500/35 text-purple-100 border border-purple-400/60 shadow-[0_0_8px_rgba(168,85,247,0.35)] text-[9px] md:text-[10px] font-bold tracking-wide leading-none">
             <span className="w-1 h-1 rounded-full bg-purple-200" aria-hidden />
@@ -693,6 +778,18 @@ function Page() {
               })()}
               <div className="flex items-center gap-2">
                 <button
+                  onClick={() => setDetailed((v) => !v)}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition text-[12px] font-medium cursor-pointer ${
+                    detailed
+                      ? "bg-teal-500/15 text-teal-300 border-teal-500/30 hover:bg-teal-500/25"
+                      : "border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/75 hover:text-white"
+                  }`}
+                  title="Overlay watchlist earnings and open-position expiries"
+                >
+                  <i className="fa-solid fa-layer-group text-[10px]" />
+                  Detailed
+                </button>
+                <button
                   onClick={goToToday}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/75 hover:text-white transition text-[12px] font-medium cursor-pointer"
                   title="Jump to today"
@@ -734,6 +831,26 @@ function Page() {
                 </div>
               </div>
             </div>
+
+            {/* Detailed-mode legend — explains the overlay chips. */}
+            {detailed && (
+              <div className="flex items-center flex-wrap gap-x-4 gap-y-1 px-3 md:px-0 mb-2 text-[10.5px] text-white/50">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-teal-400/80" />
+                  Watchlist earnings
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-orange-400/80" />
+                  Open positions expiring
+                </span>
+                {watchlist.length === 0 && (
+                  <span className="text-white/35 italic">
+                    Your watchlist is empty — add tickers on the Earnings page
+                    to see report dates here.
+                  </span>
+                )}
+              </div>
+            )}
 
             {view === "month" ? (
               <div className="flex gap-3 items-stretch md:flex-initial flex-1 md:h-auto min-h-0">
