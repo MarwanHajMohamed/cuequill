@@ -40,6 +40,7 @@ export default function TradeModal({
           onClose={onClose}
           initialTrade={initialTrade!}
           onEdit={() => setEditing(true)}
+          onDelete={onDelete}
         />
       )}
     </div>

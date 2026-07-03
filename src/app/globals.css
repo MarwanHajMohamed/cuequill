@@ -311,3 +311,68 @@ body {
     animation: none !important;
   }
 }
+
+/* ── Siri-style ring for merging trades ─────────────────────────────
+   A single overlay that wraps the whole group of rows being merged
+   (positioned via JS since <tr>s can't be wrapped). Two layers:
+   - the gradient conic ring, rotating slowly via @property --angle
+   - a soft outer glow (box-shadow) that pulses opacity in and out
+   Together they read as the Siri assistant halo: continuous colour
+   flow, no harsh edges, no per-row noise. */
+@property --siri-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+@keyframes siri-spin {
+  to {
+    --siri-angle: 360deg;
+  }
+}
+@keyframes siri-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.siri-ring {
+  pointer-events: none;
+  border-radius: 12px;
+  padding: 2px; /* ring thickness */
+  background: conic-gradient(
+    from var(--siri-angle),
+    #ff2d95 0%,
+    #ff6ec4 12%,
+    #a26bff 28%,
+    #4facfe 45%,
+    #00f2fe 60%,
+    #a26bff 78%,
+    #ff2d95 100%
+  );
+  animation:
+    siri-spin 6s linear infinite,
+    siri-pulse 3.2s ease-in-out infinite;
+  /* Mask keeps only the padding ring — the interior becomes fully
+     transparent so the table rows underneath show through. */
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  /* Soft outer haze — same palette, big blur, low alpha. */
+  box-shadow:
+    0 0 24px 4px rgba(255, 45, 149, 0.25),
+    0 0 48px 8px rgba(79, 172, 254, 0.2),
+    0 0 72px 12px rgba(162, 107, 255, 0.15);
+}
+@media (prefers-reduced-motion: reduce) {
+  .siri-ring {
+    animation: none;
+  }
+}

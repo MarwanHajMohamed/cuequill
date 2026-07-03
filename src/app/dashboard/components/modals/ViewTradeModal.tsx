@@ -6,7 +6,7 @@ import { useScrollLock } from "@/hooks/useScrollLock";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 
 import { fmtMoneySignedCompact } from "@/lib/helpers/fmt";
 type TradeModalProps = {
@@ -14,6 +14,8 @@ type TradeModalProps = {
   initialTrade: Partial<Trade>;
   /** Hide the Edit button if not provided (read-only contexts like dashboard). */
   onEdit?: () => void;
+  /** Hide the Delete button if not provided. Called with the trade _id. */
+  onDelete?: (_id: string) => void;
 };
 
 const safeDate = (d: string | Date | null | undefined) => {
@@ -26,8 +28,12 @@ export default function ViewTradeModal({
   onClose,
   initialTrade,
   onEdit,
+  onDelete,
 }: TradeModalProps) {
   useScrollLock();
+  // Inline confirm: first click primes, second click fires. Escape or
+  // clicking elsewhere in the footer resets it.
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -298,22 +304,55 @@ export default function ViewTradeModal({
         </div>
 
         {/* ── Footer (fixed at bottom of card) ── */}
-        <div className="shrink-0 px-5 md:px-6 py-3 md:py-4 flex justify-end gap-2 border-t border-white/5 bg-[var(--surface)]">
-          <button
-            onClick={onClose}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer"
-          >
-            Close
-          </button>
-          {onEdit && (
+        <div className="shrink-0 px-5 md:px-6 py-3 md:py-4 flex items-center justify-between gap-2 border-t border-white/5 bg-[var(--surface)]">
+          <div className="flex items-center gap-2">
+            {onDelete && initialTrade._id && (
+              confirmingDelete ? (
+                <div className="flex items-center gap-1.5 text-[12.5px] text-white/75">
+                  <span>Sure?</span>
+                  <button
+                    onClick={() => setConfirmingDelete(false)}
+                    className="px-2.5 py-1 rounded-full text-white/70 hover:text-white hover:bg-white/[0.08] transition text-[12px] cursor-pointer"
+                  >
+                    No
+                  </button>
+                  <button
+                    onClick={() => onDelete(initialTrade._id!)}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500/20 text-red-300 border border-red-500/40 hover:bg-red-500/30 transition text-[12px] font-semibold cursor-pointer"
+                  >
+                    <i className="fa-solid fa-trash text-[10px]" />
+                    Yes
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setConfirmingDelete(true)}
+                  aria-label="Delete trade"
+                  title="Delete trade"
+                  className="w-9 h-9 inline-flex items-center justify-center rounded-full bg-red-500/10 text-red-300 border border-red-500/25 hover:bg-red-500/20 transition cursor-pointer"
+                >
+                  <i className="fa-regular fa-trash-can text-[12px]" />
+                </button>
+              )
+            )}
+          </div>
+          <div className="flex items-center gap-2">
             <button
-              onClick={onEdit}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[13px] font-medium cursor-pointer"
+              onClick={onClose}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer"
             >
-              <i className="fa-regular fa-pen-to-square text-[11px]" />
-              Edit
+              Close
             </button>
-          )}
+            {onEdit && (
+              <button
+                onClick={onEdit}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[13px] font-medium cursor-pointer"
+              >
+                <i className="fa-regular fa-pen-to-square text-[11px]" />
+                Edit
+              </button>
+            )}
+          </div>
         </div>
       </motion.div>
     </motion.div>

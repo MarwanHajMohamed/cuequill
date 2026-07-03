@@ -6,7 +6,7 @@ import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useTrades } from "@/hooks/useTrades";
 import { withAuth } from "@/lib/withAuth";
 import { useQueryClient } from "@tanstack/react-query";
-import React, { use, useEffect, useRef, useState } from "react";
+import React, { use, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import NotesModal from "../NotesModal";
 import ImportedTradesModal from "../ImportedTradesModal";
@@ -119,6 +119,181 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
   const [showImported, setShowImported] = useState<boolean>(false);
   const [isFiltersOpen, setIsFiltersOpen] = useState<boolean>(false);
   const tradesPerPage = 15;
+
+  // ── Merge state ────────────────────────────────────────────────────
+  // Selection mode: shows a checkbox column and turns row clicks into
+  // toggles instead of navigation. Rows can only be merged if they
+  // share the same contract (symbol/side/strike/expiry-day), the same
+  // open/closed bucket, and the same simulated flag — that's the same
+  // validation the server enforces.
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [mergeConfirmOpen, setMergeConfirmOpen] = useState(false);
+  const [merging, setMerging] = useState(false);
+  // Snapshot of the most recent merge, kept in memory long enough for
+  // the user to click Undo. `originals` is the exact array of docs
+  // the merge endpoint deleted; we hand it back to the undo endpoint
+  // as-is.
+  const [lastMerge, setLastMerge] = useState<{
+    mergedId: string;
+    originals: unknown[];
+    count: number;
+  } | null>(null);
+  const [undoing, setUndoing] = useState(false);
+  // Position of the Siri ring that wraps the currently merging rows.
+  // Measured from data-trade-id attributes on the rendered <tr>s so
+  // the ring hugs the exact vertical span, even when rows aren't
+  // adjacent. Recomputed on merge/select changes and resize.
+  const tableWrapRef = useRef<HTMLDivElement | null>(null);
+  const [siriBox, setSiriBox] = useState<{
+    top: number;
+    left: number;
+    width: number;
+    height: number;
+  } | null>(null);
+  useLayoutEffect(() => {
+    if (!merging || selectedIds.size === 0 || !tableWrapRef.current) {
+      setSiriBox(null);
+      return;
+    }
+    const wrap = tableWrapRef.current;
+    const measure = () => {
+      const wrapRect = wrap.getBoundingClientRect();
+      let top = Infinity;
+      let bottom = -Infinity;
+      for (const id of selectedIds) {
+        const el = wrap.querySelector<HTMLElement>(
+          `[data-trade-id="${id}"]`,
+        );
+        if (!el) continue;
+        const r = el.getBoundingClientRect();
+        if (r.top < top) top = r.top;
+        if (r.bottom > bottom) bottom = r.bottom;
+      }
+      const table = wrap.querySelector("table");
+      if (!table || !Number.isFinite(top) || !Number.isFinite(bottom)) {
+        setSiriBox(null);
+        return;
+      }
+      const tRect = table.getBoundingClientRect();
+      // Pad the ring slightly outside the rows so it reads as a halo
+      // rather than a tight border on the row hairlines.
+      const PAD = 4;
+      setSiriBox({
+        top: top - wrapRect.top + wrap.scrollTop - PAD,
+        left: tRect.left - wrapRect.left + wrap.scrollLeft - PAD,
+        width: tRect.width + PAD * 2,
+        height: bottom - top + PAD * 2,
+      });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(wrap);
+    window.addEventListener("resize", measure);
+    window.addEventListener("scroll", measure, true);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("scroll", measure, true);
+    };
+  }, [merging, selectedIds]);
+  // Auto-dismiss the undo pill after ~20s so it doesn't linger
+  // forever. Any new merge replaces the previous snapshot outright.
+  useEffect(() => {
+    if (!lastMerge) return;
+    const t = setTimeout(() => setLastMerge(null), 20000);
+    return () => clearTimeout(t);
+  }, [lastMerge]);
+  const clearSelection = () => setSelectedIds(new Set());
+  const handleUndoMerge = async () => {
+    if (!lastMerge || undoing) return;
+    setUndoing(true);
+    try {
+      const res = await fetch("/api/trades/merge/undo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mergedId: lastMerge.mergedId,
+          originals: lastMerge.originals,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast(`Undo failed: ${data.error ?? "Unknown error"}`);
+        return;
+      }
+      toast(`Restored ${lastMerge.count} trades.`);
+      setLastMerge(null);
+      await queryClient.invalidateQueries({ queryKey: ["trades", userId] });
+    } catch (err) {
+      toast(
+        `Undo failed: ${err instanceof Error ? err.message : "Unknown error"}`,
+      );
+    } finally {
+      setUndoing(false);
+    }
+  };
+  const handleMergeConfirm = async () => {
+    if (merging) return;
+    const ids = Array.from(selectedIds);
+    if (ids.length < 2) return;
+    setMerging(true);
+    try {
+      const res = await fetch("/api/trades/merge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast(`Merge failed: ${data.error ?? "Unknown error"}`);
+        return;
+      }
+      toast(`Merged ${ids.length} trades into one.`);
+      setMergeConfirmOpen(false);
+      exitSelectMode();
+      const mergedId: string | undefined = data?.trade?._id;
+      const originals: unknown[] = Array.isArray(data?.originals)
+        ? data.originals
+        : [];
+      if (mergedId && originals.length >= 2) {
+        setLastMerge({ mergedId, originals, count: ids.length });
+      }
+      await queryClient.invalidateQueries({ queryKey: ["trades", userId] });
+    } catch (err) {
+      toast(
+        `Merge failed: ${err instanceof Error ? err.message : "Unknown error"}`,
+      );
+    } finally {
+      setMerging(false);
+    }
+  };
+  const exitSelectMode = () => {
+    setSelectMode(false);
+    clearSelection();
+  };
+  const toggleSelected = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+  const expiryDayKey = (d: string | Date) =>
+    new Date(d).toISOString().split("T")[0];
+  const isMergeableWithSeed = (seed: Trade, t: Trade) => {
+    if (t.symbol !== seed.symbol) return false;
+    if (t.option !== seed.option) return false;
+    if (t.strike !== seed.strike) return false;
+    if (expiryDayKey(t.expiryDate) !== expiryDayKey(seed.expiryDate))
+      return false;
+    if (!!t.simulated !== !!seed.simulated) return false;
+    const seedClosed = seed.status !== "OPEN";
+    const tClosed = t.status !== "OPEN";
+    if (seedClosed !== tClosed) return false;
+    return true;
+  };
 
   // ── Column customization (order + visibility), persisted locally ──────
   const [storedOrder, setStoredOrder] = useLocalStorage<TradeColumnKey[]>(
@@ -634,7 +809,22 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                 )}
               </AnimatePresence>
             </div>
-            <div className="w-full max-w-[1500px] rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md overflow-x-auto max-[1130px]:mt-0 mt-3 p-2 md:p-3">
+            <div
+              ref={tableWrapRef}
+              className="relative w-full max-w-[1500px] rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md overflow-x-auto max-[1130px]:mt-0 mt-3 p-2 md:p-3"
+            >
+              {siriBox && (
+                <div
+                  className="siri-ring absolute z-10"
+                  style={{
+                    top: siriBox.top,
+                    left: siriBox.left,
+                    width: siriBox.width,
+                    height: siriBox.height,
+                  }}
+                  aria-hidden
+                />
+              )}
               {filteredTrades?.length === 0 ? (
                 <div className="text-center text-[13px] text-white/40 py-10">
                   No trades match the current filters.
@@ -648,6 +838,12 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                             user-customisable column set so it can't be
                             reordered or hidden. */}
                         <th className="pl-2 md:pl-3 pr-0 py-2 w-7" aria-label="Quick edit" />
+                        {selectMode && (
+                          <th
+                            className="pl-1 pr-1 py-2 w-6 md:w-7"
+                            aria-label="Select"
+                          />
+                        )}
                         {visibleColumns.map((key, ci) => {
                           const isDragging = draggingKey === key;
                           const isDragOver =
@@ -725,13 +921,47 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                         exit="exit"
                         transition={{ duration: 0.15, ease: "easeOut" }}
                       >
-                        {currentTrades?.map((trade, index) => (
+                        {currentTrades?.map((trade, index) => {
+                          const tradeId = trade._id ?? "";
+                          const isSelected = selectedIds.has(tradeId);
+                          // Seed = the first-selected trade. Every
+                          // subsequent selection must match it, so
+                          // grey out any row that would be an invalid
+                          // merge partner rather than fail server-side.
+                          const seedId = selectedIds.values().next().value as
+                            | string
+                            | undefined;
+                          const seed =
+                            seedId && seedId !== tradeId
+                              ? currentTrades.find((t) => t._id === seedId) ??
+                                (filteredTrades?.find((t) => t._id === seedId) ??
+                                  null)
+                              : null;
+                          const dimmed =
+                            selectMode &&
+                            !!seed &&
+                            !isSelected &&
+                            !isMergeableWithSeed(seed, trade);
+                          return (
                           <tr
                             key={index}
-                            className="group text-xs md:text-[13.5px] border-t border-white/[0.06] hover:bg-white/[0.02] transition cursor-pointer"
-                            onClick={() =>
-                              router.push(`/trades/${userId}/${trade._id}`)
-                            }
+                            data-trade-id={tradeId}
+                            className={`group text-xs md:text-[13.5px] border-t border-white/[0.06] transition cursor-pointer ${
+                              isSelected
+                                ? "bg-teal-500/[0.08] hover:bg-teal-500/[0.12]"
+                                : dimmed
+                                  ? "opacity-40 hover:bg-white/[0.02]"
+                                  : "hover:bg-white/[0.02]"
+                            }`}
+                            onClick={() => {
+                              if (selectMode) {
+                                if (!tradeId) return;
+                                if (dimmed) return;
+                                toggleSelected(tradeId);
+                                return;
+                              }
+                              router.push(`/trades/${userId}/${trade._id}`);
+                            }}
                           >
                             {/* Pencil icon — quick-edit modal. Stops
                                 propagation so the row's row-click
@@ -751,6 +981,22 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                                 <i className="fa-solid fa-pen text-[11px]" />
                               </button>
                             </td>
+                            {selectMode && (
+                              <td className="pl-1 pr-1 py-1 w-6 md:w-7 align-middle">
+                                <input
+                                  type="checkbox"
+                                  aria-label="Select trade"
+                                  checked={isSelected}
+                                  disabled={dimmed}
+                                  onChange={() => {
+                                    if (!tradeId) return;
+                                    toggleSelected(tradeId);
+                                  }}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="w-4 h-4 accent-teal-400 cursor-pointer disabled:cursor-not-allowed"
+                                />
+                              </td>
+                            )}
                             {visibleColumns.map((key, ci) => (
                               <td
                                 key={key}
@@ -768,7 +1014,8 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                               </td>
                             ))}
                           </tr>
-                        ))}
+                          );
+                        })}
                       </motion.tbody>
                     </AnimatePresence>
                   </table>
@@ -816,6 +1063,29 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                     className="inline-flex items-center justify-center gap-2 px-3 md:px-3 py-2 rounded-full bg-white/[0.03] text-white/60 border border-white/10 hover:bg-white/[0.06] hover:text-white transition cursor-pointer text-[12px] md:text-[13px] font-medium w-9 h-9"
                   >
                     <i className="fa-solid fa-list-check text-[11px]" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (selectMode) exitSelectMode();
+                      else setSelectMode(true);
+                    }}
+                    title={
+                      selectMode
+                        ? "Exit selection mode"
+                        : "Select trades to merge partial fills into one"
+                    }
+                    aria-label="Select trades to merge"
+                    className={`inline-flex items-center justify-center gap-2 px-3 md:px-4 py-2 rounded-full border transition text-[12px] md:text-[13px] font-medium w-9 h-9 md:w-auto md:h-auto cursor-pointer ${
+                      selectMode
+                        ? "bg-teal-500/25 text-teal-200 border-teal-500/40 hover:bg-teal-500/30"
+                        : "bg-white/[0.03] text-white/60 border-white/10 hover:bg-white/[0.06] hover:text-white"
+                    }`}
+                  >
+                    <i className="fa-solid fa-object-group text-[11px]" />
+                    <span className="md:inline hidden">
+                      {selectMode ? "Cancel merge" : "Merge trades"}
+                    </span>
                   </button>
                 </div>
               </div>
@@ -916,6 +1186,99 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
           tradeId={editingTrade?._id}
         />
       )}
+      {/* Undo pill after a successful merge. Auto-dismisses after 20s
+          (see effect above) or when the user clicks × / Undo. */}
+      {lastMerge && !selectMode && (
+        <div className="fixed left-1/2 -translate-x-1/2 bottom-5 md:bottom-8 z-40 pointer-events-auto flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2 md:py-2.5 rounded-full bg-[var(--surface,#141419)]/95 border border-white/15 shadow-[0_20px_60px_var(--shadow,rgba(0,0,0,0.6))] backdrop-blur-md">
+          <span className="text-[12.5px] md:text-[13px] text-white/75 font-medium">
+            Merged {lastMerge.count} trades
+          </span>
+          <div className="w-px h-4 bg-white/15" />
+          <button
+            type="button"
+            onClick={handleUndoMerge}
+            disabled={undoing}
+            className="inline-flex items-center gap-1.5 px-3 md:px-3.5 py-1.5 rounded-full bg-white/[0.06] text-white border border-white/15 hover:bg-white/[0.12] transition text-[12.5px] md:text-[13px] font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {undoing ? (
+              <>
+                <i className="fa-solid fa-spinner animate-spin text-[10px]" />
+                Undoing…
+              </>
+            ) : (
+              <>
+                <i className="fa-solid fa-rotate-left text-[10px]" />
+                Undo
+              </>
+            )}
+          </button>
+          <button
+            type="button"
+            aria-label="Dismiss"
+            onClick={() => setLastMerge(null)}
+            disabled={undoing}
+            className="w-6 h-6 rounded-full inline-flex items-center justify-center text-white/45 hover:text-white hover:bg-white/[0.08] transition cursor-pointer disabled:opacity-40"
+          >
+            <i className="fa-solid fa-xmark text-[10px]" />
+          </button>
+        </div>
+      )}
+
+      {/* Floating merge action bar + inline confirm popover */}
+      {selectMode && selectedIds.size > 0 && (
+        <div className="fixed left-1/2 -translate-x-1/2 bottom-5 md:bottom-8 z-40 flex flex-col items-center gap-2 pointer-events-none">
+          {mergeConfirmOpen && (
+            <div className="pointer-events-auto flex items-center gap-2 px-3 py-2 rounded-full bg-[var(--surface,#141419)]/95 border border-white/15 shadow-[0_12px_40px_var(--shadow,rgba(0,0,0,0.5))] backdrop-blur-md">
+              <span className="text-[12.5px] text-white/80 font-medium">
+                Merge {selectedIds.size}?
+              </span>
+              <button
+                type="button"
+                onClick={() => setMergeConfirmOpen(false)}
+                disabled={merging}
+                className="px-2.5 py-1 rounded-full text-[12px] text-white/70 hover:text-white hover:bg-white/[0.08] transition cursor-pointer disabled:opacity-50"
+              >
+                No
+              </button>
+              <button
+                type="button"
+                onClick={handleMergeConfirm}
+                disabled={merging}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-teal-500/25 text-teal-200 border border-teal-500/40 hover:bg-teal-500/35 transition text-[12px] font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {merging && (
+                  <i className="fa-solid fa-spinner animate-spin text-[10px]" />
+                )}
+                Yes
+              </button>
+            </div>
+          )}
+          <div className="pointer-events-auto flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2 md:py-2.5 rounded-full bg-[var(--surface,#141419)]/95 border border-white/15 shadow-[0_20px_60px_var(--shadow,rgba(0,0,0,0.6))] backdrop-blur-md">
+            <span className="text-[12.5px] md:text-[13px] text-white/75 font-medium tabular-nums">
+              {selectedIds.size} selected
+            </span>
+            <button
+              type="button"
+              onClick={clearSelection}
+              disabled={merging}
+              className="text-[12px] md:text-[12.5px] text-white/50 hover:text-white transition cursor-pointer disabled:opacity-40"
+            >
+              Clear
+            </button>
+            <div className="w-px h-4 bg-white/15" />
+            <button
+              type="button"
+              disabled={selectedIds.size < 2 || merging}
+              onClick={() => setMergeConfirmOpen((v) => !v)}
+              className="inline-flex items-center gap-1.5 px-3 md:px-3.5 py-1.5 rounded-full bg-teal-500/25 text-teal-200 border border-teal-500/40 hover:bg-teal-500/35 transition text-[12.5px] md:text-[13px] font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <i className="fa-solid fa-object-group text-[11px]" />
+              Merge {selectedIds.size}
+            </button>
+          </div>
+        </div>
+      )}
+
       {showImported && (
         <ImportedTradesModal
           onClose={() => setShowImported(false)}
