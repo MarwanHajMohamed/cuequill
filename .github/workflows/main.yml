@@ -1,0 +1,15 @@
+# .github/workflows/ibkr-cron.yml
+name: IBKR nightly sync
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:   # lets you manually fire it from the Actions tab
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger cron endpoint
+        run: |
+          curl -fsS -X POST \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            https://cuequill.com/api/ibkr/cron
