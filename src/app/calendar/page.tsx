@@ -517,10 +517,10 @@ function Page() {
           ) : (
             <span
               title={`Market closed — ${marketDay.name}`}
-              className="absolute top-1 right-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/35 text-amber-100 border border-amber-400/60 shadow-[0_0_8px_rgba(245,158,11,0.4)] text-[9px] md:text-[10px] font-bold tracking-wide leading-none"
+              className="absolute top-1 right-1 inline-flex items-center gap-1 px-1.5 md:px-2 py-0.5 rounded-full bg-amber-500/35 text-amber-100 border border-amber-400/60 shadow-[0_0_8px_rgba(245,158,11,0.4)] text-[9px] md:text-[10px] font-bold tracking-wide leading-none"
             >
               <i className="fa-solid fa-lock text-[8px]" aria-hidden />
-              Closed
+              <span className="hidden md:inline">Closed</span>
             </span>
           ))}
         {isToday && (
@@ -799,22 +799,22 @@ function Page() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setDetailed((v) => !v)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition text-[12px] font-medium cursor-pointer ${
+                  className={`w-8 h-8 inline-flex items-center justify-center rounded-full border transition cursor-pointer ${
                     detailed
                       ? "bg-teal-500/15 text-teal-300 border-teal-500/30 hover:bg-teal-500/25"
                       : "border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/75 hover:text-white"
                   }`}
                   title="Overlay watchlist earnings and open-position expiries"
+                  aria-label={detailed ? "Hide overlays" : "Show overlays"}
+                  aria-pressed={detailed}
                 >
-                  <i className="fa-solid fa-layer-group text-[10px]" />
-                  Detailed
+                  <i className="fa-solid fa-layer-group text-[11px]" />
                 </button>
                 <button
                   onClick={goToToday}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/75 hover:text-white transition text-[12px] font-medium cursor-pointer"
+                  className="inline-flex items-center px-3 py-1.5 rounded-full border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/75 hover:text-white transition text-[12px] font-medium cursor-pointer"
                   title="Jump to today"
                 >
-                  <i className="fa-regular fa-calendar text-[10px]" />
                   Today
                 </button>
                 <div className="relative inline-flex rounded-full border border-white/10 bg-white/[0.03] p-1">

@@ -15,6 +15,11 @@ export interface IUser extends Document {
   // the settings UI to show what was imported and let the user delete
   // any duplicates the dedupe pass didn't catch.
   ibkrLastSyncTradeIds: mongoose.Types.ObjectId[];
+  // Last time the user acknowledged the auto-sync notice. When null or
+  // older than `ibkrLastSync` AND the last sync inserted rows, the
+  // client shows a "new trades imported automatically" pop-up on the
+  // next login. Updated once the user dismisses or opens the notice.
+  ibkrLastSyncSeenAt?: Date;
   // Tickers the user tracks on the earnings calendar.
   watchlist: string[];
   // User-authored trading affirmations (Pro). Empty by default; users
@@ -46,6 +51,7 @@ const UserSchema = new Schema<IUser>({
   ibkrLastSyncTradeIds: [
     { type: Schema.Types.ObjectId, ref: "Trade", default: [] },
   ],
+  ibkrLastSyncSeenAt: { type: Date },
   watchlist: { type: [String], default: [] },
   affirmations: { type: [String], default: [] },
   affirmationsRead: {
