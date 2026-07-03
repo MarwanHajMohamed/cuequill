@@ -473,7 +473,7 @@ function Page() {
                 title={`Earnings: ${dayEarnings
                   .map((e) => e.symbol + (e.isEstimate ? " (est.)" : ""))
                   .join(", ")}`}
-                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-teal-500/25 text-teal-100 border border-teal-400/50 text-[8.5px] md:text-[9.5px] font-bold tracking-wide leading-none max-w-full"
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/40 text-[8.5px] md:text-[9.5px] font-bold tracking-wide leading-none max-w-full"
               >
                 <i className="fa-solid fa-bullhorn text-[7px]" aria-hidden />
                 <span className="truncate">
@@ -488,7 +488,7 @@ function Page() {
             {dayExpiries.length > 0 && (
               <span
                 title={`Open positions expiring: ${dayExpiries.join(", ")}`}
-                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-orange-500/25 text-orange-100 border border-orange-400/50 text-[8.5px] md:text-[9.5px] font-bold tracking-wide leading-none max-w-full"
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/40 text-[8.5px] md:text-[9.5px] font-bold tracking-wide leading-none max-w-full"
               >
                 <i className="fa-solid fa-hourglass-end text-[7px]" aria-hidden />
                 <span className="truncate">
@@ -714,6 +714,12 @@ function Page() {
     );
   };
 
+  // On phones the month grid normally fits the viewport exactly (no
+  // scroll). In detailed mode the tiles carry extra chips, so we switch
+  // to taller, scrollable tiles instead of cramming everything into a
+  // fixed height. Desktop is unaffected (md:h-auto everywhere).
+  const scrollMode = detailed && view === "month";
+
   return (
     <>
       {/* Aurora - matches the dashboard / trades / settings hue. */}
@@ -730,13 +736,27 @@ function Page() {
           row up top (~60px incl. mt-15) and the floating bottom tab
           bar (88px + safe-area). md:h-auto on desktop where there's
           no bottom nav. */}
-      <div className="flex md:mt-24 md:mb-10 justify-center mt-15 md:h-auto h-[calc(100dvh-60px-88px-env(safe-area-inset-top)-env(safe-area-inset-bottom))] md:w-auto w-full">
-        <div className="flex md:h-auto h-full md:w-auto w-full">
+      <div
+        className={`flex md:mt-24 md:mb-10 justify-center mt-15 md:h-auto md:w-auto w-full ${
+          scrollMode
+            ? "pb-6"
+            : "h-[calc(100dvh-60px-88px-env(safe-area-inset-top)-env(safe-area-inset-bottom))]"
+        }`}
+      >
+        <div
+          className={`flex md:h-auto md:w-auto w-full ${
+            scrollMode ? "" : "h-full"
+          }`}
+        >
           {/* Width matches the desktop navbar exactly:
               max-w-[1500px] + mx-10 (80px total horizontal margin) so
               the calendar pill sits directly beneath the nav pill at
               the same width. mt-22 places it ~12px under the nav. */}
-          <div className="md:max-w-[1500px] md:w-[calc(100vw-80px)] w-full md:h-auto h-full flex flex-col mx-auto">
+          <div
+            className={`md:max-w-[1500px] md:w-[calc(100vw-80px)] w-full md:h-auto flex flex-col mx-auto ${
+              scrollMode ? "" : "h-full"
+            }`}
+          >
             {/* Unified control row - month P/L on the left, Today +
                 Month/Week toggle on the right. */}
             <div className="flex items-center justify-between gap-2 px-3 md:px-0 mb-3 md:mb-4">
@@ -853,10 +873,16 @@ function Page() {
             )}
 
             {view === "month" ? (
-              <div className="flex gap-3 items-stretch md:flex-initial flex-1 md:h-auto min-h-0">
+              <div
+                className={`flex gap-3 items-stretch md:flex-initial md:h-auto ${
+                  scrollMode ? "" : "flex-1 min-h-0"
+                }`}
+              >
                 <div
                   ref={calendarColRef}
-                  className="flex-1 min-w-0 relative md:h-auto h-full"
+                  className={`flex-1 min-w-0 relative md:h-auto ${
+                    scrollMode ? "" : "h-full"
+                  }`}
                 >
                   <AnimatedCalendar
                     ref={calRef}
@@ -864,7 +890,9 @@ function Page() {
                     onChange={(date) => handleDateClick(date)}
                     tileContent={renderTileContent}
                     tileClassName={renderTileClassName}
-                    className="custom-calendar_full-view"
+                    className={`custom-calendar_full-view${
+                      detailed ? " calendar-detailed" : ""
+                    }`}
                     showTodayButton={false}
                     onMonthChange={setDisplayedMonth}
                     onViewChange={setCalView}
