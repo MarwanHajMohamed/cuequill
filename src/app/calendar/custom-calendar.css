@@ -313,8 +313,14 @@
   .react-calendar.custom-calendar_full-view.calendar-detailed
     .react-calendar__month-view__days {
     height: auto !important;
-    grid-auto-rows: minmax(96px, auto) !important;
+    grid-auto-rows: minmax(132px, auto) !important;
     overflow: visible !important;
+  }
+  /* Give the tile inner room to breathe so the day number, chips,
+     badges and the P/L readout don't stack on top of each other. */
+  .react-calendar.custom-calendar_full-view.calendar-detailed
+    .react-calendar__tile {
+    padding-bottom: 6px !important;
   }
   .react-calendar.custom-calendar_full-view.calendar-detailed
     .react-calendar__month-view {

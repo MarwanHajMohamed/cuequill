@@ -515,13 +515,20 @@ function Page() {
               1pm
             </span>
           ) : (
-            <span
-              title={`Market closed — ${marketDay.name}`}
-              className="absolute top-1 right-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/35 text-amber-100 border border-amber-400/60 shadow-[0_0_8px_rgba(245,158,11,0.4)] text-[9px] md:text-[10px] font-bold tracking-wide leading-none"
-            >
-              <i className="fa-solid fa-lock text-[8px]" aria-hidden />
-              Closed
-            </span>
+            <>
+              {/* Full-day closure: mute the whole tile and mark it with
+                  a lock (no text). */}
+              <span
+                aria-hidden
+                className="absolute inset-0 rounded-[inherit] bg-neutral-500/15 pointer-events-none"
+              />
+              <span
+                title={`Market closed — ${marketDay.name}`}
+                className="absolute top-1 right-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-500/30 text-amber-300 border border-amber-500/50 shadow-[0_0_8px_rgba(245,158,11,0.35)]"
+              >
+                <i className="fa-solid fa-lock text-[9px]" aria-hidden />
+              </span>
+            </>
           ))}
         {isToday && (
           <span className="absolute top-2 right-1 w-1.5 h-1.5 rounded-full bg-blue-400" />
@@ -936,6 +943,7 @@ function Page() {
                   ref={calRef}
                   value={value}
                   trades={trades}
+                  earningsByDay={detailed ? earningsByDay : undefined}
                   onDateClick={(date) => handleDateClick(date)}
                   onEventClick={(event) => {
                     setSelectedDate(new Date(event.dateBought));

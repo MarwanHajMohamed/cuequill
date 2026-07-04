@@ -43,6 +43,9 @@ const pillStyle = (status: TradeEventType) => {
 interface WeekViewProps {
   value: Date;
   trades: Trade[] | undefined;
+  /** Detailed mode: "yyyy-MM-dd" → watchlist symbols reporting that day.
+   * When provided, earnings chips render on each day. */
+  earningsByDay?: Map<string, { symbol: string; isEstimate: boolean }[]>;
   onDateClick: (date: Date) => void;
   onEventClick: (event: Trade) => void;
   /** Fires whenever the visible week changes - lets the parent show a
@@ -51,7 +54,7 @@ interface WeekViewProps {
 }
 
 const WeekView = forwardRef<WeekViewHandle, WeekViewProps>(function WeekView(
-  { value, trades, onDateClick, onEventClick, onWeekChange },
+  { value, trades, earningsByDay, onDateClick, onEventClick, onWeekChange },
   ref,
 ) {
   const weekGridRef = useRef<HTMLDivElement>(null);
@@ -329,6 +332,18 @@ const WeekView = forwardRef<WeekViewHandle, WeekViewProps>(function WeekView(
                   onClick={() => onDateClick(day)}
                 >
                   <div className="mt-2 flex flex-col items-stretch gap-1.5 px-1.5">
+                    {/* Detailed mode: watchlist earnings reporting today */}
+                    {(earningsByDay?.get(dayStr) ?? []).map((e) => (
+                      <div
+                        key={`e-${e.symbol}`}
+                        title={`${e.symbol} earnings${e.isEstimate ? " (est.)" : ""}`}
+                        className="flex items-center justify-center gap-1 text-[10px] md:text-[11px] font-medium px-1.5 py-1 rounded-full border bg-teal-500/15 text-teal-300 border-teal-500/30 truncate"
+                        onClick={(ev) => ev.stopPropagation()}
+                      >
+                        <i className="fa-solid fa-bullhorn text-[8px]" aria-hidden />
+                        <span className="truncate">{e.symbol}</span>
+                      </div>
+                    ))}
                     {eventsForDay.map((event, idx) =>
                       event.status === "TODAY" ? (
                         <div
