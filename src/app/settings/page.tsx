@@ -6,6 +6,7 @@ import TradesTab from "./TradesTab";
 import { useQueryClient } from "@tanstack/react-query";
 import Account from "./Account";
 import IBKRTab from "./IBKRTab";
+import NotificationsTab from "./NotificationsTab";
 
 function Page() {
   const [selectedSetting, setSelectedSetting] = useState<string>("Account");
@@ -73,6 +74,11 @@ function Page() {
       title: "IBKR auto-sync",
       icon: "fa-solid fa-rotate",
       content: <IBKRTab />,
+    },
+    {
+      title: "Notifications",
+      icon: "fa-solid fa-bell",
+      content: <NotificationsTab />,
     },
   ];
 

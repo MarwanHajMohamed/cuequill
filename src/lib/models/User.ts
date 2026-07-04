@@ -35,6 +35,13 @@ export interface IUser extends Document {
   // an upgrade prompt. Flipped manually until a real billing
   // integration ships.
   isPro: boolean;
+  // Send a daily 8am (local) email reminder if the user hasn't
+  // read all their affirmations yet that day. Opt-out; on by default.
+  emailAffirmationsReminder?: boolean;
+  // Local-date (yyyy-MM-dd, in the user's tz) of the last reminder
+  // sent, so the hourly cron doesn't spam the same person more than
+  // once a day.
+  emailAffirmationsLastSentDate?: string;
 }
 
 const UserSchema = new Schema<IUser>({
@@ -65,6 +72,8 @@ const UserSchema = new Schema<IUser>({
     default: () => ({ date: "", texts: [] }),
   },
   isPro: { type: Boolean, default: false },
+  emailAffirmationsReminder: { type: Boolean, default: true },
+  emailAffirmationsLastSentDate: { type: String, default: "" },
 });
 
 // In dev, Next.js hot-reload keeps the previously-compiled model (with
