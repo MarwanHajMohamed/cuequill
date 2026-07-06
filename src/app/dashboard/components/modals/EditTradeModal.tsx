@@ -169,7 +169,7 @@ export default function EditTradeModal({
   return (
     <>
       <motion.div
-        className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-3 md:p-0"
+        className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 py-6 px-3 md:p-0"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -178,7 +178,7 @@ export default function EditTradeModal({
       >
         <motion.div
           onClick={(e) => e.stopPropagation()}
-          className="relative flex flex-col bg-[var(--surface)] border border-white/10 rounded-2xl md:w-[90%] md:max-w-lg w-full max-h-[88vh] md:max-h-[90vh] overflow-hidden"
+          className="relative flex flex-col bg-[var(--surface)] border border-white/10 rounded-2xl md:w-[90%] md:max-w-lg w-full max-h-full md:max-h-[90vh] overflow-hidden"
           initial={{ opacity: 0, scale: 0.96, y: 16 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: 16 }}

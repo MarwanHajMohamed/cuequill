@@ -15,6 +15,11 @@ export interface IUser extends Document {
   // the settings UI to show what was imported and let the user delete
   // any duplicates the dedupe pass didn't catch.
   ibkrLastSyncTradeIds: mongoose.Types.ObjectId[];
+  // Last time the user acknowledged the auto-sync notice. When null or
+  // older than `ibkrLastSync` AND the last sync inserted rows, the
+  // client shows a "new trades imported automatically" pop-up on the
+  // next login. Updated once the user dismisses or opens the notice.
+  ibkrLastSyncSeenAt?: Date;
   // Tickers the user tracks on the earnings calendar.
   watchlist: string[];
   // User-authored trading affirmations (Pro). Empty by default; users
@@ -30,6 +35,13 @@ export interface IUser extends Document {
   // an upgrade prompt. Flipped manually until a real billing
   // integration ships.
   isPro: boolean;
+  // Send a daily 8am (local) email reminder if the user hasn't
+  // read all their affirmations yet that day. Opt-out; on by default.
+  emailAffirmationsReminder?: boolean;
+  // Local-date (yyyy-MM-dd, in the user's tz) of the last reminder
+  // sent, so the hourly cron doesn't spam the same person more than
+  // once a day.
+  emailAffirmationsLastSentDate?: string;
 }
 
 const UserSchema = new Schema<IUser>({
@@ -46,6 +58,7 @@ const UserSchema = new Schema<IUser>({
   ibkrLastSyncTradeIds: [
     { type: Schema.Types.ObjectId, ref: "Trade", default: [] },
   ],
+  ibkrLastSyncSeenAt: { type: Date },
   watchlist: { type: [String], default: [] },
   affirmations: { type: [String], default: [] },
   affirmationsRead: {
@@ -59,6 +72,8 @@ const UserSchema = new Schema<IUser>({
     default: () => ({ date: "", texts: [] }),
   },
   isPro: { type: Boolean, default: false },
+  emailAffirmationsReminder: { type: Boolean, default: true },
+  emailAffirmationsLastSentDate: { type: String, default: "" },
 });
 
 // In dev, Next.js hot-reload keeps the previously-compiled model (with

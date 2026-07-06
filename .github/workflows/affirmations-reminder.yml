@@ -1,0 +1,25 @@
+name: Affirmations reminder
+
+# Fires every hour on the hour. The endpoint filters to users whose
+# local time is currently in the 8am hour, so only they receive an
+# email. Running hourly means one workflow covers every timezone in
+# the world (24 fires/day = ~730/mo, well inside GitHub's free tier).
+#
+# workflow_dispatch is included so you can trigger a smoke test from
+# the Actions tab without waiting for the top of the hour.
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hit /api/cron/affirmations-reminder
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -fsS \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            https://cuequill.com/api/cron/affirmations-reminder

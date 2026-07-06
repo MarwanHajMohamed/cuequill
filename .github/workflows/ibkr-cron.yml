@@ -1,0 +1,27 @@
+name: IBKR nightly sync
+
+# Fires the same endpoint the Vercel cron used to hit. Mirrors the
+# previous schedule from vercel.json — 22:00 UTC on weekdays, which
+# is ~5–6pm ET after the US market close. GitHub Actions cron can
+# drift 5–15 min under load; that's fine for a nightly sync.
+#
+# workflow_dispatch lets us fire it manually from the Actions tab
+# (useful for backfills or re-running after a failed night).
+on:
+  schedule:
+    - cron: "0 22 * * 1-5"
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hit /api/ibkr/cron
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          # -f fails on non-2xx so a bad response marks the job red.
+          # -sS keeps the log quiet on success but shows errors.
+          curl -fsS -X GET \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            https://cuequill.com/api/ibkr/cron
