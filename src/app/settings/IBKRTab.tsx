@@ -45,6 +45,10 @@ export default function IBKRTab() {
   const [importedTrades, setImportedTrades] = useState<ImportedTrade[]>([]);
   const [importedError, setImportedError] = useState("");
   const [deleting, setDeleting] = useState<Record<string, boolean>>({});
+  // Distinguishes "haven't tried loading yet" from "loaded, list is
+  // empty". Without this the pill count would flash the historical
+  // ibkrLastSyncInserted number before the real list arrives.
+  const [haveLoadedImported, setHaveLoadedImported] = useState(false);
 
   useEffect(() => {
     fetch("/api/user/ibkr-settings")
@@ -113,6 +117,11 @@ export default function IBKRTab() {
       );
       setLastSync(new Date().toISOString());
       setLastInserted(data.inserted);
+      // Force a re-fetch of the live imported list after a fresh
+      // sync so the pill count reflects the new set, not whatever
+      // was left over from the previous sync.
+      setImportedTrades([]);
+      setHaveLoadedImported(false);
       setLastSkipped(data.skipped);
       // If a panel was open, refresh; otherwise let user open it.
       if (importedOpen) loadImported();
@@ -134,8 +143,21 @@ export default function IBKRTab() {
       setImportedTrades([]);
     } finally {
       setImportedLoading(false);
+      setHaveLoadedImported(true);
     }
   };
+
+  // Fetch the live imported-trades list once we know a sync has ever
+  // inserted rows. This is what makes the pill count and the
+  // expander agree — using the historical ibkrLastSyncInserted alone
+  // would show a count for docs that have since been deleted or
+  // merged.
+  useEffect(() => {
+    if (lastInserted != null && lastInserted > 0 && !haveLoadedImported) {
+      loadImported();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastInserted]);
 
   const handleToggleImported = () => {
     const next = !importedOpen;
@@ -346,8 +368,22 @@ export default function IBKRTab() {
           )}
         </div>
 
-        {/* Imported-trades viewer */}
-        {(lastInserted ?? 0) > 0 || importedTrades.length > 0 ? (
+        {/* Imported-trades viewer. Once the live list has loaded we
+            use its length for the pill count; before that we fall
+            back to the historical ibkrLastSyncInserted so the button
+            still appears while the fetch is in flight. Hidden
+            entirely once we've confirmed nothing remains — either
+            the sync was empty, or the user deleted / merged the
+            imports away since. */}
+        {(() => {
+          const liveCount = importedTrades.length;
+          const historicalCount = lastInserted ?? 0;
+          const showCount = haveLoadedImported ? liveCount : historicalCount;
+          const shouldShow = haveLoadedImported
+            ? liveCount > 0
+            : historicalCount > 0 || importedLoading;
+          if (!shouldShow) return null;
+          return (
           <div className="mt-1">
             <button
               type="button"
@@ -358,9 +394,9 @@ export default function IBKRTab() {
                 className={`fa-solid fa-chevron-right text-[9px] transition-transform ${importedOpen ? "rotate-90" : ""}`}
               />
               {importedOpen ? "Hide" : "View"} imported trades
-              {lastInserted != null && lastInserted > 0 && (
+              {showCount > 0 && (
                 <span className="ml-1 text-white/40 tabular-nums">
-                  ({lastInserted})
+                  ({showCount})
                 </span>
               )}
             </button>
@@ -432,7 +468,8 @@ export default function IBKRTab() {
               )}
             </AnimatePresence>
           </div>
-        ) : null}
+          );
+        })()}
       </section>
     </div>
   );

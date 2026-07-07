@@ -67,17 +67,14 @@ export default function NotificationsTab() {
     <div className="p-5 md:p-7 flex flex-col gap-6">
       <div>
         <div className="text-[11px] tracking-[0.08em] text-white/45 font-medium mb-1">
-          EMAIL
-        </div>
-        <div className="text-[14px] text-white/60">
-          We only send what you ask for. Turn anything off any time.
+          Email
         </div>
       </div>
 
       <div className="flex flex-col gap-2 max-w-2xl">
         <Toggle
-          title="Morning affirmations reminder"
-          description="Every day at 8am your local time, if you haven't read all your affirmations for the day, we'll send you a quick reminder."
+          title="Affirmations"
+          description="Receive a notification to read your affirmations if you haven't already."
           checked={prefs?.emailAffirmationsReminder ?? true}
           disabled={!prefs || saving}
           onChange={(v) => setPref("emailAffirmationsReminder", v)}

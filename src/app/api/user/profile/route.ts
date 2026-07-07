@@ -30,7 +30,9 @@ export async function PATCH(req: Request) {
   }
 
   await connectDb();
-  const user = await User.findById(session.user.id);
+  // The schema hides `password` by default (select:false). We need
+  // it here for the current-password check, so opt back in.
+  const user = await User.findById(session.user.id).select("+password");
   if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
@@ -86,7 +88,10 @@ export async function PATCH(req: Request) {
         { status: 403 },
       );
     }
-    user.password = await bcrypt.hash(body.newPassword, 10);
+    // Cost factor 12 matches OWASP's 2023 guidance for bcrypt on
+    // modern hardware — meaningfully harder to brute-force offline
+    // than the old default of 10.
+    user.password = await bcrypt.hash(body.newPassword, 12);
   }
 
   // ── Apply identity changes ──────────────────────────────────────────

@@ -7,6 +7,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import Account from "./Account";
 import IBKRTab from "./IBKRTab";
 import NotificationsTab from "./NotificationsTab";
+import PlanTab from "./PlanTab";
 
 function Page() {
   const [selectedSetting, setSelectedSetting] = useState<string>("Account");
@@ -57,6 +58,7 @@ function Page() {
 
   const settingsTabs = [
     { title: "Account", icon: "fa-solid fa-user", content: <Account /> },
+    { title: "Plan", icon: "fa-solid fa-crown", content: <PlanTab /> },
     {
       title: "Trades",
       icon: "fa-solid fa-file-import",
@@ -121,7 +123,7 @@ function Page() {
           </nav>
 
           {/* Content */}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 min-h-[520px]">
             {settingsTabs.map((tab) =>
               selectedSetting === tab.title ? (
                 <div key={tab.title}>{tab.content}</div>

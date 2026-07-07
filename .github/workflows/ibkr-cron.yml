@@ -22,6 +22,9 @@ jobs:
         run: |
           # -f fails on non-2xx so a bad response marks the job red.
           # -sS keeps the log quiet on success but shows errors.
-          curl -fsS -X GET \
+          # -L follows 3xx redirects — without it, Vercel's apex →
+          # www (or http → https) redirect returns "Redirecting..."
+          # and the actual endpoint is never hit.
+          curl -fLsS -X GET \
             -H "Authorization: Bearer ${CRON_SECRET}" \
             https://cuequill.com/api/ibkr/cron

@@ -3,6 +3,12 @@ import mongoose, { Schema, Document } from "mongoose";
 export interface IUser extends Document {
   email: string;
   password: string;
+  // Account lockout counters, incremented by the sign-in flow. The
+  // `authorize` callback rejects logins while `lockedUntil` is in the
+  // future so a single account can't be brute-forced even without
+  // shared rate-limiting infrastructure.
+  failedLoginAttempts?: number;
+  lockedUntil?: Date;
   firstname: string;
   surname: string;
   timezone: string;
@@ -45,8 +51,22 @@ export interface IUser extends Document {
 }
 
 const UserSchema = new Schema<IUser>({
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
+  // lowercase+trim so a user who signs up as "Marwan@…" and later
+  // types "marwan@…" logs in successfully, and the `unique` index
+  // treats them as the same address.
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true,
+    trim: true,
+  },
+  // select:false → the hash is never returned by default queries.
+  // The two callsites that legitimately need it (sign-in verification
+  // and password change) opt in with `.select("+password")`.
+  password: { type: String, required: true, select: false },
+  failedLoginAttempts: { type: Number, default: 0 },
+  lockedUntil: { type: Date },
   firstname: { type: String, required: true },
   surname: { type: String },
   timezone: { type: String, default: null },

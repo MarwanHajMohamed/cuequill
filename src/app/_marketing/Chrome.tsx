@@ -64,20 +64,25 @@ export function SiteHeader() {
             href="/features"
             className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-full text-white/55 hover:text-white transition text-[12.5px]"
           >
-            features
+            Features
           </Link>
           <Link
             href="/pricing"
             className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-full text-white/55 hover:text-white transition text-[12.5px]"
           >
-            pricing
+            Pricing
           </Link>
-          <ThemeToggle />
           <Link
             href="/login"
+            className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-full text-white/55 hover:text-white transition text-[12.5px]"
+          >
+            Sign in
+          </Link>
+          <Link
+            href="/signup"
             className="hidden sm:inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[12.5px] font-medium"
           >
-            sign in
+            Join waitlist
           </Link>
           <button
             type="button"
@@ -109,21 +114,29 @@ export function SiteHeader() {
                 onClick={() => setMenuOpen(false)}
                 className="px-5 py-3.5 text-[14px] text-white/80 hover:text-white hover:bg-white/[0.04] border-b border-[var(--rule)] transition"
               >
-                features
+                Features
               </Link>
               <Link
                 href="/pricing"
                 onClick={() => setMenuOpen(false)}
                 className="px-5 py-3.5 text-[14px] text-white/80 hover:text-white hover:bg-white/[0.04] border-b border-[var(--rule)] transition"
               >
-                pricing
+                Pricing
               </Link>
               <Link
                 href="/login"
                 onClick={() => setMenuOpen(false)}
+                className="px-5 py-3.5 text-[14px] text-white/80 hover:text-white hover:bg-white/[0.04] border-b border-[var(--rule)] transition inline-flex items-center justify-between"
+              >
+                Sign in
+                <i className="fa-solid fa-chevron-right text-[11px]" />
+              </Link>
+              <Link
+                href="/signup"
+                onClick={() => setMenuOpen(false)}
                 className="px-5 py-3.5 text-[14px] font-medium text-teal-300 hover:bg-teal-500/[0.08] transition inline-flex items-center justify-between"
               >
-                sign in
+                Join waitlist
                 <i className="fa-solid fa-chevron-right text-[11px]" />
               </Link>
             </div>
@@ -158,6 +171,7 @@ export function SiteFooter() {
             { label: "Overview", href: "/" },
             { label: "Features", href: "/features" },
             { label: "Pricing", href: "/pricing" },
+            { label: "Join waitlist", href: "/signup" },
             { label: "Sign in", href: "/login" },
           ]}
         />
@@ -179,7 +193,10 @@ export function SiteFooter() {
       <div className="border-t border-white/10">
         <div className="max-w-[1200px] mx-auto px-6 md:px-10 py-4 flex items-center justify-between text-[10.5px] tracking-[0.1em] text-white/35">
           <span>© {new Date().getFullYear()} Cuequill</span>
-          <span>Invite-only</span>
+          <div className="flex items-center gap-4">
+            <span>Invite-only</span>
+            <ThemeToggle />
+          </div>
         </div>
       </div>
     </footer>

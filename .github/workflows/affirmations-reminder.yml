@@ -20,6 +20,9 @@ jobs:
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
-          curl -fsS \
+          # -L follows Vercel's 3xx redirects (apex → www, http → https)
+          # so the endpoint actually gets called rather than the job
+          # painting green on a redirect response.
+          curl -fLsS \
             -H "Authorization: Bearer ${CRON_SECRET}" \
             https://cuequill.com/api/cron/affirmations-reminder

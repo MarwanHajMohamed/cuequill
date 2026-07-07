@@ -1,8 +1,8 @@
 "use client";
 
-import { signIn, useSession } from "next-auth/react";
+import { getProviders, signIn, useSession } from "next-auth/react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import PageLoading from "../PageLoading";
@@ -16,12 +16,59 @@ export default function Login() {
 
   const { status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Which OAuth providers are actually configured on the server.
+  // Google/Apple only appear when their env vars are set (see
+  // lib/auth.ts), so we ask the server which are live rather than
+  // hardcoding assumptions in the UI.
+  const [oauthProviders, setOauthProviders] = useState<{
+    google?: boolean;
+    apple?: boolean;
+  }>({});
+  const [oauthLoading, setOauthLoading] = useState<null | "google" | "apple">(
+    null,
+  );
 
   useEffect(() => {
     if (status === "authenticated") {
       router.push("/dashboard");
     }
   }, [status, router]);
+
+  useEffect(() => {
+    getProviders().then((p) => {
+      setOauthProviders({
+        google: !!p?.google,
+        apple: !!p?.apple,
+      });
+    });
+  }, []);
+
+  // NextAuth redirects failed OAuth flows to /login?error=... Show a
+  // friendly message for the common ones; anything unrecognised falls
+  // through to a generic fail-safe.
+  useEffect(() => {
+    const err = searchParams.get("error");
+    if (!err) return;
+    if (err === "OAuthNoEmail") {
+      setError("Your Apple ID didn't share an email. Try Google, or the form below.");
+    } else if (err === "OAuthAccountNotLinked") {
+      setError(
+        "That email is already registered with a different sign-in method. Use email + password below.",
+      );
+    } else if (err !== "CredentialsSignin") {
+      setError("Sign-in failed. Try again.");
+    }
+  }, [searchParams]);
+
+  const handleOAuth = async (provider: "google" | "apple") => {
+    setOauthLoading(provider);
+    // redirect:true lets NextAuth handle the OAuth round-trip and
+    // the eventual bounce back to /dashboard (or /signup if the
+    // signIn callback rejects them for not being on the waitlist).
+    await signIn(provider, { callbackUrl: "/dashboard" });
+  };
 
   if (status === "loading") {
     return <PageLoading />;
@@ -42,7 +89,16 @@ export default function Login() {
     });
 
     if (res?.error) {
-      setError("Incorrect email or password.");
+      // NextAuth surfaces authorize() throws via res.error. Show a
+      // specific message for the lockout code; everything else falls
+      // through to the generic wrong-credentials copy.
+      if (res.error === "ACCOUNT_LOCKED") {
+        setError(
+          "Too many failed attempts. This account is locked for 15 minutes.",
+        );
+      } else {
+        setError("Incorrect email or password.");
+      }
     } else {
       router.push("/dashboard");
     }
@@ -70,7 +126,7 @@ export default function Login() {
         className="absolute top-6 left-6 inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-white/[0.03] backdrop-blur-md text-white/65 hover:bg-white/[0.06] hover:text-white transition text-[12px] font-medium"
       >
         <i className="fa-solid fa-chevron-left text-[10px]" />
-        back
+        Back
       </Link>
 
       <motion.div
@@ -80,25 +136,61 @@ export default function Login() {
         className="w-full max-w-[420px] rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md p-7 md:p-8 shadow-[0_24px_80px_var(--shadow)]"
       >
         {/* Header */}
-        <div className="flex flex-col gap-1.5 mb-7 text-center">
-          <div className="text-[11px] tracking-[0.1em] text-white/40 font-medium">
-            welcome back
-          </div>
+        <div className="mb-7 text-center">
           <h1 className="text-3xl md:text-4xl font-semibold tracking-tight leading-[1.05]">
             <span className="bg-gradient-to-r from-teal-300 to-emerald-400 bg-clip-text text-transparent">
-              sign in
+              Sign in
             </span>
           </h1>
-          <p className="text-[13px] text-white/50 mt-1">
-            Pick up where you left off.
-          </p>
         </div>
+
+        {(oauthProviders.google || oauthProviders.apple) && (
+          <>
+            <div className="flex flex-col gap-2 mb-5">
+              {oauthProviders.google && (
+                <button
+                  type="button"
+                  onClick={() => handleOAuth("google")}
+                  disabled={oauthLoading !== null}
+                  className="inline-flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-full border border-white/15 bg-white text-black hover:bg-white/90 transition text-[13.5px] font-medium cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {oauthLoading === "google" ? (
+                    <i className="fa-solid fa-circle-notch animate-spin text-[12px]" />
+                  ) : (
+                    <i className="fa-brands fa-google text-[13px]" />
+                  )}
+                  Continue with Google
+                </button>
+              )}
+              {oauthProviders.apple && (
+                <button
+                  type="button"
+                  onClick={() => handleOAuth("apple")}
+                  disabled={oauthLoading !== null}
+                  className="inline-flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-full border border-white/15 bg-black text-white hover:bg-neutral-900 transition text-[13.5px] font-medium cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {oauthLoading === "apple" ? (
+                    <i className="fa-solid fa-circle-notch animate-spin text-[12px]" />
+                  ) : (
+                    <i className="fa-brands fa-apple text-[14px]" />
+                  )}
+                  Continue with Apple
+                </button>
+              )}
+            </div>
+            <div className="flex items-center gap-3 mb-5 text-[10.5px] tracking-[0.12em] text-white/35">
+              <div className="flex-1 h-px bg-white/10" />
+              OR
+              <div className="flex-1 h-px bg-white/10" />
+            </div>
+          </>
+        )}
 
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
           {/* Email */}
           <label className="flex flex-col gap-1.5">
             <span className="text-[11px] tracking-[0.08em] text-white/45 font-medium">
-              email
+              Email
             </span>
             <div className="relative">
               <i className="fa-solid fa-envelope absolute left-3 top-1/2 -translate-y-1/2 text-[12px] text-white/35" />
@@ -120,7 +212,7 @@ export default function Login() {
           {/* Password */}
           <label className="flex flex-col gap-1.5">
             <span className="text-[11px] tracking-[0.08em] text-white/45 font-medium">
-              password
+              Password
             </span>
             <div className="relative">
               <i className="fa-solid fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-[12px] text-white/35" />
@@ -148,18 +240,15 @@ export default function Login() {
             </div>
           </label>
 
-          {/* Error - reserves height so the layout doesn't jump. */}
-          <div
-            className={`min-h-[36px] transition-all ${error ? "opacity-100" : "opacity-0"}`}
-            aria-live="polite"
-          >
-            {error && (
-              <div className="border border-red-500/25 bg-red-500/10 text-red-300 text-[12.5px] rounded-lg px-3 py-2 flex items-center gap-2">
-                <i className="fa-solid fa-triangle-exclamation text-[11px]" />
-                {error}
-              </div>
-            )}
-          </div>
+          {error && (
+            <div
+              aria-live="polite"
+              className="border border-red-500/25 bg-red-500/10 text-red-300 text-[12.5px] rounded-lg px-3 py-2 flex items-center gap-2"
+            >
+              <i className="fa-solid fa-triangle-exclamation text-[11px]" />
+              {error}
+            </div>
+          )}
 
           {/* Submit */}
           <button
@@ -174,11 +263,11 @@ export default function Login() {
             {loading ? (
               <>
                 <i className="fa-solid fa-circle-notch animate-spin text-[12px]" />
-                signing in…
+                Signing in…
               </>
             ) : (
               <>
-                sign in
+                Sign in
                 <i className="fa-solid fa-chevron-right text-[10px]" />
               </>
             )}
@@ -187,13 +276,13 @@ export default function Login() {
 
         {/* Footer line */}
         <div className="mt-6 text-center text-[11.5px] text-white/40">
-          Currently invite-only. Need access?{" "}
-          <a
-            href="mailto:info@cuequill.com"
+          Don&apos;t have an account?{" "}
+          <Link
+            href="/signup"
             className="text-white/70 hover:text-white underline decoration-white/20 underline-offset-2 hover:decoration-teal-400 transition"
           >
-            Get in touch
-          </a>
+            Join the waitlist
+          </Link>
           .
         </div>
       </motion.div>
