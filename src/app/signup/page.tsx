@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 // Pre-launch signup. Cuequill is currently invite-only, so instead of
@@ -16,7 +16,18 @@ type State =
   | { kind: "success"; existed: boolean }
   | { kind: "error"; message: string };
 
+// useSearchParams() forces the child into client-only rendering, so
+// the whole subtree must sit inside a Suspense boundary or the
+// prerender step fails.
 export default function SignupPage() {
+  return (
+    <Suspense fallback={null}>
+      <SignupInner />
+    </Suspense>
+  );
+}
+
+function SignupInner() {
   const [firstname, setFirstname] = useState("");
   const [email, setEmail] = useState("");
   const [state, setState] = useState<State>({ kind: "form" });

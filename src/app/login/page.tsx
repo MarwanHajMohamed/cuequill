@@ -4,10 +4,23 @@ import { getProviders, signIn, useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import PageLoading from "../PageLoading";
 
-export default function Login() {
+// useSearchParams() forces the child into client-only rendering, so
+// the whole subtree must be wrapped in a Suspense boundary or the
+// prerender step fails. Split the page in two: a trivial outer
+// component that owns the boundary, and the existing form/logic
+// inside it.
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<PageLoading />}>
+      <Login />
+    </Suspense>
+  );
+}
+
+function Login() {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [showPassword, setShowPassword] = useState(false);
