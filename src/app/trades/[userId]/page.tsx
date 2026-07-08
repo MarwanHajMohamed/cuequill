@@ -1189,7 +1189,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
       {/* Undo pill after a successful merge. Auto-dismisses after 20s
           (see effect above) or when the user clicks × / Undo. */}
       {lastMerge && !selectMode && (
-        <div className="fixed left-1/2 -translate-x-1/2 bottom-5 md:bottom-8 z-40 pointer-events-auto flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2 md:py-2.5 rounded-full bg-[var(--surface,#141419)]/95 border border-white/15 shadow-[0_20px_60px_var(--shadow,rgba(0,0,0,0.6))] backdrop-blur-md">
+        <div className="fixed left-1/2 -translate-x-1/2 bottom-[calc(env(safe-area-inset-bottom)+100px)] md:bottom-8 z-[55] pointer-events-auto flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2 md:py-2.5 rounded-full bg-[var(--surface,#141419)]/95 border border-white/15 shadow-[0_20px_60px_var(--shadow,rgba(0,0,0,0.6))] backdrop-blur-md">
           <span className="text-[12.5px] md:text-[13px] text-white/75 font-medium">
             Merged {lastMerge.count} trades
           </span>
@@ -1226,7 +1226,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
 
       {/* Floating merge action bar + inline confirm popover */}
       {selectMode && selectedIds.size > 0 && (
-        <div className="fixed left-1/2 -translate-x-1/2 bottom-5 md:bottom-8 z-40 flex flex-col items-center gap-2 pointer-events-none">
+        <div className="fixed left-1/2 -translate-x-1/2 bottom-[calc(env(safe-area-inset-bottom)+100px)] md:bottom-8 z-[55] flex flex-col items-center gap-2 pointer-events-none">
           {mergeConfirmOpen && (
             <div className="pointer-events-auto flex items-center gap-2 px-3 py-2 rounded-full bg-[var(--surface,#141419)]/95 border border-white/15 shadow-[0_12px_40px_var(--shadow,rgba(0,0,0,0.5))] backdrop-blur-md">
               <span className="text-[12.5px] text-white/80 font-medium">
