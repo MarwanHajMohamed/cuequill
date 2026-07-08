@@ -1254,14 +1254,11 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
             </div>
           )}
           <div className="pointer-events-auto flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2 md:py-2.5 rounded-full bg-[var(--surface,#141419)]/95 border border-white/15 shadow-[0_20px_60px_var(--shadow,rgba(0,0,0,0.6))] backdrop-blur-md">
-            <span className="text-[12.5px] md:text-[13px] text-white/75 font-medium tabular-nums">
-              {selectedIds.size} selected
-            </span>
             <button
               type="button"
               onClick={clearSelection}
               disabled={merging}
-              className="text-[12px] md:text-[12.5px] text-white/50 hover:text-white transition cursor-pointer disabled:opacity-40"
+              className="shrink-0 whitespace-nowrap text-[12px] md:text-[12.5px] text-white/50 hover:text-white transition cursor-pointer disabled:opacity-40"
             >
               Clear
             </button>
@@ -1270,7 +1267,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
               type="button"
               disabled={selectedIds.size < 2 || merging}
               onClick={() => setMergeConfirmOpen((v) => !v)}
-              className="inline-flex items-center gap-1.5 px-3 md:px-3.5 py-1.5 rounded-full bg-teal-500/25 text-teal-200 border border-teal-500/40 hover:bg-teal-500/35 transition text-[12.5px] md:text-[13px] font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              className="shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-3 md:px-3.5 py-1.5 rounded-full bg-teal-500/25 text-teal-200 border border-teal-500/40 hover:bg-teal-500/35 transition text-[12.5px] md:text-[13px] font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <i className="fa-solid fa-object-group text-[11px]" />
               Merge {selectedIds.size}
