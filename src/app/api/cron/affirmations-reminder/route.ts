@@ -122,6 +122,29 @@ export async function GET(req: Request) {
   const resend = new Resend(process.env.RESEND_API_KEY);
   const now = new Date();
 
+  // Smoke test: `?email=you@example.com` sends one email straight away,
+  // bypassing the 8am window and the once-a-day dedupe, and returns the
+  // Resend result so delivery failures (unverified domain, bad
+  // recipient, …) are visible immediately. Auth is already enforced
+  // above, so only the cron secret holder can trigger it.
+  const testEmail = new URL(req.url).searchParams.get("email");
+  if (testEmail) {
+    const { data, error } = await resend.emails.send({
+      from: FROM,
+      to: testEmail,
+      ...(REPLY_TO ? { replyTo: REPLY_TO } : {}),
+      subject: "Read your affirmations before the open",
+      html: renderEmail({
+        firstname: "",
+        affirmationsUrl: `${APP_URL}/affirmations`,
+      }),
+    });
+    return NextResponse.json(
+      { test: true, to: testEmail, from: FROM, id: data?.id ?? null, error },
+      { status: error ? 502 : 200 },
+    );
+  }
+
   // Only load users who plausibly need a reminder: opted in AND have
   // at least one affirmation configured. Timezone is filtered in-app
   // since we need `Intl` for hour math.
@@ -173,7 +196,12 @@ export async function GET(req: Request) {
     }
 
     try {
-      await resend.emails.send({
+      // Resend's SDK resolves with { data, error } and does NOT throw
+      // on API-level failures (unverified domain, invalid recipient,
+      // rate limit, …). Inspect `error` explicitly — otherwise a
+      // rejected send would look successful and we'd wrongly stamp the
+      // dedupe date, so nothing sends today AND it never retries.
+      const { data, error } = await resend.emails.send({
         from: FROM,
         to: u.email,
         ...(REPLY_TO ? { replyTo: REPLY_TO } : {}),
@@ -183,10 +211,15 @@ export async function GET(req: Request) {
           affirmationsUrl: `${APP_URL}/affirmations`,
         }),
       });
+      if (error) {
+        errors.push(`${u.email}: ${error.message ?? JSON.stringify(error)}`);
+        continue;
+      }
       await User.findByIdAndUpdate(u._id, {
         emailAffirmationsLastSentDate: today,
       });
       sent++;
+      void data;
     } catch (err) {
       errors.push(
         `${u.email}: ${err instanceof Error ? err.message : String(err)}`,
