@@ -20,9 +20,19 @@ jobs:
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
+          # Fail fast if the secret isn't configured — otherwise the
+          # route just returns 401 and the failure mode looks like a
+          # server bug.
+          if [ -z "${CRON_SECRET}" ]; then
+            echo "::error::CRON_SECRET is empty. Set it in Settings → Secrets and variables → Actions."
+            exit 1
+          fi
           # -L follows Vercel's 3xx redirects (apex → www, http → https)
           # so the endpoint actually gets called rather than the job
           # painting green on a redirect response.
+          # Hit the canonical host directly (www). Vercel redirects
+          # apex → www, and curl drops Authorization on cross-host
+          # redirects as a safety measure — which 401s the endpoint.
           curl -fLsS \
             -H "Authorization: Bearer ${CRON_SECRET}" \
-            https://cuequill.com/api/cron/affirmations-reminder
+            https://www.cuequill.com/api/cron/affirmations-reminder

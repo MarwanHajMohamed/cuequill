@@ -122,7 +122,11 @@ export async function POST(req: NextRequest) {
     Math.min(...trades.map((t) => new Date(t.dateBought).getTime())),
   );
 
-  const totalFees = round4(trades.reduce((s, t) => s + (t.fees || 0), 0));
+  // Fees are stored at 2dp (both manual entries and IBKR imports).
+  // The sum of 2dp values is exact at 2dp, but round explicitly so
+  // legacy trades with 4dp legacy fees don't drag a merged row into
+  // sub-cent noise.
+  const totalFees = round2(trades.reduce((s, t) => s + (t.fees || 0), 0));
   const contractPrice = round4(wavg((t) => t.contractPrice));
 
   // Preserve the first non-empty metadata field so the merged row

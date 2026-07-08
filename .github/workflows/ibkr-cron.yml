@@ -20,11 +20,22 @@ jobs:
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
+          # Fail fast with a readable error if the secret isn't set.
+          # Without this the workflow just gets a 401 from the route
+          # and it looks like a server bug.
+          if [ -z "${CRON_SECRET}" ]; then
+            echo "::error::CRON_SECRET is empty. Set it in Settings → Secrets and variables → Actions."
+            exit 1
+          fi
           # -f fails on non-2xx so a bad response marks the job red.
           # -sS keeps the log quiet on success but shows errors.
           # -L follows 3xx redirects — without it, Vercel's apex →
           # www (or http → https) redirect returns "Redirecting..."
           # and the actual endpoint is never hit.
+          # Hit the canonical host directly (www) rather than the
+          # apex. Vercel redirects cuequill.com → www.cuequill.com,
+          # and curl strips Authorization on cross-host redirects
+          # as a safety measure — which then 401s at the endpoint.
           curl -fLsS -X GET \
             -H "Authorization: Bearer ${CRON_SECRET}" \
-            https://cuequill.com/api/ibkr/cron
+            https://www.cuequill.com/api/ibkr/cron

@@ -63,9 +63,11 @@ function commissionPerContract(fill: NormalizedFill): number {
   return qty > 0 ? fill.fee / qty : 0;
 }
 
-// Round to 4dp so a precise sum still looks clean once displayed.
-function round4(n: number): number {
-  return Math.round(n * 10000) / 10000;
+// Fees are stored to 2dp — brokers quote commissions in cents, so
+// trailing sub-cent noise from per-contract division is pure display
+// clutter. Consistent with how manual entries are recorded.
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
 }
 
 // Equity-option contract multiplier. Used to derive realized P/L from
@@ -124,7 +126,7 @@ export function matchFills(fills: NormalizedFill[]): TradeDraft[] {
             fill.realizedPnl !== undefined
               ? (fill.realizedPnl / qty) * matchQty
               : (fill.price - buy.price) * CONTRACT_MULTIPLIER * matchQty;
-          const fees = round4((lot.commissionPerContract + sellCpc) * matchQty);
+          const fees = round2((lot.commissionPerContract + sellCpc) * matchQty);
 
           drafts.push({
             symbol: buy.symbol,
@@ -160,7 +162,7 @@ export function matchFills(fills: NormalizedFill[]): TradeDraft[] {
     for (const lot of openQueue) {
       // Open trades carry only the buy-side commission; the sell-side
       // share is added when the closing fill arrives later.
-      const fees = round4(lot.commissionPerContract * lot.remainingQty);
+      const fees = round2(lot.commissionPerContract * lot.remainingQty);
       const buy = lot.fill;
 
       drafts.push({
