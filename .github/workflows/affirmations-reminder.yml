@@ -33,6 +33,19 @@ jobs:
           # Hit the canonical host directly (www). Vercel redirects
           # apex → www, and curl drops Authorization on cross-host
           # redirects as a safety measure — which 401s the endpoint.
-          curl -fLsS \
+          #
+          # Capture the status + body (instead of curl -f, which hides
+          # the response) so a non-2xx prints WHY it failed in the log
+          # — e.g. "RESEND_API_KEY is not configured." — rather than an
+          # opaque exit code.
+          resp=$(curl -sS -L -w $'\n%{http_code}' \
             -H "Authorization: Bearer ${CRON_SECRET}" \
-            https://www.cuequill.com/api/cron/affirmations-reminder
+            https://www.cuequill.com/api/cron/affirmations-reminder)
+          code=$(printf '%s' "$resp" | tail -n1)
+          body=$(printf '%s' "$resp" | sed '$d')
+          echo "HTTP $code"
+          echo "$body"
+          if [ "$code" -ge 400 ]; then
+            echo "::error::affirmations-reminder returned HTTP $code"
+            exit 1
+          fi

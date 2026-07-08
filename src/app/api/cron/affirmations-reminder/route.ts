@@ -117,6 +117,7 @@ export async function GET(req: Request) {
     );
   }
 
+  try {
   await connectDB();
   const resend = new Resend(process.env.RESEND_API_KEY);
   const now = new Date();
@@ -199,4 +200,15 @@ export async function GET(req: Request) {
     skipped,
     errors,
   });
+  } catch (err) {
+    // Surface the real cause (DB/Resend/etc.) as a readable message
+    // instead of an opaque 500 so the cron log is diagnosable.
+    return NextResponse.json(
+      {
+        error:
+          err instanceof Error ? err.message : "affirmations-reminder failed",
+      },
+      { status: 500 },
+    );
+  }
 }
