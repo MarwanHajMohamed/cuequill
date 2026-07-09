@@ -95,6 +95,13 @@ export default function Navbar() {
     null,
   );
   const [bottomPillReady, setBottomPillReady] = useState(false);
+  // Flips true after the first commit. The bar DOM only exists once
+  // currentTime is set (the component returns null before that), so the
+  // measurement effects below key off `mounted` to re-run against the
+  // real DOM — otherwise the active pill never measures on a fresh load
+  // (activeKey doesn't change, so the effect wouldn't re-fire) and stays
+  // invisible until you navigate elsewhere.
+  const [mounted, setMounted] = useState(false);
   // Positions of every bottom tab - used to power the drag-snap
   // behaviour. Keyed by tab slug; "__more__" for the More button.
   const [tabPositions, setTabPositions] = useState<
@@ -127,6 +134,10 @@ export default function Navbar() {
   useEffect(() => {
     localStorage.setItem("simulated", String(simulated));
   }, [simulated]);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   /* ---------------- HELPERS ---------------- */
 
@@ -282,14 +293,25 @@ export default function Navbar() {
       setPillReady(true);
     };
     measure();
+    // Re-measure on the next frame too: on a fresh load the bar can
+    // still be settling (webfonts, hydration) when the first pass runs.
+    const raf = requestAnimationFrame(measure);
     const ro = new ResizeObserver(measure);
     if (desktopBarRef.current) ro.observe(desktopBarRef.current);
     window.addEventListener("resize", measure);
+    // Restoring the tab from bfcache / regaining visibility doesn't
+    // re-mount the component, so re-measure explicitly to recover a
+    // pill that was measured at the wrong size (or not at all).
+    window.addEventListener("pageshow", measure);
+    document.addEventListener("visibilitychange", measure);
     return () => {
+      cancelAnimationFrame(raf);
       ro.disconnect();
       window.removeEventListener("resize", measure);
+      window.removeEventListener("pageshow", measure);
+      document.removeEventListener("visibilitychange", measure);
     };
-  }, [activeKey]);
+  }, [activeKey, mounted]);
 
   // Which mobile bottom tab is currently active. The More tab claims
   // the indicator both when the sheet is open and when you're on any
@@ -342,12 +364,19 @@ export default function Navbar() {
       if (el) ro.observe(el);
     });
     window.addEventListener("resize", measure);
+    // Restoring the tab from bfcache / regaining visibility doesn't
+    // re-mount the component, so re-measure explicitly to recover a
+    // pill that was measured at the wrong size (or not at all).
+    window.addEventListener("pageshow", measure);
+    document.addEventListener("visibilitychange", measure);
     return () => {
       cancelAnimationFrame(raf);
       ro.disconnect();
       window.removeEventListener("resize", measure);
+      window.removeEventListener("pageshow", measure);
+      document.removeEventListener("visibilitychange", measure);
     };
-  }, [activeBottomKey]);
+  }, [activeBottomKey, mounted]);
 
   // Mirror bottomPill state into motion values so the pill animates
   // smoothly on tab change but is still draggable via direct
