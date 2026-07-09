@@ -3,6 +3,8 @@
 import "./custom-calendar.css";
 import { useFedDates } from "@/hooks/useFedDates";
 import { useCpiDates } from "@/hooks/useCpiDates";
+import { usePceDates } from "@/hooks/usePceDates";
+import { usePpiDates } from "@/hooks/usePpiDates";
 import { useMarketHolidays } from "@/hooks/useMarketHolidays";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useTrades } from "@/hooks/useTrades";
@@ -125,6 +127,8 @@ function Page() {
   const { data: trades } = useTrades(userId, simulated);
   const fedDates = useFedDates();
   const cpiDates = useCpiDates();
+  const pceDates = usePceDates();
+  const ppiDates = usePpiDates();
   const holidays = useMarketHolidays();
 
   // Detailed mode — overlays watchlist earnings dates and open-trade
@@ -384,6 +388,8 @@ function Page() {
       isToday,
       isFed: fedDates.has(dayStr),
       isCpi: cpiDates.has(dayStr),
+      isPce: pceDates.has(dayStr),
+      isPpi: ppiDates.has(dayStr),
       marketDay: holidays.get(dayStr) ?? null,
     };
   };
@@ -451,6 +457,8 @@ function Page() {
       isToday,
       isFed,
       isCpi,
+      isPce,
+      isPpi,
       marketDay,
     } = getDaySummary(date);
     const dayStr = format(date, "yyyy-MM-dd");
@@ -461,6 +469,8 @@ function Page() {
       !isToday &&
       !isFed &&
       !isCpi &&
+      !isPce &&
+      !isPpi &&
       !marketDay &&
       dayEarnings.length === 0 &&
       dayExpiries.length === 0
@@ -506,7 +516,7 @@ function Page() {
         )}
         {/* Top-right event badges — stacked so a day with several
             (e.g. Fed + CPI) doesn't pile them on top of each other. */}
-        {(isFed || isCpi || (marketDay && marketDay.early)) && (
+        {(isFed || isCpi || isPce || isPpi || (marketDay && marketDay.early)) && (
           <div className="absolute top-1 right-1 flex flex-col items-end gap-0.5">
             {isFed && (
               <span
@@ -524,6 +534,24 @@ function Page() {
               >
                 <i className="fa-solid fa-percent text-[7px]" aria-hidden />
                 CPI
+              </span>
+            )}
+            {isPpi && (
+              <span
+                title="PPI producer inflation report — 8:30am ET"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-500/35 text-rose-100 border border-rose-400/60 shadow-[0_0_8px_rgba(244,63,94,0.35)] text-[9px] md:text-[10px] font-bold tracking-wide leading-none"
+              >
+                <i className="fa-solid fa-industry text-[7px]" aria-hidden />
+                PPI
+              </span>
+            )}
+            {isPce && (
+              <span
+                title="PCE — Fed's preferred inflation gauge — 8:30am ET"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-500/35 text-indigo-100 border border-indigo-400/60 shadow-[0_0_8px_rgba(99,102,241,0.35)] text-[9px] md:text-[10px] font-bold tracking-wide leading-none"
+              >
+                <i className="fa-solid fa-landmark text-[7px]" aria-hidden />
+                PCE
               </span>
             )}
             {marketDay && marketDay.early && (
