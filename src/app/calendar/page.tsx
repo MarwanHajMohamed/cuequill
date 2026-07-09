@@ -665,14 +665,10 @@ function Page() {
       return "";
     }
     if (view !== "month") return "";
-    const { closedCount, netPL, hasOpen, isFed, isCpi, isPce, isPpi } =
-      getDaySummary(date);
-    const classes: string[] = [];
-    if (closedCount > 0) classes.push(netPL >= 0 ? "day-win" : "day-loss");
-    else if (hasOpen) classes.push("day-open");
-    // A high-impact economic release makes it a "red day" - ring the tile.
-    if (isFed || isCpi || isPce || isPpi) classes.push("day-notrade");
-    return classes.join(" ");
+    const { closedCount, netPL, hasOpen } = getDaySummary(date);
+    if (closedCount > 0) return netPL >= 0 ? "day-win" : "day-loss";
+    if (hasOpen) return "day-open";
+    return "";
   };
 
   // Per-month aggregation (keyed "yyyy-MM") for the year drill-up view.

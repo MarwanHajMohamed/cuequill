@@ -150,19 +150,6 @@
   background-color: rgba(249, 115, 22, 0.2) !important;
 }
 
-/* Red day - a high-impact economic release (Fed / CPI / PPI / PCE) makes
-   the session volatile, so the tile is ringed in red as a "don't trade"
-   warning. Layered over any P/L tint the day already carries. */
-.react-calendar.custom-calendar_full-view .react-calendar__tile.day-notrade {
-  border-color: rgba(239, 68, 68, 0.22);
-}
-.react-calendar.custom-calendar_full-view
-  .react-calendar__tile.day-notrade:hover,
-.react-calendar.custom-calendar_full-view
-  .react-calendar__tile.day-notrade:focus {
-  border-color: rgba(239, 68, 68, 0.4);
-}
-
 /* ─── Day grid (5-column, weekends hidden) ────────────────────────── */
 .react-calendar.custom-calendar_full-view .react-calendar__month-view__days {
   display: grid !important;

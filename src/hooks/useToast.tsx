@@ -128,14 +128,14 @@ function Toast({
   return (
     <div
       role="status"
-      className={`animate-toast-in flex items-stretch gap-0 overflow-hidden rounded-xl border border-white/10 bg-neutral-900/80 shadow-xl shadow-black/40 ring-1 backdrop-blur-md ${s.ring}`}
+      className={`animate-toast-in flex items-stretch gap-0 overflow-hidden rounded-xl border border-white/10 bg-[var(--surface-2)]/95 shadow-xl shadow-black/20 ring-1 backdrop-blur-md ${s.ring}`}
     >
       {/* Accent bar */}
       <div className={`w-1 shrink-0 bg-gradient-to-b ${s.accent}`} />
 
       <div className="flex items-center gap-3 px-3.5 py-3">
         <i className={`${s.icon} ${s.iconColor} text-[15px]`} />
-        <span className="text-[13.5px] font-medium leading-snug text-white/90">
+        <span className="text-[13.5px] font-medium leading-snug text-[rgb(var(--fg-rgb)/0.9)]">
           {text}
         </span>
         <button
