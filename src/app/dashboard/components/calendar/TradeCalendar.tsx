@@ -364,7 +364,8 @@ export default function TradeCalendar({ userId }: { userId: string }) {
             setIsModalOpen(true);
           }}
           onTradeClick={(trade) => {
-            setDayListOpen(false);
+            // Keep the day-list open behind the trade view so the
+            // chevron in ViewTradeModal can return to it.
             setEditingTrade(trade);
             setIsModalOpen(true);
           }}
@@ -379,9 +380,13 @@ export default function TradeCalendar({ userId }: { userId: string }) {
                 ? new Date(editingTrade.dateBought)
                 : selectedDate
             }
+            // Close the whole stack — trade view AND the day-list
+            // parent. Back chevron below returns to the day list
+            // instead.
             onClose={() => {
               setIsModalOpen(false);
               setEditingTrade(null);
+              setDayListOpen(false);
             }}
             onSave={(e) =>
               handleSaveTrade(e, userId, setIsModalOpen, queryClient)
@@ -396,6 +401,14 @@ export default function TradeCalendar({ userId }: { userId: string }) {
               )
             }
             initialTrade={editingTrade ?? undefined}
+            onBack={
+              dayListOpen
+                ? () => {
+                    setIsModalOpen(false);
+                    setEditingTrade(null);
+                  }
+                : undefined
+            }
           />
         )}
       </AnimatePresence>

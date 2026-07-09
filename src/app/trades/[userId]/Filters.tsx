@@ -172,7 +172,7 @@ export default function Filters({
         onClick={() => setIsPanelOpen(true)}
         aria-label="Open filters"
         title="Filters"
-        className={`cursor-pointer fixed left-0 top-1/2 -translate-y-1/2 z-40 inline-flex items-center justify-center gap-1 w-7 h-12 rounded-r-xl bg-[var(--surface)]/80 border border-l-0 border-white/10 text-white/50 hover:w-8 hover:text-white hover:bg-[var(--surface)] hover:border-white/25 opacity-60 hover:opacity-100 shadow-md transition-all duration-200 ${
+        className={`cursor-pointer fixed left-0 top-1/2 -translate-y-1/2 z-40 inline-flex items-center justify-center gap-1 w-7 h-12 rounded-r-xl bg-[var(--surface)] border border-l-0 border-white/15 text-white/80 hover:w-8 hover:text-white hover:bg-[var(--surface)] hover:border-white/30 opacity-95 hover:opacity-100 shadow-md transition-all duration-200 ${
           isPanelOpen
             ? "opacity-0 pointer-events-none -translate-x-4"
             : "pointer-events-auto"

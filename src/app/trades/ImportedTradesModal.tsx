@@ -72,13 +72,7 @@ export default function ImportedTradesModal({
     }
   };
 
-  const count = trades?.length ?? 0;
   const dupCount = (trades ?? []).filter((t) => t.hasDuplicate).length;
-
-  const subtitle =
-    trades === null
-      ? "Loading…"
-      : `${count} trade${count === 1 ? "" : "s"} from the last sync`;
 
   return (
     <AnimatePresence>
@@ -103,18 +97,33 @@ export default function ImportedTradesModal({
           {/* Header */}
           <div className="px-5 py-4 flex items-start justify-between gap-3 shrink-0">
             <div className="min-w-0">
-              <h2 className="text-[16px] font-semibold tracking-tight">
-                Imported trades
-              </h2>
-              <p className="text-[12px] mt-0.5">
-                <span className="text-white/45">{subtitle}</span>
-                {dupCount > 0 && (
-                  <span className="text-amber-400">
-                    {" · "}
-                    {dupCount} possible duplicate{dupCount === 1 ? "" : "s"}
+              <div className="flex items-center gap-1.5">
+                <h2 className="text-[16px] font-semibold tracking-tight">
+                  Imported trades
+                </h2>
+                {/* Hover-only tooltip. `group` on the wrapper + `group-hover`
+                    on the popover keeps this stateless — one-liner
+                    explanation, no click target, no accessibility trap. */}
+                <span className="relative group inline-flex">
+                  <i
+                    tabIndex={0}
+                    className="fa-solid fa-circle-info text-[11px] text-white/40 hover:text-white/70 focus:text-white/70 outline-none transition cursor-pointer"
+                    aria-label="What is this?"
+                  />
+                  <span
+                    role="tooltip"
+                    className="pointer-events-none absolute left-1/2 top-full mt-2 -translate-x-1/2 w-56 rounded-lg border border-white/10 bg-[var(--surface)] shadow-[0_12px_40px_var(--shadow)] px-3 py-2 text-[11.5px] leading-snug text-white/75 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition z-10"
+                  >
+                    Trades brought in by the last IBKR sync. Review and delete
+                    anything that shouldn&apos;t be here.
                   </span>
-                )}
-              </p>
+                </span>
+              </div>
+              {dupCount > 0 && (
+                <p className="text-[12px] mt-0.5 text-amber-400">
+                  {dupCount} possible duplicate{dupCount === 1 ? "" : "s"}
+                </p>
+              )}
             </div>
             <button
               type="button"
@@ -138,7 +147,7 @@ export default function ImportedTradesModal({
               <div className="text-[12px] text-white/40 px-3 py-10 text-center">
                 Loading…
               </div>
-            ) : count === 0 ? (
+            ) : trades.length === 0 ? (
               <div className="text-[12px] text-white/40 px-3 py-10 text-center">
                 Nothing from the last sync remains.
               </div>

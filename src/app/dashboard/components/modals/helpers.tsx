@@ -33,7 +33,8 @@ const validate = (
   if (contractPrice === null || Number.isNaN(contractPrice))
     invalid.add("contractPrice");
   if (qty === null || Number.isNaN(qty)) invalid.add("qty");
-  if (strike === null || Number.isNaN(strike)) invalid.add("strike");
+  // Strike is optional — some instruments (futures spreads, complex
+  // multi-leg orders) don't have a single meaningful strike.
   if (dateBought === "") invalid.add("dateBought");
   if (expiryDate === "") invalid.add("expiryDate");
   if (

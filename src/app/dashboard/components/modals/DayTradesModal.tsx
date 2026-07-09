@@ -69,7 +69,7 @@ export default function DayTradesModal({
           animate={{ y: 0, opacity: 1, scale: 1 }}
           exit={{ y: 12, opacity: 0, scale: 0.98 }}
           transition={{ type: "spring", stiffness: 380, damping: 32 }}
-          className="relative flex flex-col bg-[var(--surface)] border border-white/10 rounded-2xl w-full max-w-md text-white max-h-[88vh] overflow-hidden shadow-[0_24px_80px_var(--shadow)]"
+          className="relative flex flex-col bg-[var(--background)] border border-white/10 rounded-2xl w-full max-w-md text-white max-h-[88vh] overflow-hidden shadow-[0_24px_80px_var(--shadow)]"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Hero */}
@@ -209,12 +209,12 @@ export default function DayTradesModal({
           </div>
 
           {/* Footer */}
-          <div className="shrink-0 p-3 md:p-4 border-t border-white/10">
+          <div className="shrink-0 p-3 md:p-4 border-t border-white/10 flex justify-end">
             <button
               onClick={onAddTrade}
-              className="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-full bg-teal-500/15 hover:bg-teal-500/25 text-teal-300 border border-teal-500/25 transition font-medium text-[13px] cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-teal-500/15 hover:bg-teal-500/25 text-teal-300 border border-teal-500/25 transition font-medium text-[12px] cursor-pointer"
             >
-              <i className="fa-solid fa-plus text-[11px]" />
+              <i className="fa-solid fa-plus text-[10px]" />
               Add trade
             </button>
           </div>

@@ -16,6 +16,15 @@ type TradeModalProps = {
   onEdit?: () => void;
   /** Hide the Delete button if not provided. Called with the trade _id. */
   onDelete?: (_id: string) => void;
+  /** When set, renders a top-left chevron that goes back instead of
+   *  closing outright — used when this modal was opened from a
+   *  parent modal (e.g. the day list) and we want to preserve that
+   *  parent underneath. */
+  onBack?: () => void;
+  /** Direction the card slides in from. "bottom" is the default
+   *  fresh-open feel; "top" reads as returning from a deeper stack
+   *  (used when coming back from EditTradeModal). */
+  enterFrom?: "bottom" | "top";
 };
 
 const safeDate = (d: string | Date | null | undefined) => {
@@ -29,7 +38,11 @@ export default function ViewTradeModal({
   initialTrade,
   onEdit,
   onDelete,
+  onBack,
+  enterFrom = "bottom",
 }: TradeModalProps) {
+  const enterOffset =
+    enterFrom === "top" ? { x: 0, y: -32 } : { x: 0, y: 16 };
   useScrollLock();
   // Inline confirm: first click primes, second click fires. Escape or
   // clicking elsewhere in the footer resets it.
@@ -50,7 +63,6 @@ export default function ViewTradeModal({
   const isCall = initialTrade.option === "CALL";
 
   const netPL = tradeNetPL(initialTrade as Trade);
-  const gross = initialTrade.profitLoss ?? 0;
   const fees = initialTrade.fees ?? 0;
 
   const bought = safeDate(initialTrade.dateBought);
@@ -68,9 +80,9 @@ export default function ViewTradeModal({
     >
       <motion.div
         onClick={(e) => e.stopPropagation()}
-        className="relative flex flex-col bg-[var(--surface)] border border-white/10 rounded-2xl md:w-[90%] md:max-w-md w-full max-h-full md:max-h-[90vh] overflow-hidden"
-        initial={{ opacity: 0, scale: 0.96, y: 16 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
+        className="relative flex flex-col bg-[var(--background)] border border-white/10 rounded-2xl md:w-[90%] md:max-w-md w-full max-h-full md:max-h-[90vh] overflow-hidden"
+        initial={{ opacity: 0, scale: 0.96, ...enterOffset }}
+        animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
         exit={{ opacity: 0, scale: 0.96, y: 16 }}
         transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
       >
@@ -94,6 +106,16 @@ export default function ViewTradeModal({
           </button>
 
           <div className="flex items-center gap-2 flex-wrap pr-10">
+            {onBack && (
+              <button
+                onClick={onBack}
+                aria-label="Back"
+                type="button"
+                className="inline-flex items-center justify-center w-6 h-6 -ml-1 rounded-full text-white/45 hover:text-white hover:bg-white/5 transition cursor-pointer"
+              >
+                <i className="fa-solid fa-chevron-left text-[13px]"></i>
+              </button>
+            )}
             <span className="text-xl md:text-2xl font-bold tracking-tight">
               {initialTrade.symbol}
             </span>
@@ -105,17 +127,6 @@ export default function ViewTradeModal({
               }`}
             >
               {initialTrade.option}
-            </span>
-            <span
-              className={`text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded ${
-                isWin
-                  ? "bg-green-500/15 text-green-500"
-                  : isLoss
-                    ? "bg-red-500/15 text-red-500"
-                    : "bg-orange-500/15 text-orange-400"
-              }`}
-            >
-              {initialTrade.status}
             </span>
             {initialTrade.simulated && (
               <span className="text-[10px] tracking-wider px-1.5 py-0.5 rounded bg-white/10 text-white/60">
@@ -143,12 +154,6 @@ export default function ViewTradeModal({
             )}
           </div>
 
-          {isClosed && (gross !== netPL || fees > 0) && (
-            <div className="mt-1.5 text-[11px] text-white/40 flex gap-3 flex-wrap">
-              <span>Gross ${gross.toFixed(2)}</span>
-              {fees > 0 && <span>Fees −${fees.toFixed(2)}</span>}
-            </div>
-          )}
         </div>
 
         {/* ── Body (scrollable, takes remaining space) ── */}
@@ -202,32 +207,21 @@ export default function ViewTradeModal({
           </div>
 
           {/* Timeline */}
-          <div className="flex flex-col gap-2">
-            <div className="text-[10px] tracking-wider text-white/40">
-              Timeline
-            </div>
-            <div className="border border-white/10 rounded-lg divide-y divide-white/5">
+          <div className="border border-white/10 rounded-lg divide-y divide-white/5">
+            <TimelineRow
+              label="Bought"
+              value={bought ? format(bought, "EEE, MMM d yyyy") : "-"}
+            />
+            {isClosed && (
               <TimelineRow
-                icon="fa-arrow-down-to-line"
-                color="text-green-500"
-                label="Bought"
-                value={bought ? format(bought, "EEE, MMM d yyyy") : "-"}
+                label="Closed"
+                value={closed ? format(closed, "EEE, MMM d yyyy") : "-"}
               />
-              {isClosed && (
-                <TimelineRow
-                  icon="fa-arrow-up-from-line"
-                  color="text-red-500"
-                  label="Closed"
-                  value={closed ? format(closed, "EEE, MMM d yyyy") : "-"}
-                />
-              )}
-              <TimelineRow
-                icon="fa-calendar-xmark"
-                color="text-white/50"
-                label="Expiry"
-                value={expiry ? format(expiry, "EEE, MMM d yyyy") : "-"}
-              />
-            </div>
+            )}
+            <TimelineRow
+              label="Expiry"
+              value={expiry ? format(expiry, "EEE, MMM d yyyy") : "-"}
+            />
           </div>
 
           {/* Strategy */}
@@ -304,7 +298,7 @@ export default function ViewTradeModal({
         </div>
 
         {/* ── Footer (fixed at bottom of card) ── */}
-        <div className="shrink-0 px-5 md:px-6 py-3 md:py-4 flex items-center justify-between gap-2 border-t border-white/5 bg-[var(--surface)]">
+        <div className="shrink-0 px-5 md:px-6 py-3 md:py-4 flex items-center justify-between gap-2 border-t border-white/5 bg-[var(--background)]">
           <div className="flex items-center gap-2">
             {onDelete && initialTrade._id && (
               confirmingDelete ? (
@@ -387,19 +381,14 @@ function StatTile({
 }
 
 function TimelineRow({
-  icon,
-  color,
   label,
   value,
 }: {
-  icon: string;
-  color: string;
   label: string;
   value: string;
 }) {
   return (
     <div className="flex items-center gap-3 px-3 py-2.5">
-      <i className={`fa-solid ${icon} ${color} text-xs w-4 text-center`}></i>
       <span className="text-xs text-white/50 tracking-wider w-16">
         {label}
       </span>

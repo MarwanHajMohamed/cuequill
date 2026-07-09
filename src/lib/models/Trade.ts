@@ -15,7 +15,7 @@ const TradeSchema = new mongoose.Schema({
   contractPrice: { type: Number, required: true },
   qty: { type: Number, required: true },
 
-  strike: { type: Number, required: true },
+  strike: { type: Number },
 
   dateBought: { type: Date, required: true },
   expiryDate: { type: Date, required: true },

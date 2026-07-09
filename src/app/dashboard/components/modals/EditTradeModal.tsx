@@ -22,6 +22,11 @@ type TradeModalProps = {
   onSave: (trade: Trade) => void;
   initialTrade?: Partial<Trade>;
   onDelete?: (_id: string) => void;
+  // Optional back-out handler. When set, Cancel / X / Escape / backdrop
+  // clicks fire this instead of `onClose` — used by TradeModal to send
+  // the user back to the View card rather than onCloseing the whole
+  // stack when they were originally viewing an existing trade.
+  onCancel?: () => void;
 };
 
 export default function EditTradeModal({
@@ -30,6 +35,7 @@ export default function EditTradeModal({
   onSave,
   initialTrade,
   onDelete,
+  onCancel,
 }: TradeModalProps) {
   const { data: session } = useSession();
   const userId = session?.user?.id;
@@ -169,7 +175,7 @@ export default function EditTradeModal({
   return (
     <>
       <motion.div
-        className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 py-6 px-3 md:p-0"
+        className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 py-3 px-3 md:p-0"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -178,7 +184,7 @@ export default function EditTradeModal({
       >
         <motion.div
           onClick={(e) => e.stopPropagation()}
-          className="relative flex flex-col bg-[var(--surface)] border border-white/10 rounded-2xl md:w-[90%] md:max-w-lg w-full max-h-full md:max-h-[90vh] overflow-hidden"
+          className="relative flex flex-col bg-[var(--background)] border border-white/10 rounded-2xl md:w-[90%] md:max-w-lg w-full max-h-[calc(100dvh-1.5rem)] md:max-h-[90vh] overflow-hidden"
           initial={{ opacity: 0, scale: 0.96, y: 16 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: 16 }}
@@ -197,11 +203,20 @@ export default function EditTradeModal({
               <i className="fa-solid fa-xmark text-base"></i>
             </button>
 
-            <div className="text-[10px] tracking-wider text-white/40 mb-1">
-              {isEditing ? "Edit trade" : "New trade"}
-            </div>
-            <div className="text-xl md:text-2xl font-bold tracking-tight">
-              {symbol || "-"}
+            <div className="flex items-center gap-2 pr-10">
+              {onCancel && (
+                <button
+                  onClick={onCancel}
+                  aria-label="Back"
+                  type="button"
+                  className="inline-flex items-center justify-center w-6 h-6 -ml-1 rounded-full text-white/45 hover:text-white hover:bg-white/5 transition cursor-pointer"
+                >
+                  <i className="fa-solid fa-chevron-left text-[13px]"></i>
+                </button>
+              )}
+              <div className="text-xl md:text-2xl font-bold tracking-tight">
+                {symbol || "-"}
+              </div>
             </div>
 
             {/* Direction toggle. When the form is submitted without a
@@ -226,7 +241,6 @@ export default function EditTradeModal({
                     : "border-white/10 text-white/60 hover:bg-white/5"
                 }`}
               >
-                <i className="fa-solid fa-arrow-trend-up mr-1.5 text-xs"></i>
                 CALL
               </button>
               <button
@@ -241,7 +255,6 @@ export default function EditTradeModal({
                     : "border-white/10 text-white/60 hover:bg-white/5"
                 }`}
               >
-                <i className="fa-solid fa-arrow-trend-down mr-1.5 text-xs"></i>
                 PUT
               </button>
             </div>
@@ -344,11 +357,7 @@ export default function EditTradeModal({
                   invalid={isInvalid("qty")}
                 />
               </Field>
-              <Field
-                label="Strike"
-                required
-                className="col-span-2 md:col-span-1"
-              >
+              <Field label="Strike" className="col-span-2 md:col-span-1">
                 <NumberInput
                   value={strike}
                   onChange={(v) => {
@@ -480,7 +489,7 @@ export default function EditTradeModal({
           </div>
 
           {/* ── Footer (fixed at bottom of card) ── */}
-          <div className="shrink-0 px-5 md:px-6 py-3 md:py-4 flex items-center justify-between gap-2 border-t border-white/5 bg-[var(--surface)]">
+          <div className="shrink-0 px-5 md:px-6 py-3 md:py-4 flex items-center justify-between gap-2 border-t border-white/5 bg-[var(--background)]">
             <div>
               {onDelete && initialTrade?._id && (
                 <button
@@ -550,7 +559,7 @@ export default function EditTradeModal({
         >
           <motion.div
             onClick={(e) => e.stopPropagation()}
-            className="flex flex-col gap-4 bg-[var(--surface)] border border-white/10 items-center p-6 rounded-2xl w-full max-w-sm text-white"
+            className="flex flex-col gap-4 bg-[var(--background)] border border-white/10 items-center p-6 rounded-2xl w-full max-w-sm text-white"
             initial={{ scale: 0.96, y: 16 }}
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.96, y: 16 }}

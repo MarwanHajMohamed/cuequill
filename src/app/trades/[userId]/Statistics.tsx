@@ -1288,6 +1288,93 @@ export default function Statistics({
         </div>
       )}
 
+      {/* Quick-glance top/worst boxes. Sit under the equity curve so
+          the eye moves from "how am I doing overall" → "what's
+          driving it". Uses the same filtered breakdowns as the
+          detailed tables further down, so the two views agree. */}
+      {(bySymbol.length > 0 || byStrategy.length > 0) &&
+        (() => {
+          const topSymbol = bySymbol.reduce<(typeof bySymbol)[number] | null>(
+            (best, r) => (!best || r.netPL > best.netPL ? r : best),
+            null,
+          );
+          const worstSymbol = bySymbol.reduce<
+            (typeof bySymbol)[number] | null
+          >((worst, r) => (!worst || r.netPL < worst.netPL ? r : worst), null);
+          const topStrategy = byStrategy.reduce<
+            (typeof byStrategy)[number] | null
+          >((best, r) => (!best || r.netPL > best.netPL ? r : best), null);
+          const worstStrategy = byStrategy.reduce<
+            (typeof byStrategy)[number] | null
+          >(
+            (worst, r) => (!worst || r.netPL < worst.netPL ? r : worst),
+            null,
+          );
+          const cards = [
+            { title: "Top symbol", row: topSymbol, tone: "good" as const },
+            {
+              title: "Worst symbol",
+              row: worstSymbol,
+              tone: "bad" as const,
+            },
+            {
+              title: "Top strategy",
+              row: topStrategy,
+              tone: "good" as const,
+            },
+            {
+              title: "Worst strategy",
+              row: worstStrategy,
+              tone: "bad" as const,
+            },
+          ].filter((c) => c.row);
+          if (cards.length === 0) return null;
+          return (
+            <div className="w-full mb-10 grid grid-cols-2 md:grid-cols-4 gap-3">
+              {cards.map((c) => {
+                const r = c.row!;
+                const positive = r.netPL >= 0;
+                // Colour by actual outcome, not by which slot the
+                // card lives in — a "worst" that's still net-positive
+                // shouldn't wear red.
+                const numberClass = positive
+                  ? "text-green-400"
+                  : "text-red-400";
+                return (
+                  <div
+                    key={c.title}
+                    className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4 flex items-center justify-between gap-3"
+                  >
+                    <div className="flex flex-col gap-1 min-w-0 flex-1">
+                      <div className="text-[11px] text-white/45 font-medium">
+                        {c.title}
+                      </div>
+                      <div className="text-[15px] md:text-base font-semibold truncate">
+                        {r.label}
+                      </div>
+                      <div
+                        className={`text-lg md:text-xl font-bold tabular-nums ${numberClass}`}
+                      >
+                        {fmtMoneySignedCompact(r.netPL)}
+                      </div>
+                      <div className="text-[11px] text-white/40 tabular-nums">
+                        {r.n} trade{r.n === 1 ? "" : "s"}
+                      </div>
+                    </div>
+                    <MiniDonut
+                      greenPct={
+                        r.wins + r.losses > 0
+                          ? (r.wins / (r.wins + r.losses)) * 100
+                          : 0
+                      }
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
+
       {/* Performance by tag */}
       {visibility.tagStats && tagStats.length > 0 && (
         <div className="w-full mb-10 flex flex-col gap-4 md:gap-5">
@@ -2026,3 +2113,4 @@ export default function Statistics({
     </div>
   );
 }
+

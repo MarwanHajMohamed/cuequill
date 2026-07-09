@@ -969,7 +969,9 @@ function Page() {
             setIsModalOpen(true);
           }}
           onTradeClick={(trade) => {
-            setDayListOpen(false);
+            // Keep the day-list open behind the trade view so the
+            // chevron in the top-left of ViewTradeModal can return
+            // to it.
             setEditingTrade(trade);
             setIsModalOpen(true);
           }}
@@ -985,13 +987,25 @@ function Page() {
                 ? new Date(editingTrade.dateBought)
                 : selectedDate
             }
+            // Close the whole stack — trade view AND the day-list
+            // parent (if it was open). Back chevron below returns to
+            // the day list instead.
             onClose={() => {
               setIsModalOpen(false);
               setEditingTrade(null);
+              setDayListOpen(false);
             }}
             onSave={handleSaveTrade}
             initialTrade={editingTrade ?? undefined}
             onDelete={handleDeleteTrade}
+            onBack={
+              dayListOpen
+                ? () => {
+                    setIsModalOpen(false);
+                    setEditingTrade(null);
+                  }
+                : undefined
+            }
           />
         )}
       </AnimatePresence>
