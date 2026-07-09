@@ -41,6 +41,11 @@ type TradeEvent =
 const now = new Date();
 const today = now.toISOString().split("T")[0];
 
+// Shared style for every "red day" pill (Fed / CPI / PPI / PCE). One red
+// look so a high-impact-release day reads as a single "don't trade" signal.
+const NO_TRADE_PILL =
+  "inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/35 text-red-100 border border-red-400/60 shadow-[0_0_8px_rgba(239,68,68,0.35)] text-[9px] md:text-[10px] font-bold tracking-wide leading-none";
+
 // Week-summary card for the calendar sidebar (desktop only).
 const WeekSummary = ({
   weekNum,
@@ -518,19 +523,21 @@ function Page() {
             (e.g. Fed + CPI) doesn't pile them on top of each other. */}
         {(isFed || isCpi || isPce || isPpi || (marketDay && marketDay.early)) && (
           <div className="absolute top-1 right-1 flex flex-col items-end gap-0.5">
+            {/* Red "no-trade" pills — one shared red style across every
+                high-impact release so the day reads as a single warning. */}
             {isFed && (
               <span
-                title="FOMC meeting"
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-500/35 text-purple-100 border border-purple-400/60 shadow-[0_0_8px_rgba(168,85,247,0.35)] text-[9px] md:text-[10px] font-bold tracking-wide leading-none"
+                title="FOMC meeting — high volatility, avoid trading"
+                className={NO_TRADE_PILL}
               >
-                <span className="w-1 h-1 rounded-full bg-purple-200" aria-hidden />
+                <span className="w-1 h-1 rounded-full bg-red-200" aria-hidden />
                 Fed
               </span>
             )}
             {isCpi && (
               <span
-                title="CPI inflation report — 8:30am ET"
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-fuchsia-500/35 text-fuchsia-100 border border-fuchsia-400/60 shadow-[0_0_8px_rgba(217,70,239,0.35)] text-[9px] md:text-[10px] font-bold tracking-wide leading-none"
+                title="CPI inflation report — 8:30am ET — avoid trading"
+                className={NO_TRADE_PILL}
               >
                 <i className="fa-solid fa-percent text-[7px]" aria-hidden />
                 CPI
@@ -538,8 +545,8 @@ function Page() {
             )}
             {isPpi && (
               <span
-                title="PPI producer inflation report — 8:30am ET"
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-500/35 text-rose-100 border border-rose-400/60 shadow-[0_0_8px_rgba(244,63,94,0.35)] text-[9px] md:text-[10px] font-bold tracking-wide leading-none"
+                title="PPI producer inflation report — 8:30am ET — avoid trading"
+                className={NO_TRADE_PILL}
               >
                 <i className="fa-solid fa-industry text-[7px]" aria-hidden />
                 PPI
@@ -547,8 +554,8 @@ function Page() {
             )}
             {isPce && (
               <span
-                title="PCE — Fed's preferred inflation gauge — 8:30am ET"
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-500/35 text-indigo-100 border border-indigo-400/60 shadow-[0_0_8px_rgba(99,102,241,0.35)] text-[9px] md:text-[10px] font-bold tracking-wide leading-none"
+                title="PCE — Fed's preferred inflation gauge — 8:30am ET — avoid trading"
+                className={NO_TRADE_PILL}
               >
                 <i className="fa-solid fa-landmark text-[7px]" aria-hidden />
                 PCE
@@ -658,10 +665,14 @@ function Page() {
       return "";
     }
     if (view !== "month") return "";
-    const { closedCount, netPL, hasOpen } = getDaySummary(date);
-    if (closedCount > 0) return netPL >= 0 ? "day-win" : "day-loss";
-    if (hasOpen) return "day-open";
-    return "";
+    const { closedCount, netPL, hasOpen, isFed, isCpi, isPce, isPpi } =
+      getDaySummary(date);
+    const classes: string[] = [];
+    if (closedCount > 0) classes.push(netPL >= 0 ? "day-win" : "day-loss");
+    else if (hasOpen) classes.push("day-open");
+    // A high-impact economic release makes it a "red day" - ring the tile.
+    if (isFed || isCpi || isPce || isPpi) classes.push("day-notrade");
+    return classes.join(" ");
   };
 
   // Per-month aggregation (keyed "yyyy-MM") for the year drill-up view.
