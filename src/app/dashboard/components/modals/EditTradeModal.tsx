@@ -153,6 +153,21 @@ export default function EditTradeModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedOption]);
 
+  // A native <select> can't represent an empty value when no <option> has
+  // value="": it visually falls back to the first option while React state
+  // stays "". So a brand-new trade — or one opened before the async
+  // strategy list arrived — silently saves an empty strategy unless the
+  // user happens to touch the dropdown. Keep the committed value in sync
+  // with what's actually shown: whenever the option set changes, snap
+  // `strategy` to a real option if it isn't already one.
+  useEffect(() => {
+    if (strategies.length === 0) return;
+    if (!strategy || !strategies.includes(strategy)) {
+      setStrategy(strategies[0]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userStrategies, selectedOption]);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
