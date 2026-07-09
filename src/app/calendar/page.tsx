@@ -2,6 +2,7 @@
 
 import "./custom-calendar.css";
 import { useFedDates } from "@/hooks/useFedDates";
+import { useCpiDates } from "@/hooks/useCpiDates";
 import { useMarketHolidays } from "@/hooks/useMarketHolidays";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useTrades } from "@/hooks/useTrades";
@@ -123,6 +124,7 @@ function Page() {
 
   const { data: trades } = useTrades(userId, simulated);
   const fedDates = useFedDates();
+  const cpiDates = useCpiDates();
   const holidays = useMarketHolidays();
 
   // Detailed mode — overlays watchlist earnings dates and open-trade
@@ -381,6 +383,7 @@ function Page() {
       hasOpen,
       isToday,
       isFed: fedDates.has(dayStr),
+      isCpi: cpiDates.has(dayStr),
       marketDay: holidays.get(dayStr) ?? null,
     };
   };
@@ -447,6 +450,7 @@ function Page() {
       netPL,
       isToday,
       isFed,
+      isCpi,
       marketDay,
     } = getDaySummary(date);
     const dayStr = format(date, "yyyy-MM-dd");
@@ -456,6 +460,7 @@ function Page() {
       tradeCount === 0 &&
       !isToday &&
       !isFed &&
+      !isCpi &&
       !marketDay &&
       dayEarnings.length === 0 &&
       dayExpiries.length === 0
@@ -499,37 +504,55 @@ function Page() {
             )}
           </div>
         )}
-        {isFed && (
-          <span className="absolute top-1 right-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-500/35 text-purple-100 border border-purple-400/60 shadow-[0_0_8px_rgba(168,85,247,0.35)] text-[9px] md:text-[10px] font-bold tracking-wide leading-none">
-            <span className="w-1 h-1 rounded-full bg-purple-200" aria-hidden />
-            Fed
-          </span>
-        )}
-        {marketDay &&
-          (marketDay.early ? (
-            <span
-              title={`Early close 1:00pm ET — ${marketDay.name}`}
-              className="absolute top-1 right-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-500/35 text-sky-100 border border-sky-400/60 shadow-[0_0_8px_rgba(56,189,248,0.35)] text-[9px] md:text-[10px] font-bold tracking-wide leading-none"
-            >
-              <i className="fa-solid fa-clock text-[8px]" aria-hidden />
-              1pm
-            </span>
-          ) : (
-            <>
-              {/* Full-day closure: mute the whole tile and mark it with
-                  a lock (no text). */}
+        {/* Top-right event badges — stacked so a day with several
+            (e.g. Fed + CPI) doesn't pile them on top of each other. */}
+        {(isFed || isCpi || (marketDay && marketDay.early)) && (
+          <div className="absolute top-1 right-1 flex flex-col items-end gap-0.5">
+            {isFed && (
               <span
-                aria-hidden
-                className="absolute inset-0 rounded-[inherit] bg-neutral-500/15 pointer-events-none"
-              />
-              <span
-                title={`Market closed — ${marketDay.name}`}
-                className="absolute top-1 right-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-500/30 text-amber-300 border border-amber-500/50 shadow-[0_0_8px_rgba(245,158,11,0.35)]"
+                title="FOMC meeting"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-500/35 text-purple-100 border border-purple-400/60 shadow-[0_0_8px_rgba(168,85,247,0.35)] text-[9px] md:text-[10px] font-bold tracking-wide leading-none"
               >
-                <i className="fa-solid fa-lock text-[9px]" aria-hidden />
+                <span className="w-1 h-1 rounded-full bg-purple-200" aria-hidden />
+                Fed
               </span>
-            </>
-          ))}
+            )}
+            {isCpi && (
+              <span
+                title="CPI inflation report — 8:30am ET"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-fuchsia-500/35 text-fuchsia-100 border border-fuchsia-400/60 shadow-[0_0_8px_rgba(217,70,239,0.35)] text-[9px] md:text-[10px] font-bold tracking-wide leading-none"
+              >
+                <i className="fa-solid fa-percent text-[7px]" aria-hidden />
+                CPI
+              </span>
+            )}
+            {marketDay && marketDay.early && (
+              <span
+                title={`Early close 1:00pm ET — ${marketDay.name}`}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-500/35 text-sky-100 border border-sky-400/60 shadow-[0_0_8px_rgba(56,189,248,0.35)] text-[9px] md:text-[10px] font-bold tracking-wide leading-none"
+              >
+                <i className="fa-solid fa-clock text-[8px]" aria-hidden />
+                1pm
+              </span>
+            )}
+          </div>
+        )}
+        {/* Full-day closure: mute the whole tile and mark it with a lock
+            (kept separate — the overlay is inset, the lock stays pinned). */}
+        {marketDay && !marketDay.early && (
+          <>
+            <span
+              aria-hidden
+              className="absolute inset-0 rounded-[inherit] bg-neutral-500/15 pointer-events-none"
+            />
+            <span
+              title={`Market closed — ${marketDay.name}`}
+              className="absolute top-1 right-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-500/30 text-amber-300 border border-amber-500/50 shadow-[0_0_8px_rgba(245,158,11,0.35)]"
+            >
+              <i className="fa-solid fa-lock text-[9px]" aria-hidden />
+            </span>
+          </>
+        )}
         {isToday && (
           <span className="absolute top-2 right-1 w-1.5 h-1.5 rounded-full bg-blue-400" />
         )}
