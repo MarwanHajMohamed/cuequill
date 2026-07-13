@@ -51,7 +51,14 @@ function tradeAwareUrlTransform(url: string): string {
   return "";
 }
 
-const STORAGE_KEY = "cuequill:chat:v1";
+// Chat history is stored per-user in localStorage. The key is namespaced
+// by the signed-in user's id so that, on a shared browser, one user can
+// never load or see another user's conversation. LEGACY_STORAGE_KEY is the
+// old shared (un-namespaced) key from before this change — it's removed on
+// load so a previous user's chat can't linger on the device.
+const STORAGE_PREFIX = "cuequill:chat:v1";
+const LEGACY_STORAGE_KEY = "cuequill:chat:v1";
+const chatStorageKey = (uid: string) => `${STORAGE_PREFIX}:${uid}`;
 
 // Compact starter prompts shown on the empty state. Title + body lets
 // each one read as a tappable card rather than a wall of pills.
@@ -186,24 +193,49 @@ function Page() {
     return () => ro.disconnect();
   }, []);
 
-  // ── Persistence (best-effort, localStorage) ──────────────────────────
+  // ── Persistence (best-effort, localStorage, per-user) ────────────────
+  // Set right after a load so the save effect that fires on the same
+  // change doesn't immediately re-write (or, on an account switch, write
+  // the previous user's messages under the new user's key).
+  const skipNextSaveRef = useRef(false);
+
+  // Load the signed-in user's conversation whenever their id resolves or
+  // changes (account switch on a shared browser swaps in the right one).
   useEffect(() => {
+    if (!userId) return;
+    // One-time cleanup of the legacy shared key.
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setMessages(JSON.parse(raw));
+      localStorage.removeItem(LEGACY_STORAGE_KEY);
     } catch {
       /* ignore */
     }
-    setHydrated(true);
-  }, []);
-  useEffect(() => {
-    if (!hydrated) return;
+    let loaded: Msg[] = [];
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+      const raw = localStorage.getItem(chatStorageKey(userId));
+      if (raw) loaded = JSON.parse(raw);
+    } catch {
+      /* ignore */
+    }
+    skipNextSaveRef.current = true;
+    setMessages(loaded);
+    setHydrated(true);
+  }, [userId]);
+
+  useEffect(() => {
+    if (!hydrated || !userId) return;
+    // Skip the save triggered by a just-completed load — the data is
+    // already on disk, and on a switch `messages` may still be the prior
+    // user's until the load's state update commits.
+    if (skipNextSaveRef.current) {
+      skipNextSaveRef.current = false;
+      return;
+    }
+    try {
+      localStorage.setItem(chatStorageKey(userId), JSON.stringify(messages));
     } catch {
       /* ignore quota */
     }
-  }, [messages, hydrated]);
+  }, [messages, hydrated, userId]);
 
   // Auto-scroll the inner container AND the window every time the
   // displayed text grows.
