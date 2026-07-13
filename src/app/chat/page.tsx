@@ -23,6 +23,7 @@ import { tradeNetPL } from "@/lib/helpers/tradeNet";
 import ViewTradeModal from "@/app/dashboard/components/modals/ViewTradeModal";
 import ChatUsage from "./ChatUsage";
 import ChatHistory, { type ConversationMeta } from "./ChatHistory";
+import ConversationSidebar from "./ConversationSidebar";
 
 import { fmtMoneySignedCompact } from "@/lib/helpers/fmt";
 type Msg = { role: "user" | "model"; text: string; pending?: boolean };
@@ -122,6 +123,23 @@ function Page() {
   // current thread without stale-closure bugs.
   const [conversations, setConversations] = useState<ConversationMeta[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  // Desktop history sidebar open/collapsed, persisted across visits.
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  useEffect(() => {
+    const saved = localStorage.getItem("cuequill:chatSidebar");
+    if (saved !== null) setSidebarOpen(saved === "open");
+  }, []);
+  const toggleSidebar = useCallback(() => {
+    setSidebarOpen((o) => {
+      const next = !o;
+      try {
+        localStorage.setItem("cuequill:chatSidebar", next ? "open" : "closed");
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  }, []);
   const convIdRef = useRef<string | null>(null);
   const setConv = useCallback((id: string | null) => {
     convIdRef.current = id;
@@ -634,19 +652,56 @@ function Page() {
           mobile so the messages column visually CLOSES above the fixed
           composer instead of extending behind it. Desktop forces it
           back to 0 because the composer is in-flow there. */}
-      <div className="w-full max-w-[1100px] mx-auto px-5 md:px-10 mt-12 md:mt-28 flex-1 flex flex-col min-h-0">
-        {/* Toolbar: conversation history + New chat on the left, the
-            Claude-style usage meter on the right. In normal flow (not
-            absolute) so each control's popover anchors under its own
-            button. */}
+      {/* Navbar-width shell: a collapsible history sidebar + the chat
+          column, spanning the same max width as the top nav. */}
+      <div className="w-full max-w-[1500px] mx-auto px-5 md:px-10 mt-12 md:mt-28 flex-1 flex min-h-0">
+        <ConversationSidebar
+          conversations={conversations}
+          currentId={conversationId}
+          open={sidebarOpen}
+          onSelect={switchConversation}
+          onDelete={deleteConversation}
+        />
+
+        {/* Main chat column */}
+        <div className="flex-1 min-w-0 flex flex-col min-h-0">
+        {/* Toolbar: sidebar toggle + New chat (desktop) / history dropdown
+            (mobile) on the left, the usage meter on the right. In normal
+            flow so each control's popover anchors under its own button. */}
         <div className="flex items-center justify-between gap-2 mb-2 shrink-0">
-          <ChatHistory
-            conversations={conversations}
-            currentId={conversationId}
-            onSelect={switchConversation}
-            onNew={newChat}
-            onDelete={deleteConversation}
-          />
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={toggleSidebar}
+              title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+              aria-label="Toggle conversation sidebar"
+              className="hidden md:inline-flex items-center justify-center w-9 h-9 rounded-full border border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white transition cursor-pointer"
+            >
+              <i
+                className={`fa-solid ${
+                  sidebarOpen ? "fa-angles-left" : "fa-bars"
+                } text-[12px]`}
+              />
+            </button>
+            <button
+              type="button"
+              onClick={newChat}
+              title="New chat"
+              className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/10 bg-white/[0.04] text-[12px] font-medium text-white/60 hover:bg-white/[0.08] hover:text-white transition cursor-pointer"
+            >
+              <i className="fa-solid fa-plus text-[10px]" />
+              New chat
+            </button>
+            <div className="md:hidden">
+              <ChatHistory
+                conversations={conversations}
+                currentId={conversationId}
+                onSelect={switchConversation}
+                onNew={newChat}
+                onDelete={deleteConversation}
+              />
+            </div>
+          </div>
           <ChatUsage />
         </div>
         {empty ? (
@@ -660,7 +715,7 @@ function Page() {
               className="h-full overflow-y-auto pr-1"
             >
               <div
-                className="flex flex-col gap-3 md:gap-4 pt-4 pb-[var(--msg-pb,4rem)] md:pb-4"
+                className="flex flex-col gap-3 md:gap-4 pt-4 pb-[var(--msg-pb,4rem)] md:pb-24"
                 style={
                   { "--msg-pb": `${composerH + 24}px` } as React.CSSProperties
                 }
@@ -760,6 +815,7 @@ function Page() {
             }}
           />
         )}
+        </div>
       </div>
     </div>
 
