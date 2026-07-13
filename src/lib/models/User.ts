@@ -58,6 +58,10 @@ export interface IUser extends Document {
   stripeSubscriptionStatus?: string;
   stripePriceId?: string;
   stripeCurrentPeriodEnd?: Date;
+  // True once the user has cancelled but the paid term hasn't elapsed —
+  // access continues until stripeCurrentPeriodEnd, then the subscription
+  // ends. Lets the UI show "cancels on <date>" instead of a bare "Pro".
+  stripeCancelAtPeriodEnd?: boolean;
   // Send a daily 8am (local) email reminder if the user hasn't
   // read all their affirmations yet that day. Opt-out; on by default.
   emailAffirmationsReminder?: boolean;
@@ -117,6 +121,7 @@ const UserSchema = new Schema<IUser>({
   stripeSubscriptionStatus: { type: String },
   stripePriceId: { type: String },
   stripeCurrentPeriodEnd: { type: Date },
+  stripeCancelAtPeriodEnd: { type: Boolean, default: false },
   emailAffirmationsReminder: { type: Boolean, default: true },
   emailAffirmationsLastSentDate: { type: String, default: "" },
 });

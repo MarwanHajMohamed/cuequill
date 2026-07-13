@@ -38,6 +38,7 @@ export async function syncSubscriptionToUser(
   user.stripeSubscriptionId = sub.id;
   user.stripeSubscriptionStatus = sub.status;
   user.stripePriceId = sub.items?.data?.[0]?.price?.id;
+  user.stripeCancelAtPeriodEnd = !!sub.cancel_at_period_end;
   if (periodEndUnix) {
     user.stripeCurrentPeriodEnd = new Date(periodEndUnix * 1000);
   }
