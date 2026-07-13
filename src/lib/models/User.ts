@@ -35,12 +35,29 @@ export interface IUser extends Document {
   // resets daily. Stored server-side so the state syncs across devices.
   // `date` is a yyyy-MM-dd string; `texts` are the read affirmations.
   affirmationsRead: { date: string; texts: string[] };
-  // Pro membership flag. Gates Quill AI, IBKR auto-sync, the rules
-  // board / affirmations, per-strategy + per-symbol stats, and
-  // unlimited trade history. Free users see blurred previews behind
-  // an upgrade prompt. Flipped manually until a real billing
-  // integration ships.
+  // Pro membership flag — the effective, computed access gate. Gates
+  // Quill AI, IBKR auto-sync, the rules board / affirmations,
+  // per-strategy + per-symbol stats, and unlimited trade history. Free
+  // users see blurred previews behind an upgrade prompt.
+  //
+  // Written by the Stripe webhook as `proManualOverride || <subscription
+  // is active/trialing>`, so it stays true for comped accounts even with
+  // no subscription, and flips false when a subscription lapses.
   isPro: boolean;
+  // Admin comp: when true, the account is Pro regardless of billing. The
+  // Stripe webhook never clears this — it only ORs it into isPro — so a
+  // manually-granted account can't be revoked by a subscription event.
+  proManualOverride?: boolean;
+  // Stripe billing linkage. stripeCustomerId is the lookup key the
+  // webhook uses to map an incoming event back to a user.
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
+  // Raw Stripe subscription status: active, trialing, past_due, canceled,
+  // incomplete, unpaid, etc. Kept so the UI can explain WHY access
+  // changed (e.g. "payment failed") without re-querying Stripe.
+  stripeSubscriptionStatus?: string;
+  stripePriceId?: string;
+  stripeCurrentPeriodEnd?: Date;
   // Send a daily 8am (local) email reminder if the user hasn't
   // read all their affirmations yet that day. Opt-out; on by default.
   emailAffirmationsReminder?: boolean;
@@ -92,6 +109,14 @@ const UserSchema = new Schema<IUser>({
     default: () => ({ date: "", texts: [] }),
   },
   isPro: { type: Boolean, default: false },
+  proManualOverride: { type: Boolean, default: false },
+  // Indexed: the Stripe webhook finds the user by customer id on every
+  // subscription event.
+  stripeCustomerId: { type: String, index: true },
+  stripeSubscriptionId: { type: String },
+  stripeSubscriptionStatus: { type: String },
+  stripePriceId: { type: String },
+  stripeCurrentPeriodEnd: { type: Date },
   emailAffirmationsReminder: { type: Boolean, default: true },
   emailAffirmationsLastSentDate: { type: String, default: "" },
 });

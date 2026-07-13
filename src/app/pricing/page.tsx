@@ -3,7 +3,8 @@
 import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useToast } from "@/hooks/useToast";
 import {
   FaqRow,
   SectionMark,
@@ -176,11 +177,47 @@ export default function PricingPage() {
   const [cycle, setCycle] = useState<Cycle>("annual");
   // When signed in, the global app navbar already renders — so skip the
   // marketing header to avoid two stacked navbars.
-  const { status } = useSession();
+  const { data: session, status, update } = useSession();
   const signedIn = status === "authenticated";
+  const isPro = !!session?.user?.isPro;
+
+  // Returning from Stripe Checkout. Read the flag off the URL (rather
+  // than useSearchParams, which would force a Suspense boundary) and, on
+  // success, nudge the session to re-check isPro from the DB a few times
+  // — the webhook that flips it usually lands within a couple of seconds.
+  const [checkoutResult, setCheckoutResult] = useState<string | null>(null);
+  useEffect(() => {
+    const c = new URLSearchParams(window.location.search).get("checkout");
+    if (!c) return;
+    setCheckoutResult(c);
+    if (c === "success") {
+      const timers = [1000, 3000, 6000, 10000].map((d) =>
+        setTimeout(() => update(), d),
+      );
+      return () => timers.forEach(clearTimeout);
+    }
+  }, [update]);
 
   return (
     <div className="min-h-screen flex flex-col">
+      {checkoutResult === "success" && (
+        <div className="fixed top-4 inset-x-0 z-[60] flex justify-center px-4 pointer-events-none">
+          <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-teal-400/40 bg-teal-500/15 px-4 py-2 text-[13px] text-teal-200 backdrop-blur-md shadow-lg">
+            <i className="fa-solid fa-circle-check" />
+            {isPro
+              ? "You're on Pro — welcome aboard."
+              : "Payment received — activating Pro…"}
+          </div>
+        </div>
+      )}
+      {checkoutResult === "cancelled" && (
+        <div className="fixed top-4 inset-x-0 z-[60] flex justify-center px-4 pointer-events-none">
+          <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-4 py-2 text-[13px] text-white/80 backdrop-blur-md shadow-lg">
+            <i className="fa-solid fa-circle-info text-white/50" />
+            Checkout cancelled — no charge was made.
+          </div>
+        </div>
+      )}
       {/* Same fixed teal/indigo aurora wash used on the journal page so
           the pricing surface sits in the same atmosphere. */}
       <div
@@ -196,7 +233,12 @@ export default function PricingPage() {
       <main className="flex-1 pt-20">
         <PricingHero />
 
-        <PlansSpread cycle={cycle} setCycle={setCycle} />
+        <PlansSpread
+          cycle={cycle}
+          setCycle={setCycle}
+          signedIn={signedIn}
+          isPro={isPro}
+        />
 
         <CompareSection cycle={cycle} />
 
@@ -300,9 +342,13 @@ function BillingToggle({
 function PlansSpread({
   cycle,
   setCycle,
+  signedIn,
+  isPro,
 }: {
   cycle: Cycle;
   setCycle: (c: Cycle) => void;
+  signedIn: boolean;
+  isPro: boolean;
 }) {
   return (
     <section className="px-6 md:px-10 py-20 md:py-28">
@@ -324,6 +370,8 @@ function PlansSpread({
               plan={plan}
               cycle={cycle}
               index={i}
+              signedIn={signedIn}
+              isPro={isPro}
             />
           ))}
         </div>
@@ -332,14 +380,110 @@ function PlansSpread({
   );
 }
 
+// The plan CTA. Starter is a plain link; Pro drives real Stripe flows:
+// sign-in → Checkout for the currently-selected cycle, or the Billing
+// Portal for existing subscribers.
+function PlanCTA({
+  plan,
+  cycle,
+  signedIn,
+  isPro,
+}: {
+  plan: Plan;
+  cycle: Cycle;
+  signedIn: boolean;
+  isPro: boolean;
+}) {
+  const toast = useToast();
+  const [loading, setLoading] = useState(false);
+
+  const base = `shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-full transition text-[11px] font-semibold tracking-[0.08em] cursor-pointer disabled:opacity-60 disabled:cursor-default ${
+    plan.featured
+      ? "bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25"
+      : "border border-white/15 text-white/85 hover:bg-white/[0.06]"
+  }`;
+
+  const post = async (endpoint: string, body?: unknown) => {
+    setLoading(true);
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: body ? { "Content-Type": "application/json" } : undefined,
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      toast(data.error || "Something went wrong. Please try again.");
+    } catch {
+      toast("Network error. Please try again.");
+    }
+    setLoading(false);
+  };
+
+  // Starter (free) tier — a link into the app / sign-up.
+  if (!plan.featured) {
+    return (
+      <Link href={signedIn ? "/dashboard" : plan.href} className={base}>
+        {signedIn ? "Go to app" : plan.cta}
+        <i className="fa-solid fa-chevron-right text-[9px]" />
+      </Link>
+    );
+  }
+
+  // Pro tier, signed out — send to login (they can subscribe after).
+  if (!signedIn) {
+    return (
+      <Link href="/login" className={base}>
+        {plan.cta}
+        <i className="fa-solid fa-chevron-right text-[9px]" />
+      </Link>
+    );
+  }
+
+  // Pro tier, already subscribed — manage billing.
+  if (isPro) {
+    return (
+      <button
+        type="button"
+        onClick={() => post("/api/stripe/portal")}
+        disabled={loading}
+        className={base}
+      >
+        {loading ? "Opening…" : "Manage billing"}
+        {!loading && <i className="fa-solid fa-arrow-up-right-from-square text-[9px]" />}
+      </button>
+    );
+  }
+
+  // Pro tier, signed in but free — start checkout for the chosen cycle.
+  return (
+    <button
+      type="button"
+      onClick={() => post("/api/stripe/checkout", { cycle })}
+      disabled={loading}
+      className={base}
+    >
+      {loading ? "Redirecting…" : plan.cta}
+      {!loading && <i className="fa-solid fa-chevron-right text-[9px]" />}
+    </button>
+  );
+}
+
 function PlanColumn({
   plan,
   cycle,
   index,
+  signedIn,
+  isPro,
 }: {
   plan: Plan;
   cycle: Cycle;
   index: number;
+  signedIn: boolean;
+  isPro: boolean;
 }) {
   const isContact = plan.monthly === null;
   const price = cycle === "annual" ? plan.annual : plan.monthly;
@@ -408,17 +552,7 @@ function PlanColumn({
           </p>
         </div>
 
-        <Link
-          href={plan.href}
-          className={`shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-full transition text-[11px] font-semibold tracking-[0.08em] ${
-            plan.featured
-              ? "bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25"
-              : "border border-white/15 text-white/85 hover:bg-white/[0.06]"
-          }`}
-        >
-          {plan.cta}
-          <i className="fa-solid fa-chevron-right text-[9px]" />
-        </Link>
+        <PlanCTA plan={plan} cycle={cycle} signedIn={signedIn} isPro={isPro} />
       </div>
 
       {/* Features - hairline divider above. Check = included, muted dash
