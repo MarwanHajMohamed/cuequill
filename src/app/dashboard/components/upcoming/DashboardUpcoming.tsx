@@ -142,7 +142,8 @@ function EventRow({ ev, n }: { ev: UpcomingEvent; n: number }) {
         </div>
       </div>
 
-      {/* Icon */}
+      {/* Icon. -200 fills are remapped to dark inks under :root.light
+          in globals.css so the glyph stays legible in both themes. */}
       <div
         className={`shrink-0 w-8 h-8 rounded-lg border flex items-center justify-center ${
           isFed

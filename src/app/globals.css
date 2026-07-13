@@ -55,12 +55,19 @@
 
   /* Accent shades that read fine on dark but wash out on white -
      darken them so links, the brand gradient, and P/L stay legible. */
+  --color-teal-200: #115e59;
   --color-teal-300: #0f766e;
   --color-teal-400: #0d9488;
+  --color-purple-200: #6b21a8;
+  --color-purple-300: #7e22ce;
+  --color-purple-400: #9333ea;
+  --color-sky-100: #0c4a6e;
+  --color-sky-300: #0369a1;
   --color-emerald-300: #047857;
   --color-emerald-400: #059669;
   --color-green-300: #15803d;
   --color-green-400: #16a34a;
+  --color-red-100: #7f1d1d;
   --color-red-300: #b91c1c;
   --color-red-400: #dc2626;
   --color-amber-300: #b45309;

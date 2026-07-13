@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { format, parseISO } from "date-fns";
+import { AnimatePresence, motion } from "framer-motion";
 import "react-calendar/dist/Calendar.css";
 import "@/app/dashboard/components/calendar/calendar-custom.css";
 import AnimatedCalendar from "@/app/reusablecalendar/AnimatedCalendar";
@@ -180,46 +181,65 @@ function EarningsPage() {
                   : "No upcoming earnings dates found."}
               </p>
             ) : (
+              // AnimatePresence + layout on each row: new rows drop in
+              // from the top and existing rows slide down (or up when
+              // a row is removed) via framer's layout tween. initial
+              // = false suppresses the animation on the very first
+              // mount so an initial page load doesn't cascade the
+              // whole list in.
               <div className="flex flex-col divide-y divide-white/[0.06]">
-                {upcoming.map((e) => (
-                  <div key={e.symbol} className="flex items-center gap-3 py-2.5">
-                    <div className="w-[52px] shrink-0 text-center">
-                      <div className="text-[11px] tracking-wide text-white/40 leading-none">
-                        {format(parseISO(e.date!), "MMM")}
+                <AnimatePresence initial={false}>
+                  {upcoming.map((e) => (
+                    <motion.div
+                      key={e.symbol}
+                      layout
+                      initial={{ opacity: 0, y: -24 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -12, height: 0, marginTop: 0, marginBottom: 0 }}
+                      transition={{
+                        duration: 0.28,
+                        ease: [0.32, 0.72, 0, 1],
+                      }}
+                      className="flex items-center gap-3 py-2.5"
+                    >
+                      <div className="w-[52px] shrink-0 text-center">
+                        <div className="text-[11px] tracking-wide text-white/40 leading-none">
+                          {format(parseISO(e.date!), "MMM")}
+                        </div>
+                        <div className="text-[17px] font-medium tabular-nums leading-tight">
+                          {format(parseISO(e.date!), "d")}
+                        </div>
                       </div>
-                      <div className="text-[17px] font-medium tabular-nums leading-tight">
-                        {format(parseISO(e.date!), "d")}
-                      </div>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[13.5px] font-semibold tabular-nums">
-                          {e.symbol}
-                        </span>
-                        {e.isEstimate && (
-                          <span className="text-[9px] tracking-wide text-white/40 border border-white/15 rounded px-1 py-0.5">
-                            Est.
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[13.5px] font-semibold tabular-nums">
+                            {e.symbol}
                           </span>
+                          {e.isEstimate && (
+                            <span className="text-[9px] tracking-wide text-white/40 border border-white/15 rounded px-1 py-0.5">
+                              Est.
+                            </span>
+                          )}
+                        </div>
+                        {e.name && (
+                          <div className="text-[11.5px] text-white/45 truncate">
+                            {e.name}
+                          </div>
                         )}
                       </div>
-                      {e.name && (
-                        <div className="text-[11.5px] text-white/45 truncate">
-                          {e.name}
+                      <div className="shrink-0 text-right">
+                        <div className="text-[10px] tracking-wide text-white/35 leading-none">
+                          EPS est.
                         </div>
-                      )}
-                    </div>
-                    <div className="shrink-0 text-right">
-                      <div className="text-[10px] tracking-wide text-white/35 leading-none">
-                        EPS est.
+                        <div className="text-[13px] tabular-nums text-white/75">
+                          {e.epsEstimate != null
+                            ? `$${e.epsEstimate.toFixed(2)}`
+                            : "—"}
+                        </div>
                       </div>
-                      <div className="text-[13px] tabular-nums text-white/75">
-                        {e.epsEstimate != null
-                          ? `$${e.epsEstimate.toFixed(2)}`
-                          : "—"}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
               </div>
             )}
           </div>
