@@ -22,6 +22,7 @@ import { useTrades } from "@/hooks/useTrades";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
 import ViewTradeModal from "@/app/dashboard/components/modals/ViewTradeModal";
 import ChatUsage from "./ChatUsage";
+import ChatHistory, { type ConversationMeta } from "./ChatHistory";
 
 import { fmtMoneySignedCompact } from "@/lib/helpers/fmt";
 type Msg = { role: "user" | "model"; text: string; pending?: boolean };
@@ -116,6 +117,17 @@ function Page() {
   // Trade being viewed via a `trade://` link in the Gemini reply.
   const [viewingTrade, setViewingTrade] = useState<Trade | null>(null);
 
+  // Conversation history: many threads per user. `conversationId` is the
+  // active one; convIdRef mirrors it so async savers always target the
+  // current thread without stale-closure bugs.
+  const [conversations, setConversations] = useState<ConversationMeta[]>([]);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const convIdRef = useRef<string | null>(null);
+  const setConv = useCallback((id: string | null) => {
+    convIdRef.current = id;
+    setConversationId(id);
+  }, []);
+
   // Pull the user's full trade list once (React Query caches it across
   // the app) so the trade cards rendered inside chat replies can read
   // their data straight from memory — no N+1 fetches per card.
@@ -191,39 +203,62 @@ function Page() {
     return () => ro.disconnect();
   }, []);
 
-  // ── Persistence (server-side, per user) ──────────────────────────────
-  // Push the current conversation to the server. Called on turn boundaries
-  // (not per streamed token) via the debounced effect below.
-  const persist = useCallback(
-    async (msgs: Msg[]) => {
-      if (!userId) return;
-      try {
-        await fetch("/api/chat/history", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            messages: msgs
-              .filter((m) => !m.pending)
-              .map(({ role, text }) => ({ role, text })),
-          }),
-        });
-      } catch {
-        /* best-effort */
-      }
-    },
-    [userId],
-  );
-
-  // Guards auto-save: only true once we've SUCCESSFULLY loaded the
-  // server's history. Prevents a transient GET failure (which leaves
-  // messages empty) from overwriting the stored conversation with [].
+  // ── Persistence (server-side, per conversation) ──────────────────────
+  // Guards auto-save: only true once the active conversation has loaded
+  // successfully, so a transient fetch failure (which leaves messages
+  // empty) can't overwrite a stored conversation with [].
   const loadedOkRef = useRef(false);
 
-  // Load the signed-in user's conversation whenever their id resolves or
-  // changes (account switch swaps in the right one). Also purges any old
-  // localStorage copies from the previous client-side approach.
+  // Push the current conversation's messages to the server. Reads the id
+  // from a ref so it always targets the active thread.
+  const persist = useCallback(async (msgs: Msg[]) => {
+    const id = convIdRef.current;
+    if (!id) return;
+    try {
+      await fetch(`/api/chat/conversations/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: msgs
+            .filter((m) => !m.pending)
+            .map(({ role, text }) => ({ role, text })),
+        }),
+      });
+    } catch {
+      /* best-effort */
+    }
+  }, []);
+
+  const fetchConversationList = useCallback(async (): Promise<
+    ConversationMeta[]
+  > => {
+    const res = await fetch("/api/chat/conversations", { cache: "no-store" });
+    if (!res.ok) throw new Error("list failed");
+    const data = await res.json();
+    return (data.conversations ?? []) as ConversationMeta[];
+  }, []);
+
+  const refreshConversations = useCallback(async () => {
+    try {
+      setConversations(await fetchConversationList());
+    } catch {
+      /* keep the current list */
+    }
+  }, [fetchConversationList]);
+
+  const resetTicker = useCallback(() => {
+    renderQueueRef.current = [];
+    if (tickerRef.current !== null) {
+      window.clearInterval(tickerRef.current);
+      tickerRef.current = null;
+    }
+  }, []);
+
+  // Initial load: fetch the thread list, open the most recent (or create
+  // the first one), and load its messages. Re-runs on account switch.
   useEffect(() => {
     if (!userId) return;
+    // Purge any leftover localStorage copies from the old client approach.
     try {
       localStorage.removeItem(LEGACY_LOCAL_KEY);
       localStorage.removeItem(`${LEGACY_LOCAL_KEY}:${userId}`);
@@ -234,38 +269,120 @@ function Page() {
     loadedOkRef.current = false;
     setHydrated(false);
     (async () => {
-      let loaded: Msg[] = [];
-      let ok = false;
       try {
-        const res = await fetch("/api/chat/history", { cache: "no-store" });
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data.messages)) loaded = data.messages as Msg[];
-          ok = true;
+        let list = await fetchConversationList();
+        let id: string | null = null;
+        let msgs: Msg[] = [];
+        let ok = false;
+        if (list.length > 0) {
+          id = list[0].id;
+          const mRes = await fetch(`/api/chat/conversations/${id}`, {
+            cache: "no-store",
+          });
+          if (mRes.ok) {
+            msgs = ((await mRes.json()).messages ?? []) as Msg[];
+            ok = true;
+          }
+        } else {
+          const cRes = await fetch("/api/chat/conversations", {
+            method: "POST",
+          });
+          if (cRes.ok) {
+            const c = (await cRes.json()) as ConversationMeta;
+            id = c.id;
+            list = [c];
+            ok = true; // fresh empty thread — safe to persist to
+          }
+        }
+        if (!cancelled && id) {
+          setConversations(list);
+          setConv(id);
+          setMessages(msgs);
+          // Only enable auto-save if we actually loaded the thread, so a
+          // failed message fetch can't overwrite stored history with [].
+          loadedOkRef.current = ok;
         }
       } catch {
-        /* ignore — start empty, but don't allow overwriting the server */
-      }
-      if (!cancelled) {
-        loadedOkRef.current = ok;
-        setMessages(loaded);
-        setHydrated(true);
+        /* leave empty; loadedOk stays false so we don't overwrite */
+      } finally {
+        if (!cancelled) setHydrated(true);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [userId]);
+  }, [userId, fetchConversationList, setConv]);
 
   // Save on turn boundaries: only while NOT streaming (so we don't write
-  // per token) and debounced, so a finished turn — once the drip ticker
-  // has drained — is persisted exactly once. Skipped until a successful
-  // load so we never clobber stored history after a failed fetch.
+  // per token), debounced, and only after a successful load.
   useEffect(() => {
-    if (!hydrated || !userId || streaming || !loadedOkRef.current) return;
+    if (!hydrated || !conversationId || streaming || !loadedOkRef.current) {
+      return;
+    }
     const id = setTimeout(() => persist(messages), 700);
     return () => clearTimeout(id);
-  }, [messages, hydrated, userId, streaming, persist]);
+  }, [messages, hydrated, conversationId, streaming, persist]);
+
+  // Start a fresh conversation.
+  const newChat = useCallback(async () => {
+    resetTicker();
+    try {
+      const res = await fetch("/api/chat/conversations", { method: "POST" });
+      if (!res.ok) return;
+      const c = (await res.json()) as ConversationMeta;
+      loadedOkRef.current = true;
+      setConversations((prev) => [c, ...prev]);
+      setConv(c.id);
+      setMessages([]);
+      setInput("");
+    } catch {
+      /* ignore */
+    }
+  }, [resetTicker, setConv]);
+
+  // Switch to an existing conversation.
+  const switchConversation = useCallback(
+    async (id: string) => {
+      if (id === convIdRef.current) return;
+      resetTicker();
+      loadedOkRef.current = false;
+      try {
+        const res = await fetch(`/api/chat/conversations/${id}`, {
+          cache: "no-store",
+        });
+        const msgs = res.ok ? (((await res.json()).messages ?? []) as Msg[]) : [];
+        setConv(id);
+        setMessages(msgs);
+        loadedOkRef.current = res.ok;
+      } catch {
+        setConv(id);
+        setMessages([]);
+      }
+    },
+    [resetTicker, setConv],
+  );
+
+  // Delete a conversation; if it was the active one, fall back to the
+  // next most recent (or a fresh chat).
+  const deleteConversation = useCallback(
+    async (id: string) => {
+      try {
+        await fetch(`/api/chat/conversations/${id}`, { method: "DELETE" });
+      } catch {
+        /* ignore */
+      }
+      const remaining = conversations.filter((c) => c.id !== id);
+      setConversations(remaining);
+      if (id === convIdRef.current) {
+        if (remaining.length > 0) {
+          await switchConversation(remaining[0].id);
+        } else {
+          await newChat();
+        }
+      }
+    },
+    [conversations, switchConversation, newChat],
+  );
 
   // Auto-scroll the inner container AND the window every time the
   // displayed text grows.
@@ -325,6 +442,10 @@ function Page() {
     async (text: string) => {
       const trimmed = text.trim();
       if (!trimmed || streaming) return;
+      // The thread this turn belongs to. If the user switches conversations
+      // mid-stream, we stop feeding tokens so they don't land in the wrong
+      // thread.
+      const activeConv = convIdRef.current;
       const next: Msg[] = [
         ...messages,
         { role: "user", text: trimmed },
@@ -377,6 +498,11 @@ function Page() {
         for (;;) {
           const { value, done } = await reader.read();
           if (done) break;
+          // User switched away from this thread — stop appending here.
+          if (convIdRef.current !== activeConv) {
+            await reader.cancel().catch(() => {});
+            break;
+          }
           tail += decoder.decode(value, { stream: true });
           while (tail.includes(REFRESH_SENTINEL)) {
             const i = tail.indexOf(REFRESH_SENTINEL);
@@ -416,9 +542,12 @@ function Page() {
         setStreaming(false);
         // Refresh the usage meter — this turn consumed a message + tokens.
         queryClient.invalidateQueries({ queryKey: ["chatUsage"] });
+        // Refresh the thread list so a new thread's derived title and the
+        // most-recent ordering show up.
+        refreshConversations();
       }
     },
-    [messages, streaming, enqueueChunk, queryClient, userId],
+    [messages, streaming, enqueueChunk, queryClient, userId, refreshConversations],
   );
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -426,17 +555,6 @@ function Page() {
       e.preventDefault();
       send(input);
     }
-  };
-
-  const clear = () => {
-    renderQueueRef.current = [];
-    if (tickerRef.current !== null) {
-      window.clearInterval(tickerRef.current);
-      tickerRef.current = null;
-    }
-    setMessages([]);
-    // Persist the cleared state immediately (don't wait for the debounce).
-    persist([]);
   };
 
   const empty = messages.length === 0;
@@ -516,25 +634,27 @@ function Page() {
           mobile so the messages column visually CLOSES above the fixed
           composer instead of extending behind it. Desktop forces it
           back to 0 because the composer is in-flow there. */}
-      <div className="relative w-full max-w-[1100px] mx-auto px-5 md:px-10 mt-12 md:mt-28 flex-1 flex flex-col min-h-0">
-        {/* Usage meter — messages today + monthly token budget, like a
-            Claude-style usage readout. Visible in both empty and active
-            states. */}
-        <ChatUsage className="absolute top-0 right-5 md:right-10 z-20" />
+      <div className="w-full max-w-[1100px] mx-auto px-5 md:px-10 mt-12 md:mt-28 flex-1 flex flex-col min-h-0">
+        {/* Toolbar: conversation history + New chat on the left, the
+            Claude-style usage meter on the right. In normal flow (not
+            absolute) so each control's popover anchors under its own
+            button. */}
+        <div className="flex items-center justify-between gap-2 mb-2 shrink-0">
+          <ChatHistory
+            conversations={conversations}
+            currentId={conversationId}
+            onSelect={switchConversation}
+            onNew={newChat}
+            onDelete={deleteConversation}
+          />
+          <ChatUsage />
+        </div>
         {empty ? (
           <div className="flex-1 flex items-center justify-center pb-6">
             {Greeting}
           </div>
         ) : (
           <div className="flex-1 min-h-0 relative">
-            <button
-              onClick={clear}
-              className="absolute -top-2 left-1/2 -translate-x-1/2 z-20 inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-white/[0.04] backdrop-blur text-white/60 hover:bg-white/[0.08] hover:text-white transition text-[12px] font-medium cursor-pointer"
-              aria-label="Clear conversation"
-            >
-              <i className="fa-regular fa-trash-can text-[10px]" />
-              Clear
-            </button>
             <div
               ref={scrollRef}
               className="h-full overflow-y-auto pr-1"
