@@ -406,8 +406,18 @@ function Page() {
   // displayed text grows.
   useEffect(() => {
     const inner = scrollRef.current;
-    if (inner) inner.scrollTop = inner.scrollHeight;
-    bottomRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
+    if (!inner) return;
+    // Instant, scoped-to-the-container scroll only. The previous version
+    // combined this with a smooth scrollIntoView on every streamed token —
+    // the two fought each other (and scrollIntoView could nudge the whole
+    // page), which read as glitchy jitter while Quill AI typed. Only stick
+    // to the bottom when the user is already near it, so scrolling up to
+    // read earlier messages isn't yanked back down.
+    const distanceFromBottom =
+      inner.scrollHeight - inner.scrollTop - inner.clientHeight;
+    if (distanceFromBottom < 140) {
+      inner.scrollTop = inner.scrollHeight;
+    }
   }, [messages]);
 
   // Word-by-word drip ticker.
@@ -712,7 +722,7 @@ function Page() {
           <div className="flex-1 min-h-0 relative">
             <div
               ref={scrollRef}
-              className="h-full overflow-y-auto pr-1"
+              className="chat-scroll h-full overflow-y-auto pr-1"
             >
               <div
                 className="flex flex-col gap-3 md:gap-4 pt-4 pb-[var(--msg-pb,4rem)] md:pb-24"
