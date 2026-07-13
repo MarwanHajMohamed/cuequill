@@ -182,20 +182,42 @@ export default function PricingPage() {
   const isPro = !!session?.user?.isPro;
 
   // Returning from Stripe Checkout. Read the flag off the URL (rather
-  // than useSearchParams, which would force a Suspense boundary) and, on
-  // success, nudge the session to re-check isPro from the DB a few times
-  // — the webhook that flips it usually lands within a couple of seconds.
+  // than useSearchParams, which would force a Suspense boundary). On
+  // success, poll a DB-backed endpoint until the webhook has flipped
+  // isPro, THEN refresh the session exactly once — polling the session
+  // itself (repeated update() calls) churns next-auth and flickers the
+  // navbar. The `{ isPro: true }` arg makes the jwt callback re-check the
+  // DB (the DB value, not the client's, is authoritative).
   const [checkoutResult, setCheckoutResult] = useState<string | null>(null);
   useEffect(() => {
     const c = new URLSearchParams(window.location.search).get("checkout");
     if (!c) return;
     setCheckoutResult(c);
-    if (c === "success") {
-      const timers = [1000, 3000, 6000, 10000].map((d) =>
-        setTimeout(() => update(), d),
-      );
-      return () => timers.forEach(clearTimeout);
-    }
+    if (c !== "success") return;
+
+    let cancelled = false;
+    let tries = 0;
+    const poll = async () => {
+      if (cancelled) return;
+      tries += 1;
+      try {
+        const res = await fetch("/api/me/pro", { cache: "no-store" });
+        const data = await res.json();
+        if (data?.isPro) {
+          if (!cancelled) await update({ isPro: true });
+          return;
+        }
+      } catch {
+        // transient — fall through and retry
+      }
+      if (!cancelled && tries < 10) setTimeout(poll, 2000);
+    };
+    // Give the webhook a beat to land before the first check.
+    const first = setTimeout(poll, 1500);
+    return () => {
+      cancelled = true;
+      clearTimeout(first);
+    };
   }, [update]);
 
   return (
@@ -228,7 +250,12 @@ export default function PricingPage() {
             "radial-gradient(50% 50% at 50% 0%, rgba(20,184,166,0.14) 0%, rgba(20,184,166,0) 75%), radial-gradient(40% 45% at 80% 5%, rgba(99,102,241,0.10) 0%, rgba(99,102,241,0) 75%)",
         }}
       />
-      {!signedIn && <SiteHeader />}
+      {/* Only render the marketing header once we KNOW the visitor is
+          logged out. During the brief "loading" state signedIn is also
+          false, which — paired with the app navbar appearing only when
+          authenticated — made the two headers flicker back and forth on
+          session revalidation. */}
+      {status === "unauthenticated" && <SiteHeader />}
 
       <main className="flex-1 pt-20">
         <PricingHero />
