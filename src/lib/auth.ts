@@ -247,7 +247,12 @@ export const authOptions: NextAuthOptions = {
           token.firstname = session.firstname;
         if (session.surname !== undefined) token.surname = session.surname;
         if (session.email !== undefined) token.email = session.email;
-        if (session.isPro !== undefined) token.isPro = !!session.isPro;
+        // Deliberately NOT honouring session.isPro from the client here.
+        // isPro is derived from the DB in the forced re-check below, so a
+        // client calling update({ isPro: true }) can't latch a forged
+        // value into the JWT (it would previously persist if that DB read
+        // happened to throw). Callers that pass isPro just trigger the
+        // re-check, which is what they actually want.
       }
       // Keep the membership flag in sync with the DB so a session
       // minted before an upgrade unlocks the client gates without a
