@@ -384,14 +384,33 @@ body {
   }
 }
 
-/* Chat message list: hide the native scrollbar so it doesn't show through
-   the translucent bottom fade that blends the conversation into the
-   composer. Scrolling (wheel/touch/keys) still works. */
+/* Chat message list: a thin, theme-aware custom scrollbar. On WebKit the
+   track is inset from the bottom (margin-bottom) so the thumb stops above
+   the translucent fade that blends the conversation into the composer —
+   it never bleeds into the blend. Colours use --fg-rgb so the thumb is
+   visible in both light and dark themes. */
 .chat-scroll {
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* legacy Edge/IE */
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: rgb(var(--fg-rgb) / 0.25) transparent;
 }
 .chat-scroll::-webkit-scrollbar {
-  width: 0;
-  height: 0;
+  width: 8px;
+}
+.chat-scroll::-webkit-scrollbar-track {
+  background: transparent;
+  /* Clear the ~64px bottom fade (h-16) plus a little gap. */
+  margin-bottom: 72px;
+  margin-top: 8px;
+}
+.chat-scroll::-webkit-scrollbar-thumb {
+  /* content-box + transparent border renders a ~4px visible thumb inside
+     the 8px track, for a slim look with breathing room. */
+  background: rgb(var(--fg-rgb) / 0.18);
+  background-clip: content-box;
+  border: 2px solid transparent;
+  border-radius: 9999px;
+}
+.chat-scroll:hover::-webkit-scrollbar-thumb {
+  background: rgb(var(--fg-rgb) / 0.32);
+  background-clip: content-box;
 }
