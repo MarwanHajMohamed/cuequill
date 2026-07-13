@@ -21,6 +21,7 @@ import { Trade } from "@/app/types/Trades";
 import { useTrades } from "@/hooks/useTrades";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
 import ViewTradeModal from "@/app/dashboard/components/modals/ViewTradeModal";
+import ChatUsage from "./ChatUsage";
 
 import { fmtMoneySignedCompact } from "@/lib/helpers/fmt";
 type Msg = { role: "user" | "model"; text: string; pending?: boolean };
@@ -413,6 +414,8 @@ function Page() {
       } finally {
         networkOpenRef.current = false;
         setStreaming(false);
+        // Refresh the usage meter — this turn consumed a message + tokens.
+        queryClient.invalidateQueries({ queryKey: ["chatUsage"] });
       }
     },
     [messages, streaming, enqueueChunk, queryClient, userId],
@@ -513,7 +516,11 @@ function Page() {
           mobile so the messages column visually CLOSES above the fixed
           composer instead of extending behind it. Desktop forces it
           back to 0 because the composer is in-flow there. */}
-      <div className="w-full max-w-[1100px] mx-auto px-5 md:px-10 mt-12 md:mt-28 flex-1 flex flex-col min-h-0">
+      <div className="relative w-full max-w-[1100px] mx-auto px-5 md:px-10 mt-12 md:mt-28 flex-1 flex flex-col min-h-0">
+        {/* Usage meter — messages today + monthly token budget, like a
+            Claude-style usage readout. Visible in both empty and active
+            states. */}
+        <ChatUsage className="absolute top-0 right-5 md:right-10 z-20" />
         {empty ? (
           <div className="flex-1 flex items-center justify-center pb-6">
             {Greeting}
