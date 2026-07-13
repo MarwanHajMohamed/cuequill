@@ -1,15 +1,13 @@
 name: IBKR nightly sync
 
-# Fires the same endpoint the Vercel cron used to hit. Mirrors the
-# previous schedule from vercel.json — 22:00 UTC on weekdays, which
-# is ~5–6pm ET after the US market close. GitHub Actions cron can
-# drift 5–15 min under load; that's fine for a nightly sync.
+# The nightly schedule is owned by Upstash QStash, which delivers on
+# time and retries on failure — GitHub Actions' `schedule:` trigger runs
+# best-effort and silently drops runs under load, which is why syncs were
+# missed. QStash hits https://www.cuequill.com/api/ibkr/cron directly.
 #
-# workflow_dispatch lets us fire it manually from the Actions tab
-# (useful for backfills or re-running after a failed night).
+# This workflow is kept for manual runs only: workflow_dispatch lets you
+# fire a backfill or re-run a failed night from the Actions tab.
 on:
-  schedule:
-    - cron: "0 22 * * 1-5"
   workflow_dispatch:
 
 jobs:
