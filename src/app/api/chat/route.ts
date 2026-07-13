@@ -10,6 +10,12 @@ import {
   type FunctionCall,
   type FunctionDeclaration,
 } from "@google/generative-ai";
+import {
+  DAILY_MESSAGE_LIMIT,
+  MONTHLY_TOKEN_LIMIT,
+  dayKey,
+  monthKey,
+} from "@/lib/chatLimits";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -37,11 +43,39 @@ export async function POST(req: Request) {
   // immediately for stale JWTs.
   await connectDb();
   const proCheck = await User.findById(session.user.id)
-    .select("isPro")
-    .lean<{ isPro?: boolean }>();
+    .select("isPro chatDailyDate chatDailyCount chatMonth chatMonthTokens")
+    .lean<{
+      isPro?: boolean;
+      chatDailyDate?: string;
+      chatDailyCount?: number;
+      chatMonth?: string;
+      chatMonthTokens?: number;
+    }>();
   if (!proCheck?.isPro) {
     return new Response("Pro membership required", { status: 403 });
   }
+
+  // ── Per-user fair-use limits ────────────────────────────────────────
+  // Counters reset lazily: if the stored day/month key differs from the
+  // current one, treat the used amount as 0.
+  const today = dayKey();
+  const month = monthKey();
+  const usedToday = proCheck.chatDailyDate === today ? proCheck.chatDailyCount ?? 0 : 0;
+  const usedMonthTokens =
+    proCheck.chatMonth === month ? proCheck.chatMonthTokens ?? 0 : 0;
+  if (usedToday >= DAILY_MESSAGE_LIMIT) {
+    return new Response(
+      `You've reached today's Quill AI limit of ${DAILY_MESSAGE_LIMIT} messages. It resets at midnight UTC — check back then.`,
+      { status: 429 },
+    );
+  }
+  if (usedMonthTokens >= MONTHLY_TOKEN_LIMIT) {
+    return new Response(
+      "You've reached this month's Quill AI usage limit. It resets at the start of next month.",
+      { status: 429 },
+    );
+  }
+
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return new Response("GEMINI_API_KEY not set", { status: 500 });
@@ -123,10 +157,26 @@ export async function POST(req: Request) {
         return collected;
       };
 
+      // Sum Gemini's reported token usage across every generation in this
+      // turn (the initial reply plus any tool-call follow-ups) so it can
+      // be billed against the user's monthly budget.
+      let totalTokens = 0;
+      const addUsage = async (
+        r: Awaited<ReturnType<typeof chat.sendMessageStream>>,
+      ) => {
+        try {
+          const resp = await r.response;
+          totalTokens += resp.usageMetadata?.totalTokenCount ?? 0;
+        } catch {
+          /* usage is best-effort */
+        }
+      };
+
       try {
         let touchedTrades = false;
         let result = await chat.sendMessageStream(last.text);
         let calls = await drainStream(result);
+        await addUsage(result);
 
         // Loop in case Gemini chains tool calls. Bounded so a hallucinating
         // model can't spin us forever.
@@ -162,6 +212,7 @@ export async function POST(req: Request) {
           }
           result = await chat.sendMessageStream(fnResponses);
           calls = await drainStream(result);
+          await addUsage(result);
         }
 
         if (touchedTrades) {
@@ -172,6 +223,20 @@ export async function POST(req: Request) {
         controller.enqueue(encoder.encode(`\n\n[error: ${msg}]`));
       } finally {
         controller.close();
+        // Record usage for this turn (best-effort). The user consumed a
+        // message either way, so count it even if generation errored.
+        try {
+          await User.findByIdAndUpdate(session.user.id, {
+            $set: {
+              chatDailyDate: today,
+              chatDailyCount: usedToday + 1,
+              chatMonth: month,
+              chatMonthTokens: usedMonthTokens + totalTokens,
+            },
+          });
+        } catch {
+          /* usage accounting is best-effort */
+        }
       }
     },
   });

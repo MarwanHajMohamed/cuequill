@@ -62,6 +62,12 @@ export interface IUser extends Document {
   // access continues until stripeCurrentPeriodEnd, then the subscription
   // ends. Lets the UI show "cancels on <date>" instead of a bare "Pro".
   stripeCancelAtPeriodEnd?: boolean;
+  // Quill AI per-user fair-use counters. Reset lazily when the stored
+  // day/month key differs from the current one (no cron needed).
+  chatDailyDate?: string; // yyyy-MM-dd (UTC) the daily count belongs to
+  chatDailyCount?: number; // messages sent that day
+  chatMonth?: string; // yyyy-MM (UTC) the token total belongs to
+  chatMonthTokens?: number; // Gemini tokens consumed that month
   // Send a daily 8am (local) email reminder if the user hasn't
   // read all their affirmations yet that day. Opt-out; on by default.
   emailAffirmationsReminder?: boolean;
@@ -122,6 +128,10 @@ const UserSchema = new Schema<IUser>({
   stripePriceId: { type: String },
   stripeCurrentPeriodEnd: { type: Date },
   stripeCancelAtPeriodEnd: { type: Boolean, default: false },
+  chatDailyDate: { type: String, default: "" },
+  chatDailyCount: { type: Number, default: 0 },
+  chatMonth: { type: String, default: "" },
+  chatMonthTokens: { type: Number, default: 0 },
   emailAffirmationsReminder: { type: Boolean, default: true },
   emailAffirmationsLastSentDate: { type: String, default: "" },
 });

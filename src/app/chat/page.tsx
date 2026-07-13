@@ -51,14 +51,11 @@ function tradeAwareUrlTransform(url: string): string {
   return "";
 }
 
-// Chat history is stored per-user in localStorage. The key is namespaced
-// by the signed-in user's id so that, on a shared browser, one user can
-// never load or see another user's conversation. LEGACY_STORAGE_KEY is the
-// old shared (un-namespaced) key from before this change — it's removed on
-// load so a previous user's chat can't linger on the device.
-const STORAGE_PREFIX = "cuequill:chat:v1";
-const LEGACY_STORAGE_KEY = "cuequill:chat:v1";
-const chatStorageKey = (uid: string) => `${STORAGE_PREFIX}:${uid}`;
+// Chat history now lives server-side (per user) via /api/chat/history, so
+// it syncs across devices and can never leak between accounts on a shared
+// browser. These are the old localStorage keys, purged on load to remove
+// any lingering client copy from the previous approach.
+const LEGACY_LOCAL_KEY = "cuequill:chat:v1";
 
 // Compact starter prompts shown on the empty state. Title + body lets
 // each one read as a tappable card rather than a wall of pills.
@@ -193,49 +190,81 @@ function Page() {
     return () => ro.disconnect();
   }, []);
 
-  // ── Persistence (best-effort, localStorage, per-user) ────────────────
-  // Set right after a load so the save effect that fires on the same
-  // change doesn't immediately re-write (or, on an account switch, write
-  // the previous user's messages under the new user's key).
-  const skipNextSaveRef = useRef(false);
+  // ── Persistence (server-side, per user) ──────────────────────────────
+  // Push the current conversation to the server. Called on turn boundaries
+  // (not per streamed token) via the debounced effect below.
+  const persist = useCallback(
+    async (msgs: Msg[]) => {
+      if (!userId) return;
+      try {
+        await fetch("/api/chat/history", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            messages: msgs
+              .filter((m) => !m.pending)
+              .map(({ role, text }) => ({ role, text })),
+          }),
+        });
+      } catch {
+        /* best-effort */
+      }
+    },
+    [userId],
+  );
+
+  // Guards auto-save: only true once we've SUCCESSFULLY loaded the
+  // server's history. Prevents a transient GET failure (which leaves
+  // messages empty) from overwriting the stored conversation with [].
+  const loadedOkRef = useRef(false);
 
   // Load the signed-in user's conversation whenever their id resolves or
-  // changes (account switch on a shared browser swaps in the right one).
+  // changes (account switch swaps in the right one). Also purges any old
+  // localStorage copies from the previous client-side approach.
   useEffect(() => {
     if (!userId) return;
-    // One-time cleanup of the legacy shared key.
     try {
-      localStorage.removeItem(LEGACY_STORAGE_KEY);
+      localStorage.removeItem(LEGACY_LOCAL_KEY);
+      localStorage.removeItem(`${LEGACY_LOCAL_KEY}:${userId}`);
     } catch {
       /* ignore */
     }
-    let loaded: Msg[] = [];
-    try {
-      const raw = localStorage.getItem(chatStorageKey(userId));
-      if (raw) loaded = JSON.parse(raw);
-    } catch {
-      /* ignore */
-    }
-    skipNextSaveRef.current = true;
-    setMessages(loaded);
-    setHydrated(true);
+    let cancelled = false;
+    loadedOkRef.current = false;
+    setHydrated(false);
+    (async () => {
+      let loaded: Msg[] = [];
+      let ok = false;
+      try {
+        const res = await fetch("/api/chat/history", { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.messages)) loaded = data.messages as Msg[];
+          ok = true;
+        }
+      } catch {
+        /* ignore — start empty, but don't allow overwriting the server */
+      }
+      if (!cancelled) {
+        loadedOkRef.current = ok;
+        setMessages(loaded);
+        setHydrated(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [userId]);
 
+  // Save on turn boundaries: only while NOT streaming (so we don't write
+  // per token) and debounced, so a finished turn — once the drip ticker
+  // has drained — is persisted exactly once. Skipped until a successful
+  // load so we never clobber stored history after a failed fetch.
   useEffect(() => {
-    if (!hydrated || !userId) return;
-    // Skip the save triggered by a just-completed load — the data is
-    // already on disk, and on a switch `messages` may still be the prior
-    // user's until the load's state update commits.
-    if (skipNextSaveRef.current) {
-      skipNextSaveRef.current = false;
-      return;
-    }
-    try {
-      localStorage.setItem(chatStorageKey(userId), JSON.stringify(messages));
-    } catch {
-      /* ignore quota */
-    }
-  }, [messages, hydrated, userId]);
+    if (!hydrated || !userId || streaming || !loadedOkRef.current) return;
+    const id = setTimeout(() => persist(messages), 700);
+    return () => clearTimeout(id);
+  }, [messages, hydrated, userId, streaming, persist]);
 
   // Auto-scroll the inner container AND the window every time the
   // displayed text grows.
@@ -319,12 +348,13 @@ function Page() {
         if (!res.ok || !res.body) {
           const errText = (await res.text()) || `HTTP ${res.status}`;
           networkOpenRef.current = false;
+          // 429 bodies are already user-facing (rate/usage limit reached);
+          // show them as-is rather than prefixed with "Sorry".
+          const display =
+            res.status === 429 ? errText : `Sorry - ${errText}`;
           setMessages((prev) => {
             const copy = [...prev];
-            copy[copy.length - 1] = {
-              role: "model",
-              text: `Sorry - ${errText}`,
-            };
+            copy[copy.length - 1] = { role: "model", text: display };
             return copy;
           });
           return;
@@ -402,6 +432,8 @@ function Page() {
       tickerRef.current = null;
     }
     setMessages([]);
+    // Persist the cleared state immediately (don't wait for the debounce).
+    persist([]);
   };
 
   const empty = messages.length === 0;
