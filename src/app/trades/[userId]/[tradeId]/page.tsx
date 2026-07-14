@@ -167,7 +167,7 @@ function TradeDetailPage() {
 
   if (isLoading || !form) {
     return (
-      <div className="w-full max-w-[1500px] mx-auto px-4 md:px-8 py-6 md:py-10 flex flex-col gap-5">
+      <div className="w-full max-w-[1500px] mx-auto md:mx-0 px-4 md:px-8 py-6 md:py-10 flex flex-col gap-5">
         <Skeleton className="h-7 w-48" />
         <div className="grid md:grid-cols-2 gap-6">
           <Skeleton className="h-[600px] rounded-2xl" />
@@ -179,7 +179,7 @@ function TradeDetailPage() {
 
   if (isError) {
     return (
-      <div className="w-full max-w-[1500px] mx-auto px-4 md:px-8 py-10">
+      <div className="w-full max-w-[1500px] mx-auto md:mx-0 px-4 md:px-8 py-10">
         <div className="rounded-2xl border border-red-500/25 bg-red-500/[0.06] p-4 text-sm text-red-300">
           Couldn&apos;t load this trade.
         </div>
@@ -198,7 +198,7 @@ function TradeDetailPage() {
   const isPut = form.option === "PUT";
 
   return (
-    <div className="w-full max-w-[1500px] mx-auto px-4 md:px-8 pt-24 md:pt-8 pb-6 flex flex-col gap-4 md:h-[100dvh]">
+    <div className="w-full max-w-[1500px] mx-auto md:mx-0 px-4 md:px-8 pt-24 md:pt-8 pb-6 flex flex-col gap-4 md:h-[100dvh]">
       {/* One container — trade fields on the left, the wider notes
           editor on the right, filling the viewport height. A
           full-width action row pins to the bottom of the card. */}

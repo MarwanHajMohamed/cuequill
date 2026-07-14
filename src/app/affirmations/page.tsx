@@ -68,7 +68,7 @@ function AffirmationsPage() {
   const allRead = affirmations.length > 0 && readCount === affirmations.length;
 
   return (
-    <div className="w-full flex flex-col items-center min-h-screen">
+    <div className="w-full flex flex-col md:items-start min-h-screen">
       {/* Aurora */}
       <div
         aria-hidden

@@ -27,7 +27,7 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
       .map((s) => ({ id: s.id, title: s.title })) ?? [];
 
   return (
-    <div className="w-full flex flex-col items-center min-h-screen pb-20">
+    <div className="w-full flex flex-col md:items-start min-h-screen pb-20">
       {/* Aurora */}
       <div
         aria-hidden

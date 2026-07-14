@@ -297,7 +297,7 @@ function Page() {
   const manualGoals = goals.filter((g) => g.kind === "manual");
 
   return (
-    <div className="w-full flex flex-col items-center min-h-screen pb-16">
+    <div className="w-full flex flex-col md:items-start min-h-screen pb-16">
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0 -z-10"

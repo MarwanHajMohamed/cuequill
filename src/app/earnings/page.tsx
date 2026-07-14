@@ -59,7 +59,7 @@ function EarningsPage() {
     const events = byDay.get(format(date, "yyyy-MM-dd"));
     if (!events || events.length === 0) return null;
     return (
-      <div className="mt-1 flex flex-col items-center gap-0.5 w-full px-0.5">
+      <div className="mt-1 flex flex-col md:items-start gap-0.5 w-full px-0.5">
         {events.slice(0, 2).map((e) => (
           <span
             key={e.symbol}
@@ -83,7 +83,7 @@ function EarningsPage() {
   };
 
   return (
-    <div className="w-full flex flex-col items-center min-h-screen pb-24">
+    <div className="w-full flex flex-col md:items-start min-h-screen pb-24">
       {/* Aurora wash, same as the other app surfaces. */}
       <div
         aria-hidden

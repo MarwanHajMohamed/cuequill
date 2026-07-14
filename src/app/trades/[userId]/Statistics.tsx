@@ -1176,7 +1176,7 @@ export default function Statistics({
   );
 
   return (
-    <div className="mt-10 flex flex-col items-center w-full max-w-[1500px]">
+    <div className="mt-10 flex flex-col md:items-start w-full max-w-[1500px]">
       {/* Customize toggle */}
       <div className="flex justify-end w-full mb-4">
         <CustomizeMenu visibility={visibility} setVisibility={setVisibility} />
@@ -1852,7 +1852,7 @@ export default function Statistics({
                 >
                   <i className="fa-solid fa-chevron-left text-[11px]" />
                 </button>
-                <div className="flex flex-col items-center gap-0.5">
+                <div className="flex flex-col md:items-start gap-0.5">
                   <div className="text-base md:text-xl font-semibold tracking-tight tabular-nums">
                     {currentMonth} {year}
                   </div>

@@ -69,7 +69,7 @@ export default function DashboardGoals() {
   const moreMetrics = metricGoals.length - shownMetrics.length;
 
   return (
-    <div className="w-full max-w-[1100px] mx-auto px-5 md:px-10 flex flex-col gap-4 md:gap-6">
+    <div className="w-full max-w-[1100px] mx-auto md:mx-0 px-5 md:px-10 flex flex-col gap-4 md:gap-6">
       <div className="flex items-center justify-between gap-2">
         <h2 className="md:text-xl text-sm font-bold">Goals</h2>
         <Link

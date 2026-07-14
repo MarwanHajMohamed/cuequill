@@ -47,7 +47,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
     .sort((a, b) => b.count - a.count);
 
   return (
-    <div className="md:p-10 p-5 text-white flex flex-col items-center mt-20 md:mt-6">
+    <div className="md:p-10 p-5 text-white flex flex-col md:items-start mt-20 md:mt-6">
       <div className="md:text-xl mb-4 text-center">Most Used Strategies</div>
       <div className="space-y-4 max-w-200 w-full">
         {strategyList.map((s) => (

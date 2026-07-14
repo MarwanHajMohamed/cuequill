@@ -193,7 +193,7 @@ export default function TradeCalendar({ userId }: { userId: string }) {
       const { total, closedCount, netPL } = getMonthSummary(date);
       if (total === 0) return null;
       return (
-        <div className="mt-1 flex flex-col items-center gap-0.5 text-[10px] md:text-xs">
+        <div className="mt-1 flex flex-col md:items-start gap-0.5 text-[10px] md:text-xs">
           {closedCount > 0 ? (
             <div
               className={`font-normal ${
@@ -217,7 +217,7 @@ export default function TradeCalendar({ userId }: { userId: string }) {
       const { total, closedCount, netPL } = getYearSummary(date);
       if (total === 0) return null;
       return (
-        <div className="mt-1 flex flex-col items-center gap-0.5 text-[10px] md:text-xs">
+        <div className="mt-1 flex flex-col md:items-start gap-0.5 text-[10px] md:text-xs">
           {closedCount > 0 ? (
             <div
               className={`font-normal ${
@@ -269,7 +269,7 @@ export default function TradeCalendar({ userId }: { userId: string }) {
               Closed
             </span>
           ))}
-        <div className="mt-1 flex flex-col items-center gap-0.5 text-[10px] md:text-xs">
+        <div className="mt-1 flex flex-col md:items-start gap-0.5 text-[10px] md:text-xs">
           {isToday && <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />}
           {total > 0 && (
             <>
@@ -322,7 +322,7 @@ export default function TradeCalendar({ userId }: { userId: string }) {
 
   if (isLoading)
     return (
-      <div className="w-full max-w-[1100px] mx-auto px-5 md:px-10 flex flex-col gap-4 md:gap-6">
+      <div className="w-full max-w-[1100px] mx-auto md:mx-0 px-5 md:px-10 flex flex-col gap-4 md:gap-6">
         <div className="flex items-center justify-between gap-2">
           <Skeleton className="h-5 w-24" />
           <Skeleton className="h-3 w-16" />
@@ -332,7 +332,7 @@ export default function TradeCalendar({ userId }: { userId: string }) {
     );
   if (isError)
     return (
-      <div className="w-full max-w-[1100px] mx-auto px-5 md:px-10">
+      <div className="w-full max-w-[1100px] mx-auto md:mx-0 px-5 md:px-10">
         <div className="rounded-2xl border border-red-500/25 bg-red-500/[0.06] p-4 text-sm text-red-300">
           Couldn&apos;t load calendar data.
         </div>
@@ -341,7 +341,7 @@ export default function TradeCalendar({ userId }: { userId: string }) {
 
   return (
     <>
-      <div className="w-full max-w-[1100px] mx-auto px-5 md:px-10 flex flex-col gap-4 md:gap-6">
+      <div className="w-full max-w-[1100px] mx-auto md:mx-0 px-5 md:px-10 flex flex-col gap-4 md:gap-6">
         <div className="flex items-center justify-between gap-2"></div>
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-5">
           <AnimatedCalendar

@@ -398,7 +398,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
 
   if (isLoading)
     return (
-      <div className="w-full flex justify-center mt-19 md:mt-8">
+      <div className="w-full flex justify-center md:justify-start mt-19 md:mt-8">
         <div className="w-full max-w-[1500px] px-5 md:px-10 pb-10">
           <HeroSkeleton />
           <TableSkeleton rows={10} columns={7} />
@@ -407,7 +407,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
     );
   if (isError)
     return (
-      <div className="w-full flex flex-col items-center justify-center min-h-screen px-5 gap-3">
+      <div className="w-full flex flex-col md:items-start justify-center min-h-screen px-5 gap-3">
         <div className="w-12 h-12 rounded-full bg-red-500/15 border border-red-500/25 flex items-center justify-center">
           <i className="fa-solid fa-triangle-exclamation text-red-300 text-lg" />
         </div>
@@ -633,7 +633,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
           </button>
         </div>
       ) : (
-        <div className="w-full flex justify-center mt-19 md:mt-8">
+        <div className="w-full flex justify-center md:justify-start mt-19 md:mt-8">
           <div
             className={`w-full max-w-[1500px] flex flex-col items-stretch px-5 md:px-10 pb-5 md:pb-10 transition-[padding] duration-300 ease-out ${
               isFiltersOpen ? "md:pl-[300px]" : ""
@@ -1226,7 +1226,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
 
       {/* Floating merge action bar + inline confirm popover */}
       {selectMode && selectedIds.size > 0 && (
-        <div className="fixed left-1/2 -translate-x-1/2 bottom-[calc(env(safe-area-inset-bottom)+100px)] md:bottom-8 z-[55] flex flex-col items-center gap-2 pointer-events-none">
+        <div className="fixed left-1/2 -translate-x-1/2 bottom-[calc(env(safe-area-inset-bottom)+100px)] md:bottom-8 z-[55] flex flex-col md:items-start gap-2 pointer-events-none">
           {mergeConfirmOpen && (
             <div className="pointer-events-auto flex items-center gap-2 px-3 py-2 rounded-full bg-[var(--surface,#141419)]/95 border border-white/15 shadow-[0_12px_40px_var(--shadow,rgba(0,0,0,0.5))] backdrop-blur-md">
               <span className="text-[12.5px] text-white/80 font-medium">

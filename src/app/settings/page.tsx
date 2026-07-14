@@ -85,7 +85,7 @@ function Page() {
   ];
 
   return (
-    <div className="w-full flex flex-col items-center min-h-screen pb-16">
+    <div className="w-full flex flex-col md:items-start min-h-screen pb-16">
       {/* Aurora */}
       <div
         aria-hidden

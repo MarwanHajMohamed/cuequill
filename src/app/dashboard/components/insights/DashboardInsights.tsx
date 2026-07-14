@@ -31,7 +31,7 @@ export default function DashboardInsights({ userId }: { userId: string }) {
   if (isLoading || !trades || trades.length === 0) return null;
 
   return (
-    <div className="w-full max-w-[1100px] mx-auto px-5 md:px-10 flex flex-col gap-4 md:gap-6">
+    <div className="w-full max-w-[1100px] mx-auto md:mx-0 px-5 md:px-10 flex flex-col gap-4 md:gap-6">
       <div className="flex items-center gap-2">
         <h2 className="md:text-xl text-sm font-bold">Insights</h2>
       </div>

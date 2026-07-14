@@ -77,7 +77,7 @@ export default function DashboardUpcoming() {
   }, [fedDates, earnings, todayStr]);
 
   return (
-    <div className="w-full max-w-[1100px] mx-auto px-5 md:px-10 flex flex-col gap-4 md:gap-6">
+    <div className="w-full max-w-[1100px] mx-auto md:mx-0 px-5 md:px-10 flex flex-col gap-4 md:gap-6">
       <div className="flex items-center justify-between gap-2">
         <h2 className="md:text-xl text-sm font-bold">Upcoming events</h2>
         <Link
@@ -133,7 +133,7 @@ function EventRow({ ev, n }: { ev: UpcomingEvent; n: number }) {
   return (
     <li className="flex items-center gap-3 md:gap-4 px-4 md:px-5 py-3">
       {/* Date block */}
-      <div className="shrink-0 w-11 flex flex-col items-center">
+      <div className="shrink-0 w-11 flex flex-col md:items-start">
         <div className="text-[9px] tracking-[0.14em] text-white/40 uppercase leading-none">
           {format(d, "MMM")}
         </div>

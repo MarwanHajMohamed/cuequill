@@ -596,8 +596,8 @@ function Page() {
 
   const Greeting = useMemo(
     () => (
-      <div className="flex flex-col items-center gap-8 w-full max-w-xl mx-auto">
-        <div className="flex flex-col items-center text-center gap-2">
+      <div className="flex flex-col md:items-start gap-8 w-full max-w-xl mx-auto">
+        <div className="flex flex-col md:items-start text-center gap-2">
           <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-teal-500/10 text-teal-300 border border-teal-500/25 text-[11px] tracking-[0.08em] font-medium">
             <i className="fa-solid fa-wand-magic-sparkles text-[10px]" />
             QuillAI
@@ -664,7 +664,7 @@ function Page() {
           back to 0 because the composer is in-flow there. */}
       {/* Navbar-width shell: a collapsible history sidebar + the chat
           column, spanning the same max width as the top nav. */}
-      <div className="w-full max-w-[1500px] mx-auto px-5 md:px-10 mt-12 md:mt-8 flex-1 flex min-h-0">
+      <div className="w-full max-w-[1500px] mx-auto md:mx-0 px-5 md:px-10 mt-12 md:mt-8 flex-1 flex min-h-0">
         <ConversationSidebar
           conversations={conversations}
           currentId={conversationId}

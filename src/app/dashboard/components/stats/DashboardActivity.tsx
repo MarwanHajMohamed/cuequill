@@ -67,14 +67,14 @@ export default function DashboardActivity({ userId }: { userId: string }) {
 
   if (isLoading) {
     return (
-      <div className="w-full max-w-[1100px] mx-auto px-5 md:px-10 text-xs text-white/40">
+      <div className="w-full max-w-[1100px] mx-auto md:mx-0 px-5 md:px-10 text-xs text-white/40">
         Loading…
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-[1100px] mx-auto px-5 md:px-10 flex flex-col gap-4 md:gap-6">
+    <div className="w-full max-w-[1100px] mx-auto md:mx-0 px-5 md:px-10 flex flex-col gap-4 md:gap-6">
       <div className="flex flex-col md:flex-row gap-4 md:gap-6">
         <OpenPositions trades={open} userId={userId} onSelect={setSelected} />
         <RecentCloses trades={recent} userId={userId} onSelect={setSelected} />
