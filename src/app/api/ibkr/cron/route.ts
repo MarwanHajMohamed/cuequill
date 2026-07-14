@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import connectDb from "@/lib/db";
 import { User } from "@/lib/models/User";
 import { syncForUser } from "@/lib/ibkrSync";
+import { isMarketOpenAt } from "@/lib/marketHolidays";
 
 // IBKR's Flex Web Service generates a statement on-demand, then we poll
 // (up to ~50s) until it's ready. The default Vercel function timeout is
@@ -92,6 +93,21 @@ export async function GET(req: Request) {
       { status: 401 },
     );
   }
+
+  // Opt-in market-hours guard for the intraday schedule (?intraday=1).
+  // When set, skip cheaply outside RTH so the every-15-min poll doesn't
+  // hammer IBKR's Flex service (and hit its rate limits) overnight or on
+  // holidays. The nightly run omits the param and always executes.
+  const intraday = new URL(req.url).searchParams.get("intraday") === "1";
+  if (intraday) {
+    const nyNow = new Date(
+      new Date().toLocaleString("en-US", { timeZone: "America/New_York" }),
+    );
+    if (!isMarketOpenAt(nyNow)) {
+      return NextResponse.json({ skipped: true, reason: "market closed" });
+    }
+  }
+
   const result = await runSync();
   // Console logs show up in Vercel's function logs so you can debug what
   // the cron did at runtime.
