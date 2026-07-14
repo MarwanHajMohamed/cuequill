@@ -18,6 +18,7 @@ import {
   PanInfo,
 } from "framer-motion";
 import ThemeToggle from "@/components/ThemeToggle";
+import TimezoneDisplay from "@/helpers/TimezoneDisplay";
 import ProTag from "@/components/ProTag";
 import { isMarketOpenAt } from "@/lib/marketHolidays";
 
@@ -67,7 +68,6 @@ export default function Navbar() {
     "U";
 
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const guideDropdownRef = useRef<HTMLDivElement>(null);
   // Persistent pill: one element whose position/width is animated via
   // refs rather than framer's layoutId. layoutId measures via
   // getBoundingClientRect across renders, which misreads the
@@ -106,7 +106,10 @@ export default function Navbar() {
   const PILL_SPRING = { type: "spring" as const, stiffness: 380, damping: 32 };
 
   const [open, setOpen] = useState(false);
-  const [dropdown, setDropdown] = useState(false);
+  // Which sidebar groups are expanded. Undefined for a group means "follow
+  // whether it contains the active route"; an explicit value (set on click)
+  // overrides that.
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   // Mobile "More" bottom sheet replaces the old slide-in side drawer.
   const [openMore, setOpenMore] = useState(false);
   const [simulated, setSimulated] = useState<boolean>(() => {
@@ -215,22 +218,80 @@ export default function Navbar() {
     { icon: "fa-solid fa-gear", label: "Settings", slug: "settings" },
   ];
 
-  const guideItems = [
-    { label: "Strategies", slug: "strategies" },
-    { label: "Stocks/ETFs", slug: "stocks" },
-    { label: "Earnings", slug: "earnings" },
-    { label: "Rules", slug: "rules" },
-    { label: "Goals", slug: "goals" },
+  // Desktop sidebar: standalone links + expandable groups of related pages.
+  type SidebarEntry =
+    | { kind: "link"; icon: string; label: string; slug: string }
+    | {
+        kind: "group";
+        key: string;
+        icon: string;
+        label: string;
+        items: { icon: string; label: string; slug: string }[];
+      };
+  const sidebarNav: SidebarEntry[] = [
+    { kind: "link", icon: "fa-solid fa-house", label: "Dashboard", slug: "/" },
+    {
+      kind: "link",
+      icon: "fa-solid fa-wand-magic-sparkles",
+      label: "Quill AI",
+      slug: "chat",
+    },
+    {
+      kind: "group",
+      key: "journal",
+      icon: "fa-solid fa-book",
+      label: "Journal",
+      items: [
+        {
+          icon: "fa-solid fa-chart-column",
+          label: "Trades",
+          slug: `trades/${userId}`,
+        },
+        {
+          icon: "fa-solid fa-calendar-days",
+          label: "Calendar",
+          slug: "calendar",
+        },
+      ],
+    },
+    {
+      kind: "group",
+      key: "research",
+      icon: "fa-solid fa-magnifying-glass-chart",
+      label: "Research",
+      items: [
+        {
+          icon: "fa-solid fa-bezier-curve",
+          label: "Strategies",
+          slug: "strategies",
+        },
+        { icon: "fa-solid fa-coins", label: "Stocks & ETFs", slug: "stocks" },
+        { icon: "fa-solid fa-bullhorn", label: "Earnings", slug: "earnings" },
+      ],
+    },
+    {
+      kind: "group",
+      key: "discipline",
+      icon: "fa-solid fa-flag-checkered",
+      label: "Discipline",
+      items: [
+        { icon: "fa-solid fa-bullseye", label: "Goals", slug: "goals" },
+        { icon: "fa-solid fa-list-check", label: "Rules", slug: "rules" },
+        {
+          icon: "fa-regular fa-circle-check",
+          label: "Affirmations",
+          slug: "affirmations",
+        },
+      ],
+    },
   ];
 
-  const navItems = [
-    { name: "Trades", slug: `trades/${userId}` },
-    { name: "Calendar", slug: "calendar" },
-    { name: "Quill AI", slug: "chat" },
-    { name: "Affirmations", slug: "affirmations" },
-  ];
-
-  const guideActive = guideItems.some((g) => isActive(g.slug));
+  const groupIsActive = (items: { slug: string }[]) =>
+    items.some((it) => isActive(it.slug));
+  const isGroupOpen = (key: string, active: boolean) =>
+    openGroups[key] ?? active;
+  const toggleGroup = (key: string, active: boolean) =>
+    setOpenGroups((p) => ({ ...p, [key]: !(p[key] ?? active) }));
 
   /* ---------------- EFFECTS ---------------- */
 
@@ -241,11 +302,7 @@ export default function Navbar() {
       const clickedOutsideUser =
         dropdownRef.current && !dropdownRef.current.contains(target);
 
-      const clickedOutsideGuide =
-        guideDropdownRef.current && !guideDropdownRef.current.contains(target);
-
       if (clickedOutsideUser) setOpen(false);
-      if (clickedOutsideGuide) setDropdown(false);
     };
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -453,6 +510,12 @@ export default function Navbar() {
         }}
       />
 
+      {/* TIME - small date + clock, top-centre (desktop only; the left
+          sidebar leaves the top of the screen free). */}
+      <div className="hidden md:flex fixed left-1/2 top-1.5 -translate-x-1/2 z-50 text-[10px] text-white/45 tracking-wide pointer-events-none">
+        <TimezoneDisplay showWeekDay showDay showMonth showSeconds={false} />
+      </div>
+
       <div
         className="fixed top-0 left-0 right-0 z-50 flex justify-center"
         style={{ paddingTop: "env(safe-area-inset-top)" }}
@@ -559,96 +622,101 @@ export default function Navbar() {
             </span>
           </Link>
 
-          {/* NAV - vertical list */}
-          <div className="relative flex flex-col items-stretch gap-1 text-[13.5px] font-medium mt-4">
-            {navItems.map((item) => {
-              const active = isActive(item.slug);
+          {/* NAV - grouped, expandable in place (no floating menus) */}
+          <nav className="chat-scroll relative flex flex-col items-stretch gap-0.5 text-[13.5px] font-medium mt-4 flex-1 min-h-0 overflow-y-auto pr-0.5">
+            {sidebarNav.map((entry) => {
+              if (entry.kind === "link") {
+                const active = isActive(entry.slug);
+                return (
+                  <Link
+                    key={entry.slug}
+                    href={hrefFor(entry.slug)}
+                    prefetch
+                    onClick={(e) => {
+                      e.preventDefault();
+                      navigate(entry.slug);
+                    }}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-xl cursor-pointer transition-colors ${
+                      active
+                        ? "bg-white/[0.08] text-white"
+                        : "text-white/60 hover:bg-white/5 hover:text-white"
+                    }`}
+                  >
+                    <i className={`${entry.icon} w-4 text-center text-[13px]`} />
+                    <span>{entry.label}</span>
+                  </Link>
+                );
+              }
+
+              const active = groupIsActive(entry.items);
+              const open = isGroupOpen(entry.key, active);
               return (
-                <Link
-                  key={item.name}
-                  ref={(el) => {
-                    itemRefs.current[item.slug] = el;
-                  }}
-                  href={hrefFor(item.slug)}
-                  prefetch
-                  onClick={(e) => {
-                    e.preventDefault();
-                    navigate(item.slug);
-                  }}
-                  className={`relative px-3 py-2 rounded-xl cursor-pointer transition-colors ${
-                    active
-                      ? "bg-white/[0.08] text-white"
-                      : "text-white/60 hover:bg-white/5 hover:text-white"
-                  }`}
-                >
-                  <span className="relative">{item.name}</span>
-                </Link>
+                <div key={entry.key} className="flex flex-col">
+                  <button
+                    type="button"
+                    onClick={() => toggleGroup(entry.key, active)}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-xl cursor-pointer transition-colors ${
+                      active
+                        ? "text-white"
+                        : "text-white/60 hover:bg-white/5 hover:text-white"
+                    }`}
+                  >
+                    <i className={`${entry.icon} w-4 text-center text-[13px]`} />
+                    <span className="flex-1 text-left">{entry.label}</span>
+                    <i
+                      className={`fa-solid fa-chevron-down text-[9px] transition-transform duration-200 ${
+                        open ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+                  <AnimatePresence initial={false}>
+                    {open && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.18, ease: "easeOut" }}
+                        className="overflow-hidden"
+                      >
+                        <div className="ml-4 pl-3 border-l border-white/10 flex flex-col gap-0.5 py-0.5">
+                          {entry.items.map((sub) => {
+                            const subActive = isActive(sub.slug);
+                            return (
+                              <Link
+                                key={sub.slug}
+                                href={hrefFor(sub.slug)}
+                                prefetch
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  navigate(sub.slug);
+                                }}
+                                className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg cursor-pointer transition-colors text-[13px] ${
+                                  subActive
+                                    ? "bg-white/[0.08] text-white"
+                                    : "text-white/55 hover:bg-white/5 hover:text-white"
+                                }`}
+                              >
+                                <i
+                                  className={`${sub.icon} w-3.5 text-center text-[11px]`}
+                                />
+                                <span>{sub.label}</span>
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               );
             })}
-
-            {/* Guide dropdown */}
-            <div ref={guideDropdownRef} className="relative">
-              <button
-                ref={(el) => {
-                  itemRefs.current["__guide__"] = el;
-                }}
-                onClick={() => setDropdown((d) => !d)}
-                className={`relative w-full px-3 py-2 rounded-xl cursor-pointer transition-colors flex items-center justify-between gap-1.5 ${
-                  guideActive
-                    ? "bg-white/[0.08] text-white"
-                    : "text-white/60 hover:bg-white/5 hover:text-white"
-                }`}
-              >
-                <span className="relative">Guide</span>
-                <i
-                  className={`relative fa-solid fa-chevron-down text-[9px] transition-transform duration-200 ${
-                    dropdown ? "-rotate-180" : ""
-                  }`}
-                />
-              </button>
-
-              <AnimatePresence>
-                {dropdown && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -4, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -4, scale: 0.98 }}
-                    transition={{ duration: 0.15 }}
-                    className="absolute left-0 top-[calc(100%+8px)] flex flex-col bg-[var(--surface-2)]/95 backdrop-blur-md rounded-xl border border-white/10 shadow-xl min-w-[160px] z-50 p-1"
-                  >
-                    {guideItems.map((subItem) => {
-                      const sub = isActive(subItem.slug);
-                      return (
-                        <Link
-                          key={subItem.slug}
-                          href={hrefFor(subItem.slug)}
-                          prefetch
-                          className={`px-3 py-2 text-left text-[13px] rounded-lg cursor-pointer transition ${
-                            sub
-                              ? "bg-white/8 text-white"
-                              : "text-white/70 hover:bg-white/5 hover:text-white"
-                          }`}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            navigate(subItem.slug);
-                            setDropdown(false);
-                          }}
-                        >
-                          {subItem.label}
-                        </Link>
-                      );
-                    })}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
+          </nav>
 
           {/* FOOTER - market status + user */}
           <div className="mt-auto pt-3 border-t border-white/10 flex flex-col items-stretch gap-2">
-            {/* Market status pill */}
+            {/* Market status pill - compact */}
             <div
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium border ${
+              className={`self-start inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border ${
                 marketOpen
                   ? "bg-green-500/10 text-green-400 border-green-500/20"
                   : "bg-red-500/10 text-red-400 border-red-500/20"
@@ -656,11 +724,11 @@ export default function Navbar() {
               title={marketOpen ? "US market open" : "US market closed"}
             >
               <span
-                className={`w-1.5 h-1.5 rounded-full ${
+                className={`w-1 h-1 rounded-full ${
                   marketOpen ? "bg-green-400 animate-pulse" : "bg-red-400"
                 }`}
               />
-              <span>{marketOpen ? "Market open" : "Market closed"}</span>
+              <span>{marketOpen ? "Open" : "Closed"}</span>
             </div>
 
             {/* User row */}
