@@ -10,7 +10,12 @@ import { getBrokerAdapter, DEFAULT_BROKER, type BrokerId } from "@/lib/brokers";
 export async function syncForUser(
   userId: string,
   brokerId: BrokerId = DEFAULT_BROKER,
-): Promise<{ inserted: number; skipped: number }> {
+): Promise<{
+  inserted: number;
+  skipped: number;
+  fetched?: number;
+  matched?: number;
+}> {
   const adapter = getBrokerAdapter(brokerId);
   if (!adapter.fetchFills) {
     throw new Error(
@@ -28,7 +33,12 @@ export async function syncForUser(
 export async function importFills(
   userId: string,
   fills: NormalizedFill[],
-): Promise<{ inserted: number; skipped: number }> {
+): Promise<{
+  inserted: number;
+  skipped: number;
+  fetched: number;
+  matched: number;
+}> {
   await connectDb();
 
   const trades = matchFills(fills).map((draft) => ({
@@ -43,7 +53,7 @@ export async function importFills(
       ibkrLastSyncSkipped: 0,
       ibkrLastSyncTradeIds: [],
     });
-    return { inserted: 0, skipped: 0 };
+    return { inserted: 0, skipped: 0, fetched: fills.length, matched: 0 };
   }
 
   // Dedupe pass 1: by ibkrTradeId (fast, for trades imported via this sync).
@@ -117,5 +127,10 @@ export async function importFills(
     ibkrLastSyncTradeIds: insertedIds,
   });
 
-  return { inserted: newTrades.length, skipped };
+  return {
+    inserted: newTrades.length,
+    skipped,
+    fetched: fills.length,
+    matched: trades.length,
+  };
 }

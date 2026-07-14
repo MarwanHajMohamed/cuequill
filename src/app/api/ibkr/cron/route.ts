@@ -51,7 +51,14 @@ async function runSync() {
   const results: Array<{
     userId: string;
     status: string;
+    // fetched  = raw fills IBKR's Flex statement returned
+    // matched  = round-trip/open trades built from those fills
+    // inserted = new trades actually saved (after dedupe)
+    // skipped  = matched trades that were already in the journal
+    fetched?: number;
+    matched?: number;
     inserted?: number;
+    skipped?: number;
     error?: string;
   }> = [];
 
@@ -61,7 +68,10 @@ async function runSync() {
       results.push({
         userId: user._id.toString(),
         status: "ok",
+        fetched: result.fetched,
+        matched: result.matched,
         inserted: result.inserted,
+        skipped: result.skipped,
       });
     } catch (err) {
       results.push({
@@ -72,7 +82,9 @@ async function runSync() {
     }
   }
 
-  return { synced: results.length, results };
+  // `eligibleUsers` distinguishes "no Pro users with IBKR creds" (0) from
+  // "users synced but nothing new". Shows up in the QStash/Vercel log.
+  return { eligibleUsers: users.length, synced: results.length, results };
 }
 
 export async function GET(req: Request) {
