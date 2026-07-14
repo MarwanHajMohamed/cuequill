@@ -13,21 +13,27 @@ export const runtime = "nodejs";
 // Don't cache the cron response - every invocation must run fresh.
 export const dynamic = "force-dynamic";
 
-function isAuthorized(req: Request): boolean {
-  // Vercel cron requests are signed two ways:
-  //   1. Authorization: Bearer ${CRON_SECRET}   - when CRON_SECRET env is set
-  //   2. x-vercel-cron header                   - set automatically on cron
-  //      invocations and stripped from external traffic
-  // Accept either so the job runs whether or not CRON_SECRET is configured.
+// Returns ok + a human reason so a 401 tells you WHICH check failed
+// (missing env vs missing header vs mismatch) instead of a blanket
+// "Unauthorized". Never returns or logs the secret itself.
+function checkAuth(req: Request): { ok: boolean; reason: string } {
   const auth = req.headers.get("authorization");
-  if (
-    process.env.CRON_SECRET &&
-    auth === `Bearer ${process.env.CRON_SECRET}`
-  ) {
-    return true;
+  const secret = process.env.CRON_SECRET;
+  // Vercel-signed cron header, kept as a fallback.
+  if (req.headers.get("x-vercel-cron")) return { ok: true, reason: "vercel" };
+  if (!secret) {
+    return { ok: false, reason: "CRON_SECRET is not set on the server" };
   }
-  if (req.headers.get("x-vercel-cron")) return true;
-  return false;
+  if (!auth) {
+    return { ok: false, reason: "no Authorization header was received" };
+  }
+  if (auth !== `Bearer ${secret}`) {
+    return {
+      ok: false,
+      reason: "Authorization header did not match CRON_SECRET",
+    };
+  }
+  return { ok: true, reason: "bearer" };
 }
 
 async function runSync() {
@@ -69,8 +75,22 @@ async function runSync() {
 }
 
 export async function GET(req: Request) {
-  if (!isAuthorized(req)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = checkAuth(req);
+  if (!auth.ok) {
+    // Log shapes only (never the secret) so you can spot a length/prefix
+    // mismatch — e.g. a trailing newline pasted into Vercel or QStash.
+    const header = req.headers.get("authorization");
+    console.warn("[cron/ibkr] 401:", auth.reason, {
+      hasSecret: !!process.env.CRON_SECRET,
+      secretLen: process.env.CRON_SECRET?.length ?? 0,
+      hasAuthHeader: !!header,
+      authHeaderLen: header?.length ?? 0,
+      startsWithBearer: header?.startsWith("Bearer ") ?? false,
+    });
+    return NextResponse.json(
+      { error: "Unauthorized", reason: auth.reason },
+      { status: 401 },
+    );
   }
   const result = await runSync();
   // Console logs show up in Vercel's function logs so you can debug what
