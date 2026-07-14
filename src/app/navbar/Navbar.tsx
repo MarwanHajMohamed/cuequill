@@ -203,6 +203,11 @@ export default function Navbar() {
       slug: "affirmations",
     },
     {
+      icon: "fa-solid fa-bullseye",
+      label: "Goals",
+      slug: "goals",
+    },
+    {
       icon: "fa-solid fa-bezier-curve",
       label: "Strategies",
       slug: "strategies",
@@ -223,6 +228,7 @@ export default function Navbar() {
     { label: "Stocks/ETFs", slug: "stocks" },
     { label: "Earnings", slug: "earnings" },
     { label: "Rules", slug: "rules" },
+    { label: "Goals", slug: "goals" },
   ];
 
   const navItems = [

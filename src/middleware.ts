@@ -25,6 +25,7 @@ export const config = {
     "/strategies/:path*",
     "/strategies_used/:path*",
     "/rules/:path*",
+    "/goals/:path*",
     "/affirmations/:path*",
     "/earnings/:path*",
     "/community/:path*",
