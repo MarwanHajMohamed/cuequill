@@ -5,6 +5,7 @@ import "react-calendar/dist/Calendar.css";
 import "@/app/calendar/custom-calendar.css";
 import Providers from "./providers";
 import NavbarWrapper from "./navbar/NavbarWrapper";
+import ContentShell from "./ContentShell";
 import { ToastProvider } from "@/hooks/useToast";
 import PWARegister from "./PWARegister";
 import NativeBridge from "./NativeBridge";
@@ -73,7 +74,7 @@ export default function RootLayout({
         <Providers>
           <ToastProvider>
             <NavbarWrapper />
-            {children}
+            <ContentShell>{children}</ContentShell>
             <PWARegister />
             <NativeBridge />
           </ToastProvider>

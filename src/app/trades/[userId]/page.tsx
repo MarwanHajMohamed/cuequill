@@ -398,7 +398,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
 
   if (isLoading)
     return (
-      <div className="w-full flex justify-center mt-19 md:mt-[100px]">
+      <div className="w-full flex justify-center mt-19 md:mt-8">
         <div className="w-full max-w-[1500px] px-5 md:px-10 pb-10">
           <HeroSkeleton />
           <TableSkeleton rows={10} columns={7} />
@@ -633,7 +633,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
           </button>
         </div>
       ) : (
-        <div className="w-full flex justify-center mt-19 md:mt-[100px]">
+        <div className="w-full flex justify-center mt-19 md:mt-8">
           <div
             className={`w-full max-w-[1500px] flex flex-col items-stretch px-5 md:px-10 pb-5 md:pb-10 transition-[padding] duration-300 ease-out ${
               isFiltersOpen ? "md:pl-[300px]" : ""

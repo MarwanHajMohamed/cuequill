@@ -87,7 +87,7 @@ export default function Page() {
         }}
       />
 
-      <div className="w-full max-w-[1500px] mt-30 px-5 md:px-10">
+      <div className="w-full max-w-[1500px] mt-30 md:mt-10 px-5 md:px-10">
         {/* Toolbar - search on the left, add/save on the right. */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}

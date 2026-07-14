@@ -111,7 +111,7 @@ export default function Time() {
 
   if (!currentTime) {
     return (
-      <div className="w-full max-w-[1500px] mt-30 px-5 md:px-10">
+      <div className="w-full max-w-[1500px] mt-30 md:mt-10 px-5 md:px-10">
         <div className="flex flex-col md:flex-row gap-6 md:gap-8 justify-between">
           <div className="flex flex-col gap-4 w-full">
             <div className="h-5 w-32 rounded-lg bg-white/10 animate-pulse" />
@@ -130,7 +130,7 @@ export default function Time() {
     hours < 12 ? "Good morning" : hours < 17 ? "Good afternoon" : "Good evening";
 
   return (
-    <div className="relative w-full max-w-[1500px] mt-30 px-5 md:px-10">
+    <div className="relative w-full max-w-[1500px] mt-30 md:mt-10 px-5 md:px-10">
       {/* Aurora glow - anchored to the VIEWPORT (fixed inset-0), not the
           max-width hero container, so on ultra-wide screens the glow
           feathers all the way to the screen edges instead of cutting

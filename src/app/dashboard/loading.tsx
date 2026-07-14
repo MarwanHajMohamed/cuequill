@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/Loaders";
 export default function Loading() {
   return (
     <div className="w-full flex flex-col items-center">
-      <div className="w-full max-w-[1500px] mt-30 px-5 md:px-10">
+      <div className="w-full max-w-[1500px] mt-30 md:mt-10 px-5 md:px-10">
         {/* Hero shell */}
         <div className="flex flex-col md:flex-row justify-between md:items-end gap-8 md:gap-12">
           <div className="flex flex-col gap-3 md:max-w-[60%]">

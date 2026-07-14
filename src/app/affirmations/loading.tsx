@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/Loaders";
 export default function Loading() {
   return (
     <div className="w-full flex flex-col items-center min-h-screen">
-      <div className="w-full max-w-[1100px] mt-30 px-5 md:px-10">
+      <div className="w-full max-w-[1100px] mt-30 md:mt-10 px-5 md:px-10">
         <div className="flex flex-col gap-3 items-center text-center">
           <Skeleton className="h-3 w-24" />
           <Skeleton className="h-10 md:h-14 w-72" delay={0.04} />

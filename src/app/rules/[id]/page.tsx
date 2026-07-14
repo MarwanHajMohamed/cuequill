@@ -38,7 +38,7 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
         }}
       />
 
-      <div className="w-full max-w-[1100px] mt-25 md:mt-30 px-5 md:px-10">
+      <div className="w-full max-w-[1100px] mt-25 md:mt-10 px-5 md:px-10">
         {/* HERO */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}

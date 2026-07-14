@@ -79,7 +79,7 @@ function AffirmationsPage() {
         }}
       />
 
-      <div className="relative w-full max-w-[1500px] mt-30 px-5 md:px-10">
+      <div className="relative w-full max-w-[1500px] mt-30 md:mt-10 px-5 md:px-10">
         {/* Add affirmation */}
         <div className="mt-8 flex items-center gap-2">
           <input

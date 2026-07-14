@@ -30,7 +30,7 @@ function Page() {
         }}
       />
 
-      <div className="w-full max-w-[1500px] mt-30 px-5 md:px-10">
+      <div className="w-full max-w-[1500px] mt-30 md:mt-10 px-5 md:px-10">
         {sections === null ? (
           <div className="mt-10 text-center text-[13px] text-white/40">
             Loading…

@@ -664,7 +664,7 @@ function Page() {
           back to 0 because the composer is in-flow there. */}
       {/* Navbar-width shell: a collapsible history sidebar + the chat
           column, spanning the same max width as the top nav. */}
-      <div className="w-full max-w-[1500px] mx-auto px-5 md:px-10 mt-12 md:mt-28 flex-1 flex min-h-0">
+      <div className="w-full max-w-[1500px] mx-auto px-5 md:px-10 mt-12 md:mt-8 flex-1 flex min-h-0">
         <ConversationSidebar
           conversations={conversations}
           currentId={conversationId}

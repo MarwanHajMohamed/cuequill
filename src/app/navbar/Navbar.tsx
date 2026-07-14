@@ -17,7 +17,6 @@ import {
   animate as motionAnimate,
   PanInfo,
 } from "framer-motion";
-import TimezoneDisplay from "@/helpers/TimezoneDisplay";
 import ThemeToggle from "@/components/ThemeToggle";
 import ProTag from "@/components/ProTag";
 import { isMarketOpenAt } from "@/lib/marketHolidays";
@@ -79,13 +78,6 @@ export default function Navbar() {
   // brand on the left and the nav items in the middle.
   const desktopBarRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<Record<string, HTMLElement | null>>({});
-  const [pill, setPill] = useState<{
-    x: number;
-    y: number;
-    w: number;
-    h: number;
-  } | null>(null);
-  const [pillReady, setPillReady] = useState(false);
 
   // Bottom tab bar - its own pill so the sliding indicator can move
   // between tabs independent of the desktop bar.
@@ -275,49 +267,6 @@ export default function Navbar() {
   // Which key in itemRefs is currently active? Computed from activePath
   // so the measurement effect re-runs as soon as a click optimistically
   // updates pendingPath.
-  const activeKey = (() => {
-    if (isActive("/")) return "__brand__";
-    const hit = navItems.find((n) => isActive(n.slug));
-    if (hit) return hit.slug;
-    if (guideActive) return "__guide__";
-    return null;
-  })();
-
-  useLayoutEffect(() => {
-    const measure = () => {
-      if (!desktopBarRef.current || !activeKey) return;
-      const el = itemRefs.current[activeKey];
-      if (!el) return;
-      const parent = desktopBarRef.current.getBoundingClientRect();
-      const rect = el.getBoundingClientRect();
-      setPill({
-        x: rect.left - parent.left,
-        y: rect.top - parent.top,
-        w: rect.width,
-        h: rect.height,
-      });
-      setPillReady(true);
-    };
-    measure();
-    // Re-measure on the next frame too: on a fresh load the bar can
-    // still be settling (webfonts, hydration) when the first pass runs.
-    const raf = requestAnimationFrame(measure);
-    const ro = new ResizeObserver(measure);
-    if (desktopBarRef.current) ro.observe(desktopBarRef.current);
-    window.addEventListener("resize", measure);
-    // Restoring the tab from bfcache / regaining visibility doesn't
-    // re-mount the component, so re-measure explicitly to recover a
-    // pill that was measured at the wrong size (or not at all).
-    window.addEventListener("pageshow", measure);
-    document.addEventListener("visibilitychange", measure);
-    return () => {
-      cancelAnimationFrame(raf);
-      ro.disconnect();
-      window.removeEventListener("resize", measure);
-      window.removeEventListener("pageshow", measure);
-      document.removeEventListener("visibilitychange", measure);
-    };
-  }, [activeKey, mounted]);
 
   // Which mobile bottom tab is currently active. The More tab claims
   // the indicator both when the sheet is open and when you're on any
@@ -490,7 +439,7 @@ export default function Navbar() {
           below the bar (z-40) and ignores pointer events. */}
       <div
         aria-hidden
-        className="fixed top-0 inset-x-0 z-40 pointer-events-none"
+        className="md:hidden fixed top-0 inset-x-0 z-40 pointer-events-none"
         style={{
           height: "calc(env(safe-area-inset-top) + 96px)",
           background:
@@ -503,11 +452,6 @@ export default function Navbar() {
             "linear-gradient(to bottom, black 0%, black 52%, transparent 100%)",
         }}
       />
-
-      {/* TIME */}
-      <div className="fixed left-1/2 top-1 text-[10px] z-50 -translate-x-1/2 hidden md:flex">
-        <TimezoneDisplay showWeekDay showMonth showYear showDay />
-      </div>
 
       <div
         className="fixed top-0 left-0 right-0 z-50 flex justify-center"
@@ -590,26 +534,12 @@ export default function Navbar() {
         {/* -------- DESKTOP NAV -------- */}
         <div
           ref={desktopBarRef}
-          className="relative hidden md:flex justify-between items-center w-full max-w-[1500px] mt-6 mx-10 py-2 pl-3 pr-2 bg-white/[0.03] backdrop-blur-md rounded-full border border-white/10 shadow-[0_2px_24px_var(--shadow-soft)]"
+          className="hidden md:flex flex-col fixed left-4 top-4 bottom-4 z-50 w-[228px] px-3 py-4 bg-white/[0.03] backdrop-blur-md rounded-3xl border border-white/10 shadow-[0_2px_24px_var(--shadow-soft)]"
         >
-          {/* Sliding active pill - single element spanning the whole
-              desktop bar so it can move between brand, nav items, and
-              Guide. */}
-          {pill && activeKey && (
-            <motion.span
-              className="absolute rounded-full bg-white/10 border border-white/10 pointer-events-none"
-              initial={false}
-              animate={{ x: pill.x, y: pill.y, width: pill.w, height: pill.h }}
-              transition={
-                pillReady
-                  ? { type: "spring", stiffness: 380, damping: 30 }
-                  : { duration: 0 }
-              }
-              style={{ left: 0, top: 0 }}
-            />
-          )}
+          {/* Active state is a per-item highlight in the vertical sidebar
+              (no sliding pill). */}
 
-          {/* LEFT - brand */}
+          {/* BRAND */}
           <Link
             ref={(el) => {
               itemRefs.current["__brand__"] = el;
@@ -624,13 +554,13 @@ export default function Navbar() {
             aria-label="Cuequill - dashboard"
           >
             <CuequillLogo className="relative h-7 w-auto" />
-            <span className="relative text-[14px] font-semibold tracking-tight hidden lg:inline">
+            <span className="relative text-[15px] font-semibold tracking-tight">
               Cuequill
             </span>
           </Link>
 
-          {/* MIDDLE - pill nav with sliding active indicator */}
-          <div className="relative flex items-center gap-1 text-[13.5px] font-medium">
+          {/* NAV - vertical list */}
+          <div className="relative flex flex-col items-stretch gap-1 text-[13.5px] font-medium mt-4">
             {navItems.map((item) => {
               const active = isActive(item.slug);
               return (
@@ -645,8 +575,10 @@ export default function Navbar() {
                     e.preventDefault();
                     navigate(item.slug);
                   }}
-                  className={`relative px-4 py-2 rounded-full cursor-pointer transition-colors ${
-                    active ? "text-white" : "text-white/60 hover:text-white"
+                  className={`relative px-3 py-2 rounded-xl cursor-pointer transition-colors ${
+                    active
+                      ? "bg-white/[0.08] text-white"
+                      : "text-white/60 hover:bg-white/5 hover:text-white"
                   }`}
                 >
                   <span className="relative">{item.name}</span>
@@ -661,8 +593,10 @@ export default function Navbar() {
                   itemRefs.current["__guide__"] = el;
                 }}
                 onClick={() => setDropdown((d) => !d)}
-                className={`relative px-4 py-2 rounded-full cursor-pointer transition-colors flex items-center gap-1.5 ${
-                  guideActive ? "text-white" : "text-white/60 hover:text-white"
+                className={`relative w-full px-3 py-2 rounded-xl cursor-pointer transition-colors flex items-center justify-between gap-1.5 ${
+                  guideActive
+                    ? "bg-white/[0.08] text-white"
+                    : "text-white/60 hover:bg-white/5 hover:text-white"
                 }`}
               >
                 <span className="relative">Guide</span>
@@ -710,8 +644,8 @@ export default function Navbar() {
             </div>
           </div>
 
-          {/* RIGHT - market status + user */}
-          <div className="flex items-center gap-2">
+          {/* FOOTER - market status + user */}
+          <div className="mt-auto pt-3 border-t border-white/10 flex flex-col items-stretch gap-2">
             {/* Market status pill */}
             <div
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium border ${
@@ -726,19 +660,30 @@ export default function Navbar() {
                   marketOpen ? "bg-green-400 animate-pulse" : "bg-red-400"
                 }`}
               />
-              <span className="hidden lg:inline">
-                {marketOpen ? "Open" : "Closed"}
-              </span>
+              <span>{marketOpen ? "Market open" : "Market closed"}</span>
             </div>
 
-            {/* User avatar */}
+            {/* User row */}
             <div ref={dropdownRef} className="relative">
               <button
                 onClick={() => setOpen((o) => !o)}
-                className="w-9 h-9 rounded-full bg-gradient-to-br from-teal-500/80 to-emerald-600/80 border border-white/15 flex items-center justify-center text-[13px] font-semibold text-white cursor-pointer hover:brightness-110 transition"
+                className="w-full flex items-center gap-2.5 px-2 py-2 rounded-xl hover:bg-white/[0.06] transition cursor-pointer"
                 aria-label="account menu"
               >
-                {userInitial}
+                <div className="w-8 h-8 shrink-0 rounded-full bg-gradient-to-br from-teal-500/80 to-emerald-600/80 border border-white/15 flex items-center justify-center text-[12.5px] font-semibold text-white">
+                  {userInitial}
+                </div>
+                <div className="min-w-0 flex-1 text-left">
+                  <div className="text-[12.5px] font-medium truncate leading-tight">
+                    {userFullName || "Account"}
+                  </div>
+                  {session?.user?.email && (
+                    <div className="text-[10.5px] text-white/45 truncate leading-tight">
+                      {session.user.email}
+                    </div>
+                  )}
+                </div>
+                <i className="fa-solid fa-ellipsis-vertical text-[11px] text-white/40" />
               </button>
 
               <AnimatePresence>
@@ -748,7 +693,7 @@ export default function Navbar() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -4, scale: 0.98 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute right-0 top-[calc(100%+10px)] flex flex-col bg-[var(--surface-2)]/95 backdrop-blur-md rounded-2xl border border-white/10 shadow-[0_24px_60px_var(--shadow)] min-w-[260px] z-50 overflow-hidden"
+                    className="absolute left-0 bottom-[calc(100%+10px)] flex flex-col bg-[var(--surface-2)]/95 backdrop-blur-md rounded-2xl border border-white/10 shadow-[0_24px_60px_var(--shadow)] min-w-[260px] z-50 overflow-hidden"
                   >
                     {/* Identity header */}
                     {session?.user && (

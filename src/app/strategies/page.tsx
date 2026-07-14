@@ -82,7 +82,7 @@ function Page() {
         }}
       />
 
-      <div className="w-full max-w-[1500px] mt-30 px-5 md:px-10">
+      <div className="w-full max-w-[1500px] mt-30 md:mt-10 px-5 md:px-10">
         {/* Header */}
         <div className="mt-8 md:mt-10 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
           <div>

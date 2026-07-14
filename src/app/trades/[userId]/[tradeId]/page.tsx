@@ -198,7 +198,7 @@ function TradeDetailPage() {
   const isPut = form.option === "PUT";
 
   return (
-    <div className="w-full max-w-[1500px] mx-auto px-4 md:px-8 pt-24 pb-6 flex flex-col gap-4 md:h-[100dvh]">
+    <div className="w-full max-w-[1500px] mx-auto px-4 md:px-8 pt-24 md:pt-8 pb-6 flex flex-col gap-4 md:h-[100dvh]">
       {/* One container — trade fields on the left, the wider notes
           editor on the right, filling the viewport height. A
           full-width action row pins to the bottom of the card. */}
