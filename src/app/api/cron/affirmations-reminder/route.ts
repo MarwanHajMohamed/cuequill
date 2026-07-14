@@ -20,18 +20,25 @@ const FROM =
 const REPLY_TO = process.env.RESEND_REPLY_TO;
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://cuequill.com";
 
-function checkAuth(req: Request) {
+// Returns ok + a human reason so a 401 says WHICH check failed instead of
+// a blanket "Unauthorized". Never returns or logs the secret itself.
+function checkAuth(req: Request): { ok: boolean; reason: string } {
   const auth = req.headers.get("authorization");
-  if (
-    process.env.CRON_SECRET &&
-    auth === `Bearer ${process.env.CRON_SECRET}`
-  ) {
-    return true;
+  const secret = process.env.CRON_SECRET;
+  // Vercel-signed cron header, kept as a fallback.
+  if (req.headers.get("x-vercel-cron")) return { ok: true, reason: "vercel" };
+  // If no secret is configured the endpoint is open (dev/first-run).
+  if (!secret) return { ok: true, reason: "no-secret-open" };
+  if (!auth) {
+    return { ok: false, reason: "no Authorization header was received" };
   }
-  // Vercel-signed cron header, kept as a fallback if this project
-  // ever moves back to Vercel cron.
-  if (req.headers.get("x-vercel-cron")) return true;
-  return !process.env.CRON_SECRET;
+  if (auth !== `Bearer ${secret}`) {
+    return {
+      ok: false,
+      reason: "Authorization header did not match CRON_SECRET",
+    };
+  }
+  return { ok: true, reason: "bearer" };
 }
 
 // Current hour (0–23) in an IANA timezone. Falls back to UTC if the
@@ -107,8 +114,20 @@ function renderEmail({
 }
 
 export async function GET(req: Request) {
-  if (!checkAuth(req)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = checkAuth(req);
+  if (!auth.ok) {
+    const header = req.headers.get("authorization");
+    console.warn("[cron/affirmations] 401:", auth.reason, {
+      hasSecret: !!process.env.CRON_SECRET,
+      secretLen: process.env.CRON_SECRET?.length ?? 0,
+      hasAuthHeader: !!header,
+      authHeaderLen: header?.length ?? 0,
+      startsWithBearer: header?.startsWith("Bearer ") ?? false,
+    });
+    return NextResponse.json(
+      { error: "Unauthorized", reason: auth.reason },
+      { status: 401 },
+    );
   }
   if (!process.env.RESEND_API_KEY) {
     return NextResponse.json(
@@ -244,4 +263,10 @@ export async function GET(req: Request) {
       { status: 500 },
     );
   }
+}
+
+// QStash publishes as POST by default; mirror GET so the job runs whether
+// the schedule's method is GET or POST.
+export async function POST(req: Request) {
+  return GET(req);
 }
