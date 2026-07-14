@@ -199,7 +199,7 @@ export default function Filters({
       {/* ── Pill sidebar - persistent push on desktop, modal overlay on
             mobile. Sits directly under the navbar pill. ── */}
       <aside
-        className={`fixed md:top-[100px] top-19 bottom-4 md:bottom-5 left-5 md:left-[260px] w-60 max-w-[85vw] bg-white/[0.03] md:backdrop-blur-md border border-white/10 rounded-2xl z-30 flex flex-col shadow-2xl transition-all duration-300 ease-out ${
+        className={`fixed md:top-4 top-19 bottom-4 md:bottom-4 left-5 md:left-[260px] w-60 max-w-[85vw] bg-white/[0.03] md:backdrop-blur-md border border-white/10 rounded-2xl z-30 flex flex-col shadow-2xl transition-all duration-300 ease-out ${
           isPanelOpen
             ? "translate-x-0 opacity-100"
             : "-translate-x-[120%] opacity-0 pointer-events-none"

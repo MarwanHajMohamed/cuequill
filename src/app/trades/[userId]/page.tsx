@@ -636,7 +636,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
         <div className="w-full flex justify-center md:justify-start mt-19 md:mt-8">
           <div
             className={`w-full max-w-[1500px] flex flex-col items-stretch px-5 md:px-10 pb-5 md:pb-10 transition-[padding] duration-300 ease-out ${
-              isFiltersOpen ? "md:pl-[300px]" : ""
+              isFiltersOpen ? "md:pl-[264px]" : ""
             }`}
           >
             <Filters
