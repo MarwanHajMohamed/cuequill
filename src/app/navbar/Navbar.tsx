@@ -602,25 +602,44 @@ export default function Navbar() {
           {/* Active state is a per-item highlight in the vertical sidebar
               (no sliding pill). */}
 
-          {/* BRAND */}
-          <Link
-            ref={(el) => {
-              itemRefs.current["__brand__"] = el;
-            }}
-            href="/dashboard"
-            prefetch
-            onClick={(e) => {
-              e.preventDefault();
-              navigate("dashboard");
-            }}
-            className="relative cursor-pointer flex items-center gap-2 pl-2 pr-3 py-1 rounded-full hover:bg-white/5 transition"
-            aria-label="Cuequill - dashboard"
-          >
-            <CuequillLogo className="relative h-7 w-auto" />
-            <span className="relative text-[15px] font-semibold tracking-tight">
-              Cuequill
-            </span>
-          </Link>
+          {/* BRAND + market status */}
+          <div className="flex items-center justify-between gap-2 pl-1">
+            <Link
+              ref={(el) => {
+                itemRefs.current["__brand__"] = el;
+              }}
+              href="/dashboard"
+              prefetch
+              onClick={(e) => {
+                e.preventDefault();
+                navigate("dashboard");
+              }}
+              className="cursor-pointer inline-flex items-center gap-2 rounded-lg px-1 py-0.5 hover:bg-white/5 transition"
+              aria-label="Cuequill - dashboard"
+            >
+              <CuequillLogo className="h-7 w-auto" />
+              <span className="text-[15px] font-semibold tracking-tight">
+                Cuequill
+              </span>
+            </Link>
+
+            {/* Market status - compact */}
+            <div
+              className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border ${
+                marketOpen
+                  ? "bg-green-500/10 text-green-400 border-green-500/20"
+                  : "bg-red-500/10 text-red-400 border-red-500/20"
+              }`}
+              title={marketOpen ? "US market open" : "US market closed"}
+            >
+              <span
+                className={`w-1 h-1 rounded-full ${
+                  marketOpen ? "bg-green-400 animate-pulse" : "bg-red-400"
+                }`}
+              />
+              <span>{marketOpen ? "Open" : "Closed"}</span>
+            </div>
+          </div>
 
           {/* NAV - grouped, expandable in place (no floating menus) */}
           <nav className="chat-scroll relative flex flex-col items-stretch gap-0.5 text-[13.5px] font-medium mt-4 flex-1 min-h-0 overflow-y-auto pr-0.5">
@@ -712,25 +731,8 @@ export default function Navbar() {
             })}
           </nav>
 
-          {/* FOOTER - market status + user */}
+          {/* FOOTER - user */}
           <div className="mt-auto pt-3 border-t border-white/10 flex flex-col items-stretch gap-2">
-            {/* Market status pill - compact */}
-            <div
-              className={`self-start inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border ${
-                marketOpen
-                  ? "bg-green-500/10 text-green-400 border-green-500/20"
-                  : "bg-red-500/10 text-red-400 border-red-500/20"
-              }`}
-              title={marketOpen ? "US market open" : "US market closed"}
-            >
-              <span
-                className={`w-1 h-1 rounded-full ${
-                  marketOpen ? "bg-green-400 animate-pulse" : "bg-red-400"
-                }`}
-              />
-              <span>{marketOpen ? "Open" : "Closed"}</span>
-            </div>
-
             {/* User row */}
             <div ref={dropdownRef} className="relative">
               <button
