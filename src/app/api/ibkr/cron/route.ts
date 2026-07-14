@@ -74,9 +74,12 @@ async function runSync() {
         skipped: result.skipped,
       });
     } catch (err) {
+      const code = (err as { code?: string }).code;
       results.push({
         userId: user._id.toString(),
-        status: "error",
+        // Throttling (IBKR busy / too-frequent) is transient and clears on
+        // its own once syncs are spaced out — flag it apart from real errors.
+        status: code === "RATE_LIMITED" ? "throttled" : "error",
         error: err instanceof Error ? err.message : "Unknown error",
       });
     }

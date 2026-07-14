@@ -105,16 +105,20 @@ async function fetchIbkrCsv(token: string, queryId: string): Promise<string> {
     // explicit wait-and-retry codes mean "this clears on its own" -
     // everything else is a config problem the user needs to fix. Codes
     // per IBKR Flex docs:
+    //   1001               - statement can't be generated right now
+    //                        (IBKR busy OR the query was requested too
+    //                        recently — Flex throttles frequent syncs)
     //   1004               - statement still incomplete on IBKR's side
     //   1018 / 1019 / 1020 - statement throttled, retry after delay
     //   1003 / 1011        - invalid or expired token
     //   1006               - invalid queryId
-    const RETRY_CODES = new Set(["1004", "1018", "1019", "1020"]);
+    const RETRY_CODES = new Set(["1001", "1004", "1018", "1019", "1020"]);
     if (RETRY_CODES.has(errorCode)) {
+      const stillGenerating = errorCode === "1001" || errorCode === "1004";
       const err = new Error(
-        errorCode === "1004"
-          ? "IBKR is still finishing the previous statement for this query. Please wait a few minutes and try again."
-          : "IBKR is rate-limiting this query (about one sync every ~15 minutes). Please wait and try again.",
+        stillGenerating
+          ? "IBKR couldn't generate the statement right now — it's busy or the query was requested too recently. Sync less frequently (Flex allows roughly one request per query every ~15+ min); it'll retry next run."
+          : "IBKR is rate-limiting this query. Please sync less often.",
       );
       (err as Error & { code?: string }).code = "RATE_LIMITED";
       throw err;
