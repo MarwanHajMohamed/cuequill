@@ -63,8 +63,14 @@ export function useGoalMutations() {
     onSuccess: invalidate,
   });
 
+  // Optimistic: patch the cached goal immediately so the checkbox (or any
+  // edit) flips instantly, then reconcile with the server — which owns the
+  // metric recomputation — in the background.
   const update = useMutation({
-    mutationFn: async ({ id, ...patch }: { id: string } & Partial<NewGoal> & { done?: boolean }) => {
+    mutationFn: async ({
+      id,
+      ...patch
+    }: { id: string } & Partial<NewGoal> & { done?: boolean }) => {
       const res = await fetch(`/api/goals/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -73,7 +79,21 @@ export function useGoalMutations() {
       if (!res.ok) throw new Error("Failed to update goal");
       return res.json();
     },
-    onSuccess: invalidate,
+    onMutate: async ({ id, ...patch }) => {
+      await qc.cancelQueries({ queryKey: ["goals"] });
+      const prev = qc.getQueryData<Goal[]>(["goals"]);
+      if (prev) {
+        qc.setQueryData<Goal[]>(
+          ["goals"],
+          prev.map((g) => (g.id === id ? { ...g, ...patch } : g)),
+        );
+      }
+      return { prev };
+    },
+    onError: (_e, _vars, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["goals"], ctx.prev);
+    },
+    onSettled: invalidate,
   });
 
   const remove = useMutation({
@@ -82,7 +102,21 @@ export function useGoalMutations() {
       if (!res.ok) throw new Error("Failed to delete goal");
       return res.json();
     },
-    onSuccess: invalidate,
+    onMutate: async (id: string) => {
+      await qc.cancelQueries({ queryKey: ["goals"] });
+      const prev = qc.getQueryData<Goal[]>(["goals"]);
+      if (prev) {
+        qc.setQueryData<Goal[]>(
+          ["goals"],
+          prev.filter((g) => g.id !== id),
+        );
+      }
+      return { prev };
+    },
+    onError: (_e, _id, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["goals"], ctx.prev);
+    },
+    onSettled: invalidate,
   });
 
   return { create, update, remove };

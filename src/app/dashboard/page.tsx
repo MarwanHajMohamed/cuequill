@@ -7,6 +7,7 @@ import DashboardStats from "./components/stats/DashboardStats";
 import DashboardActivity from "./components/stats/DashboardActivity";
 import DashboardInsights from "./components/insights/DashboardInsights";
 import DashboardUpcoming from "./components/upcoming/DashboardUpcoming";
+import DashboardGoals from "./components/goals/DashboardGoals";
 import { withAuth } from "@/lib/withAuth";
 import { useSession } from "next-auth/react";
 
@@ -22,6 +23,7 @@ function Page() {
       <div className="w-[100%] flex flex-col items-center gap-8 md:gap-12 py-8 md:py-12">
         <TradeCalendar userId={userId} />
         <DashboardUpcoming />
+        <DashboardGoals />
         <DashboardActivity userId={userId} />
         <DashboardStats userId={userId} />
         <DashboardInsights userId={userId} />
