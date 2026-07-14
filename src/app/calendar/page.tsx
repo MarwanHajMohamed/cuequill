@@ -802,7 +802,7 @@ function Page() {
           bar (88px + safe-area). md:h-auto on desktop where there's
           no bottom nav. */}
       <div
-        className={`flex md:mt-8 md:mb-10 justify-center md:justify-start mt-15 md:h-auto md:w-full w-full ${
+        className={`flex md:mt-8 md:mb-10 justify-center md:justify-start mt-15 md:h-auto md:w-full w-full overflow-x-hidden ${
           scrollMode
             ? "pb-6"
             : "h-[calc(100dvh-60px-88px-env(safe-area-inset-top)-env(safe-area-inset-bottom))]"
@@ -818,7 +818,7 @@ function Page() {
               the calendar pill sits directly beneath the nav pill at
               the same width. mt-22 places it ~12px under the nav. */}
           <div
-            className={`md:max-w-[1500px] w-full md:h-auto flex flex-col mx-auto md:mx-0 ${
+            className={`md:max-w-[1500px] w-full md:h-auto flex flex-col mx-auto md:mx-0 px-4 md:px-6 ${
               scrollMode ? "" : "h-full"
             }`}
           >
