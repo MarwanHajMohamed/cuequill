@@ -113,6 +113,34 @@ function renderEmail({
 </html>`;
 }
 
+// Plain-text alternative. Multipart text+HTML mail looks less like spam to
+// filters (HTML-only is a common spam signal) and renders in text-only
+// clients.
+function renderText({
+  firstname,
+  affirmationsUrl,
+}: {
+  firstname: string;
+  affirmationsUrl: string;
+}) {
+  const greeting = firstname ? `Good morning, ${firstname}` : "Good morning";
+  return `${greeting} — read your affirmations before the open.
+
+You haven't checked off today's affirmations yet. Take two minutes to reset your mindset before the market opens.
+
+Open your affirmations: ${affirmationsUrl}
+
+Don't want these? Turn them off under Settings → Notifications: ${APP_URL}/settings`;
+}
+
+// List-Unsubscribe header. Mail providers (Gmail/Yahoo) reward its
+// presence, and it surfaces a native "unsubscribe" affordance that
+// reduces spam complaints. Points at the settings page (and reply-to
+// mailbox if configured) where the reminder can be turned off.
+const LIST_UNSUBSCRIBE = process.env.RESEND_REPLY_TO
+  ? `<${APP_URL}/settings>, <mailto:${process.env.RESEND_REPLY_TO}>`
+  : `<${APP_URL}/settings>`;
+
 export async function GET(req: Request) {
   const auth = checkAuth(req);
   if (!auth.ok) {
@@ -157,6 +185,8 @@ export async function GET(req: Request) {
         firstname: "",
         affirmationsUrl: `${APP_URL}/affirmations`,
       }),
+      text: renderText({ firstname: "", affirmationsUrl: `${APP_URL}/affirmations` }),
+      headers: { "List-Unsubscribe": LIST_UNSUBSCRIBE },
     });
     return NextResponse.json(
       { test: true, to: testEmail, from: FROM, id: data?.id ?? null, error },
@@ -229,6 +259,11 @@ export async function GET(req: Request) {
           firstname: u.firstname ?? "",
           affirmationsUrl: `${APP_URL}/affirmations`,
         }),
+        text: renderText({
+          firstname: u.firstname ?? "",
+          affirmationsUrl: `${APP_URL}/affirmations`,
+        }),
+        headers: { "List-Unsubscribe": LIST_UNSUBSCRIBE },
       });
       if (error) {
         errors.push(`${u.email}: ${error.message ?? JSON.stringify(error)}`);
