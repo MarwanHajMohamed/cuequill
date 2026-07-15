@@ -110,8 +110,10 @@ export default function DashboardGoals() {
         </Link>
       </div>
 
-      {/* List bleeds to the card edges with a divider under the title. */}
-      <div className="flex-1 -mx-4 md:-mx-5 -mb-4 md:-mb-5 border-t border-white/[0.06] overflow-hidden">
+      {/* List bleeds to the card's left/right edges with a divider under
+          the title, keeps the card's bottom padding, and lets the card
+          scroll rather than clipping. */}
+      <div className="flex-1 min-h-0 -mx-4 md:-mx-5 border-t border-white/[0.06]">
         {shownMetrics.length > 0 ? (
           <ul className="divide-y divide-white/[0.06]">
             {shownMetrics.map((g) => (

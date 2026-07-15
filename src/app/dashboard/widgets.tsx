@@ -93,8 +93,21 @@ export const WIDGET_MAP: Record<WidgetId, WidgetDef> = Object.fromEntries(
 ) as Record<WidgetId, WidgetDef>;
 
 // Default layout — the order the dashboard ships with before any
-// customisation. All widgets enabled.
-export const DEFAULT_LAYOUT: WidgetId[] = WIDGETS.map((w) => w.id);
+// customisation. All widgets enabled. Ordered so the default row heights
+// pair up cleanly (the two short one-row widgets — risk budget and
+// win/loss — sit together at the end) rather than brick-laying.
+export const DEFAULT_LAYOUT: WidgetId[] = [
+  "glance",
+  "equity",
+  "openPositions",
+  "recentCloses",
+  "upcoming",
+  "goals",
+  "edge",
+  "mistakes",
+  "riskBudget",
+  "winLoss",
+];
 
 export const ALL_WIDGET_IDS = new Set<WidgetId>(WIDGETS.map((w) => w.id));
 

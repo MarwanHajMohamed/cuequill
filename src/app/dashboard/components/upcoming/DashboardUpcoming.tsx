@@ -90,10 +90,11 @@ export default function DashboardUpcoming() {
         </Link>
       </div>
 
-      {/* List bleeds to the card edges (negative margins cancel the card
-          padding) with a divider under the title, matching the inset-title
-          list widgets. */}
-      <div className="flex-1 -mx-4 md:-mx-5 -mb-4 md:-mb-5 border-t border-white/[0.06] overflow-hidden">
+      {/* List bleeds to the card's left/right edges (negative x-margins
+          cancel the card padding) with a divider under the title. It keeps
+          the card's bottom padding so the last row has breathing room, and
+          doesn't clip — the card itself scrolls when the list is long. */}
+      <div className="flex-1 min-h-0 -mx-4 md:-mx-5 border-t border-white/[0.06]">
         {events.length === 0 ? (
           <div className="px-5 py-8 text-center">
             <div className="w-11 h-11 mx-auto rounded-2xl bg-teal-500/10 border border-teal-500/25 text-teal-300 flex items-center justify-center">
