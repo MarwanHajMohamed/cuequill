@@ -31,14 +31,24 @@ function isIdArray(v: unknown): v is string[] {
   );
 }
 
-function isSizeMap(v: unknown): v is Record<string, number> {
-  if (typeof v !== "object" || v === null || Array.isArray(v)) return false;
-  const entries = Object.entries(v as Record<string, unknown>);
-  if (entries.length > MAX_IDS) return false;
-  return entries.every(
-    ([k, val]) => typeof k === "string" && (val === 1 || val === 2),
-  );
+// Column spans are 1–2; row spans are 1–3.
+function isSpanMap(max: number) {
+  return (v: unknown): v is Record<string, number> => {
+    if (typeof v !== "object" || v === null || Array.isArray(v)) return false;
+    const entries = Object.entries(v as Record<string, unknown>);
+    if (entries.length > MAX_IDS) return false;
+    return entries.every(
+      ([k, val]) =>
+        typeof k === "string" &&
+        typeof val === "number" &&
+        Number.isInteger(val) &&
+        val >= 1 &&
+        val <= max,
+    );
+  };
 }
+const isSizeMap = isSpanMap(2);
+const isRowMap = isSpanMap(3);
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -117,9 +127,9 @@ export async function PUT(req: NextRequest) {
     update.dashboardWidgetSizes = widgetSizes;
   }
   if (widgetRows !== undefined) {
-    if (!isSizeMap(widgetRows)) {
+    if (!isRowMap(widgetRows)) {
       return NextResponse.json(
-        { error: "widgetRows must be a map of id → 1|2" },
+        { error: "widgetRows must be a map of id → 1|2|3" },
         { status: 400 },
       );
     }

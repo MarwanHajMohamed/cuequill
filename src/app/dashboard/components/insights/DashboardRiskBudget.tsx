@@ -100,7 +100,7 @@ export default function DashboardRiskBudget({ userId }: { userId: string }) {
 
   return (
     <div
-      className={`rounded-2xl border md:backdrop-blur-md p-4 md:p-5 h-full ${tone.ring} ${tone.bg}`}
+      className={`rounded-2xl border md:backdrop-blur-md p-4 md:p-5 h-full overflow-y-auto chat-scroll ${tone.ring} ${tone.bg}`}
     >
       <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
         <div

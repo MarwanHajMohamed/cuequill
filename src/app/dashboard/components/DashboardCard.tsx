@@ -6,8 +6,12 @@ import React from "react";
 // every widget in the 2-up grid reads as part of the same system. Pass a
 // title (with optional right-aligned `action`, e.g. a "Manage" link) to
 // get the standard header row, or omit both for a bare card.
+//
+// The grid gives each cell a fixed height per its row span, so cards scroll
+// their own overflow (thin scrollbar) rather than clipping when a widget's
+// content is taller than the rows it's been given.
 export const CARD_CLASS =
-  "rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5";
+  "rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5 overflow-y-auto chat-scroll";
 
 export function DashboardCard({
   title,
