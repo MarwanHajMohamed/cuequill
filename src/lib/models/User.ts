@@ -85,6 +85,9 @@ export interface IUser extends Document {
   // Per-widget column span (1 = half width, 2 = full width) keyed by
   // widget id. Missing id → default span of 1.
   dashboardWidgetSizes?: Record<string, number>;
+  // Per-widget row span (1 = one row tall, 2 = two rows tall) keyed by
+  // widget id. Missing id → default span of 1.
+  dashboardWidgetRows?: Record<string, number>;
 }
 
 const UserSchema = new Schema<IUser>({
@@ -147,6 +150,7 @@ const UserSchema = new Schema<IUser>({
   dashboardLayout: { type: [String], default: undefined },
   dashboardGlanceTiles: { type: [String], default: undefined },
   dashboardWidgetSizes: { type: Schema.Types.Mixed, default: undefined },
+  dashboardWidgetRows: { type: Schema.Types.Mixed, default: undefined },
 });
 
 // In dev, Next.js hot-reload keeps the previously-compiled model (with

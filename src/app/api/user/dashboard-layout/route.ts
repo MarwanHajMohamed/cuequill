@@ -11,10 +11,11 @@ export const dynamic = "force-dynamic";
 //   • layout       — ordered enabled widget ids for the widget grid
 //   • glanceTiles  — ordered enabled stat-tile ids inside "At a glance"
 //   • widgetSizes  — { [widgetId]: 1 | 2 } column span per widget
+//   • widgetRows   — { [widgetId]: 1 | 2 } row span per widget
 //
-//   GET → { layout, glanceTiles, widgetSizes }  (null = never customised)
-//   PUT { layout?, glanceTiles?, widgetSizes? } → persists whichever
-//         key(s) are present, returns the current values.
+//   GET → { layout, glanceTiles, widgetSizes, widgetRows }
+//   PUT { layout?, glanceTiles?, widgetSizes?, widgetRows? } → persists
+//         whichever key(s) are present, returns the current values.
 //
 // Values are stored verbatim; the client sanitises each against its
 // registry on read, so an unknown/removed id can never break the render.
@@ -57,6 +58,7 @@ export async function GET() {
     layout: user.dashboardLayout ?? null,
     glanceTiles: user.dashboardGlanceTiles ?? null,
     widgetSizes: user.dashboardWidgetSizes ?? null,
+    widgetRows: user.dashboardWidgetRows ?? null,
   });
 }
 
@@ -73,16 +75,18 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { layout, glanceTiles, widgetSizes } = (body ?? {}) as {
+  const { layout, glanceTiles, widgetSizes, widgetRows } = (body ?? {}) as {
     layout?: unknown;
     glanceTiles?: unknown;
     widgetSizes?: unknown;
+    widgetRows?: unknown;
   };
 
   const update: {
     dashboardLayout?: string[];
     dashboardGlanceTiles?: string[];
     dashboardWidgetSizes?: Record<string, number>;
+    dashboardWidgetRows?: Record<string, number>;
   } = {};
 
   if (layout !== undefined) {
@@ -112,10 +116,19 @@ export async function PUT(req: NextRequest) {
     }
     update.dashboardWidgetSizes = widgetSizes;
   }
+  if (widgetRows !== undefined) {
+    if (!isSizeMap(widgetRows)) {
+      return NextResponse.json(
+        { error: "widgetRows must be a map of id → 1|2" },
+        { status: 400 },
+      );
+    }
+    update.dashboardWidgetRows = widgetRows;
+  }
 
   if (Object.keys(update).length === 0) {
     return NextResponse.json(
-      { error: "provide layout, glanceTiles and/or widgetSizes" },
+      { error: "provide layout, glanceTiles, widgetSizes and/or widgetRows" },
       { status: 400 },
     );
   }
@@ -123,7 +136,9 @@ export async function PUT(req: NextRequest) {
   await connectDb();
   const user = await User.findByIdAndUpdate(session.user.id, update, {
     new: true,
-  }).select("dashboardLayout dashboardGlanceTiles dashboardWidgetSizes");
+  }).select(
+    "dashboardLayout dashboardGlanceTiles dashboardWidgetSizes dashboardWidgetRows",
+  );
   if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
@@ -132,5 +147,6 @@ export async function PUT(req: NextRequest) {
     layout: user.dashboardLayout ?? null,
     glanceTiles: user.dashboardGlanceTiles ?? null,
     widgetSizes: user.dashboardWidgetSizes ?? null,
+    widgetRows: user.dashboardWidgetRows ?? null,
   });
 }

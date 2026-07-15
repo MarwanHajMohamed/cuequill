@@ -30,6 +30,7 @@ import { usePersistedField } from "./usePersistedLayout";
 
 const LAYOUT_KEY = "cuequill:dashboard-layout-v1";
 const SIZES_KEY = "cuequill:dashboard-widget-sizes-v1";
+const ROWS_KEY = "cuequill:dashboard-widget-rows-v1";
 
 // Column span per widget: 1 = half width, 2 = full width. Drop unknown
 // ids and clamp to {1,2} so a stale/bad value can't break the grid.
@@ -57,6 +58,12 @@ export default function DashboardGrid({ userId }: { userId: string }) {
     {} as Record<WidgetId, 1 | 2>,
     sanitizeSizes,
   );
+  const [rows, persistRows] = usePersistedField<Record<WidgetId, 1 | 2>>(
+    ROWS_KEY,
+    "widgetRows",
+    {} as Record<WidgetId, 1 | 2>,
+    sanitizeSizes,
+  );
 
   const [editing, setEditing] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
@@ -75,6 +82,11 @@ export default function DashboardGrid({ userId }: { userId: string }) {
   const setWidgetSize = (id: WidgetId, span: 1 | 2) => {
     if ((sizes[id] ?? 1) === span) return;
     persistSizes({ ...sizes, [id]: span });
+  };
+
+  const setWidgetRows = (id: WidgetId, span: 1 | 2) => {
+    if ((rows[id] ?? 1) === span) return;
+    persistRows({ ...rows, [id]: span });
   };
 
   const onDragEnd = (event: DragEndEvent) => {
@@ -97,6 +109,7 @@ export default function DashboardGrid({ userId }: { userId: string }) {
   const resetLayout = () => {
     persist([...DEFAULT_LAYOUT]);
     persistSizes({} as Record<WidgetId, 1 | 2>);
+    persistRows({} as Record<WidgetId, 1 | 2>);
   };
 
   return (
@@ -173,7 +186,10 @@ export default function DashboardGrid({ userId }: { userId: string }) {
         onDragEnd={onDragEnd}
       >
         <SortableContext items={layout} strategy={rectSortingStrategy}>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+          {/* A base row height on lg+ so a 2-row widget is visibly taller;
+              short widgets stretch to fill (h-full). Mobile stays a simple
+              content-height single column. */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 lg:[grid-auto-rows:minmax(200px,auto)]">
             {layout.map((id) => (
               <SortableWidget
                 key={id}
@@ -181,8 +197,10 @@ export default function DashboardGrid({ userId }: { userId: string }) {
                 userId={userId}
                 editing={editing}
                 span={sizes[id] ?? 1}
+                rowSpan={rows[id] ?? 1}
                 onRemove={removeWidget}
                 onResize={setWidgetSize}
+                onResizeRow={setWidgetRows}
               />
             ))}
           </div>
@@ -210,15 +228,19 @@ function SortableWidget({
   userId,
   editing,
   span,
+  rowSpan,
   onRemove,
   onResize,
+  onResizeRow,
 }: {
   id: WidgetId;
   userId: string;
   editing: boolean;
   span: 1 | 2;
+  rowSpan: 1 | 2;
   onRemove: (id: WidgetId) => void;
   onResize: (id: WidgetId, span: 1 | 2) => void;
+  onResizeRow: (id: WidgetId, span: 1 | 2) => void;
 }) {
   const def = WIDGET_MAP[id];
   const {
@@ -235,26 +257,31 @@ function SortableWidget({
     transform: CSS.Transform.toString(transform),
     transition,
   };
-  // Full-width widgets span both grid columns on lg+ (mobile is one column
-  // so span is moot there).
-  const spanClass = span === 2 ? "lg:col-span-2" : "";
+  // Full-width widgets span both grid columns on lg+; tall widgets span
+  // two rows. Mobile is a single content-height column, so both are moot
+  // there.
+  const spanClass = `${span === 2 ? "lg:col-span-2" : ""} ${
+    rowSpan === 2 ? "lg:row-span-2" : ""
+  }`;
 
-  // Drag the right-edge handle to resize. There are only two column
-  // states, so we snap to 1 or 2 based on where the pointer crosses
-  // relative to this widget's own width.
-  const startResize = (e: React.PointerEvent) => {
+  // Drag the right-edge handle to resize width, or the bottom-edge handle
+  // to resize height. Only two states per axis, so we snap to 1 or 2 based
+  // on where the pointer crosses relative to this widget's own size.
+  const startResize = (axis: "x" | "y") => (e: React.PointerEvent) => {
     e.preventDefault();
     e.stopPropagation();
     const el = outerRef.current;
     if (!el) return;
-    const startX = e.clientX;
-    const startWidth = el.getBoundingClientRect().width;
-    // Width of a single column ≈ full-width / 2 (minus gap, close enough).
-    const colWidth = span === 2 ? startWidth / 2 : startWidth;
+    const rect = el.getBoundingClientRect();
+    const start = axis === "x" ? e.clientX : e.clientY;
+    const cur = axis === "x" ? span : rowSpan;
+    const setter = axis === "x" ? onResize : onResizeRow;
+    // Size of a single unit ≈ full size / current span.
+    const unit = (axis === "x" ? rect.width : rect.height) / cur;
     const move = (ev: PointerEvent) => {
-      const dx = ev.clientX - startX;
-      if (span === 1 && dx > colWidth * 0.4) onResize(id, 2);
-      else if (span === 2 && dx < -colWidth * 0.4) onResize(id, 1);
+      const d = (axis === "x" ? ev.clientX : ev.clientY) - start;
+      if (cur === 1 && d > unit * 0.4) setter(id, 2);
+      else if (cur === 2 && d < -unit * 0.4) setter(id, 1);
     };
     const up = () => {
       window.removeEventListener("pointermove", move);
@@ -305,8 +332,7 @@ function SortableWidget({
           <span className="text-[12px] font-medium">{def.title}</span>
         </button>
         <div className="flex items-center gap-1">
-          {/* Width toggle — click as an accessible alternative to dragging
-              the edge handle. */}
+          {/* Width toggle — accessible alternative to dragging the edge. */}
           <button
             onClick={() => onResize(id, span === 2 ? 1 : 2)}
             className="hidden lg:flex w-6 h-6 items-center justify-center rounded-md text-white/40 hover:text-white hover:bg-white/10 transition cursor-pointer"
@@ -315,7 +341,22 @@ function SortableWidget({
           >
             <i
               className={`fa-solid ${
-                span === 2 ? "fa-compress" : "fa-expand"
+                span === 2 ? "fa-left-right" : "fa-arrows-left-right-to-line"
+              } text-[11px]`}
+            />
+          </button>
+          {/* Height toggle. */}
+          <button
+            onClick={() => onResizeRow(id, rowSpan === 2 ? 1 : 2)}
+            className="hidden lg:flex w-6 h-6 items-center justify-center rounded-md text-white/40 hover:text-white hover:bg-white/10 transition cursor-pointer"
+            aria-label={
+              rowSpan === 2 ? "Make one row tall" : "Make two rows tall"
+            }
+            title={rowSpan === 2 ? "Shorter" : "Taller"}
+          >
+            <i
+              className={`fa-solid ${
+                rowSpan === 2 ? "fa-up-down" : "fa-arrows-up-to-line"
               } text-[11px]`}
             />
           </button>
@@ -333,13 +374,22 @@ function SortableWidget({
         {def.render(userId)}
       </div>
 
-      {/* Right-edge drag-to-resize handle (desktop only). */}
+      {/* Right-edge (width) drag-to-resize handle — desktop only. */}
       <div
-        onPointerDown={startResize}
+        onPointerDown={startResize("x")}
         className="hidden lg:flex absolute top-1/2 -translate-y-1/2 right-0 h-16 w-3 items-center justify-center cursor-ew-resize touch-none group"
-        title="Drag to resize"
+        title="Drag to resize width"
       >
         <div className="w-1 h-10 rounded-full bg-white/20 group-hover:bg-teal-400/70 transition" />
+      </div>
+
+      {/* Bottom-edge (height) drag-to-resize handle — desktop only. */}
+      <div
+        onPointerDown={startResize("y")}
+        className="hidden lg:flex absolute left-1/2 -translate-x-1/2 bottom-0 w-16 h-3 items-center justify-center cursor-ns-resize touch-none group"
+        title="Drag to resize height"
+      >
+        <div className="h-1 w-10 rounded-full bg-white/20 group-hover:bg-teal-400/70 transition" />
       </div>
     </div>
   );

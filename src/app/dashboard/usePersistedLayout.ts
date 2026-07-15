@@ -12,13 +12,13 @@ const ENDPOINT = "/api/user/dashboard-layout";
 // writes both.
 //
 //   field    — which key on the /api/user/dashboard-layout document this
-//              value maps to ("layout" | "glanceTiles" | "widgetSizes").
+//              value maps to.
 //   sanitize — validates/normalises the raw stored or fetched value so a
 //              removed id / bad shape can't break the render. MUST be a
 //              stable (module-level) function.
 export function usePersistedField<T>(
   storageKey: string,
-  field: "layout" | "glanceTiles" | "widgetSizes",
+  field: "layout" | "glanceTiles" | "widgetSizes" | "widgetRows",
   fallback: T,
   sanitize: (raw: unknown) => T,
 ): [T, (next: T) => void] {
