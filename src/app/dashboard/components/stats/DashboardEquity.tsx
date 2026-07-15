@@ -72,7 +72,10 @@ export default function DashboardEquity({ userId }: { userId: string }) {
           {Math.abs(curveEnd - curveStart).toFixed(2)}
         </div>
       </div>
-      <div className="w-full h-24 md:h-32">
+      {/* flex-1 so the chart fills whatever height the card is (grows when
+          the widget is resized to two rows tall); the min-heights keep it
+          from collapsing at the default one-row size. */}
+      <div className="w-full flex-1 min-h-[96px] md:min-h-[128px]">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
             data={curve}
