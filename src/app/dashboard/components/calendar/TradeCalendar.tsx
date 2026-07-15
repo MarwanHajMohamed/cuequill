@@ -496,10 +496,12 @@ export default function TradeCalendar({ userId }: { userId: string }) {
     <>
       <div className="w-full max-w-[1300px] mx-auto md:mx-0 px-5 md:px-10 flex flex-col gap-4 md:gap-6">
         <div className="flex items-center justify-between gap-2"></div>
-        <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-5">
-          <div className="flex gap-3 items-stretch">
-            <div ref={calendarColRef} className="flex-1 min-w-0 relative">
-              <AnimatedCalendar
+        <div className="flex gap-3 items-stretch">
+          <div
+            ref={calendarColRef}
+            className="flex-1 min-w-0 relative rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-5"
+          >
+            <AnimatedCalendar
                 onChange={(val) => handleDateClick(val as Date)}
                 tileContent={renderTileContent}
                 tileClassName={renderTileClassName}
@@ -542,7 +544,6 @@ export default function TradeCalendar({ userId }: { userId: string }) {
             </div>
           </div>
         </div>
-      </div>
       {dayListOpen && selectedDate && (
         <DayTradesModal
           date={selectedDate}
