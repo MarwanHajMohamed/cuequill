@@ -7,7 +7,7 @@ import { Trade } from "@/app/types/Trades";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
 import { fmtMoneySignedCompact } from "@/lib/helpers/fmt";
 import { CARD_CLASS } from "../DashboardCard";
-import { usePersistedLayout } from "../../usePersistedLayout";
+import { usePersistedField } from "../../usePersistedLayout";
 import {
   DndContext,
   closestCenter,
@@ -367,7 +367,7 @@ export default function DashboardStats({ userId }: { userId: string }) {
   const [simulated] = useLocalStorage<boolean>("simulated", false);
   const { data: trades, isLoading } = useTrades(userId, simulated);
 
-  const [tiles, persistTiles] = usePersistedLayout<GlanceTileId>(
+  const [tiles, persistTiles] = usePersistedField<GlanceTileId[]>(
     GLANCE_KEY,
     "glanceTiles",
     DEFAULT_GLANCE,

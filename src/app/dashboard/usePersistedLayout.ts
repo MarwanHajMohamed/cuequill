@@ -5,23 +5,25 @@ import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 const ENDPOINT = "/api/user/dashboard-layout";
 
-// Shared persistence for an ordered list of ids (dashboard widgets, or the
-// stat tiles inside "At a glance"). localStorage is a fast offline cache
-// for instant paint; the account copy is the source of truth and
-// reconciles once fetched. Every mutation writes both.
+// Shared persistence for a piece of dashboard customisation state (the
+// widget order, the widget sizes, or the "At a glance" tile order).
+// localStorage is a fast offline cache for instant paint; the account
+// copy is the source of truth and reconciles once fetched. Every mutation
+// writes both.
 //
 //   field    — which key on the /api/user/dashboard-layout document this
-//              list maps to ("layout" | "glanceTiles").
-//   sanitize — drops unknown ids so a removed widget/tile can't break the
-//              render. MUST be a stable (module-level) function.
-export function usePersistedLayout<T extends string>(
+//              value maps to ("layout" | "glanceTiles" | "widgetSizes").
+//   sanitize — validates/normalises the raw stored or fetched value so a
+//              removed id / bad shape can't break the render. MUST be a
+//              stable (module-level) function.
+export function usePersistedField<T>(
   storageKey: string,
-  field: "layout" | "glanceTiles",
-  fallback: T[],
-  sanitize: (raw: unknown) => T[],
-): [T[], (next: T[]) => void] {
-  const [stored, setStored] = useLocalStorage<T[]>(storageKey, fallback);
-  const layout = useMemo(() => sanitize(stored), [stored, sanitize]);
+  field: "layout" | "glanceTiles" | "widgetSizes",
+  fallback: T,
+  sanitize: (raw: unknown) => T,
+): [T, (next: T) => void] {
+  const [stored, setStored] = useLocalStorage<T>(storageKey, fallback);
+  const value = useMemo(() => sanitize(stored), [stored, sanitize]);
   const dirtyRef = useRef(false);
 
   useEffect(() => {
@@ -30,7 +32,7 @@ export function usePersistedLayout<T extends string>(
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (cancelled || dirtyRef.current) return;
-        if (data && Array.isArray(data[field])) {
+        if (data && data[field] != null) {
           setStored(sanitize(data[field]));
         }
       })
@@ -43,7 +45,7 @@ export function usePersistedLayout<T extends string>(
   }, []);
 
   const persist = useCallback(
-    (next: T[]) => {
+    (next: T) => {
       dirtyRef.current = true;
       setStored(next);
       fetch(ENDPOINT, {
@@ -56,5 +58,5 @@ export function usePersistedLayout<T extends string>(
     [],
   );
 
-  return [layout, persist];
+  return [value, persist];
 }

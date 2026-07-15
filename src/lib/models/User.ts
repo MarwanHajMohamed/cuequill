@@ -82,6 +82,9 @@ export interface IUser extends Document {
   // Ordered list of enabled stat-tile ids inside the "At a glance" widget
   // (Today, This week, All-time P/L, …). Same contract as dashboardLayout.
   dashboardGlanceTiles?: string[];
+  // Per-widget column span (1 = half width, 2 = full width) keyed by
+  // widget id. Missing id → default span of 1.
+  dashboardWidgetSizes?: Record<string, number>;
 }
 
 const UserSchema = new Schema<IUser>({
@@ -143,6 +146,7 @@ const UserSchema = new Schema<IUser>({
   emailAffirmationsLastSentDate: { type: String, default: "" },
   dashboardLayout: { type: [String], default: undefined },
   dashboardGlanceTiles: { type: [String], default: undefined },
+  dashboardWidgetSizes: { type: Schema.Types.Mixed, default: undefined },
 });
 
 // In dev, Next.js hot-reload keeps the previously-compiled model (with

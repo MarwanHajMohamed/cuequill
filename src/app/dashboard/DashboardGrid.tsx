@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   DndContext,
   closestCenter,
@@ -22,19 +22,40 @@ import {
   WIDGETS,
   WIDGET_MAP,
   DEFAULT_LAYOUT,
+  ALL_WIDGET_IDS,
   sanitizeLayout,
   type WidgetId,
 } from "./widgets";
-import { usePersistedLayout } from "./usePersistedLayout";
+import { usePersistedField } from "./usePersistedLayout";
 
 const LAYOUT_KEY = "cuequill:dashboard-layout-v1";
+const SIZES_KEY = "cuequill:dashboard-widget-sizes-v1";
+
+// Column span per widget: 1 = half width, 2 = full width. Drop unknown
+// ids and clamp to {1,2} so a stale/bad value can't break the grid.
+function sanitizeSizes(raw: unknown): Record<WidgetId, 1 | 2> {
+  const out = {} as Record<WidgetId, 1 | 2>;
+  if (typeof raw !== "object" || raw === null) return out;
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (ALL_WIDGET_IDS.has(k as WidgetId) && (v === 1 || v === 2)) {
+      out[k as WidgetId] = v;
+    }
+  }
+  return out;
+}
 
 export default function DashboardGrid({ userId }: { userId: string }) {
-  const [layout, persist] = usePersistedLayout<WidgetId>(
+  const [layout, persist] = usePersistedField<WidgetId[]>(
     LAYOUT_KEY,
     "layout",
     DEFAULT_LAYOUT,
     sanitizeLayout,
+  );
+  const [sizes, persistSizes] = usePersistedField<Record<WidgetId, 1 | 2>>(
+    SIZES_KEY,
+    "widgetSizes",
+    {} as Record<WidgetId, 1 | 2>,
+    sanitizeSizes,
   );
 
   const [editing, setEditing] = useState(false);
@@ -50,6 +71,11 @@ export default function DashboardGrid({ userId }: { userId: string }) {
   );
 
   const disabledWidgets = WIDGETS.filter((w) => !layout.includes(w.id));
+
+  const setWidgetSize = (id: WidgetId, span: 1 | 2) => {
+    if ((sizes[id] ?? 1) === span) return;
+    persistSizes({ ...sizes, [id]: span });
+  };
 
   const onDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -68,7 +94,10 @@ export default function DashboardGrid({ userId }: { userId: string }) {
     setAddOpen(false);
   };
 
-  const resetLayout = () => persist([...DEFAULT_LAYOUT]);
+  const resetLayout = () => {
+    persist([...DEFAULT_LAYOUT]);
+    persistSizes({} as Record<WidgetId, 1 | 2>);
+  };
 
   return (
     <div className="w-full max-w-[1600px] mx-auto px-5 md:px-10">
@@ -151,7 +180,9 @@ export default function DashboardGrid({ userId }: { userId: string }) {
                 id={id}
                 userId={userId}
                 editing={editing}
+                span={sizes[id] ?? 1}
                 onRemove={removeWidget}
+                onResize={setWidgetSize}
               />
             ))}
           </div>
@@ -178,12 +209,16 @@ function SortableWidget({
   id,
   userId,
   editing,
+  span,
   onRemove,
+  onResize,
 }: {
   id: WidgetId;
   userId: string;
   editing: boolean;
+  span: 1 | 2;
   onRemove: (id: WidgetId) => void;
+  onResize: (id: WidgetId, span: 1 | 2) => void;
 }) {
   const def = WIDGET_MAP[id];
   const {
@@ -194,10 +229,39 @@ function SortableWidget({
     transition,
     isDragging,
   } = useSortable({ id, disabled: !editing });
+  const outerRef = useRef<HTMLDivElement | null>(null);
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
+  };
+  // Full-width widgets span both grid columns on lg+ (mobile is one column
+  // so span is moot there).
+  const spanClass = span === 2 ? "lg:col-span-2" : "";
+
+  // Drag the right-edge handle to resize. There are only two column
+  // states, so we snap to 1 or 2 based on where the pointer crosses
+  // relative to this widget's own width.
+  const startResize = (e: React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const el = outerRef.current;
+    if (!el) return;
+    const startX = e.clientX;
+    const startWidth = el.getBoundingClientRect().width;
+    // Width of a single column ≈ full-width / 2 (minus gap, close enough).
+    const colWidth = span === 2 ? startWidth / 2 : startWidth;
+    const move = (ev: PointerEvent) => {
+      const dx = ev.clientX - startX;
+      if (span === 1 && dx > colWidth * 0.4) onResize(id, 2);
+      else if (span === 2 && dx < -colWidth * 0.4) onResize(id, 1);
+    };
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
   };
 
   // View mode: render the widget as-is. `[&:empty]:hidden` collapses a
@@ -205,20 +269,28 @@ function SortableWidget({
   // doesn't leave a gap in the grid.
   if (!editing) {
     return (
-      <div ref={setNodeRef} style={style} className="h-full [&:empty]:hidden">
+      <div
+        ref={setNodeRef}
+        style={style}
+        className={`h-full [&:empty]:hidden ${spanClass}`}
+      >
         {def.render(userId)}
       </div>
     );
   }
 
-  // Edit mode: wrap each widget in a dashed tile with a drag handle and a
-  // remove button, so even an empty widget stays identifiable and
-  // manageable. Content is non-interactive while editing.
+  // Edit mode: wrap each widget in a dashed tile with a drag handle, a
+  // remove button, and a right-edge resize handle, so even an empty widget
+  // stays identifiable and manageable. Content is non-interactive while
+  // editing.
   return (
     <div
-      ref={setNodeRef}
+      ref={(node) => {
+        setNodeRef(node);
+        outerRef.current = node;
+      }}
       style={style}
-      className={`h-full rounded-2xl border border-dashed border-white/20 bg-white/[0.02] p-2 flex flex-col gap-2 ${
+      className={`relative h-full rounded-2xl border border-dashed border-white/20 bg-white/[0.02] p-2 flex flex-col gap-2 ${spanClass} ${
         isDragging ? "opacity-60 z-10 shadow-2xl" : ""
       }`}
     >
@@ -232,17 +304,42 @@ function SortableWidget({
           <i className="fa-solid fa-grip-vertical text-[12px]" />
           <span className="text-[12px] font-medium">{def.title}</span>
         </button>
-        <button
-          onClick={() => onRemove(id)}
-          className="w-6 h-6 flex items-center justify-center rounded-md text-white/40 hover:text-red-300 hover:bg-red-500/10 transition cursor-pointer"
-          aria-label={`Remove ${def.title}`}
-          title="Remove widget"
-        >
-          <i className="fa-solid fa-xmark text-[13px]" />
-        </button>
+        <div className="flex items-center gap-1">
+          {/* Width toggle — click as an accessible alternative to dragging
+              the edge handle. */}
+          <button
+            onClick={() => onResize(id, span === 2 ? 1 : 2)}
+            className="hidden lg:flex w-6 h-6 items-center justify-center rounded-md text-white/40 hover:text-white hover:bg-white/10 transition cursor-pointer"
+            aria-label={span === 2 ? "Make half width" : "Make full width"}
+            title={span === 2 ? "Half width" : "Full width"}
+          >
+            <i
+              className={`fa-solid ${
+                span === 2 ? "fa-compress" : "fa-expand"
+              } text-[11px]`}
+            />
+          </button>
+          <button
+            onClick={() => onRemove(id)}
+            className="w-6 h-6 flex items-center justify-center rounded-md text-white/40 hover:text-red-300 hover:bg-red-500/10 transition cursor-pointer"
+            aria-label={`Remove ${def.title}`}
+            title="Remove widget"
+          >
+            <i className="fa-solid fa-xmark text-[13px]" />
+          </button>
+        </div>
       </div>
       <div className="flex-1 min-h-0 pointer-events-none">
         {def.render(userId)}
+      </div>
+
+      {/* Right-edge drag-to-resize handle (desktop only). */}
+      <div
+        onPointerDown={startResize}
+        className="hidden lg:flex absolute top-1/2 -translate-y-1/2 right-0 h-16 w-3 items-center justify-center cursor-ew-resize touch-none group"
+        title="Drag to resize"
+      >
+        <div className="w-1 h-10 rounded-full bg-white/20 group-hover:bg-teal-400/70 transition" />
       </div>
     </div>
   );
