@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useLayoutEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { useFedDates } from "@/hooks/useFedDates";
@@ -43,16 +43,19 @@ function relativeLabel(n: number): string {
   return `In ${Math.round(n / 7)} weeks`;
 }
 
-export default function DashboardUpcoming({
-  rowSpan = 2,
-}: {
-  rowSpan?: number;
-}) {
+export default function DashboardUpcoming() {
   const fedDates = useFedDates();
   const { data: watchlist = [] } = useWatchlist();
   const { data: earnings = [] } = useEarnings(watchlist);
 
   const todayStr = format(new Date(), "yyyy-MM-dd");
+
+  // Never scroll: when the list is taller than the card, hide the whole
+  // rows that don't fit (no partial rows). We measure each row against the
+  // list area's height and drop the first overflowing row and everything
+  // after it. Re-runs whenever the card resizes or the events change.
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
 
   const events = useMemo<UpcomingEvent[]>(() => {
     const out: UpcomingEvent[] = [];
@@ -81,6 +84,32 @@ export default function DashboardUpcoming({
     return out.slice(0, MAX_EVENTS);
   }, [fedDates, earnings, todayStr]);
 
+  useLayoutEffect(() => {
+    const wrap = wrapRef.current;
+    const ul = listRef.current;
+    if (!wrap || !ul) return;
+
+    const apply = () => {
+      const items = Array.from(ul.children) as HTMLElement[];
+      // Show everything, then measure and hide from the first row that
+      // overflows the visible area onward.
+      items.forEach((li) => (li.style.display = ""));
+      const maxBottom = wrap.getBoundingClientRect().top + wrap.clientHeight;
+      let overflowed = false;
+      for (const li of items) {
+        if (overflowed || li.getBoundingClientRect().bottom > maxBottom + 0.5) {
+          li.style.display = "none";
+          overflowed = true;
+        }
+      }
+    };
+
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(wrap);
+    return () => ro.disconnect();
+  }, [events]);
+
   return (
     <section className={`${CARD_CLASS_BASE} flex flex-col gap-3 h-full`}>
       <div className="flex items-center justify-between gap-2">
@@ -96,13 +125,12 @@ export default function DashboardUpcoming({
 
       {/* List bleeds to the card's left/right edges (negative x-margins
           cancel the card padding) with a divider under the title, keeping
-          the card's bottom padding. The card itself never scrolls; the list
-          only scrolls internally when the widget is a single row tall (too
-          short to show every event) — at two+ rows it always fits. */}
+          the card's bottom padding. Never scrolls — rows that don't fit are
+          hidden whole by the layout effect above; overflow-hidden is just a
+          safety clip. */}
       <div
-        className={`flex-1 min-h-0 -mx-4 md:-mx-5 border-t border-white/[0.06] ${
-          rowSpan <= 1 ? "overflow-y-auto chat-scroll" : "overflow-hidden"
-        }`}
+        ref={wrapRef}
+        className="flex-1 min-h-0 -mx-4 md:-mx-5 border-t border-white/[0.06] overflow-hidden"
       >
         {events.length === 0 ? (
           <div className="px-5 py-8 text-center">
@@ -128,7 +156,7 @@ export default function DashboardUpcoming({
             </p>
           </div>
         ) : (
-          <ul className="divide-y divide-white/[0.06]">
+          <ul ref={listRef} className="divide-y divide-white/[0.06]">
             {events.map((ev, i) => (
               <EventRow
                 key={`${ev.date}-${ev.kind}-${ev.symbol ?? ""}-${i}`}

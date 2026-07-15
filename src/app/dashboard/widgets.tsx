@@ -71,7 +71,7 @@ export const WIDGETS: WidgetDef[] = [
   {
     id: "upcoming",
     title: "Upcoming events",
-    render: (_userId, rowSpan) => <DashboardUpcoming rowSpan={rowSpan} />,
+    render: () => <DashboardUpcoming />,
   },
   {
     id: "goals",
