@@ -65,20 +65,12 @@ export default function DashboardActivity({ userId }: { userId: string }) {
     return { open: openTrades, recent: recentClosed };
   }, [trades]);
 
-  if (isLoading) {
-    return (
-      <div className="w-full max-w-[1100px] mx-auto md:mx-0 px-5 md:px-10 text-xs text-white/40">
-        Loading…
-      </div>
-    );
-  }
+  if (isLoading) return null;
 
   return (
-    <div className="w-full max-w-[1100px] mx-auto md:mx-0 px-5 md:px-10 flex flex-col gap-4 md:gap-6">
-      <div className="flex flex-col md:flex-row gap-4 md:gap-6">
-        <OpenPositions trades={open} userId={userId} onSelect={setSelected} />
-        <RecentCloses trades={recent} userId={userId} onSelect={setSelected} />
-      </div>
+    <>
+      <OpenPositions trades={open} userId={userId} onSelect={setSelected} />
+      <RecentCloses trades={recent} userId={userId} onSelect={setSelected} />
       <AnimatePresence>
         {selected && (
           <ViewTradeModal
@@ -88,7 +80,7 @@ export default function DashboardActivity({ userId }: { userId: string }) {
           />
         )}
       </AnimatePresence>
-    </div>
+    </>
   );
 }
 
@@ -103,7 +95,7 @@ function OpenPositions({
   onSelect: (t: Trade) => void;
 }) {
   return (
-    <section className="flex-1 min-w-0 border border-[var(--hairline)] rounded-lg p-4 md:p-6 flex flex-col gap-3">
+    <section className="min-w-0 rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5 flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-sm md:text-base font-semibold">
           Open positions
@@ -197,7 +189,7 @@ function RecentCloses({
   onSelect: (t: Trade) => void;
 }) {
   return (
-    <section className="flex-1 min-w-0 border border-[var(--hairline)] rounded-lg p-4 md:p-6 flex flex-col gap-3">
+    <section className="min-w-0 rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5 flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-sm md:text-base font-semibold">Recent closes</h2>
         <Link

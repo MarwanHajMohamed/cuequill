@@ -31,16 +31,11 @@ export default function DashboardInsights({ userId }: { userId: string }) {
   if (isLoading || !trades || trades.length === 0) return null;
 
   return (
-    <div className="w-full max-w-[1100px] mx-auto md:mx-0 px-5 md:px-10 flex flex-col gap-4 md:gap-6">
-      <div className="flex items-center gap-2">
-        <h2 className="md:text-xl text-sm font-bold">Insights</h2>
-      </div>
+    <>
       <DailyRiskBudget trades={trades} />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-        <EdgeRanking trades={trades} />
-        <MistakeLeaderboard trades={trades} />
-      </div>
-    </div>
+      <EdgeRanking trades={trades} />
+      <MistakeLeaderboard trades={trades} />
+    </>
   );
 }
 
@@ -131,7 +126,9 @@ function DailyRiskBudget({ trades }: { trades: Trade[] }) {
       className={`rounded-2xl border md:backdrop-blur-md p-4 md:p-5 ${tone.ring} ${tone.bg}`}
     >
       <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
-        <div className={`text-[10px] md:text-[11px] tracking-[0.1em] font-medium ${tone.eyebrow}`}>
+        <div
+          className={`text-[10px] md:text-[11px] tracking-[0.1em] font-medium ${tone.eyebrow}`}
+        >
           Daily risk budget
         </div>
         <div className="flex items-center gap-2 text-[11px] text-white/45">
@@ -173,7 +170,9 @@ function DailyRiskBudget({ trades }: { trades: Trade[] }) {
 
       <div className="flex items-end justify-between gap-3 mb-2">
         <div className="flex flex-col gap-0.5 min-w-0">
-          <div className={`text-2xl md:text-3xl font-normal tabular-nums tracking-tight ${tone.text}`}>
+          <div
+            className={`text-2xl md:text-3xl font-normal tabular-nums tracking-tight ${tone.text}`}
+          >
             {todayNet >= 0
               ? `+$${todayNet.toFixed(2)}`
               : `−$${todayLoss.toFixed(2)}`}
@@ -232,7 +231,9 @@ function EdgeRanking({ trades }: { trades: Trade[] }) {
   if (ranked.length === 0) {
     return (
       <Section title="Strategy edge">
-        <Empty text={`Need ≥${MIN_N_FOR_EDGE} closed trades per strategy to rank edge.`} />
+        <Empty
+          text={`Need ≥${MIN_N_FOR_EDGE} closed trades per strategy to rank edge.`}
+        />
       </Section>
     );
   }
@@ -242,10 +243,7 @@ function EdgeRanking({ trades }: { trades: Trade[] }) {
   const top = showSplit ? ranked.slice(0, 3) : ranked;
   const bot = showSplit ? ranked.slice(-3).reverse() : [];
 
-  const maxExp = Math.max(
-    ...ranked.map((r) => Math.abs(r.expectancy)),
-    1,
-  );
+  const maxExp = Math.max(...ranked.map((r) => Math.abs(r.expectancy)), 1);
 
   return (
     <Section title="Strategy edge">
@@ -289,7 +287,9 @@ function RankGroup({
             <div className="flex-1 min-w-0">
               <div className="flex items-baseline justify-between gap-2">
                 <span className="text-white/85 truncate">{r.label}</span>
-                <span className={`${accent} tabular-nums font-normal whitespace-nowrap`}>
+                <span
+                  className={`${accent} tabular-nums font-normal whitespace-nowrap`}
+                >
                   {r.expectancy >= 0 ? "+" : "−"}$
                   {Math.abs(r.expectancy).toFixed(2)}
                   <span className="text-white/35 font-normal">/trade</span>
@@ -338,10 +338,7 @@ function MistakeLeaderboard({ trades }: { trades: Trade[] }) {
       .slice(0, 3);
   }, [trades]);
 
-  const totalDrag = top.reduce(
-    (s, r) => s + (r.total < 0 ? r.total : 0),
-    0,
-  );
+  const totalDrag = top.reduce((s, r) => s + (r.total < 0 ? r.total : 0), 0);
 
   if (top.length === 0) {
     return (

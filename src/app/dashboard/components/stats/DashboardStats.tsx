@@ -6,6 +6,7 @@ import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { Trade } from "@/app/types/Trades";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
 import { fmtMoneySignedCompact } from "@/lib/helpers/fmt";
+import { CARD_CLASS } from "../DashboardCard";
 import {
   ResponsiveContainer,
   Area,
@@ -32,8 +33,7 @@ const summarize = (trades: Trade[]): Summary => {
   };
 };
 
-const exitDate = (t: Trade): Date =>
-  new Date(t.dateClosed || t.dateBought);
+const exitDate = (t: Trade): Date => new Date(t.dateClosed || t.dateBought);
 
 const startOfDay = (d: Date) => {
   const x = new Date(d);
@@ -145,15 +145,9 @@ export default function DashboardStats({ userId }: { userId: string }) {
     const closed = trades.filter(isClosed);
     const open = trades.filter((t) => t.status === "OPEN");
 
-    const today = summarize(
-      closed.filter((t) => exitDate(t) >= todayStart),
-    );
-    const week = summarize(
-      closed.filter((t) => exitDate(t) >= weekStart),
-    );
-    const month = summarize(
-      closed.filter((t) => exitDate(t) >= monthStart),
-    );
+    const today = summarize(closed.filter((t) => exitDate(t) >= todayStart));
+    const week = summarize(closed.filter((t) => exitDate(t) >= weekStart));
+    const month = summarize(closed.filter((t) => exitDate(t) >= monthStart));
     const allTime = summarize(closed);
 
     // Current streak - chronologically newest first.
@@ -172,10 +166,7 @@ export default function DashboardStats({ userId }: { userId: string }) {
     }
 
     // Top-performing strategy this month (by net P/L)
-    const stratByMonth = new Map<
-      string,
-      { net: number; n: number }
-    >();
+    const stratByMonth = new Map<string, { net: number; n: number }>();
     for (const t of closed.filter((c) => exitDate(c) >= monthStart)) {
       const k = t.strategy ?? "-";
       const prev = stratByMonth.get(k) ?? { net: 0, n: 0 };
@@ -214,7 +205,7 @@ export default function DashboardStats({ userId }: { userId: string }) {
 
   if (isLoading || !trades) {
     return (
-      <div className="text-white/40 text-sm py-20">
+      <div className={`${CARD_CLASS} text-white/40 text-sm py-16 text-center`}>
         Loading dashboard stats…
       </div>
     );
@@ -222,7 +213,7 @@ export default function DashboardStats({ userId }: { userId: string }) {
 
   if (trades.length === 0) {
     return (
-      <div className="text-center text-white/40 text-sm py-20">
+      <div className={`${CARD_CLASS} text-center text-white/40 text-sm py-16`}>
         You haven&apos;t made any trades yet. Add one to see your dashboard.
       </div>
     );
@@ -231,95 +222,95 @@ export default function DashboardStats({ userId }: { userId: string }) {
   const s = stats!;
   const curveEnd = s.curve.length > 0 ? s.curve[s.curve.length - 1].cum : 0;
   const curveStart = s.curve.length > 0 ? s.curve[0].cum : 0;
-  const curveColor =
-    curveEnd >= curveStart ? "#22c55e" : "#ef4444";
+  const curveColor = curveEnd >= curveStart ? "#22c55e" : "#ef4444";
 
   return (
-    <div className="w-full max-w-[1100px] mx-auto md:mx-0 px-5 md:px-10 flex flex-col gap-4 md:gap-6">
-      <div className="flex items-center gap-2">
-        <h2 className="md:text-xl text-sm font-bold">At a glance</h2>
-      </div>
+    <>
+      <section className={`${CARD_CLASS} flex flex-col gap-4`}>
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm md:text-base font-semibold">At a glance</h2>
+        </div>
 
-      {/* Period summaries */}
-      <div className="flex flex-wrap gap-2 md:gap-3">
-        <PeriodTile label="Today" summary={s.today} highlight />
-        <PeriodTile label="This week" summary={s.week} />
-        <PeriodTile label="This month" summary={s.month} />
-      </div>
+        {/* Period summaries */}
+        <div className="flex flex-wrap gap-2 md:gap-3">
+          <PeriodTile label="Today" summary={s.today} highlight />
+          <PeriodTile label="This week" summary={s.week} />
+          <PeriodTile label="This month" summary={s.month} />
+        </div>
 
-      {/* Mini tiles row */}
-      <div className="flex flex-wrap gap-2 md:gap-3">
-        <MiniTile
-          label="All-time net P/L"
-          value={
-            s.allTime.count === 0
-              ? "-"
-              : `${fmtMoneySignedCompact(s.allTime.netPL)}`
-          }
-          tone={
-            s.allTime.count === 0
-              ? "neutral"
-              : s.allTime.netPL >= 0
+        {/* Mini tiles row */}
+        <div className="flex flex-wrap gap-2 md:gap-3">
+          <MiniTile
+            label="All-time net P/L"
+            value={
+              s.allTime.count === 0
+                ? "-"
+                : `${fmtMoneySignedCompact(s.allTime.netPL)}`
+            }
+            tone={
+              s.allTime.count === 0
+                ? "neutral"
+                : s.allTime.netPL >= 0
+                  ? "good"
+                  : "bad"
+            }
+          />
+          <MiniTile
+            label="Current streak"
+            value={
+              s.streakKind === null
+                ? "-"
+                : `${s.streakKind === "WIN" ? "W" : "L"} × ${s.streakLen}`
+            }
+            tone={
+              s.streakKind === "WIN"
                 ? "good"
-                : "bad"
-          }
-        />
-        <MiniTile
-          label="Current streak"
-          value={
-            s.streakKind === null
-              ? "-"
-              : `${s.streakKind === "WIN" ? "W" : "L"} × ${s.streakLen}`
-          }
-          tone={
-            s.streakKind === "WIN"
-              ? "good"
-              : s.streakKind === "LOSS"
-                ? "bad"
-                : "neutral"
-          }
-        />
-        <MiniTile
-          label="Open positions"
-          value={s.openCount > 0 ? `${s.openCount}` : "-"}
-          tone={s.openCount > 0 ? "neutral" : "neutral"}
-        />
-        <MiniTile
-          label="Top strategy MTD"
-          value={
-            s.topStrategy && s.topStrategy.n > 0 ? (
-              <span className="flex items-center gap-1.5 truncate">
-                <span className="truncate">{s.topStrategy.label}</span>
-                <span
-                  className={`text-[10px] md:text-xs ${
-                    s.topStrategy.net >= 0
-                      ? "text-green-500"
-                      : "text-red-500"
-                  }`}
-                >
-                  {s.topStrategy.net >= 0 ? "+" : "−"}$
-                  {Math.abs(s.topStrategy.net).toFixed(0)}
+                : s.streakKind === "LOSS"
+                  ? "bad"
+                  : "neutral"
+            }
+          />
+          <MiniTile
+            label="Open positions"
+            value={s.openCount > 0 ? `${s.openCount}` : "-"}
+            tone={s.openCount > 0 ? "neutral" : "neutral"}
+          />
+          <MiniTile
+            label="Top strategy MTD"
+            value={
+              s.topStrategy && s.topStrategy.n > 0 ? (
+                <span className="flex items-center gap-1.5 truncate">
+                  <span className="truncate">{s.topStrategy.label}</span>
+                  <span
+                    className={`text-[10px] md:text-xs ${
+                      s.topStrategy.net >= 0 ? "text-green-500" : "text-red-500"
+                    }`}
+                  >
+                    {s.topStrategy.net >= 0 ? "+" : "−"}$
+                    {Math.abs(s.topStrategy.net).toFixed(0)}
+                  </span>
                 </span>
-              </span>
-            ) : (
-              "-"
-            )
-          }
-        />
-      </div>
+              ) : (
+                "-"
+              )
+            }
+          />
+        </div>
+      </section>
 
-      {/* Equity sparkline */}
+      {/* Equity sparkline — its own grid cell */}
       {s.curve.length >= 2 && (
-        <div className="border border-[var(--hairline)] rounded-lg p-3 md:p-4 flex flex-col gap-2">
+        <section className={`${CARD_CLASS} flex flex-col gap-2`}>
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <div className="text-[10px] md:text-xs text-white/50 tracking-wide">
-              Recent equity ({s.curve.length} trades)
+            <div className="text-sm md:text-base font-semibold">
+              Recent equity{" "}
+              <span className="text-white/40 font-normal text-[11px] md:text-xs">
+                ({s.curve.length} trades)
+              </span>
             </div>
             <div
               className={`text-sm md:text-base font-normal ${
-                curveEnd - curveStart >= 0
-                  ? "text-green-500"
-                  : "text-red-500"
+                curveEnd - curveStart >= 0 ? "text-green-500" : "text-red-500"
               }`}
             >
               {curveEnd - curveStart >= 0 ? "+" : "−"}$
@@ -378,8 +369,8 @@ export default function DashboardStats({ userId }: { userId: string }) {
               </AreaChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        </section>
       )}
-    </div>
+    </>
   );
 }

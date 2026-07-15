@@ -77,9 +77,9 @@ export default function DashboardUpcoming() {
   }, [fedDates, earnings, todayStr]);
 
   return (
-    <div className="w-full max-w-[1100px] mx-auto md:mx-0 px-5 md:px-10 flex flex-col gap-4 md:gap-6">
+    <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="md:text-xl text-sm font-bold">Upcoming events</h2>
+        <h2 className="md:text-base text-sm font-semibold">Upcoming events</h2>
         <Link
           href="/earnings"
           className="text-[11px] md:text-[12px] text-white/50 hover:text-white transition inline-flex items-center gap-1.5"
@@ -116,7 +116,11 @@ export default function DashboardUpcoming() {
         ) : (
           <ul className="divide-y divide-white/[0.06]">
             {events.map((ev, i) => (
-              <EventRow key={`${ev.date}-${ev.kind}-${ev.symbol ?? ""}-${i}`} ev={ev} n={daysUntil(ev.date, todayStr)} />
+              <EventRow
+                key={`${ev.date}-${ev.kind}-${ev.symbol ?? ""}-${i}`}
+                ev={ev}
+                n={daysUntil(ev.date, todayStr)}
+              />
             ))}
           </ul>
         )}

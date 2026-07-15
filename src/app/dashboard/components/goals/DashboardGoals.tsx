@@ -37,10 +37,14 @@ function MetricRow({ g }: { g: Goal }) {
       <div className="flex items-baseline justify-between gap-3 mb-1.5">
         <span className="text-[13px] font-medium truncate">{heading(g)}</span>
         <span className="text-[11.5px] text-white/55 tabular-nums shrink-0">
-          {g.metric && g.current != null ? formatValue(g.metric, g.current) : "—"}
+          {g.metric && g.current != null
+            ? formatValue(g.metric, g.current)
+            : "—"}
           <span className="text-white/30">
             {" / "}
-            {g.metric && g.target != null ? formatValue(g.metric, g.target) : "—"}
+            {g.metric && g.target != null
+              ? formatValue(g.metric, g.target)
+              : "—"}
           </span>
         </span>
       </div>
@@ -69,9 +73,9 @@ export default function DashboardGoals() {
   const moreMetrics = metricGoals.length - shownMetrics.length;
 
   return (
-    <div className="w-full max-w-[1100px] mx-auto md:mx-0 px-5 md:px-10 flex flex-col gap-4 md:gap-6">
+    <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="md:text-xl text-sm font-bold">Goals</h2>
+        <h2 className="md:text-base text-sm font-semibold">Goals</h2>
         <Link
           href="/goals"
           className="text-[11px] md:text-[12px] text-white/50 hover:text-white transition inline-flex items-center gap-1.5"
