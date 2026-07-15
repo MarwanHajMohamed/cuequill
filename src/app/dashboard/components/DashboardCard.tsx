@@ -7,11 +7,13 @@ import React from "react";
 // title (with optional right-aligned `action`, e.g. a "Manage" link) to
 // get the standard header row, or omit both for a bare card.
 //
-// The grid gives each cell a fixed height per its row span, so cards scroll
-// their own overflow (thin scrollbar) rather than clipping when a widget's
-// content is taller than the rows it's been given.
-export const CARD_CLASS =
-  "rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5 overflow-y-auto chat-scroll";
+// CARD_CLASS_BASE is the look with no scroll behaviour — use it when the
+// widget fills its own height (charts) or scrolls an inner region itself.
+// CARD_CLASS adds whole-card scroll for widgets whose content should scroll
+// when it's taller than the rows it's been given.
+export const CARD_CLASS_BASE =
+  "rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5";
+export const CARD_CLASS = `${CARD_CLASS_BASE} overflow-y-auto chat-scroll`;
 
 export function DashboardCard({
   title,

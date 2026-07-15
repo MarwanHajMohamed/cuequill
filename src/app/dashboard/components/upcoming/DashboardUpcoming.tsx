@@ -6,7 +6,7 @@ import { format } from "date-fns";
 import { useFedDates } from "@/hooks/useFedDates";
 import { useWatchlist } from "@/hooks/useWatchlist";
 import { useEarnings } from "@/hooks/useEarnings";
-import { CARD_CLASS } from "../DashboardCard";
+import { CARD_CLASS_BASE } from "../DashboardCard";
 
 // "Upcoming events" — the next market dates a discretionary options
 // trader wants on their radar: FOMC (Fed) days and earnings reports for
@@ -43,7 +43,11 @@ function relativeLabel(n: number): string {
   return `In ${Math.round(n / 7)} weeks`;
 }
 
-export default function DashboardUpcoming() {
+export default function DashboardUpcoming({
+  rowSpan = 2,
+}: {
+  rowSpan?: number;
+}) {
   const fedDates = useFedDates();
   const { data: watchlist = [] } = useWatchlist();
   const { data: earnings = [] } = useEarnings(watchlist);
@@ -78,7 +82,7 @@ export default function DashboardUpcoming() {
   }, [fedDates, earnings, todayStr]);
 
   return (
-    <section className={`${CARD_CLASS} flex flex-col gap-3 h-full`}>
+    <section className={`${CARD_CLASS_BASE} flex flex-col gap-3 h-full`}>
       <div className="flex items-center justify-between gap-2">
         <h2 className="md:text-base text-sm font-semibold">Upcoming events</h2>
         <Link
@@ -91,10 +95,15 @@ export default function DashboardUpcoming() {
       </div>
 
       {/* List bleeds to the card's left/right edges (negative x-margins
-          cancel the card padding) with a divider under the title. It keeps
-          the card's bottom padding so the last row has breathing room, and
-          doesn't clip — the card itself scrolls when the list is long. */}
-      <div className="flex-1 min-h-0 -mx-4 md:-mx-5 border-t border-white/[0.06]">
+          cancel the card padding) with a divider under the title, keeping
+          the card's bottom padding. The card itself never scrolls; the list
+          only scrolls internally when the widget is a single row tall (too
+          short to show every event) — at two+ rows it always fits. */}
+      <div
+        className={`flex-1 min-h-0 -mx-4 md:-mx-5 border-t border-white/[0.06] ${
+          rowSpan <= 1 ? "overflow-y-auto chat-scroll" : "overflow-hidden"
+        }`}
+      >
         {events.length === 0 ? (
           <div className="px-5 py-8 text-center">
             <div className="w-11 h-11 mx-auto rounded-2xl bg-teal-500/10 border border-teal-500/25 text-teal-300 flex items-center justify-center">

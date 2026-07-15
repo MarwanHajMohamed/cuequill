@@ -6,7 +6,7 @@ import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { Trade } from "@/app/types/Trades";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
 import { fmtMoneySignedCompact } from "@/lib/helpers/fmt";
-import { CARD_CLASS } from "../DashboardCard";
+import { CARD_CLASS_BASE } from "../DashboardCard";
 import {
   ResponsiveContainer,
   Area,
@@ -41,7 +41,7 @@ export default function DashboardEquity({ userId }: { userId: string }) {
 
   if (curve.length < 2) {
     return (
-      <section className={`${CARD_CLASS} flex flex-col gap-2 h-full`}>
+      <section className={`${CARD_CLASS_BASE} flex flex-col gap-2 h-full`}>
         <div className="text-sm md:text-base font-semibold">Recent equity</div>
         <div className="flex-1 flex items-center justify-center text-[12px] text-white/40 text-center py-6">
           Close at least two trades to plot your equity curve.
@@ -55,7 +55,7 @@ export default function DashboardEquity({ userId }: { userId: string }) {
   const curveColor = curveEnd >= curveStart ? "#22c55e" : "#ef4444";
 
   return (
-    <section className={`${CARD_CLASS} flex flex-col gap-2 h-full`}>
+    <section className={`${CARD_CLASS_BASE} flex flex-col gap-2 h-full`}>
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="text-sm md:text-base font-semibold">
           Recent equity{" "}

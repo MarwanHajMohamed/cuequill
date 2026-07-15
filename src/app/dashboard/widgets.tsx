@@ -32,7 +32,9 @@ export type WidgetId =
 export type WidgetDef = {
   id: WidgetId;
   title: string;
-  render: (userId: string) => React.ReactNode;
+  // rowSpan is the widget's current height in grid rows (1–3); widgets that
+  // scroll conditionally (e.g. Upcoming) use it, most ignore it.
+  render: (userId: string, rowSpan: number) => React.ReactNode;
 };
 
 export const WIDGETS: WidgetDef[] = [
@@ -69,7 +71,7 @@ export const WIDGETS: WidgetDef[] = [
   {
     id: "upcoming",
     title: "Upcoming events",
-    render: () => <DashboardUpcoming />,
+    render: (_userId, rowSpan) => <DashboardUpcoming rowSpan={rowSpan} />,
   },
   {
     id: "goals",
