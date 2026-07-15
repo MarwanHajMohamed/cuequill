@@ -203,6 +203,7 @@ export default function Navbar() {
       label: "Strategies",
       slug: "strategies",
     },
+    { icon: "fa-solid fa-flask", label: "Backtest", slug: "backtest" },
     { icon: "fa-solid fa-coins", label: "Stocks & ETFs", slug: "stocks" },
     {
       icon: "fa-regular fa-calendar-days",
@@ -245,6 +246,7 @@ export default function Navbar() {
         label: "Strategies",
         slug: "strategies",
       },
+      { icon: "fa-solid fa-flask", label: "Backtest", slug: "backtest" },
       { icon: "fa-solid fa-coins", label: "Stocks & ETFs", slug: "stocks" },
       { icon: "fa-solid fa-bullhorn", label: "Earnings", slug: "earnings" },
     ],
