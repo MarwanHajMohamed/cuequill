@@ -146,6 +146,60 @@ function beginReorder(
   window.addEventListener("pointerup", up);
 }
 
+// Arrow-button reorder (touch-friendly): swap the item with its neighbour
+// in the given direction (-1 = earlier, +1 = later). Reads the live visual
+// order from the DOM so it matches what's on screen regardless of CSS
+// `order`. Persists via setOrder.
+function moveByArrow(
+  id: string,
+  dir: -1 | 1,
+  container: HTMLElement | null,
+  attr: string,
+  axis: "x" | "y",
+  setOrder: (o: string[]) => void,
+) {
+  if (!container) return;
+  const ids = Array.from(container.querySelectorAll<HTMLElement>(`[${attr}]`))
+    .map((el) => ({
+      id: el.getAttribute(attr)!,
+      rect: el.getBoundingClientRect(),
+    }))
+    .sort((a, b) =>
+      axis === "y" ? a.rect.top - b.rect.top : a.rect.left - b.rect.left,
+    )
+    .map((i) => i.id);
+  const idx = ids.indexOf(id);
+  const target = idx + dir;
+  if (idx < 0 || target < 0 || target >= ids.length) return;
+  const next = ids.slice();
+  [next[idx], next[target]] = [next[target], next[idx]];
+  setOrder(next);
+}
+
+// A small arrow button to nudge an item one step earlier/later — the
+// touch-friendly alternative to dragging.
+function MoveBtn({
+  icon,
+  onClick,
+  label,
+}: {
+  icon: string;
+  onClick: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-6 h-6 flex items-center justify-center rounded-md border border-white/15 bg-[var(--surface-2,#1a1a1a)]/80 text-white/70 hover:text-white hover:bg-white/10 transition cursor-pointer shadow"
+      aria-label={label}
+      title={label}
+    >
+      <i className={`fa-solid ${icon} text-[10px]`} />
+    </button>
+  );
+}
+
 // A drag handle shown in reorder mode. Grip + label; the whole thing is
 // the grab target.
 function DragHandle({
@@ -926,27 +980,92 @@ export default function Statistics({
   const sectionsRootRef = useRef<HTMLDivElement>(null);
   const tilesRootRef = useRef<HTMLDivElement>(null);
 
-  // Small corner grip shown on each summary tile in reorder mode.
+  const moveSection = (id: string, dir: -1 | 1) =>
+    moveByArrow(
+      id,
+      dir,
+      sectionsRootRef.current,
+      "data-sec-id",
+      "y",
+      setSectionOrder,
+    );
+  const moveTile = (id: string, dir: -1 | 1) =>
+    moveByArrow(
+      id,
+      dir,
+      tilesRootRef.current,
+      "data-tile-id",
+      "x",
+      setTileOrder,
+    );
+
+  // Reorder controls on each summary tile: prev/next arrows (touch) around
+  // a drag grip (pointer). Sits at the tile's top-right in reorder mode.
   const tileHandle = (id: string) =>
     editing ? (
-      <button
-        type="button"
-        onPointerDown={(e) =>
-          beginReorder(
-            e,
-            id,
-            tilesRootRef.current,
-            "x",
-            "data-tile-id",
-            setTileOrder,
-          )
-        }
-        className="absolute -top-2 -right-2 z-10 w-5 h-5 flex items-center justify-center rounded-full bg-[var(--surface-2,#222)] border border-white/15 text-white/60 cursor-grab active:cursor-grabbing touch-none shadow"
-        aria-label="Drag tile"
-      >
-        <i className="fa-solid fa-grip-vertical text-[9px]" />
-      </button>
+      <div className="absolute -top-2.5 right-1 z-10 flex items-center gap-0.5">
+        <MoveBtn
+          icon="fa-chevron-left"
+          onClick={() => moveTile(id, -1)}
+          label="earlier"
+        />
+        <button
+          type="button"
+          onPointerDown={(e) =>
+            beginReorder(
+              e,
+              id,
+              tilesRootRef.current,
+              "x",
+              "data-tile-id",
+              setTileOrder,
+            )
+          }
+          className="w-5 h-5 flex items-center justify-center rounded-full bg-[var(--surface-2,#222)] border border-white/15 text-white/60 cursor-grab active:cursor-grabbing touch-none shadow"
+          aria-label="Drag tile"
+        >
+          <i className="fa-solid fa-grip-vertical text-[9px]" />
+        </button>
+        <MoveBtn
+          icon="fa-chevron-right"
+          onClick={() => moveTile(id, 1)}
+          label="later"
+        />
+      </div>
     ) : undefined;
+
+  // Reorder controls for a whole section: drag handle (pointer) plus
+  // up/down arrows (touch). Absolutely positioned at the section's top-left.
+  const sectionControls = (id: string, label: string) =>
+    editing ? (
+      <div className="absolute -top-3 left-2 z-10 flex items-center gap-1.5">
+        <DragHandle
+          label={label}
+          onPointerDown={(e) =>
+            beginReorder(
+              e,
+              id,
+              sectionsRootRef.current,
+              "y",
+              "data-sec-id",
+              setSectionOrder,
+            )
+          }
+        />
+        <div className="flex items-center gap-1">
+          <MoveBtn
+            icon="fa-chevron-up"
+            onClick={() => moveSection(id, -1)}
+            label={`Move ${label} up`}
+          />
+          <MoveBtn
+            icon="fa-chevron-down"
+            onClick={() => moveSection(id, 1)}
+            label={`Move ${label} down`}
+          />
+        </div>
+      </div>
+    ) : null;
 
   const anyTileVisible =
     visibility.netPL ||
@@ -1388,23 +1507,7 @@ export default function Statistics({
               : ""
           }`}
         >
-          {editing && (
-            <div className="absolute -top-3 left-2 z-10">
-              <DragHandle
-                label="Summary tiles"
-                onPointerDown={(e) =>
-                  beginReorder(
-                    e,
-                    "summary",
-                    sectionsRootRef.current,
-                    "y",
-                    "data-sec-id",
-                    setSectionOrder,
-                  )
-                }
-              />
-            </div>
-          )}
+          {sectionControls("summary", "Summary tiles")}
           {visibility.netPL && (
             <SummaryTile
               label="Net P&L"
@@ -1529,23 +1632,7 @@ export default function Statistics({
               : ""
           }`}
         >
-          {editing && (
-            <div className="absolute -top-3 left-2 z-10">
-              <DragHandle
-                label="Equity curve"
-                onPointerDown={(e) =>
-                  beginReorder(
-                    e,
-                    "equityCurve",
-                    sectionsRootRef.current,
-                    "y",
-                    "data-sec-id",
-                    setSectionOrder,
-                  )
-                }
-              />
-            </div>
-          )}
+          {sectionControls("equityCurve", "Equity curve")}
           <EquityCurve trades={data} />
         </motion.div>
       )}
@@ -1601,23 +1688,7 @@ export default function Statistics({
                   : ""
               }`}
             >
-              {editing && (
-                <div className="absolute -top-3 left-2 z-10 col-span-2 md:col-span-4">
-                  <DragHandle
-                    label="Top / worst"
-                    onPointerDown={(e) =>
-                      beginReorder(
-                        e,
-                        "quickGlance",
-                        sectionsRootRef.current,
-                        "y",
-                        "data-sec-id",
-                        setSectionOrder,
-                      )
-                    }
-                  />
-                </div>
-              )}
+              {sectionControls("quickGlance", "Top / worst")}
               {cards.map((c) => {
                 const r = c.row!;
                 const positive = r.netPL >= 0;
@@ -1675,23 +1746,7 @@ export default function Statistics({
               : ""
           }`}
         >
-          {editing && (
-            <div className="absolute -top-3 left-2 z-10">
-              <DragHandle
-                label="Performance by tag"
-                onPointerDown={(e) =>
-                  beginReorder(
-                    e,
-                    "tagStats",
-                    sectionsRootRef.current,
-                    "y",
-                    "data-sec-id",
-                    setSectionOrder,
-                  )
-                }
-              />
-            </div>
-          )}
+          {sectionControls("tagStats", "Performance by tag")}
           <SectionHeader
             title="Performance by tag"
             info="Net P/L grouped by the tags you've added to your trades. Highlights which mistakes are costing the most and which patterns are paying off."
@@ -1774,23 +1829,7 @@ export default function Statistics({
               : ""
           }`}
         >
-          {editing && (
-            <div className="absolute -top-3 left-2 z-10">
-              <DragHandle
-                label="Filter insights"
-                onPointerDown={(e) =>
-                  beginReorder(
-                    e,
-                    "filterInsights",
-                    sectionsRootRef.current,
-                    "y",
-                    "data-sec-id",
-                    setSectionOrder,
-                  )
-                }
-              />
-            </div>
-          )}
+          {sectionControls("filterInsights", "Filter insights")}
           <SectionHeader
             title="Filter insights"
             info="Compares the trades currently matching your filters against your all-time baseline. Use it to ask: 'Is this subset of trades actually better than my average?'"
@@ -1912,23 +1951,7 @@ export default function Statistics({
               : ""
           }`}
         >
-          {editing && (
-            <div className="absolute -top-3 left-2 z-10">
-              <DragHandle
-                label="Performance breakdown"
-                onPointerDown={(e) =>
-                  beginReorder(
-                    e,
-                    "breakdown",
-                    sectionsRootRef.current,
-                    "y",
-                    "data-sec-id",
-                    setSectionOrder,
-                  )
-                }
-              />
-            </div>
-          )}
+          {sectionControls("breakdown", "Performance breakdown")}
           <SectionHeader
             title="Performance breakdown"
             info="A bird's-eye view of where your edge is across your entire trading history - split by direction, strategy, symbol, streaks, and best/worst day."
@@ -2210,23 +2233,7 @@ export default function Statistics({
                   : ""
               }`}
             >
-              {editing && (
-                <div className="absolute -top-3 left-2 z-10">
-                  <DragHandle
-                    label="Monthly stats"
-                    onPointerDown={(e) =>
-                      beginReorder(
-                        e,
-                        "monthly",
-                        sectionsRootRef.current,
-                        "y",
-                        "data-sec-id",
-                        setSectionOrder,
-                      )
-                    }
-                  />
-                </div>
-              )}
+              {sectionControls("monthly", "Monthly stats")}
               {/* Header */}
               <SectionHeader
                 title="Statistics per month"
