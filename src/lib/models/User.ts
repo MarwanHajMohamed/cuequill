@@ -79,6 +79,9 @@ export interface IUser extends Document {
   // unset means "use the client default layout". Validated client-side
   // against the widget registry before render.
   dashboardLayout?: string[];
+  // Ordered list of enabled stat-tile ids inside the "At a glance" widget
+  // (Today, This week, All-time P/L, …). Same contract as dashboardLayout.
+  dashboardGlanceTiles?: string[];
 }
 
 const UserSchema = new Schema<IUser>({
@@ -139,6 +142,7 @@ const UserSchema = new Schema<IUser>({
   emailAffirmationsReminder: { type: Boolean, default: true },
   emailAffirmationsLastSentDate: { type: String, default: "" },
   dashboardLayout: { type: [String], default: undefined },
+  dashboardGlanceTiles: { type: [String], default: undefined },
 });
 
 // In dev, Next.js hot-reload keeps the previously-compiled model (with

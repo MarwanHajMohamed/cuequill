@@ -1,12 +1,6 @@
 "use client";
 
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useState } from "react";
 import {
   DndContext,
   closestCenter,
@@ -24,7 +18,6 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
 import {
   WIDGETS,
   WIDGET_MAP,
@@ -32,60 +25,20 @@ import {
   sanitizeLayout,
   type WidgetId,
 } from "./widgets";
+import { usePersistedLayout } from "./usePersistedLayout";
 
 const LAYOUT_KEY = "cuequill:dashboard-layout-v1";
 
 export default function DashboardGrid({ userId }: { userId: string }) {
-  // localStorage is a fast, offline cache so the grid paints instantly on
-  // load; the account copy (below) is the source of truth and reconciles
-  // once fetched. Every mutation writes both.
-  const [stored, setStored] = useLocalStorage<WidgetId[]>(
+  const [layout, persist] = usePersistedLayout<WidgetId>(
     LAYOUT_KEY,
+    "layout",
     DEFAULT_LAYOUT,
+    sanitizeLayout,
   );
-  const layout = useMemo(() => sanitizeLayout(stored), [stored]);
 
   const [editing, setEditing] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
-
-  // Once the user has changed anything this session, don't let a slow
-  // account fetch clobber their edit.
-  const dirtyRef = useRef(false);
-
-  // Load the saved layout from the account on mount. A null layout means
-  // the user has never customised — leave the local/default in place.
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/user/dashboard-layout")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (cancelled || dirtyRef.current) return;
-        if (data && Array.isArray(data.layout)) {
-          setStored(sanitizeLayout(data.layout));
-        }
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-    // Run once on mount; setStored identity is stable enough for this.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Persist a layout change to both the local cache and the account.
-  const persist = useCallback(
-    (next: WidgetId[]) => {
-      dirtyRef.current = true;
-      setStored(next);
-      fetch("/api/user/dashboard-layout", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ layout: next }),
-      }).catch(() => {});
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
-  );
 
   const sensors = useSensors(
     // A small activation distance so clicks on widget links still work
