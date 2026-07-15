@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   DndContext,
   closestCenter,
@@ -30,6 +36,9 @@ import {
 const LAYOUT_KEY = "cuequill:dashboard-layout-v1";
 
 export default function DashboardGrid({ userId }: { userId: string }) {
+  // localStorage is a fast, offline cache so the grid paints instantly on
+  // load; the account copy (below) is the source of truth and reconciles
+  // once fetched. Every mutation writes both.
   const [stored, setStored] = useLocalStorage<WidgetId[]>(
     LAYOUT_KEY,
     DEFAULT_LAYOUT,
@@ -38,6 +47,45 @@ export default function DashboardGrid({ userId }: { userId: string }) {
 
   const [editing, setEditing] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+
+  // Once the user has changed anything this session, don't let a slow
+  // account fetch clobber their edit.
+  const dirtyRef = useRef(false);
+
+  // Load the saved layout from the account on mount. A null layout means
+  // the user has never customised — leave the local/default in place.
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/user/dashboard-layout")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled || dirtyRef.current) return;
+        if (data && Array.isArray(data.layout)) {
+          setStored(sanitizeLayout(data.layout));
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+    // Run once on mount; setStored identity is stable enough for this.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Persist a layout change to both the local cache and the account.
+  const persist = useCallback(
+    (next: WidgetId[]) => {
+      dirtyRef.current = true;
+      setStored(next);
+      fetch("/api/user/dashboard-layout", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ layout: next }),
+      }).catch(() => {});
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
 
   const sensors = useSensors(
     // A small activation distance so clicks on widget links still work
@@ -56,18 +104,18 @@ export default function DashboardGrid({ userId }: { userId: string }) {
     const from = layout.indexOf(active.id as WidgetId);
     const to = layout.indexOf(over.id as WidgetId);
     if (from === -1 || to === -1) return;
-    setStored(arrayMove(layout, from, to));
+    persist(arrayMove(layout, from, to));
   };
 
   const removeWidget = (id: WidgetId) =>
-    setStored(layout.filter((x) => x !== id));
+    persist(layout.filter((x) => x !== id));
 
   const addWidget = (id: WidgetId) => {
-    if (!layout.includes(id)) setStored([...layout, id]);
+    if (!layout.includes(id)) persist([...layout, id]);
     setAddOpen(false);
   };
 
-  const resetLayout = () => setStored([...DEFAULT_LAYOUT]);
+  const resetLayout = () => persist([...DEFAULT_LAYOUT]);
 
   return (
     <div className="w-full max-w-[1600px] mx-auto px-5 md:px-10">

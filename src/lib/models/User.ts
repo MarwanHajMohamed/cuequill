@@ -75,6 +75,10 @@ export interface IUser extends Document {
   // sent, so the hourly cron doesn't spam the same person more than
   // once a day.
   emailAffirmationsLastSentDate?: string;
+  // Customisable dashboard: ordered list of enabled widget ids. Empty /
+  // unset means "use the client default layout". Validated client-side
+  // against the widget registry before render.
+  dashboardLayout?: string[];
 }
 
 const UserSchema = new Schema<IUser>({
@@ -134,6 +138,7 @@ const UserSchema = new Schema<IUser>({
   chatMonthTokens: { type: Number, default: 0 },
   emailAffirmationsReminder: { type: Boolean, default: true },
   emailAffirmationsLastSentDate: { type: String, default: "" },
+  dashboardLayout: { type: [String], default: undefined },
 });
 
 // In dev, Next.js hot-reload keeps the previously-compiled model (with
