@@ -173,9 +173,13 @@ function DragHandle({
 const CustomizeMenu = ({
   visibility,
   setVisibility,
+  label = "Customize",
+  icon = "fa-sliders",
 }: {
   visibility: StatsVisibility;
   setVisibility: (v: StatsVisibility) => void;
+  label?: string;
+  icon?: string;
 }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -242,7 +246,9 @@ const CustomizeMenu = ({
         onClick={() => setOpen((o) => !o)}
         active={open}
         ariaExpanded={open}
-        title="Customize stats"
+        icon={icon}
+        label={label}
+        title="Show or hide stats"
       />
       <AnimatePresence>
         {open && (
@@ -472,7 +478,9 @@ const SummaryTile = ({
   dataId?: string;
   handle?: React.ReactNode;
 }) => (
-  <div
+  <motion.div
+    layout="position"
+    transition={{ type: "spring", stiffness: 500, damping: 40 }}
     data-tile-id={dataId}
     style={style}
     className={`relative rounded-xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4 flex flex-col gap-1.5 md:gap-2 min-w-0 ${className}`}
@@ -483,7 +491,7 @@ const SummaryTile = ({
       {info && <InfoTooltip text={info} />}
     </div>
     <div className="flex items-center justify-between gap-2">{children}</div>
-  </div>
+  </motion.div>
 );
 
 const SectionHeader = ({
@@ -895,7 +903,7 @@ export default function Statistics({
 
   // Reorder (Customize) mode + saved section/tile order. CSS `order` on
   // each block does the actual repositioning, driven by these arrays.
-  const [reordering, setReordering] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [sectionOrderRaw, setSectionOrder] = useLocalStorage<string[]>(
     "cuequill:stats-section-order",
     DEFAULT_SECTION_ORDER,
@@ -920,7 +928,7 @@ export default function Statistics({
 
   // Small corner grip shown on each summary tile in reorder mode.
   const tileHandle = (id: string) =>
-    reordering ? (
+    editing ? (
       <button
         type="button"
         onPointerDown={(e) =>
@@ -1336,20 +1344,36 @@ export default function Statistics({
   return (
     <div
       ref={sectionsRootRef}
-      className="mt-10 flex flex-col md:items-start w-full max-w-[1500px]"
+      className="mt-10 flex flex-col md:items-start w-full max-w-[1500px] gap-8 md:gap-12"
     >
-      {/* Customize toolbar — Rearrange (drag order) + Customize (show/hide).
-          The toolbar keeps order -1 so it always stays on top of the
-          CSS-ordered sections below. */}
-      <div className="flex justify-end w-full mb-4 gap-2" style={{ order: -1 }}>
-        <CustomizeButton
-          icon={reordering ? "fa-check" : "fa-up-down-left-right"}
-          label={reordering ? "Done" : "Rearrange"}
-          active={reordering}
-          onClick={() => setReordering((v) => !v)}
-          title="Drag to reorder sections and tiles"
-        />
-        <CustomizeMenu visibility={visibility} setVisibility={setVisibility} />
+      {/* Customize toolbar. One Customize button toggles edit mode; in edit
+          mode you can drag sections/tiles to reorder AND use Show / hide.
+          Order -1 keeps the toolbar above the CSS-ordered sections, and the
+          container's flex gap gives every section the same spacing
+          regardless of order. */}
+      <div className="flex justify-end w-full gap-2" style={{ order: -1 }}>
+        {editing ? (
+          <>
+            <CustomizeMenu
+              visibility={visibility}
+              setVisibility={setVisibility}
+              icon="fa-eye"
+              label="Show / hide"
+            />
+            <CustomizeButton
+              icon="fa-check"
+              label="Done"
+              active
+              onClick={() => setEditing(false)}
+            />
+          </>
+        ) : (
+          <CustomizeButton
+            label="Customize"
+            onClick={() => setEditing(true)}
+            title="Reorder and show/hide stats"
+          />
+        )}
       </div>
 
       {/* Summary tiles - at-a-glance, all-time */}
@@ -1358,13 +1382,13 @@ export default function Statistics({
           ref={tilesRootRef}
           data-sec-id="summary"
           style={{ order: secOrder("summary") }}
-          className={`relative flex flex-wrap justify-center gap-2 md:gap-3 w-full mb-10 ${
-            reordering
+          className={`relative flex flex-wrap justify-center gap-2 md:gap-3 w-full ${
+            editing
               ? "rounded-2xl outline outline-1 outline-dashed outline-white/15 outline-offset-4"
               : ""
           }`}
         >
-          {reordering && (
+          {editing && (
             <div className="absolute -top-3 left-2 z-10">
               <DragHandle
                 label="Summary tiles"
@@ -1494,16 +1518,18 @@ export default function Statistics({
 
       {/* Equity curve */}
       {visibility.equityCurve && (
-        <div
+        <motion.div
+          layout="position"
+          transition={{ type: "spring", stiffness: 500, damping: 40 }}
           data-sec-id="equityCurve"
           style={{ order: secOrder("equityCurve") }}
-          className={`relative w-full mb-10 ${
-            reordering
+          className={`relative w-full ${
+            editing
               ? "rounded-2xl outline outline-1 outline-dashed outline-white/15 outline-offset-4"
               : ""
           }`}
         >
-          {reordering && (
+          {editing && (
             <div className="absolute -top-3 left-2 z-10">
               <DragHandle
                 label="Equity curve"
@@ -1521,7 +1547,7 @@ export default function Statistics({
             </div>
           )}
           <EquityCurve trades={data} />
-        </div>
+        </motion.div>
       )}
 
       {/* Quick-glance top/worst boxes. Sit under the equity curve so
@@ -1564,16 +1590,18 @@ export default function Statistics({
           ].filter((c) => c.row);
           if (cards.length === 0) return null;
           return (
-            <div
+            <motion.div
+              layout="position"
+              transition={{ type: "spring", stiffness: 500, damping: 40 }}
               data-sec-id="quickGlance"
               style={{ order: secOrder("quickGlance") }}
-              className={`relative w-full mb-10 grid grid-cols-2 md:grid-cols-4 gap-3 ${
-                reordering
+              className={`relative w-full grid grid-cols-2 md:grid-cols-4 gap-3 ${
+                editing
                   ? "rounded-2xl outline outline-1 outline-dashed outline-white/15 outline-offset-4"
                   : ""
               }`}
             >
-              {reordering && (
+              {editing && (
                 <div className="absolute -top-3 left-2 z-10 col-span-2 md:col-span-4">
                   <DragHandle
                     label="Top / worst"
@@ -1630,22 +1658,24 @@ export default function Statistics({
                   </div>
                 );
               })}
-            </div>
+            </motion.div>
           );
         })()}
 
       {/* Performance by tag */}
       {visibility.tagStats && tagStats.length > 0 && (
-        <div
+        <motion.div
+          layout="position"
+          transition={{ type: "spring", stiffness: 500, damping: 40 }}
           data-sec-id="tagStats"
           style={{ order: secOrder("tagStats") }}
-          className={`relative w-full mb-10 flex flex-col gap-4 md:gap-5 ${
-            reordering
+          className={`relative w-full flex flex-col gap-4 md:gap-5 ${
+            editing
               ? "rounded-2xl outline outline-1 outline-dashed outline-white/15 outline-offset-4"
               : ""
           }`}
         >
-          {reordering && (
+          {editing && (
             <div className="absolute -top-3 left-2 z-10">
               <DragHandle
                 label="Performance by tag"
@@ -1728,21 +1758,23 @@ export default function Statistics({
               </tbody>
             </table>
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* ── Filter Insights ─────────────────────────────────────────── */}
       {visibility.filteredStats && (
-        <div
+        <motion.div
+          layout="position"
+          transition={{ type: "spring", stiffness: 500, damping: 40 }}
           data-sec-id="filterInsights"
           style={{ order: secOrder("filterInsights") }}
-          className={`relative w-full mt-8 md:mt-16 mb-2 flex flex-col gap-4 md:gap-5 ${
-            reordering
+          className={`relative w-full flex flex-col gap-4 md:gap-5 ${
+            editing
               ? "rounded-2xl outline outline-1 outline-dashed outline-white/15 outline-offset-4"
               : ""
           }`}
         >
-          {reordering && (
+          {editing && (
             <div className="absolute -top-3 left-2 z-10">
               <DragHandle
                 label="Filter insights"
@@ -1864,21 +1896,23 @@ export default function Statistics({
               info="Gross wins ÷ gross losses. Above 1.0 = profitable; above 2.0 = strong system."
             />
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* ── Performance Breakdown ───────────────────────────────────── */}
       {visibility.totalStats && (
-        <div
+        <motion.div
+          layout="position"
+          transition={{ type: "spring", stiffness: 500, damping: 40 }}
           data-sec-id="breakdown"
           style={{ order: secOrder("breakdown") }}
-          className={`relative w-full mt-8 md:mt-16 mb-2 flex flex-col gap-4 md:gap-5 ${
-            reordering
+          className={`relative w-full flex flex-col gap-4 md:gap-5 ${
+            editing
               ? "rounded-2xl outline outline-1 outline-dashed outline-white/15 outline-offset-4"
               : ""
           }`}
         >
-          {reordering && (
+          {editing && (
             <div className="absolute -top-3 left-2 z-10">
               <DragHandle
                 label="Performance breakdown"
@@ -2091,7 +2125,7 @@ export default function Statistics({
               info="Percentage of trading days that ended net positive. A high number with a low avg-win signals consistency; low + big avg-win signals lumpy P/L."
             />
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* Monthly Section */}
@@ -2165,16 +2199,18 @@ export default function Statistics({
           };
 
           return (
-            <div
+            <motion.div
+              layout="position"
+              transition={{ type: "spring", stiffness: 500, damping: 40 }}
               data-sec-id="monthly"
               style={{ order: secOrder("monthly") }}
-              className={`relative w-full mt-8 md:mt-16 mb-2 flex flex-col gap-4 md:gap-5 ${
-                reordering
+              className={`relative w-full flex flex-col gap-4 md:gap-5 ${
+                editing
                   ? "rounded-2xl outline outline-1 outline-dashed outline-white/15 outline-offset-4"
                   : ""
               }`}
             >
-              {reordering && (
+              {editing && (
                 <div className="absolute -top-3 left-2 z-10">
                   <DragHandle
                     label="Monthly stats"
@@ -2466,7 +2502,7 @@ export default function Statistics({
                   </motion.div>
                 </AnimatePresence>
               </div>
-            </div>
+            </motion.div>
           );
         })()}
     </div>
