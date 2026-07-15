@@ -6,7 +6,13 @@ import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useTrades } from "@/hooks/useTrades";
 import { withAuth } from "@/lib/withAuth";
 import { useQueryClient } from "@tanstack/react-query";
-import React, { use, useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, {
+  use,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { useRouter } from "next/navigation";
 import NotesModal from "../NotesModal";
 import ImportedTradesModal from "../ImportedTradesModal";
@@ -20,6 +26,7 @@ import Filters from "./Filters";
 import Statistics from "./Statistics";
 import { AnimatePresence, motion } from "framer-motion";
 import { HeroSkeleton, TableSkeleton } from "@/components/Loaders";
+import CustomizeButton from "@/components/CustomizeButton";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
 
 import { fmtMoneyCompact } from "@/lib/helpers/fmt";
@@ -162,9 +169,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
       let top = Infinity;
       let bottom = -Infinity;
       for (const id of selectedIds) {
-        const el = wrap.querySelector<HTMLElement>(
-          `[data-trade-id="${id}"]`,
-        );
+        const el = wrap.querySelector<HTMLElement>(`[data-trade-id="${id}"]`);
         if (!el) continue;
         const r = el.getBoundingClientRect();
         if (r.top < top) top = r.top;
@@ -416,8 +421,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
         </div>
         <div className="text-lg font-semibold">Trades unavailable</div>
         <div className="text-sm text-white/55 max-w-sm text-center">
-          We couldn&apos;t reach the journal. Check your connection and
-          retry.
+          We couldn&apos;t reach the journal. Check your connection and retry.
         </div>
       </div>
     );
@@ -659,19 +663,14 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
             />
             {/* Column controls */}
             <div className="relative flex justify-end mt-5 max-[1130px]:mt-3 mb-3">
-              <button
+              <CustomizeButton
+                icon="fa-table-columns"
+                label="Columns"
                 onClick={() => setIsColumnsOpen((v) => !v)}
+                active={isColumnsOpen}
+                ariaExpanded={isColumnsOpen}
                 title="Customize columns"
-                aria-label="Customize columns"
-                aria-expanded={isColumnsOpen}
-                className={`inline-flex items-center justify-center w-9 h-9 rounded-full border transition cursor-pointer ${
-                  isColumnsOpen
-                    ? "bg-teal-500/15 text-teal-300 border-teal-500/30"
-                    : "bg-white/[0.03] text-white/60 border-white/10 hover:bg-white/[0.06] hover:text-white hover:border-white/20"
-                }`}
-              >
-                <i className="fa-solid fa-table-columns text-[13px]" />
-              </button>
+              />
               <AnimatePresence>
                 {isColumnsOpen && (
                   <>
@@ -837,7 +836,10 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                         {/* Fixed quick-edit column — sits outside the
                             user-customisable column set so it can't be
                             reordered or hidden. */}
-                        <th className="pl-2 md:pl-3 pr-0 py-2 w-7" aria-label="Quick edit" />
+                        <th
+                          className="pl-2 md:pl-3 pr-0 py-2 w-7"
+                          aria-label="Quick edit"
+                        />
                         {selectMode && (
                           <th
                             className="pl-1 pr-1 py-2 w-6 md:w-7"
@@ -871,7 +873,10 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                               }}
                               onDrop={(e) => {
                                 e.preventDefault();
-                                if (dragKey.current && dragKey.current !== key) {
+                                if (
+                                  dragKey.current &&
+                                  dragKey.current !== key
+                                ) {
                                   moveColumn(dragKey.current, key);
                                 }
                                 dragKey.current = null;
@@ -933,9 +938,9 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                             | undefined;
                           const seed =
                             seedId && seedId !== tradeId
-                              ? currentTrades.find((t) => t._id === seedId) ??
-                                (filteredTrades?.find((t) => t._id === seedId) ??
-                                  null)
+                              ? (currentTrades.find((t) => t._id === seedId) ??
+                                filteredTrades?.find((t) => t._id === seedId) ??
+                                null)
                               : null;
                           const dimmed =
                             selectMode &&
@@ -943,77 +948,78 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                             !isSelected &&
                             !isMergeableWithSeed(seed, trade);
                           return (
-                          <tr
-                            key={index}
-                            data-trade-id={tradeId}
-                            className={`group text-xs md:text-[13.5px] border-t border-white/[0.06] transition cursor-pointer ${
-                              isSelected
-                                ? "bg-teal-500/[0.08] hover:bg-teal-500/[0.12]"
-                                : dimmed
-                                  ? "opacity-40 hover:bg-white/[0.02]"
-                                  : "hover:bg-white/[0.02]"
-                            }`}
-                            onClick={() => {
-                              if (selectMode) {
-                                if (!tradeId) return;
-                                if (dimmed) return;
-                                toggleSelected(tradeId);
-                                return;
-                              }
-                              router.push(`/trades/${userId}/${trade._id}`);
-                            }}
-                          >
-                            {/* Pencil icon — quick-edit modal. Stops
+                            <tr
+                              key={index}
+                              data-trade-id={tradeId}
+                              className={`group text-xs md:text-[13.5px] border-t border-white/[0.06] transition cursor-pointer ${
+                                isSelected
+                                  ? "bg-teal-500/[0.08] hover:bg-teal-500/[0.12]"
+                                  : dimmed
+                                    ? "opacity-40 hover:bg-white/[0.02]"
+                                    : "hover:bg-white/[0.02]"
+                              }`}
+                              onClick={() => {
+                                if (selectMode) {
+                                  if (!tradeId) return;
+                                  if (dimmed) return;
+                                  toggleSelected(tradeId);
+                                  return;
+                                }
+                                router.push(`/trades/${userId}/${trade._id}`);
+                              }}
+                            >
+                              {/* Pencil icon — quick-edit modal. Stops
                                 propagation so the row's row-click
                                 navigation doesn't fire. */}
-                            <td className="pl-2 md:pl-3 pr-0 py-1 w-7 align-middle">
-                              <button
-                                type="button"
-                                aria-label="Quick edit"
-                                title="Quick edit"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setEditingTrade(trade);
-                                  setIsModalOpen(true);
-                                }}
-                                className="w-7 h-7 rounded-md inline-flex items-center justify-center text-white/35 group-hover:text-white/65 hover:text-white hover:bg-white/[0.08] transition cursor-pointer"
-                              >
-                                <i className="fa-solid fa-pen text-[11px]" />
-                              </button>
-                            </td>
-                            {selectMode && (
-                              <td className="pl-1 pr-1 py-1 w-6 md:w-7 align-middle">
-                                <input
-                                  type="checkbox"
-                                  aria-label="Select trade"
-                                  checked={isSelected}
-                                  disabled={dimmed}
-                                  onChange={() => {
-                                    if (!tradeId) return;
-                                    toggleSelected(tradeId);
+                              <td className="pl-2 md:pl-3 pr-0 py-1 w-7 align-middle">
+                                <button
+                                  type="button"
+                                  aria-label="Quick edit"
+                                  title="Quick edit"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditingTrade(trade);
+                                    setIsModalOpen(true);
                                   }}
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="w-4 h-4 accent-teal-400 cursor-pointer disabled:cursor-not-allowed"
-                                />
+                                  className="w-7 h-7 rounded-md inline-flex items-center justify-center text-white/35 group-hover:text-white/65 hover:text-white hover:bg-white/[0.08] transition cursor-pointer"
+                                >
+                                  <i className="fa-solid fa-pen text-[11px]" />
+                                </button>
                               </td>
-                            )}
-                            {visibleColumns.map((key, ci) => (
-                              <td
-                                key={key}
-                                className={`${ci === 0 ? "pl-1 pr-1 md:pr-1.5" : "px-1 md:px-1.5"} py-1 whitespace-nowrap transition ${
-                                  key === "notes" ? "text-center" : ""
-                                } ${
-                                  draggingKey === key
-                                    ? "bg-white/[0.06]"
-                                    : dragOverKey === key && draggingKey !== null
-                                      ? "bg-teal-500/[0.06]"
-                                      : ""
-                                }`}
-                              >
-                                {renderCell(key, trade)}
-                              </td>
-                            ))}
-                          </tr>
+                              {selectMode && (
+                                <td className="pl-1 pr-1 py-1 w-6 md:w-7 align-middle">
+                                  <input
+                                    type="checkbox"
+                                    aria-label="Select trade"
+                                    checked={isSelected}
+                                    disabled={dimmed}
+                                    onChange={() => {
+                                      if (!tradeId) return;
+                                      toggleSelected(tradeId);
+                                    }}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="w-4 h-4 accent-teal-400 cursor-pointer disabled:cursor-not-allowed"
+                                  />
+                                </td>
+                              )}
+                              {visibleColumns.map((key, ci) => (
+                                <td
+                                  key={key}
+                                  className={`${ci === 0 ? "pl-1 pr-1 md:pr-1.5" : "px-1 md:px-1.5"} py-1 whitespace-nowrap transition ${
+                                    key === "notes" ? "text-center" : ""
+                                  } ${
+                                    draggingKey === key
+                                      ? "bg-white/[0.06]"
+                                      : dragOverKey === key &&
+                                          draggingKey !== null
+                                        ? "bg-teal-500/[0.06]"
+                                        : ""
+                                  }`}
+                                >
+                                  {renderCell(key, trade)}
+                                </td>
+                              ))}
+                            </tr>
                           );
                         })}
                       </motion.tbody>

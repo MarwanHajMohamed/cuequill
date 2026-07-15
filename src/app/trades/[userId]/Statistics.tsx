@@ -1,5 +1,6 @@
 "use client";
 
+import CustomizeButton from "@/components/CustomizeButton";
 import Bar from "@/app/dashboard/components/charts/Bar";
 import Pie from "@/app/dashboard/components/charts/Pie";
 import { TAG_KIND_BY_LABEL } from "@/app/data/tradeTags";
@@ -129,19 +130,12 @@ const CustomizeMenu = ({
 
   return (
     <div ref={ref} className="relative">
-      <button
+      <CustomizeButton
         onClick={() => setOpen((o) => !o)}
+        active={open}
+        ariaExpanded={open}
         title="Customize stats"
-        aria-label="Customize stats"
-        aria-expanded={open}
-        className={`inline-flex items-center justify-center w-9 h-9 rounded-full border transition cursor-pointer ${
-          open
-            ? "bg-teal-500/15 text-teal-300 border-teal-500/30"
-            : "bg-white/[0.03] text-white/60 border-white/10 hover:bg-white/[0.06] hover:text-white hover:border-white/20"
-        }`}
-      >
-        <i className="fa-solid fa-sliders text-[13px]" />
-      </button>
+      />
       <AnimatePresence>
         {open && (
           <>
@@ -1298,18 +1292,16 @@ export default function Statistics({
             (best, r) => (!best || r.netPL > best.netPL ? r : best),
             null,
           );
-          const worstSymbol = bySymbol.reduce<
-            (typeof bySymbol)[number] | null
-          >((worst, r) => (!worst || r.netPL < worst.netPL ? r : worst), null);
+          const worstSymbol = bySymbol.reduce<(typeof bySymbol)[number] | null>(
+            (worst, r) => (!worst || r.netPL < worst.netPL ? r : worst),
+            null,
+          );
           const topStrategy = byStrategy.reduce<
             (typeof byStrategy)[number] | null
           >((best, r) => (!best || r.netPL > best.netPL ? r : best), null);
           const worstStrategy = byStrategy.reduce<
             (typeof byStrategy)[number] | null
-          >(
-            (worst, r) => (!worst || r.netPL < worst.netPL ? r : worst),
-            null,
-          );
+          >((worst, r) => (!worst || r.netPL < worst.netPL ? r : worst), null);
           const cards = [
             { title: "Top symbol", row: topSymbol, tone: "good" as const },
             {
@@ -2113,4 +2105,3 @@ export default function Statistics({
     </div>
   );
 }
-

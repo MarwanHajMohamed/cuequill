@@ -28,6 +28,7 @@ import {
   type WidgetId,
 } from "./widgets";
 import { usePersistedField } from "./usePersistedLayout";
+import CustomizeButton from "@/components/CustomizeButton";
 
 const LAYOUT_KEY = "cuequill:dashboard-layout-v1";
 const SIZES_KEY = "cuequill:dashboard-widget-sizes-v1";
@@ -206,13 +207,7 @@ export default function DashboardGrid({ userId }: { userId: string }) {
             </button>
           </>
         ) : (
-          <button
-            onClick={() => setEditing(true)}
-            className="inline-flex items-center gap-2 text-[12px] font-medium px-3 py-1.5 rounded-lg border border-white/10 bg-white/[0.04] text-white/70 hover:bg-white/[0.08] transition cursor-pointer"
-          >
-            <i className="fa-solid fa-sliders text-[11px]" />
-            Customize
-          </button>
+          <CustomizeButton onClick={() => setEditing(true)} />
         )}
       </div>
 
