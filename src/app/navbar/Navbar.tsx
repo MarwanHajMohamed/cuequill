@@ -106,10 +106,6 @@ export default function Navbar() {
   const PILL_SPRING = { type: "spring" as const, stiffness: 380, damping: 32 };
 
   const [open, setOpen] = useState(false);
-  // Which sidebar groups are expanded. Undefined for a group means "follow
-  // whether it contains the active route"; an explicit value (set on click)
-  // overrides that.
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   // Mobile "More" bottom sheet replaces the old slide-in side drawer.
   const [openMore, setOpenMore] = useState(false);
   const [simulated, setSimulated] = useState<boolean>(() => {
@@ -218,80 +214,50 @@ export default function Navbar() {
     { icon: "fa-solid fa-gear", label: "Settings", slug: "settings" },
   ];
 
-  // Desktop sidebar: standalone links + expandable groups of related pages.
-  type SidebarEntry =
-    | { kind: "link"; icon: string; label: string; slug: string }
-    | {
-        kind: "group";
-        key: string;
-        icon: string;
-        label: string;
-        items: { icon: string; label: string; slug: string }[];
-      };
-  const sidebarNav: SidebarEntry[] = [
-    { kind: "link", icon: "fa-solid fa-house", label: "Dashboard", slug: "/" },
-    {
-      kind: "link",
-      icon: "fa-solid fa-wand-magic-sparkles",
-      label: "Quill AI",
-      slug: "chat",
-    },
-    {
-      kind: "group",
-      key: "journal",
-      icon: "fa-solid fa-book",
-      label: "Journal",
-      items: [
-        {
-          icon: "fa-solid fa-chart-column",
-          label: "Trades",
-          slug: `trades/${userId}`,
-        },
-        {
-          icon: "fa-solid fa-calendar-days",
-          label: "Calendar",
-          slug: "calendar",
-        },
-      ],
-    },
-    {
-      kind: "group",
-      key: "research",
-      icon: "fa-solid fa-magnifying-glass-chart",
-      label: "Research",
-      items: [
-        {
-          icon: "fa-solid fa-bezier-curve",
-          label: "Strategies",
-          slug: "strategies",
-        },
-        { icon: "fa-solid fa-coins", label: "Stocks & ETFs", slug: "stocks" },
-        { icon: "fa-solid fa-bullhorn", label: "Earnings", slug: "earnings" },
-      ],
-    },
-    {
-      kind: "group",
-      key: "discipline",
-      icon: "fa-solid fa-flag-checkered",
-      label: "Discipline",
-      items: [
-        { icon: "fa-solid fa-bullseye", label: "Goals", slug: "goals" },
-        { icon: "fa-solid fa-list-check", label: "Rules", slug: "rules" },
-        {
-          icon: "fa-regular fa-circle-check",
-          label: "Affirmations",
-          slug: "affirmations",
-        },
-      ],
-    },
+  // Desktop sidebar: a flat list of links, split into visual sections by
+  // an unlabeled divider line. Each former group member is now its own
+  // top-level nav item.
+  type NavLink = { icon: string; label: string; slug: string };
+  const navSections: NavLink[][] = [
+    [
+      { icon: "fa-solid fa-house", label: "Dashboard", slug: "/" },
+      {
+        icon: "fa-solid fa-wand-magic-sparkles",
+        label: "Quill AI",
+        slug: "chat",
+      },
+    ],
+    [
+      {
+        icon: "fa-solid fa-chart-column",
+        label: "Trades",
+        slug: `trades/${userId}`,
+      },
+      {
+        icon: "fa-solid fa-calendar-days",
+        label: "Calendar",
+        slug: "calendar",
+      },
+    ],
+    [
+      {
+        icon: "fa-solid fa-bezier-curve",
+        label: "Strategies",
+        slug: "strategies",
+      },
+      { icon: "fa-solid fa-coins", label: "Stocks & ETFs", slug: "stocks" },
+      { icon: "fa-solid fa-bullhorn", label: "Earnings", slug: "earnings" },
+    ],
+    [
+      { icon: "fa-solid fa-bullseye", label: "Goals", slug: "goals" },
+      { icon: "fa-solid fa-list-check", label: "Rules", slug: "rules" },
+      {
+        icon: "fa-regular fa-circle-check",
+        label: "Affirmations",
+        slug: "affirmations",
+      },
+    ],
   ];
-
-  const groupIsActive = (items: { slug: string }[]) =>
-    items.some((it) => isActive(it.slug));
-  const isGroupOpen = (key: string, active: boolean) =>
-    openGroups[key] ?? active;
-  const toggleGroup = (key: string, active: boolean) =>
-    setOpenGroups((p) => ({ ...p, [key]: !(p[key] ?? active) }));
 
   /* ---------------- EFFECTS ---------------- */
 
@@ -641,94 +607,42 @@ export default function Navbar() {
             </div>
           </div>
 
-          {/* NAV - grouped, expandable in place (no floating menus) */}
+          {/* NAV - a flat list of links, sections split by a plain divider */}
           <nav className="chat-scroll relative flex flex-col items-stretch gap-0.5 text-[13.5px] font-medium mt-4 flex-1 min-h-0 overflow-y-auto pr-0.5">
-            {sidebarNav.map((entry) => {
-              if (entry.kind === "link") {
-                const active = isActive(entry.slug);
-                return (
-                  <Link
-                    key={entry.slug}
-                    href={hrefFor(entry.slug)}
-                    prefetch
-                    onClick={(e) => {
-                      e.preventDefault();
-                      navigate(entry.slug);
-                    }}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-xl cursor-pointer transition-colors ${
-                      active
-                        ? "bg-white/[0.08] text-white"
-                        : "text-white/60 hover:bg-white/5 hover:text-white"
-                    }`}
-                  >
-                    <i className={`${entry.icon} w-4 text-center text-[13px]`} />
-                    <span>{entry.label}</span>
-                  </Link>
-                );
-              }
-
-              const active = groupIsActive(entry.items);
-              const open = isGroupOpen(entry.key, active);
-              return (
-                <div key={entry.key} className="flex flex-col">
-                  <button
-                    type="button"
-                    onClick={() => toggleGroup(entry.key, active)}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-xl cursor-pointer transition-colors ${
-                      active
-                        ? "text-white"
-                        : "text-white/60 hover:bg-white/5 hover:text-white"
-                    }`}
-                  >
-                    <i className={`${entry.icon} w-4 text-center text-[13px]`} />
-                    <span className="flex-1 text-left">{entry.label}</span>
-                    <i
-                      className={`fa-solid fa-chevron-down text-[9px] transition-transform duration-200 ${
-                        open ? "rotate-180" : ""
+            {navSections.map((section, i) => (
+              <React.Fragment key={i}>
+                {i > 0 && (
+                  <div
+                    aria-hidden
+                    className="mx-3 my-1.5 border-t border-white/10"
+                  />
+                )}
+                {section.map((item) => {
+                  const active = isActive(item.slug);
+                  return (
+                    <Link
+                      key={item.slug}
+                      href={hrefFor(item.slug)}
+                      prefetch
+                      onClick={(e) => {
+                        e.preventDefault();
+                        navigate(item.slug);
+                      }}
+                      className={`flex items-center gap-3 px-3 py-2 rounded-xl cursor-pointer transition-colors ${
+                        active
+                          ? "bg-white/[0.08] text-white"
+                          : "text-white/60 hover:bg-white/5 hover:text-white"
                       }`}
-                    />
-                  </button>
-                  <AnimatePresence initial={false}>
-                    {open && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.18, ease: "easeOut" }}
-                        className="overflow-hidden"
-                      >
-                        <div className="ml-4 pl-3 border-l border-white/10 flex flex-col gap-0.5 py-0.5">
-                          {entry.items.map((sub) => {
-                            const subActive = isActive(sub.slug);
-                            return (
-                              <Link
-                                key={sub.slug}
-                                href={hrefFor(sub.slug)}
-                                prefetch
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  navigate(sub.slug);
-                                }}
-                                className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg cursor-pointer transition-colors text-[13px] ${
-                                  subActive
-                                    ? "bg-white/[0.08] text-white"
-                                    : "text-white/55 hover:bg-white/5 hover:text-white"
-                                }`}
-                              >
-                                <i
-                                  className={`${sub.icon} w-3.5 text-center text-[11px]`}
-                                />
-                                <span>{sub.label}</span>
-                              </Link>
-                            );
-                          })}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              );
-            })}
+                    >
+                      <i
+                        className={`${item.icon} w-4 text-center text-[13px]`}
+                      />
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </React.Fragment>
+            ))}
           </nav>
 
           {/* FOOTER - user */}
@@ -778,7 +692,9 @@ export default function Navbar() {
                                 {userFullName}
                               </div>
                             )}
-                            {session.user.isPro && <ProTag className="shrink-0" />}
+                            {session.user.isPro && (
+                              <ProTag className="shrink-0" />
+                            )}
                           </div>
                           {session.user.email && (
                             <div className="text-[11px] text-white/50 truncate leading-tight mt-0.5">

@@ -18,6 +18,7 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { motion } from "framer-motion";
 import {
   WIDGETS,
   WIDGET_MAP,
@@ -311,12 +312,18 @@ function SortableWidget({
   // stays identifiable and manageable. Content is non-interactive while
   // editing.
   return (
-    <div
-      ref={(node) => {
+    <motion.div
+      ref={(node: HTMLDivElement | null) => {
         setNodeRef(node);
         outerRef.current = node;
       }}
-      style={style}
+      // Animate span changes and reflow. While sorting we hand transform
+      // control to dnd-kit (layout off + its inline transform); otherwise
+      // Framer springs the size/position change so a resize grows smoothly
+      // and locks into its new cell.
+      layout={!isDragging}
+      transition={{ type: "spring", stiffness: 500, damping: 38, mass: 0.6 }}
+      style={isDragging ? style : undefined}
       className={`relative h-full rounded-2xl border border-dashed border-white/20 bg-white/[0.02] p-2 flex flex-col gap-2 ${spanClass} ${
         isDragging ? "opacity-60 z-10 shadow-2xl" : ""
       }`}
@@ -391,6 +398,6 @@ function SortableWidget({
       >
         <div className="h-1 w-10 rounded-full bg-white/20 group-hover:bg-teal-400/70 transition" />
       </div>
-    </div>
+    </motion.div>
   );
 }
