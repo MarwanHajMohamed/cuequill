@@ -6,6 +6,7 @@ import { format } from "date-fns";
 import { useFedDates } from "@/hooks/useFedDates";
 import { useWatchlist } from "@/hooks/useWatchlist";
 import { useEarnings } from "@/hooks/useEarnings";
+import { CARD_CLASS } from "../DashboardCard";
 
 // "Upcoming events" — the next market dates a discretionary options
 // trader wants on their radar: FOMC (Fed) days and earnings reports for
@@ -77,7 +78,7 @@ export default function DashboardUpcoming() {
   }, [fedDates, earnings, todayStr]);
 
   return (
-    <div className="flex flex-col gap-3 h-full">
+    <section className={`${CARD_CLASS} flex flex-col gap-3 h-full`}>
       <div className="flex items-center justify-between gap-2">
         <h2 className="md:text-base text-sm font-semibold">Upcoming events</h2>
         <Link
@@ -89,7 +90,10 @@ export default function DashboardUpcoming() {
         </Link>
       </div>
 
-      <div className="flex-1 rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md overflow-hidden">
+      {/* List bleeds to the card edges (negative margins cancel the card
+          padding) with a divider under the title, matching the inset-title
+          list widgets. */}
+      <div className="flex-1 -mx-4 md:-mx-5 -mb-4 md:-mb-5 border-t border-white/[0.06] overflow-hidden">
         {events.length === 0 ? (
           <div className="px-5 py-8 text-center">
             <div className="w-11 h-11 mx-auto rounded-2xl bg-teal-500/10 border border-teal-500/25 text-teal-300 flex items-center justify-center">
@@ -125,7 +129,7 @@ export default function DashboardUpcoming() {
           </ul>
         )}
       </div>
-    </div>
+    </section>
   );
 }
 

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useGoals, type Goal } from "@/hooks/useGoals";
 import { METRIC_LABEL, metricUnit, type GoalMetric } from "@/lib/goals";
 import { fmtMoneyCompact } from "@/lib/helpers/fmt";
+import { CARD_CLASS } from "../DashboardCard";
 
 function formatValue(metric: GoalMetric, value: number): string {
   switch (metricUnit(metric)) {
@@ -71,7 +72,7 @@ export default function DashboardGoals() {
 
   if (goals.length === 0) {
     return (
-      <div className="flex flex-col gap-3 h-full">
+      <section className={`${CARD_CLASS} flex flex-col gap-3 h-full`}>
         <div className="flex items-center justify-between gap-2">
           <h2 className="md:text-base text-sm font-semibold">Goals</h2>
           <Link
@@ -82,10 +83,10 @@ export default function DashboardGoals() {
             <i className="fa-solid fa-chevron-right text-[9px]" />
           </Link>
         </div>
-        <div className="flex-1 rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md flex items-center justify-center text-[12.5px] text-white/45 py-8 text-center px-5">
+        <div className="flex-1 flex items-center justify-center text-[12.5px] text-white/45 py-8 text-center">
           No goals yet — set targets on the Goals page.
         </div>
-      </div>
+      </section>
     );
   }
 
@@ -97,7 +98,7 @@ export default function DashboardGoals() {
   const moreMetrics = metricGoals.length - shownMetrics.length;
 
   return (
-    <div className="flex flex-col gap-3 h-full">
+    <section className={`${CARD_CLASS} flex flex-col gap-3 h-full`}>
       <div className="flex items-center justify-between gap-2">
         <h2 className="md:text-base text-sm font-semibold">Goals</h2>
         <Link
@@ -109,7 +110,8 @@ export default function DashboardGoals() {
         </Link>
       </div>
 
-      <div className="flex-1 rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md overflow-hidden">
+      {/* List bleeds to the card edges with a divider under the title. */}
+      <div className="flex-1 -mx-4 md:-mx-5 -mb-4 md:-mb-5 border-t border-white/[0.06] overflow-hidden">
         {shownMetrics.length > 0 ? (
           <ul className="divide-y divide-white/[0.06]">
             {shownMetrics.map((g) => (
@@ -139,6 +141,6 @@ export default function DashboardGoals() {
           </div>
         )}
       </div>
-    </div>
+    </section>
   );
 }
