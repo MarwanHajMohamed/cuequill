@@ -1,7 +1,19 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import { format } from "date-fns";
+import React, {
+  useState,
+  useMemo,
+  useRef,
+  useLayoutEffect,
+} from "react";
+import {
+  format,
+  addDays,
+  endOfMonth,
+  endOfWeek,
+  startOfMonth,
+  startOfWeek,
+} from "date-fns";
 import "react-calendar/dist/Calendar.css";
 import "./calendar-custom.css";
 import DayTradesModal from "../modals/DayTradesModal";
@@ -23,6 +35,51 @@ import { fmtMoneySignedCompact } from "@/lib/helpers/fmt";
 const now = new Date();
 const today = now.toISOString().split("T")[0];
 
+// Week-summary card for the calendar sidebar (desktop only). Mirrors the
+// card on the full calendar page so the dashboard reads the same way.
+const WeekSummary = ({
+  weekNum,
+  netPL,
+  tradeCount,
+  daysWithTrades,
+}: {
+  weekNum: number;
+  netPL: number;
+  tradeCount: number;
+  daysWithTrades: number;
+}) => {
+  const hasTrades = tradeCount > 0;
+  return (
+    <div className="border border-white/10 rounded-lg p-3 flex flex-col gap-1.5">
+      <div className="flex justify-between items-baseline">
+        <div className="text-xs text-white/60">Week {weekNum}</div>
+        {hasTrades && (
+          <div className="text-[10px] text-white/40 tracking-wide">Total</div>
+        )}
+      </div>
+      {hasTrades ? (
+        <>
+          <div className="flex justify-between items-baseline gap-2">
+            <div
+              className={`text-lg font-normal ${
+                netPL >= 0 ? "text-green-500" : "text-red-500"
+              }`}
+            >
+              {fmtMoneySignedCompact(netPL)}
+            </div>
+            <div className="text-xs text-white/60 whitespace-nowrap">
+              {tradeCount} {tradeCount === 1 ? "trade" : "trades"}
+            </div>
+          </div>
+          <div className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 text-white/50 w-fit">
+            {daysWithTrades} {daysWithTrades === 1 ? "day" : "days"}
+          </div>
+        </>
+      ) : null}
+    </div>
+  );
+};
+
 export default function TradeCalendar({ userId }: { userId: string }) {
   const value = new Date();
   const queryClient = useQueryClient();
@@ -36,6 +93,102 @@ export default function TradeCalendar({ userId }: { userId: string }) {
   const [simulated] = useLocalStorage<boolean>("simulated", false);
 
   const { data: trades, isLoading, isError } = useTrades(userId, simulated);
+
+  // Track the month/view the calendar is showing so the week-summary
+  // sidebar reflects the same view. Only meaningful for the day grid.
+  const [displayedMonth, setDisplayedMonth] = useState<Date>(() => new Date());
+  const [calView, setCalView] = useState<string>("month");
+
+  // The sidebar lines each week card up with its calendar row. We measure
+  // the day grid's offset + row template and mirror them onto the sidebar.
+  const calendarColRef = useRef<HTMLDivElement>(null);
+  const [sidebarOffset, setSidebarOffset] = useState(0);
+  const [sidebarRows, setSidebarRows] = useState<string>("");
+
+  useLayoutEffect(() => {
+    const measure = () => {
+      if (!calendarColRef.current) return;
+      const days = calendarColRef.current.querySelector(
+        ".react-calendar__month-view__days",
+      ) as HTMLElement | null;
+      if (!days) return;
+      const colRect = calendarColRef.current.getBoundingClientRect();
+      const daysRect = days.getBoundingClientRect();
+      setSidebarOffset(Math.max(0, daysRect.top - colRect.top));
+      setSidebarRows(getComputedStyle(days).gridTemplateRows);
+    };
+
+    measure();
+    const ro = new ResizeObserver(measure);
+    if (calendarColRef.current) ro.observe(calendarColRef.current);
+    const days = calendarColRef.current?.querySelector(
+      ".react-calendar__month-view__days",
+    );
+    if (days) ro.observe(days);
+    window.addEventListener("resize", measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [displayedMonth, calView, trades]);
+
+  // Per-week summaries for the displayed month - buckets trades the same
+  // way the calendar tiles do so totals match what each day shows.
+  const weekSummaries = useMemo(() => {
+    const monthStart = startOfMonth(displayedMonth);
+    const monthEnd = endOfMonth(displayedMonth);
+    const monthStartStr = format(monthStart, "yyyy-MM-dd");
+    const monthEndStr = format(monthEnd, "yyyy-MM-dd");
+
+    const buckets: {
+      weekNum: number;
+      tradeCount: number;
+      netPL: number;
+      daysWithTrades: number;
+    }[] = [];
+    let weekStart = startOfWeek(monthStart, { weekStartsOn: 1 });
+    let weekNum = 1;
+    while (weekStart <= monthEnd) {
+      const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
+      const weekStartStr = format(weekStart, "yyyy-MM-dd");
+      const weekEndStr = format(weekEnd, "yyyy-MM-dd");
+
+      const inWeek = (trades ?? []).filter((t) => {
+        const isClosed = t.status === "WIN" || t.status === "LOSS";
+        const dayStr =
+          isClosed && t.dateClosed
+            ? t.dateClosed.split("T")[0]
+            : t.dateBought.split("T")[0];
+        return (
+          dayStr >= weekStartStr &&
+          dayStr <= weekEndStr &&
+          dayStr >= monthStartStr &&
+          dayStr <= monthEndStr
+        );
+      });
+      const closed = inWeek.filter(
+        (t) => t.status === "WIN" || t.status === "LOSS",
+      );
+      const netPL = closed.reduce((sum, t) => sum + tradeNetPL(t), 0);
+      const days = new Set(
+        inWeek.map((t) => {
+          const isClosed = t.status === "WIN" || t.status === "LOSS";
+          return isClosed && t.dateClosed
+            ? t.dateClosed.split("T")[0]
+            : t.dateBought.split("T")[0];
+        }),
+      );
+      buckets.push({
+        weekNum,
+        tradeCount: inWeek.length,
+        netPL,
+        daysWithTrades: days.size,
+      });
+      weekStart = addDays(weekEnd, 1);
+      weekNum++;
+    }
+    return buckets;
+  }, [trades, displayedMonth]);
 
   const router = useRouter();
 
@@ -193,7 +346,7 @@ export default function TradeCalendar({ userId }: { userId: string }) {
       const { total, closedCount, netPL } = getMonthSummary(date);
       if (total === 0) return null;
       return (
-        <div className="mt-1 flex flex-col md:items-start gap-0.5 text-[10px] md:text-xs">
+        <div className="mt-1 flex flex-col items-center gap-0.5 text-[10px] md:text-xs">
           {closedCount > 0 ? (
             <div
               className={`font-normal ${
@@ -217,7 +370,7 @@ export default function TradeCalendar({ userId }: { userId: string }) {
       const { total, closedCount, netPL } = getYearSummary(date);
       if (total === 0) return null;
       return (
-        <div className="mt-1 flex flex-col md:items-start gap-0.5 text-[10px] md:text-xs">
+        <div className="mt-1 flex flex-col items-center gap-0.5 text-[10px] md:text-xs">
           {closedCount > 0 ? (
             <div
               className={`font-normal ${
@@ -269,7 +422,7 @@ export default function TradeCalendar({ userId }: { userId: string }) {
               Closed
             </span>
           ))}
-        <div className="mt-1 flex flex-col md:items-start gap-0.5 text-[10px] md:text-xs">
+        <div className="mt-1 flex flex-col items-center gap-0.5 text-[10px] md:text-xs">
           {isToday && <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />}
           {total > 0 && (
             <>
@@ -341,16 +494,53 @@ export default function TradeCalendar({ userId }: { userId: string }) {
 
   return (
     <>
-      <div className="w-full max-w-[1100px] mx-auto md:mx-0 px-5 md:px-10 flex flex-col gap-4 md:gap-6">
+      <div className="w-full max-w-[1300px] mx-auto md:mx-0 px-5 md:px-10 flex flex-col gap-4 md:gap-6">
         <div className="flex items-center justify-between gap-2"></div>
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-5">
-          <AnimatedCalendar
-            onChange={(val) => handleDateClick(val as Date)}
-            tileContent={renderTileContent}
-            tileClassName={renderTileClassName}
-            className="custom-calendar"
-            value={value}
-          />
+          <div className="flex gap-3 items-stretch">
+            <div ref={calendarColRef} className="flex-1 min-w-0 relative">
+              <AnimatedCalendar
+                onChange={(val) => handleDateClick(val as Date)}
+                tileContent={renderTileContent}
+                tileClassName={renderTileClassName}
+                className="custom-calendar"
+                value={value}
+                onMonthChange={setDisplayedMonth}
+                onViewChange={setCalView}
+              />
+            </div>
+            {/* Sidebar - empty spacer at top sized to the calendar's
+                nav+weekday height so each week card lines up with its
+                day-grid row. Hidden in drill-up views and on mobile. */}
+            <div
+              className={`w-44 shrink-0 flex-col ${
+                calView === "month" ? "hidden md:flex" : "hidden"
+              }`}
+            >
+              <div
+                style={{ height: sidebarOffset, minHeight: 40 }}
+                className="pb-2"
+              />
+              <div
+                className="grid"
+                style={{
+                  gridTemplateRows:
+                    sidebarRows || "repeat(6, minmax(110px, 1fr))",
+                  rowGap: 4,
+                }}
+              >
+                {weekSummaries.map((w) => (
+                  <WeekSummary
+                    key={w.weekNum}
+                    weekNum={w.weekNum}
+                    netPL={w.netPL}
+                    tradeCount={w.tradeCount}
+                    daysWithTrades={w.daysWithTrades}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       {dayListOpen && selectedDate && (
