@@ -39,7 +39,7 @@ export default function DashboardRiskBudget({ userId }: { userId: string }) {
       .reduce((sum, t) => sum + tradeNetPL(t), 0);
   }, [trades]);
 
-  if (isLoading || !trades || trades.length === 0) return null;
+  if (isLoading || !trades) return null;
 
   const todayLoss = Math.max(0, -todayNet);
   const pct = budget > 0 ? Math.min(100, (todayLoss / budget) * 100) : 0;
@@ -100,7 +100,7 @@ export default function DashboardRiskBudget({ userId }: { userId: string }) {
 
   return (
     <div
-      className={`rounded-2xl border md:backdrop-blur-md p-4 md:p-5 ${tone.ring} ${tone.bg}`}
+      className={`rounded-2xl border md:backdrop-blur-md p-4 md:p-5 h-full ${tone.ring} ${tone.bg}`}
     >
       <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
         <div

@@ -77,7 +77,7 @@ export default function DashboardUpcoming() {
   }, [fedDates, earnings, todayStr]);
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3 h-full">
       <div className="flex items-center justify-between gap-2">
         <h2 className="md:text-base text-sm font-semibold">Upcoming events</h2>
         <Link
@@ -89,7 +89,7 @@ export default function DashboardUpcoming() {
         </Link>
       </div>
 
-      <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md overflow-hidden">
+      <div className="flex-1 rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md overflow-hidden">
         {events.length === 0 ? (
           <div className="px-5 py-8 text-center">
             <div className="w-11 h-11 mx-auto rounded-2xl bg-teal-500/10 border border-teal-500/25 text-teal-300 flex items-center justify-center">

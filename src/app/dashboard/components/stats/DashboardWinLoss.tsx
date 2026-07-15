@@ -75,7 +75,18 @@ export default function DashboardWinLoss({ userId }: { userId: string }) {
     };
   }, [trades]);
 
-  if (isLoading || !stats) return null;
+  if (isLoading || !trades) return null;
+
+  if (!stats) {
+    return (
+      <section className={`${CARD_CLASS} flex flex-col gap-3 h-full`}>
+        <h2 className="text-sm md:text-base font-semibold">Win / loss</h2>
+        <div className="flex-1 flex items-center justify-center text-[12px] text-white/40 text-center py-6">
+          No closed trades yet.
+        </div>
+      </section>
+    );
+  }
 
   const winPct = stats.winRate;
   const pfLabel =
@@ -94,7 +105,7 @@ export default function DashboardWinLoss({ userId }: { userId: string }) {
         : "bad";
 
   return (
-    <section className={`${CARD_CLASS} flex flex-col gap-4`}>
+    <section className={`${CARD_CLASS} flex flex-col gap-4 h-full`}>
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-sm md:text-base font-semibold">Win / loss</h2>
         <span className="text-[11px] md:text-xs text-white/45 tabular-nums">

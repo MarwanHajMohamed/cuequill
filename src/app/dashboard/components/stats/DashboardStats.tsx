@@ -205,7 +205,7 @@ export default function DashboardStats({ userId }: { userId: string }) {
   const s = stats!;
 
   return (
-    <section className={`${CARD_CLASS} flex flex-col gap-4`}>
+    <section className={`${CARD_CLASS} flex flex-col gap-4 h-full`}>
       <div className="flex items-center gap-2">
         <h2 className="text-sm md:text-base font-semibold">At a glance</h2>
       </div>

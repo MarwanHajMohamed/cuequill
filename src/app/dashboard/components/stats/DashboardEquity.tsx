@@ -23,7 +23,7 @@ const exitDate = (t: Trade): Date => new Date(t.dateClosed || t.dateBought);
 
 export default function DashboardEquity({ userId }: { userId: string }) {
   const [simulated] = useLocalStorage<boolean>("simulated", false);
-  const { data: trades } = useTrades(userId, simulated);
+  const { data: trades, isLoading } = useTrades(userId, simulated);
 
   const curve = useMemo(() => {
     if (!trades) return [];
@@ -37,14 +37,25 @@ export default function DashboardEquity({ userId }: { userId: string }) {
     });
   }, [trades]);
 
-  if (curve.length < 2) return null;
+  if (isLoading || !trades) return null;
+
+  if (curve.length < 2) {
+    return (
+      <section className={`${CARD_CLASS} flex flex-col gap-2 h-full`}>
+        <div className="text-sm md:text-base font-semibold">Recent equity</div>
+        <div className="flex-1 flex items-center justify-center text-[12px] text-white/40 text-center py-6">
+          Close at least two trades to plot your equity curve.
+        </div>
+      </section>
+    );
+  }
 
   const curveEnd = curve[curve.length - 1].cum;
   const curveStart = curve[0].cum;
   const curveColor = curveEnd >= curveStart ? "#22c55e" : "#ef4444";
 
   return (
-    <section className={`${CARD_CLASS} flex flex-col gap-2`}>
+    <section className={`${CARD_CLASS} flex flex-col gap-2 h-full`}>
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="text-sm md:text-base font-semibold">
           Recent equity{" "}

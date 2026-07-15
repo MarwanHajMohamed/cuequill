@@ -63,7 +63,31 @@ function MetricRow({ g }: { g: Goal }) {
 export default function DashboardGoals() {
   const { data: goals, isError } = useGoals();
 
-  if (isError || !goals || goals.length === 0) return null;
+  // Non-Pro users get a 403 from the goals API — hide the widget entirely
+  // for them. Pro users with no goals yet see an empty-state card so the
+  // widget stays visible and manageable on the customisable dashboard.
+  if (isError) return null;
+  if (!goals) return null;
+
+  if (goals.length === 0) {
+    return (
+      <div className="flex flex-col gap-3 h-full">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="md:text-base text-sm font-semibold">Goals</h2>
+          <Link
+            href="/goals"
+            className="text-[11px] md:text-[12px] text-white/50 hover:text-white transition inline-flex items-center gap-1.5"
+          >
+            Manage goals
+            <i className="fa-solid fa-chevron-right text-[9px]" />
+          </Link>
+        </div>
+        <div className="flex-1 rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md flex items-center justify-center text-[12.5px] text-white/45 py-8 text-center px-5">
+          No goals yet — set targets on the Goals page.
+        </div>
+      </div>
+    );
+  }
 
   const metricGoals = goals.filter((g) => g.kind === "metric");
   const manualGoals = goals.filter((g) => g.kind === "manual");
@@ -73,7 +97,7 @@ export default function DashboardGoals() {
   const moreMetrics = metricGoals.length - shownMetrics.length;
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3 h-full">
       <div className="flex items-center justify-between gap-2">
         <h2 className="md:text-base text-sm font-semibold">Goals</h2>
         <Link
@@ -85,7 +109,7 @@ export default function DashboardGoals() {
         </Link>
       </div>
 
-      <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md overflow-hidden">
+      <div className="flex-1 rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md overflow-hidden">
         {shownMetrics.length > 0 ? (
           <ul className="divide-y divide-white/[0.06]">
             {shownMetrics.map((g) => (
