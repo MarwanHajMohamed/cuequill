@@ -62,6 +62,114 @@ const SECTION_OPTIONS: Array<{ key: keyof StatsVisibility; label: string }> = [
   { key: "monthlyStats", label: "Monthly stats" },
 ];
 
+// ─── Reorderable layout (Customize mode) ──────────────────────────────
+// Top-level stats sections, in default order. Reordering only rearranges
+// these blocks vertically; within the summary block the tiles reorder too.
+const STATS_SECTIONS: Array<{ id: string; label: string }> = [
+  { id: "summary", label: "Summary tiles" },
+  { id: "equityCurve", label: "Equity curve" },
+  { id: "quickGlance", label: "Top / worst" },
+  { id: "tagStats", label: "Performance by tag" },
+  { id: "filterInsights", label: "Filter insights" },
+  { id: "breakdown", label: "Performance breakdown" },
+  { id: "monthly", label: "Monthly stats" },
+];
+const DEFAULT_SECTION_ORDER = STATS_SECTIONS.map((s) => s.id);
+const DEFAULT_TILE_ORDER = TILE_OPTIONS.map((t) => String(t.key));
+
+// Keep the saved order but drop unknown ids and append any new ones, so a
+// stale localStorage value can never hide or duplicate a block.
+function sanitizeOrder(raw: unknown, allowed: string[]): string[] {
+  const set = new Set(allowed);
+  const seen = new Set<string>();
+  const out: string[] = [];
+  if (Array.isArray(raw)) {
+    for (const x of raw) {
+      if (typeof x === "string" && set.has(x) && !seen.has(x)) {
+        seen.add(x);
+        out.push(x);
+      }
+    }
+  }
+  for (const x of allowed) if (!seen.has(x)) out.push(x);
+  return out;
+}
+
+// Lightweight drag-reorder. CSS `order` positions the items, so on each
+// pointer move we read the live rects (in visual order) and recompute
+// where the dragged item should sit — a pure function of pointer position,
+// so it can't oscillate. Order state is derived from the DOM each move, so
+// a stale closure can't fight it. Persists via setOrder (localStorage).
+function beginReorder(
+  e: React.PointerEvent,
+  id: string,
+  container: HTMLElement | null,
+  axis: "x" | "y",
+  attr: string,
+  setOrder: (o: string[]) => void,
+) {
+  e.preventDefault();
+  e.stopPropagation();
+  if (!container) return;
+  const move = (ev: PointerEvent) => {
+    const els = Array.from(
+      container.querySelectorAll<HTMLElement>(`[${attr}]`),
+    );
+    const items = els
+      .map((el) => ({
+        id: el.getAttribute(attr)!,
+        rect: el.getBoundingClientRect(),
+      }))
+      .sort((a, b) =>
+        axis === "y" ? a.rect.top - b.rect.top : a.rect.left - b.rect.left,
+      );
+    const pos = axis === "y" ? ev.clientY : ev.clientX;
+    let target = 0;
+    for (const it of items) {
+      if (it.id === id) continue;
+      const mid =
+        axis === "y"
+          ? (it.rect.top + it.rect.bottom) / 2
+          : (it.rect.left + it.rect.right) / 2;
+      if (pos > mid) target++;
+    }
+    const currentIds = items.map((it) => it.id);
+    const without = currentIds.filter((x) => x !== id);
+    const next = [...without.slice(0, target), id, ...without.slice(target)];
+    if (next.join("|") !== currentIds.join("|")) setOrder(next);
+  };
+  const up = () => {
+    window.removeEventListener("pointermove", move);
+    window.removeEventListener("pointerup", up);
+  };
+  window.addEventListener("pointermove", move);
+  window.addEventListener("pointerup", up);
+}
+
+// A drag handle shown in reorder mode. Grip + label; the whole thing is
+// the grab target.
+function DragHandle({
+  label,
+  onPointerDown,
+  className = "",
+}: {
+  label?: string;
+  onPointerDown: (e: React.PointerEvent) => void;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onPointerDown={onPointerDown}
+      className={`inline-flex items-center gap-1.5 rounded-lg border border-dashed border-white/25 bg-[var(--surface-2,#1a1a1a)]/80 px-2 py-1 text-[11px] font-medium text-white/70 cursor-grab active:cursor-grabbing touch-none shadow ${className}`}
+      aria-label={label ? `Drag ${label}` : "Drag to reorder"}
+    >
+      <i className="fa-solid fa-grip-vertical text-[11px]" />
+      {label}
+    </button>
+  );
+}
+
 const CustomizeMenu = ({
   visibility,
   setVisibility,
@@ -352,15 +460,24 @@ const SummaryTile = ({
   info,
   className = "",
   children,
+  style,
+  dataId,
+  handle,
 }: {
   label: string;
   info?: string;
   className?: string;
   children: React.ReactNode;
+  style?: React.CSSProperties;
+  dataId?: string;
+  handle?: React.ReactNode;
 }) => (
   <div
-    className={`rounded-xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4 flex flex-col gap-1.5 md:gap-2 min-w-0 ${className}`}
+    data-tile-id={dataId}
+    style={style}
+    className={`relative rounded-xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4 flex flex-col gap-1.5 md:gap-2 min-w-0 ${className}`}
   >
+    {handle}
     <div className="text-[10px] md:text-[11px] tracking-[0.08em] text-white/45 font-medium flex items-center justify-between gap-1.5">
       <span className="truncate">{label}</span>
       {info && <InfoTooltip text={info} />}
@@ -776,6 +893,53 @@ export default function Statistics({
     DEFAULT_VISIBILITY,
   );
 
+  // Reorder (Customize) mode + saved section/tile order. CSS `order` on
+  // each block does the actual repositioning, driven by these arrays.
+  const [reordering, setReordering] = useState(false);
+  const [sectionOrderRaw, setSectionOrder] = useLocalStorage<string[]>(
+    "cuequill:stats-section-order",
+    DEFAULT_SECTION_ORDER,
+  );
+  const [tileOrderRaw, setTileOrder] = useLocalStorage<string[]>(
+    "cuequill:stats-tile-order",
+    DEFAULT_TILE_ORDER,
+  );
+  const sectionOrder = useMemo(
+    () => sanitizeOrder(sectionOrderRaw, DEFAULT_SECTION_ORDER),
+    [sectionOrderRaw],
+  );
+  const tileOrder = useMemo(
+    () => sanitizeOrder(tileOrderRaw, DEFAULT_TILE_ORDER),
+    [tileOrderRaw],
+  );
+  const secOrder = (id: string) => sectionOrder.indexOf(id);
+  const tileStyleOrder = (id: string) => tileOrder.indexOf(id);
+  // Roots for the drag helper to measure siblings against.
+  const sectionsRootRef = useRef<HTMLDivElement>(null);
+  const tilesRootRef = useRef<HTMLDivElement>(null);
+
+  // Small corner grip shown on each summary tile in reorder mode.
+  const tileHandle = (id: string) =>
+    reordering ? (
+      <button
+        type="button"
+        onPointerDown={(e) =>
+          beginReorder(
+            e,
+            id,
+            tilesRootRef.current,
+            "x",
+            "data-tile-id",
+            setTileOrder,
+          )
+        }
+        className="absolute -top-2 -right-2 z-10 w-5 h-5 flex items-center justify-center rounded-full bg-[var(--surface-2,#222)] border border-white/15 text-white/60 cursor-grab active:cursor-grabbing touch-none shadow"
+        aria-label="Drag tile"
+      >
+        <i className="fa-solid fa-grip-vertical text-[9px]" />
+      </button>
+    ) : undefined;
+
   const anyTileVisible =
     visibility.netPL ||
     visibility.profitFactor ||
@@ -1170,20 +1334,61 @@ export default function Statistics({
   );
 
   return (
-    <div className="mt-10 flex flex-col md:items-start w-full max-w-[1500px]">
-      {/* Customize toggle */}
-      <div className="flex justify-end w-full mb-4">
+    <div
+      ref={sectionsRootRef}
+      className="mt-10 flex flex-col md:items-start w-full max-w-[1500px]"
+    >
+      {/* Customize toolbar — Rearrange (drag order) + Customize (show/hide).
+          The toolbar keeps order -1 so it always stays on top of the
+          CSS-ordered sections below. */}
+      <div className="flex justify-end w-full mb-4 gap-2" style={{ order: -1 }}>
+        <CustomizeButton
+          icon={reordering ? "fa-check" : "fa-up-down-left-right"}
+          label={reordering ? "Done" : "Rearrange"}
+          active={reordering}
+          onClick={() => setReordering((v) => !v)}
+          title="Drag to reorder sections and tiles"
+        />
         <CustomizeMenu visibility={visibility} setVisibility={setVisibility} />
       </div>
 
       {/* Summary tiles - at-a-glance, all-time */}
       {anyTileVisible && (
-        <div className="flex flex-wrap justify-center gap-2 md:gap-3 w-full mb-10">
+        <div
+          ref={tilesRootRef}
+          data-sec-id="summary"
+          style={{ order: secOrder("summary") }}
+          className={`relative flex flex-wrap justify-center gap-2 md:gap-3 w-full mb-10 ${
+            reordering
+              ? "rounded-2xl outline outline-1 outline-dashed outline-white/15 outline-offset-4"
+              : ""
+          }`}
+        >
+          {reordering && (
+            <div className="absolute -top-3 left-2 z-10">
+              <DragHandle
+                label="Summary tiles"
+                onPointerDown={(e) =>
+                  beginReorder(
+                    e,
+                    "summary",
+                    sectionsRootRef.current,
+                    "y",
+                    "data-sec-id",
+                    setSectionOrder,
+                  )
+                }
+              />
+            </div>
+          )}
           {visibility.netPL && (
             <SummaryTile
               label="Net P&L"
               info="Total profit/loss across all closed trades."
               className="basis-[100px] md:basis-[200px] grow max-w-[280px]"
+              dataId="netPL"
+              style={{ order: tileStyleOrder("netPL") }}
+              handle={tileHandle("netPL")}
             >
               <div
                 className={`text-sm md:text-2xl font-semibold tabular-nums truncate ${
@@ -1200,6 +1405,9 @@ export default function Statistics({
               label="Profit factor"
               info="Gross wins ÷ gross losses. Above 1.0 = profitable; above 2.0 = strong system."
               className="basis-[100px] md:basis-[200px] grow max-w-[280px]"
+              dataId="profitFactor"
+              style={{ order: tileStyleOrder("profitFactor") }}
+              handle={tileHandle("profitFactor")}
             >
               <div
                 className={`text-sm md:text-2xl font-semibold tabular-nums truncate ${
@@ -1223,6 +1431,9 @@ export default function Statistics({
               label="Win rate"
               info="Percentage of closed trades that ended as wins."
               className="basis-[100px] md:basis-[200px] grow max-w-[280px]"
+              dataId="winRate"
+              style={{ order: tileStyleOrder("winRate") }}
+              handle={tileHandle("winRate")}
             >
               <div className="text-sm md:text-2xl font-semibold tabular-nums truncate">
                 {concludedCount > 0 ? `${winRatePct.toFixed(0)}%` : "-"}
@@ -1238,6 +1449,9 @@ export default function Statistics({
               label="Avg R:R"
               info="Average winner size ÷ average loser size. Above 1R means your wins are bigger than your losses on average."
               className="basis-[100px] md:basis-[200px] grow max-w-[280px]"
+              dataId="avgRR"
+              style={{ order: tileStyleOrder("avgRR") }}
+              handle={tileHandle("avgRR")}
             >
               <div
                 className={`text-sm md:text-2xl font-semibold tabular-nums truncate ${
@@ -1262,6 +1476,9 @@ export default function Statistics({
               label="Best win streak"
               info="Longest run of consecutive winning trades in your history (open trades are skipped, losses break the streak)."
               className="basis-[100px] md:basis-[200px] grow max-w-[280px]"
+              dataId="winStreak"
+              style={{ order: tileStyleOrder("winStreak") }}
+              handle={tileHandle("winStreak")}
             >
               <div
                 className={`text-sm md:text-2xl font-semibold tabular-nums truncate ${
@@ -1277,7 +1494,32 @@ export default function Statistics({
 
       {/* Equity curve */}
       {visibility.equityCurve && (
-        <div className="w-full mb-10">
+        <div
+          data-sec-id="equityCurve"
+          style={{ order: secOrder("equityCurve") }}
+          className={`relative w-full mb-10 ${
+            reordering
+              ? "rounded-2xl outline outline-1 outline-dashed outline-white/15 outline-offset-4"
+              : ""
+          }`}
+        >
+          {reordering && (
+            <div className="absolute -top-3 left-2 z-10">
+              <DragHandle
+                label="Equity curve"
+                onPointerDown={(e) =>
+                  beginReorder(
+                    e,
+                    "equityCurve",
+                    sectionsRootRef.current,
+                    "y",
+                    "data-sec-id",
+                    setSectionOrder,
+                  )
+                }
+              />
+            </div>
+          )}
           <EquityCurve trades={data} />
         </div>
       )}
@@ -1322,7 +1564,32 @@ export default function Statistics({
           ].filter((c) => c.row);
           if (cards.length === 0) return null;
           return (
-            <div className="w-full mb-10 grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div
+              data-sec-id="quickGlance"
+              style={{ order: secOrder("quickGlance") }}
+              className={`relative w-full mb-10 grid grid-cols-2 md:grid-cols-4 gap-3 ${
+                reordering
+                  ? "rounded-2xl outline outline-1 outline-dashed outline-white/15 outline-offset-4"
+                  : ""
+              }`}
+            >
+              {reordering && (
+                <div className="absolute -top-3 left-2 z-10 col-span-2 md:col-span-4">
+                  <DragHandle
+                    label="Top / worst"
+                    onPointerDown={(e) =>
+                      beginReorder(
+                        e,
+                        "quickGlance",
+                        sectionsRootRef.current,
+                        "y",
+                        "data-sec-id",
+                        setSectionOrder,
+                      )
+                    }
+                  />
+                </div>
+              )}
               {cards.map((c) => {
                 const r = c.row!;
                 const positive = r.netPL >= 0;
@@ -1369,7 +1636,32 @@ export default function Statistics({
 
       {/* Performance by tag */}
       {visibility.tagStats && tagStats.length > 0 && (
-        <div className="w-full mb-10 flex flex-col gap-4 md:gap-5">
+        <div
+          data-sec-id="tagStats"
+          style={{ order: secOrder("tagStats") }}
+          className={`relative w-full mb-10 flex flex-col gap-4 md:gap-5 ${
+            reordering
+              ? "rounded-2xl outline outline-1 outline-dashed outline-white/15 outline-offset-4"
+              : ""
+          }`}
+        >
+          {reordering && (
+            <div className="absolute -top-3 left-2 z-10">
+              <DragHandle
+                label="Performance by tag"
+                onPointerDown={(e) =>
+                  beginReorder(
+                    e,
+                    "tagStats",
+                    sectionsRootRef.current,
+                    "y",
+                    "data-sec-id",
+                    setSectionOrder,
+                  )
+                }
+              />
+            </div>
+          )}
           <SectionHeader
             title="Performance by tag"
             info="Net P/L grouped by the tags you've added to your trades. Highlights which mistakes are costing the most and which patterns are paying off."
@@ -1441,7 +1733,32 @@ export default function Statistics({
 
       {/* ── Filter Insights ─────────────────────────────────────────── */}
       {visibility.filteredStats && (
-        <div className="w-full mt-8 md:mt-16 flex flex-col gap-4 md:gap-5">
+        <div
+          data-sec-id="filterInsights"
+          style={{ order: secOrder("filterInsights") }}
+          className={`relative w-full mt-8 md:mt-16 mb-2 flex flex-col gap-4 md:gap-5 ${
+            reordering
+              ? "rounded-2xl outline outline-1 outline-dashed outline-white/15 outline-offset-4"
+              : ""
+          }`}
+        >
+          {reordering && (
+            <div className="absolute -top-3 left-2 z-10">
+              <DragHandle
+                label="Filter insights"
+                onPointerDown={(e) =>
+                  beginReorder(
+                    e,
+                    "filterInsights",
+                    sectionsRootRef.current,
+                    "y",
+                    "data-sec-id",
+                    setSectionOrder,
+                  )
+                }
+              />
+            </div>
+          )}
           <SectionHeader
             title="Filter insights"
             info="Compares the trades currently matching your filters against your all-time baseline. Use it to ask: 'Is this subset of trades actually better than my average?'"
@@ -1552,7 +1869,32 @@ export default function Statistics({
 
       {/* ── Performance Breakdown ───────────────────────────────────── */}
       {visibility.totalStats && (
-        <div className="w-full mt-8 md:mt-16 flex flex-col gap-4 md:gap-5">
+        <div
+          data-sec-id="breakdown"
+          style={{ order: secOrder("breakdown") }}
+          className={`relative w-full mt-8 md:mt-16 mb-2 flex flex-col gap-4 md:gap-5 ${
+            reordering
+              ? "rounded-2xl outline outline-1 outline-dashed outline-white/15 outline-offset-4"
+              : ""
+          }`}
+        >
+          {reordering && (
+            <div className="absolute -top-3 left-2 z-10">
+              <DragHandle
+                label="Performance breakdown"
+                onPointerDown={(e) =>
+                  beginReorder(
+                    e,
+                    "breakdown",
+                    sectionsRootRef.current,
+                    "y",
+                    "data-sec-id",
+                    setSectionOrder,
+                  )
+                }
+              />
+            </div>
+          )}
           <SectionHeader
             title="Performance breakdown"
             info="A bird's-eye view of where your edge is across your entire trading history - split by direction, strategy, symbol, streaks, and best/worst day."
@@ -1823,7 +2165,32 @@ export default function Statistics({
           };
 
           return (
-            <div className="w-full mt-8 md:mt-16 flex flex-col gap-4 md:gap-5">
+            <div
+              data-sec-id="monthly"
+              style={{ order: secOrder("monthly") }}
+              className={`relative w-full mt-8 md:mt-16 mb-2 flex flex-col gap-4 md:gap-5 ${
+                reordering
+                  ? "rounded-2xl outline outline-1 outline-dashed outline-white/15 outline-offset-4"
+                  : ""
+              }`}
+            >
+              {reordering && (
+                <div className="absolute -top-3 left-2 z-10">
+                  <DragHandle
+                    label="Monthly stats"
+                    onPointerDown={(e) =>
+                      beginReorder(
+                        e,
+                        "monthly",
+                        sectionsRootRef.current,
+                        "y",
+                        "data-sec-id",
+                        setSectionOrder,
+                      )
+                    }
+                  />
+                </div>
+              )}
               {/* Header */}
               <SectionHeader
                 title="Statistics per month"
