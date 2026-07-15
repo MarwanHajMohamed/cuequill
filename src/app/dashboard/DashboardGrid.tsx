@@ -267,22 +267,30 @@ function SortableWidget({
 
   // Drag the right-edge handle to resize width, or the bottom-edge handle
   // to resize height. Only two states per axis, so we snap to 1 or 2 based
-  // on where the pointer crosses relative to this widget's own size.
+  // on where the pointer sits relative to the widget's fixed top/left edge.
+  //
+  // We measure against the edge the widget grows away from (its top for
+  // vertical, left for horizontal), captured once at drag start, and pick
+  // the span from the pointer's absolute distance from that edge. Because
+  // the reference edge and unit are fixed for the whole gesture, the span
+  // is a pure function of pointer position — it can't oscillate or jump
+  // when the widget animates to its new size mid-drag. A widget can always
+  // be dragged back to one unit regardless of what its neighbour is doing.
   const startResize = (axis: "x" | "y") => (e: React.PointerEvent) => {
     e.preventDefault();
     e.stopPropagation();
     const el = outerRef.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
-    const start = axis === "x" ? e.clientX : e.clientY;
     const cur = axis === "x" ? span : rowSpan;
     const setter = axis === "x" ? onResize : onResizeRow;
-    // Size of a single unit ≈ full size / current span.
+    const edge = axis === "x" ? rect.left : rect.top;
+    // Size of one unit (column / row) = current size ÷ current span.
     const unit = (axis === "x" ? rect.width : rect.height) / cur;
     const move = (ev: PointerEvent) => {
-      const d = (axis === "x" ? ev.clientX : ev.clientY) - start;
-      if (cur === 1 && d > unit * 0.4) setter(id, 2);
-      else if (cur === 2 && d < -unit * 0.4) setter(id, 1);
+      const pos = (axis === "x" ? ev.clientX : ev.clientY) - edge;
+      // Past the midpoint between one and two units → 2, else 1.
+      setter(id, pos > unit * 1.5 ? 2 : 1);
     };
     const up = () => {
       window.removeEventListener("pointermove", move);
