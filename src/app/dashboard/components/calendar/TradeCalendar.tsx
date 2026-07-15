@@ -475,7 +475,7 @@ export default function TradeCalendar({ userId }: { userId: string }) {
 
   if (isLoading)
     return (
-      <div className="w-full max-w-[1100px] mx-auto md:mx-0 px-5 md:px-10 flex flex-col gap-4 md:gap-6">
+      <div className="w-full max-w-[1600px] mx-auto px-5 md:px-10 flex flex-col gap-4 md:gap-6">
         <div className="flex items-center justify-between gap-2">
           <Skeleton className="h-5 w-24" />
           <Skeleton className="h-3 w-16" />
@@ -485,7 +485,7 @@ export default function TradeCalendar({ userId }: { userId: string }) {
     );
   if (isError)
     return (
-      <div className="w-full max-w-[1100px] mx-auto md:mx-0 px-5 md:px-10">
+      <div className="w-full max-w-[1600px] mx-auto px-5 md:px-10">
         <div className="rounded-2xl border border-red-500/25 bg-red-500/[0.06] p-4 text-sm text-red-300">
           Couldn&apos;t load calendar data.
         </div>
@@ -494,7 +494,7 @@ export default function TradeCalendar({ userId }: { userId: string }) {
 
   return (
     <>
-      <div className="w-full max-w-[1300px] mx-auto md:mx-0 px-5 md:px-10 flex flex-col gap-4 md:gap-6">
+      <div className="w-full max-w-[1600px] mx-auto px-5 md:px-10 flex flex-col gap-4 md:gap-6">
         <div className="flex items-center justify-between gap-2"></div>
         <div className="flex gap-3 items-stretch">
           <div
