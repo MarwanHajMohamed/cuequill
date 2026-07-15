@@ -1021,7 +1021,7 @@ export default function Statistics({
               setTileOrder,
             )
           }
-          className="w-5 h-5 flex items-center justify-center rounded-full bg-[var(--surface-2,#222)] border border-white/15 text-white/60 cursor-grab active:cursor-grabbing touch-none shadow"
+          className="hidden md:flex w-5 h-5 items-center justify-center rounded-full bg-[var(--surface-2,#222)] border border-white/15 text-white/60 cursor-grab active:cursor-grabbing touch-none shadow"
           aria-label="Drag tile"
         >
           <i className="fa-solid fa-grip-vertical text-[9px]" />
@@ -1039,19 +1039,23 @@ export default function Statistics({
   const sectionControls = (id: string, label: string) =>
     editing ? (
       <div className="absolute -top-3 left-2 z-10 flex items-center gap-1.5">
-        <DragHandle
-          label={label}
-          onPointerDown={(e) =>
-            beginReorder(
-              e,
-              id,
-              sectionsRootRef.current,
-              "y",
-              "data-sec-id",
-              setSectionOrder,
-            )
-          }
-        />
+        {/* Grip + section title: desktop only. On mobile the arrows are the
+            sole control so nothing overlaps. */}
+        <span className="hidden md:inline-flex">
+          <DragHandle
+            label={label}
+            onPointerDown={(e) =>
+              beginReorder(
+                e,
+                id,
+                sectionsRootRef.current,
+                "y",
+                "data-sec-id",
+                setSectionOrder,
+              )
+            }
+          />
+        </span>
         <div className="flex items-center gap-1">
           <MoveBtn
             icon="fa-chevron-up"
