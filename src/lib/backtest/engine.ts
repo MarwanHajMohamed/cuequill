@@ -1,4 +1,5 @@
 import { sma, ema, rsi } from "./indicators";
+import { isPattern, DEFAULT_PATTERN_N } from "./types";
 import type {
   Bar,
   BacktestConfig,
@@ -7,7 +8,63 @@ import type {
   Condition,
   EquityPoint,
   Indicator,
+  PatternCondition,
 } from "./types";
+
+// Candlestick / price-action pattern check at bar i. Returns null when
+// there isn't enough history yet.
+function evalPattern(
+  bars: Bar[],
+  p: PatternCondition,
+  i: number,
+): boolean | null {
+  const n = p.n ?? DEFAULT_PATTERN_N[p.pattern] ?? 1;
+  const b = bars[i];
+  const red = (k: number) => bars[k].close < bars[k].open;
+  const green = (k: number) => bars[k].close > bars[k].open;
+  switch (p.pattern) {
+    case "redCandle":
+      return red(i);
+    case "greenCandle":
+      return green(i);
+    case "firstRedAfterGreen": {
+      if (i < n) return null;
+      if (!red(i)) return false;
+      for (let k = 1; k <= n; k++) if (!green(i - k)) return false;
+      return true;
+    }
+    case "firstGreenAfterRed": {
+      if (i < n) return null;
+      if (!green(i)) return false;
+      for (let k = 1; k <= n; k++) if (!red(i - k)) return false;
+      return true;
+    }
+    case "gapUp":
+      return i > 0 ? b.open > bars[i - 1].close : null;
+    case "gapDown":
+      return i > 0 ? b.open < bars[i - 1].close : null;
+    case "higherHigh":
+      return i > 0 ? b.high > bars[i - 1].high : null;
+    case "lowerLow":
+      return i > 0 ? b.low < bars[i - 1].low : null;
+    case "insideBar":
+      return i > 0
+        ? b.high < bars[i - 1].high && b.low > bars[i - 1].low
+        : null;
+    case "newHigh": {
+      if (i < n) return null;
+      let mx = -Infinity;
+      for (let k = i - n; k <= i - 1; k++) mx = Math.max(mx, bars[k].close);
+      return b.close > mx;
+    }
+    case "newLow": {
+      if (i < n) return null;
+      let mn = Infinity;
+      for (let k = i - n; k <= i - 1; k++) mn = Math.min(mn, bars[k].close);
+      return b.close < mn;
+    }
+  }
+}
 
 // Deterministic key so each distinct indicator (e.g. SMA(50)) is computed
 // once and reused across conditions.
@@ -83,11 +140,13 @@ export function runBacktest(
     return s;
   };
   for (const c of [...config.entry, ...config.exit]) {
+    if (isPattern(c)) continue;
     seriesFor(c.left);
     seriesFor(c.right);
   }
 
   const evalCond = (c: Condition, i: number): boolean | null => {
+    if (isPattern(c)) return evalPattern(bars, c, i);
     const l = seriesFor(c.left);
     const r = seriesFor(c.right);
     const li = l[i];

@@ -14,11 +14,16 @@ import { runBacktest } from "@/lib/backtest/engine";
 import {
   DEFAULT_CONFIG,
   COMPARATOR_LABEL,
-  indicatorLabel,
+  PATTERN_META,
+  DEFAULT_PATTERN_N,
+  TEMPLATES,
+  isPattern,
+  conditionText,
   type BacktestConfig,
   type Condition,
   type Comparator,
   type Indicator,
+  type PatternKind,
 } from "@/lib/backtest/types";
 import { fmtMoneyCompact, fmtMoneySignedCompact } from "@/lib/helpers/fmt";
 import {
@@ -101,6 +106,13 @@ function IndicatorPicker({
   );
 }
 
+const COMPARE_DEFAULT: Condition = {
+  left: { kind: "price", field: "close" },
+  op: "crossesAbove",
+  right: { kind: "sma", period: 50 },
+};
+const PATTERN_DEFAULT: Condition = { type: "pattern", pattern: "redCandle" };
+
 function ConditionList({
   title,
   join,
@@ -112,17 +124,8 @@ function ConditionList({
   conditions: Condition[];
   onChange: (c: Condition[]) => void;
 }) {
-  const setAt = (i: number, patch: Partial<Condition>) =>
-    onChange(conditions.map((c, idx) => (idx === i ? { ...c, ...patch } : c)));
-  const add = () =>
-    onChange([
-      ...conditions,
-      {
-        left: { kind: "price", field: "close" },
-        op: "crossesAbove",
-        right: { kind: "sma", period: 50 },
-      },
-    ]);
+  const replaceAt = (i: number, next: Condition) =>
+    onChange(conditions.map((c, idx) => (idx === i ? next : c)));
   const remove = (i: number) =>
     onChange(conditions.filter((_, idx) => idx !== i));
 
@@ -136,49 +139,125 @@ function ConditionList({
           No conditions — this side won&apos;t fire.
         </div>
       )}
-      {conditions.map((c, i) => (
-        <div key={i} className="flex flex-col gap-1.5">
-          {i > 0 && (
-            <span className="text-[10px] uppercase tracking-wider text-teal-300/70">
-              {join}
-            </span>
-          )}
-          <div className="flex flex-wrap items-center gap-1.5">
-            <IndicatorPicker
-              value={c.left}
-              onChange={(left) => setAt(i, { left })}
-            />
-            <select
-              className={selectCls}
-              value={c.op}
-              onChange={(e) => setAt(i, { op: e.target.value as Comparator })}
-            >
-              {(Object.keys(COMPARATOR_LABEL) as Comparator[]).map((op) => (
-                <option key={op} value={op}>
-                  {COMPARATOR_LABEL[op]}
-                </option>
-              ))}
-            </select>
-            <IndicatorPicker
-              value={c.right}
-              onChange={(right) => setAt(i, { right })}
-            />
-            <button
-              onClick={() => remove(i)}
-              className="w-7 h-7 flex items-center justify-center rounded-md text-white/40 hover:text-red-300 hover:bg-red-500/10 transition cursor-pointer"
-              aria-label="Remove condition"
-            >
-              <i className="fa-solid fa-xmark text-[13px]" />
-            </button>
+      {conditions.map((c, i) => {
+        const pattern = isPattern(c);
+        return (
+          <div key={i} className="flex flex-col gap-1.5">
+            {i > 0 && (
+              <span className="text-[10px] uppercase tracking-wider text-teal-300/70">
+                {join}
+              </span>
+            )}
+            <div className="flex flex-wrap items-center gap-1.5">
+              {/* Comparison vs candle pattern */}
+              <select
+                className={selectCls}
+                value={pattern ? "pattern" : "compare"}
+                onChange={(e) =>
+                  replaceAt(
+                    i,
+                    e.target.value === "pattern"
+                      ? PATTERN_DEFAULT
+                      : COMPARE_DEFAULT,
+                  )
+                }
+              >
+                <option value="compare">Indicator</option>
+                <option value="pattern">Candle pattern</option>
+              </select>
+
+              {pattern ? (
+                <>
+                  <select
+                    className={selectCls}
+                    value={c.pattern}
+                    onChange={(e) =>
+                      replaceAt(i, {
+                        type: "pattern",
+                        pattern: e.target.value as PatternKind,
+                        n: DEFAULT_PATTERN_N[e.target.value as PatternKind],
+                      })
+                    }
+                  >
+                    {(Object.keys(PATTERN_META) as PatternKind[]).map((p) => (
+                      <option key={p} value={p}>
+                        {PATTERN_META[p].label}
+                      </option>
+                    ))}
+                  </select>
+                  {PATTERN_META[c.pattern].hasN && (
+                    <span className="inline-flex items-center gap-1.5">
+                      <input
+                        type="number"
+                        min={1}
+                        className={`${inputCls} w-16 tabular-nums`}
+                        value={c.n ?? DEFAULT_PATTERN_N[c.pattern] ?? 1}
+                        onChange={(e) =>
+                          replaceAt(i, {
+                            type: "pattern",
+                            pattern: c.pattern,
+                            n: Math.max(1, Number(e.target.value) || 1),
+                          })
+                        }
+                      />
+                      <span className="text-[10px] text-white/40">
+                        {PATTERN_META[c.pattern].nLabel}
+                      </span>
+                    </span>
+                  )}
+                </>
+              ) : (
+                <>
+                  <IndicatorPicker
+                    value={c.left}
+                    onChange={(left) => replaceAt(i, { ...c, left })}
+                  />
+                  <select
+                    className={selectCls}
+                    value={c.op}
+                    onChange={(e) =>
+                      replaceAt(i, { ...c, op: e.target.value as Comparator })
+                    }
+                  >
+                    {(Object.keys(COMPARATOR_LABEL) as Comparator[]).map(
+                      (op) => (
+                        <option key={op} value={op}>
+                          {COMPARATOR_LABEL[op]}
+                        </option>
+                      ),
+                    )}
+                  </select>
+                  <IndicatorPicker
+                    value={c.right}
+                    onChange={(right) => replaceAt(i, { ...c, right })}
+                  />
+                </>
+              )}
+              <button
+                onClick={() => remove(i)}
+                className="w-7 h-7 flex items-center justify-center rounded-md text-white/40 hover:text-red-300 hover:bg-red-500/10 transition cursor-pointer"
+                aria-label="Remove condition"
+              >
+                <i className="fa-solid fa-xmark text-[13px]" />
+              </button>
+            </div>
           </div>
-        </div>
-      ))}
-      <button
-        onClick={add}
-        className="self-start inline-flex items-center gap-1.5 text-[12px] font-medium px-2.5 py-1.5 rounded-lg border border-white/10 bg-white/[0.04] text-white/70 hover:bg-white/[0.08] transition cursor-pointer"
-      >
-        <i className="fa-solid fa-plus text-[10px]" /> Add condition
-      </button>
+        );
+      })}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => onChange([...conditions, COMPARE_DEFAULT])}
+          className="inline-flex items-center gap-1.5 text-[12px] font-medium px-2.5 py-1.5 rounded-lg border border-white/10 bg-white/[0.04] text-white/70 hover:bg-white/[0.08] transition cursor-pointer"
+        >
+          <i className="fa-solid fa-plus text-[10px]" /> Indicator
+        </button>
+        <button
+          onClick={() => onChange([...conditions, PATTERN_DEFAULT])}
+          className="inline-flex items-center gap-1.5 text-[12px] font-medium px-2.5 py-1.5 rounded-lg border border-white/10 bg-white/[0.04] text-white/70 hover:bg-white/[0.08] transition cursor-pointer"
+        >
+          <i className="fa-solid fa-plus text-[10px]" /> Pattern
+        </button>
+      </div>
     </div>
   );
 }
@@ -341,6 +420,30 @@ function Page() {
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,380px)_1fr] gap-6 items-start">
         {/* ── Config ── */}
         <div className={`${CARD} flex flex-col gap-5`}>
+          {/* Templates — start from a working example, then tweak. */}
+          <label className="flex flex-col gap-1 text-[11px] text-white/50">
+            Start from a template
+            <select
+              className={selectCls}
+              value=""
+              onChange={(e) => {
+                const t = TEMPLATES.find((x) => x.name === e.target.value);
+                if (t) {
+                  setConfig(structuredClone(t.config));
+                  setLoadedId("");
+                  setActiveSymbol(t.config.symbol.trim().toUpperCase());
+                }
+              }}
+            >
+              <option value="">Choose a strategy…</option>
+              {TEMPLATES.map((t) => (
+                <option key={t.name} value={t.name}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
           <div className="grid grid-cols-2 gap-3">
             <label className="flex flex-col gap-1 text-[11px] text-white/50">
               Symbol
@@ -690,20 +793,8 @@ function Page() {
               {/* Plain-English rule recap */}
               <div className="text-[11.5px] text-white/40 leading-relaxed">
                 {config.direction === "long" ? "Buy" : "Short"} {config.symbol}{" "}
-                when{" "}
-                {config.entry
-                  .map(
-                    (c) =>
-                      `${indicatorLabel(c.left)} ${COMPARATOR_LABEL[c.op]} ${indicatorLabel(c.right)}`,
-                  )
-                  .join(" and ") || "…"}
-                ; exit when{" "}
-                {config.exit
-                  .map(
-                    (c) =>
-                      `${indicatorLabel(c.left)} ${COMPARATOR_LABEL[c.op]} ${indicatorLabel(c.right)}`,
-                  )
-                  .join(" or ") || "…"}
+                when {config.entry.map(conditionText).join(" and ") || "…"};
+                exit when {config.exit.map(conditionText).join(" or ") || "…"}
                 {config.stopLossPct ? `, stop −${config.stopLossPct}%` : ""}
                 {config.takeProfitPct
                   ? `, target +${config.takeProfitPct}%`
