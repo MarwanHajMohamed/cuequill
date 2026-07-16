@@ -11,6 +11,7 @@ import DashboardUpcoming from "./components/upcoming/DashboardUpcoming";
 import DashboardGoals from "./components/goals/DashboardGoals";
 import DashboardEdge from "./components/insights/DashboardEdge";
 import DashboardMistakes from "./components/insights/DashboardMistakes";
+import DashboardQuillInsight from "./components/insights/DashboardQuillInsight";
 
 // A dashboard widget is a self-contained card that fetches its own data.
 // `render` receives the current user id (widgets that don't need it just
@@ -19,6 +20,7 @@ import DashboardMistakes from "./components/insights/DashboardMistakes";
 // customisable grid reads layout as an ordered list of these ids.
 export type WidgetId =
   | "glance"
+  | "quillInsight"
   | "equity"
   | "riskBudget"
   | "openPositions"
@@ -42,6 +44,11 @@ export const WIDGETS: WidgetDef[] = [
     id: "glance",
     title: "At a glance",
     render: (userId) => <DashboardStats userId={userId} />,
+  },
+  {
+    id: "quillInsight",
+    title: "Insight of the day",
+    render: () => <DashboardQuillInsight />,
   },
   {
     id: "equity",
@@ -100,6 +107,7 @@ export const WIDGET_MAP: Record<WidgetId, WidgetDef> = Object.fromEntries(
 // win/loss — sit together at the end) rather than brick-laying.
 export const DEFAULT_LAYOUT: WidgetId[] = [
   "glance",
+  "quillInsight",
   "equity",
   "openPositions",
   "recentCloses",
