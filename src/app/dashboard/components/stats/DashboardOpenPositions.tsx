@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AnimatePresence } from "framer-motion";
 import { useTrades } from "@/hooks/useTrades";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { useQuotes } from "@/hooks/useQuotes";
 import { Trade } from "@/app/types/Trades";
 import ViewTradeModal from "../modals/ViewTradeModal";
 import { CARD_CLASS } from "../DashboardCard";
@@ -29,6 +30,16 @@ export default function DashboardOpenPositions({ userId }: { userId: string }) {
           new Date(b.dateBought).getTime() - new Date(a.dateBought).getTime(),
       );
   }, [trades]);
+
+  // Live underlying quotes for the shown positions. The journal holds
+  // options, so this is the underlying share price + today's move — a
+  // directional read, not exact option P/L.
+  const shown = useMemo(() => open.slice(0, 5), [open]);
+  const symbols = useMemo(
+    () => Array.from(new Set(shown.map((t) => t.symbol))),
+    [shown],
+  );
+  const { data: quotes } = useQuotes(symbols);
 
   return (
     <section className={`${CARD_CLASS} flex flex-col gap-3 h-full`}>
@@ -55,13 +66,20 @@ export default function DashboardOpenPositions({ userId }: { userId: string }) {
         </div>
       ) : (
         <ul className="flex flex-col gap-1">
-          {open.slice(0, 5).map((t) => {
-            const bought = new Date(t.dateBought);
+          {shown.map((t) => {
             const expiry = t.expiryDate ? new Date(t.expiryDate) : null;
             const daysToExpiry = expiry
               ? daysBetween(new Date(), new Date(expiry))
               : null;
             const expirySoon = daysToExpiry !== null && daysToExpiry <= 3;
+            const q = quotes?.[t.symbol.toUpperCase()];
+            const pct = q?.changePct ?? null;
+            const pctColor =
+              pct == null
+                ? "text-white/40"
+                : pct >= 0
+                  ? "text-green-500"
+                  : "text-red-500";
             return (
               <li key={t._id}>
                 <button
@@ -86,7 +104,7 @@ export default function DashboardOpenPositions({ userId }: { userId: string }) {
                         ${t.strike} ×{t.qty}
                       </span>
                     </div>
-                    <div className="text-[11px] text-white/40">
+                    <div className="text-[11px] text-white/40 flex items-center gap-1.5">
                       {daysToExpiry !== null && (
                         <span
                           className={
@@ -100,12 +118,30 @@ export default function DashboardOpenPositions({ userId }: { userId: string }) {
                       )}
                     </div>
                   </div>
+                  {q && (
+                    <div className="flex flex-col items-end shrink-0 tabular-nums">
+                      <span className="text-xs md:text-sm text-white/80">
+                        ${q.price.toFixed(2)}
+                      </span>
+                      {pct != null && (
+                        <span className={`text-[10px] ${pctColor}`}>
+                          {pct >= 0 ? "+" : ""}
+                          {pct.toFixed(2)}%
+                        </span>
+                      )}
+                    </div>
+                  )}
                   <i className="fa-solid fa-chevron-right text-[10px] text-white/30"></i>
                 </button>
               </li>
             );
           })}
         </ul>
+      )}
+      {open.length > 0 && (
+        <p className="text-[10px] text-white/30 mt-auto pt-1">
+          Underlying price · delayed. Options P/L differs.
+        </p>
       )}
 
       <AnimatePresence>

@@ -17,6 +17,7 @@ import {
   type GoalDirection,
   type MetricTrade,
 } from "@/lib/goals";
+import { getQuotes } from "@/lib/marketData";
 import mongoose from "mongoose";
 import {
   GoogleGenerativeAI,
@@ -167,7 +168,12 @@ export async function POST(req: Request) {
 
   // ── Build Gemini request ────────────────────────────────────────────
   const genAI = new GoogleGenerativeAI(apiKey);
-  const TOOLS = [ADD_TRADE_TOOL, EDIT_TRADE_TOOL, DELETE_TRADE_TOOL];
+  const TOOLS = [
+    ADD_TRADE_TOOL,
+    EDIT_TRADE_TOOL,
+    DELETE_TRADE_TOOL,
+    GET_QUOTE_TOOL,
+  ];
   const model = genAI.getGenerativeModel({
     model: "gemini-2.5-flash",
     systemInstruction: SYSTEM_PROMPT(
@@ -276,6 +282,13 @@ export async function POST(req: Request) {
                 call.args as Record<string, unknown>,
               );
               if (res.ok) touchedTrades = true;
+              fnResponses.push({
+                functionResponse: { name: call.name, response: res },
+              });
+            } else if (call.name === "get_quote") {
+              const res = await executeGetQuote(
+                call.args as Record<string, unknown>,
+              );
               fnResponses.push({
                 functionResponse: { name: call.name, response: res },
               });
@@ -758,6 +771,65 @@ async function executeDeleteTrade(
   }
 }
 
+// ── Tool: get_quote ────────────────────────────────────────────────────
+
+const GET_QUOTE_TOOL: FunctionDeclaration = {
+  name: "get_quote",
+  description:
+    "Fetch the latest market price for one or more US stock/ETF symbols. Use it when the user asks where a symbol is trading, or when you need a current price to mark their OPEN positions to market (estimate live unrealized P/L). Prices are delayed (typically ~15 min), not real-time tick data — say 'roughly' / 'delayed' when it matters. Note: the journal tracks OPTIONS; a quote is the price of the UNDERLYING share, so use it for context/direction, not exact option P/L.",
+  parameters: {
+    type: SchemaType.OBJECT,
+    properties: {
+      symbols: {
+        type: SchemaType.ARRAY,
+        description:
+          "Uppercase US tickers to quote, e.g. ['SPY','AAPL']. No leading $.",
+        items: { type: SchemaType.STRING },
+      },
+    },
+    required: ["symbols"],
+  },
+};
+
+async function executeGetQuote(
+  rawArgs: Record<string, unknown>,
+): Promise<
+  | { ok: true; quotes: Record<string, unknown>; asOf: string }
+  | { ok: false; error: string }
+> {
+  const list = Array.isArray(rawArgs.symbols)
+    ? (rawArgs.symbols as unknown[]).map((s) => String(s)).filter(Boolean)
+    : typeof rawArgs.symbols === "string"
+      ? [rawArgs.symbols]
+      : [];
+  if (list.length === 0) return { ok: false, error: "No symbols provided" };
+  try {
+    const map = await getQuotes(list.slice(0, 25));
+    if (map.size === 0) {
+      return { ok: false, error: "No quotes found for those symbols" };
+    }
+    const quotes: Record<string, unknown> = {};
+    for (const [sym, q] of map) {
+      quotes[sym] = {
+        price: Number(q.price.toFixed(2)),
+        change: q.change == null ? null : Number(q.change.toFixed(2)),
+        changePct:
+          q.changePct == null ? null : Number(q.changePct.toFixed(2)),
+        currency: q.currency,
+        marketState: q.marketState,
+        name: q.name,
+        asOf: q.time,
+      };
+    }
+    return { ok: true, quotes, asOf: new Date().toISOString() };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Quote lookup failed",
+    };
+  }
+}
+
 function parseDateOnly(s: string | undefined): Date | null {
   if (!s) return null;
   // Accept YYYY-MM-DD and parse as UTC so the calendar/journal don't
@@ -1225,8 +1297,17 @@ STYLE & ANALYSIS
 - This is journaling and analysis only - do NOT give personalized investment
   advice, trade recommendations, or predictions.
 
+LIVE PRICES
+You can pull delayed market quotes with get_quote. Use it when the user
+asks where something is trading, or to mark their OPEN positions to market
+(estimate roughly where they stand right now). Remember the journal holds
+OPTIONS but a quote is the UNDERLYING share price — use it for direction and
+context ("SPY's up 1.2% today, so your 600 calls are likely in the green"),
+not as an exact option value. Prices are delayed ~15 min; say so when it
+matters. Never quote a price you didn't get from the tool.
+
 TOOLS
-You have three tools available:
+You have four tools available:
 
 - add_trade(...) - log a NEW open options trade in the user's journal.
   Call this when the user clearly says they took a trade (e.g. "I just
