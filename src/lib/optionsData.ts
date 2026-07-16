@@ -1,17 +1,27 @@
 // Real option marks (bid/ask/last → a mid mark) for the user's option
 // positions, so we can compute genuine unrealized P/L rather than just the
-// underlying's move. Sourced from Tradier's market-data API.
+// underlying's move.
 //
-// Setup (env):
-//   TRADIER_TOKEN     - a Tradier access token (required to enable this)
-//   TRADIER_API_BASE  - defaults to the sandbox host (delayed data, free).
-//                       Set to https://api.tradier.com with a production
-//                       token + market-data agreement for real-time.
+// Providers live behind a small abstraction (OptionsProvider) and are
+// selected by env, so the routes, hook, dashboard, and Quill tool never
+// change when the source does. When nothing is configured,
+// isOptionsConfigured() is false and callers fall back to the underlying
+// quote.
 //
-// The provider is behind a small abstraction (OptionsProvider) so a
-// different source (Polygon, IBKR, …) can be swapped in without touching
-// the routes or UI. When no token is configured, isOptionsConfigured()
-// returns false and callers fall back to the underlying quote.
+// Setup (env) — configure ONE:
+//   Polygon.io (UK/global signup, no US brokerage account, unlimited calls
+//   on the paid Options plan — the recommended source):
+//     POLYGON_API_KEY   - your Polygon key
+//     POLYGON_API_BASE  - optional, defaults to https://api.polygon.io
+//
+//   Tradier (US brokerage account required):
+//     TRADIER_TOKEN     - a Tradier access token
+//     TRADIER_API_BASE  - defaults to the sandbox host; set
+//                         https://api.tradier.com for production
+//
+//   OPTIONS_PROVIDER    - optional "polygon" | "tradier" to force one when
+//                         more than one is configured; otherwise Polygon
+//                         wins if its key is present.
 
 export type OptionType = "CALL" | "PUT";
 
@@ -31,17 +41,34 @@ export type OptionMark = {
   asOf: string | null; // ISO
 };
 
-const TOKEN = process.env.TRADIER_TOKEN ?? process.env.TRADIER_ACCESS_TOKEN;
-const BASE = (
+const POLYGON_KEY = process.env.POLYGON_API_KEY;
+const POLYGON_BASE = (
+  process.env.POLYGON_API_BASE ?? "https://api.polygon.io"
+).replace(/\/+$/, "");
+const TRADIER_TOKEN =
+  process.env.TRADIER_TOKEN ?? process.env.TRADIER_ACCESS_TOKEN;
+const TRADIER_BASE = (
   process.env.TRADIER_API_BASE ?? "https://sandbox.tradier.com"
 ).replace(/\/+$/, "");
 
+// Which provider to use. Explicit override, else Polygon if keyed, else
+// Tradier if keyed, else none.
+function selectedProviderName(): "polygon" | "tradier" | null {
+  const forced = process.env.OPTIONS_PROVIDER?.toLowerCase();
+  if (forced === "polygon") return POLYGON_KEY ? "polygon" : null;
+  if (forced === "tradier") return TRADIER_TOKEN ? "tradier" : null;
+  if (POLYGON_KEY) return "polygon";
+  if (TRADIER_TOKEN) return "tradier";
+  return null;
+}
+
 export function isOptionsConfigured(): boolean {
-  return !!TOKEN;
+  return selectedProviderName() !== null;
 }
 
 // OCC option symbol, e.g. { SPY, 2024-03-15, 600, CALL } → SPY240315C00600000.
-// Tradier accepts this compact (unpadded-root) form for quotes.
+// This compact (unpadded-root) form is what Tradier quotes on directly;
+// the Polygon provider prefixes it with "O:".
 export function occSymbol(p: OptionPosition): string | null {
   const root = p.symbol.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(p.expiry.trim());
@@ -72,17 +99,29 @@ function num(v: unknown): number | null {
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
-function toMark(q: TradierQuote): OptionMark {
-  const bid = num(q.bid);
-  const ask = num(q.ask);
-  const last = num(q.last);
+function markOf(
+  bidRaw: unknown,
+  askRaw: unknown,
+  lastRaw: unknown,
+): Pick<OptionMark, "bid" | "ask" | "last" | "mark"> {
+  const bid = num(bidRaw);
+  const ask = num(askRaw);
+  const last = num(lastRaw);
   const mark = bid != null && ask != null ? (bid + ask) / 2 : last;
+  return { bid, ask, last, mark };
+}
+
+function toMark(q: TradierQuote): OptionMark {
   let asOf: string | null = null;
   if (q.trade_date) {
     const d = new Date(Number(q.trade_date));
     asOf = Number.isNaN(d.getTime()) ? null : d.toISOString();
   }
-  return { occSymbol: q.symbol.toUpperCase(), bid, ask, last, mark, asOf };
+  return {
+    occSymbol: q.symbol.toUpperCase(),
+    ...markOf(q.bid, q.ask, q.last),
+    asOf,
+  };
 }
 
 interface OptionsProvider {
@@ -93,13 +132,13 @@ interface OptionsProvider {
 const tradierProvider: OptionsProvider = {
   async getMarks(occSymbols) {
     const out = new Map<string, OptionMark>();
-    if (!TOKEN || occSymbols.length === 0) return out;
-    const url = `${BASE}/v1/markets/quotes?symbols=${encodeURIComponent(
+    if (!TRADIER_TOKEN || occSymbols.length === 0) return out;
+    const url = `${TRADIER_BASE}/v1/markets/quotes?symbols=${encodeURIComponent(
       occSymbols.join(","),
     )}&greeks=false`;
     const res = await fetch(url, {
       headers: {
-        Authorization: `Bearer ${TOKEN}`,
+        Authorization: `Bearer ${TRADIER_TOKEN}`,
         Accept: "application/json",
       },
     });
@@ -117,7 +156,84 @@ const tradierProvider: OptionsProvider = {
   },
 };
 
-const provider: OptionsProvider = tradierProvider;
+type PolygonSnapshot = {
+  results?: {
+    last_quote?: { bid?: number; ask?: number; midpoint?: number; last_updated?: number };
+    last_trade?: { price?: number; sip_timestamp?: number };
+  };
+};
+
+// Underlying ticker embedded in an OCC symbol: everything before the
+// trailing yymmdd(6) + C/P(1) + strike(8) = 15 chars.
+function underlyingOf(occ: string): string {
+  return occ.slice(0, Math.max(0, occ.length - 15));
+}
+
+// Polygon: one option-contract snapshot per symbol
+// (/v3/snapshot/options/{underlying}/O:{occ}). Snapshots aren't batchable,
+// so we fan out with a small concurrency limit; the shared cache keeps the
+// count low across renders.
+const polygonProvider: OptionsProvider = {
+  async getMarks(occSymbols) {
+    const out = new Map<string, OptionMark>();
+    if (!POLYGON_KEY || occSymbols.length === 0) return out;
+
+    const fetchOne = async (occ: string): Promise<void> => {
+      const underlying = underlyingOf(occ);
+      if (!underlying) return;
+      const url = `${POLYGON_BASE}/v3/snapshot/options/${encodeURIComponent(
+        underlying,
+      )}/${encodeURIComponent(`O:${occ}`)}`;
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${POLYGON_KEY}` },
+      });
+      // 404 = contract not found (e.g. wrong strike/expiry); skip it rather
+      // than failing the whole batch.
+      if (res.status === 404) return;
+      if (!res.ok) throw new Error(`Polygon returned ${res.status}`);
+      const json = (await res.json()) as PolygonSnapshot;
+      const r = json.results;
+      if (!r) return;
+      const q = r.last_quote;
+      const { bid, ask, last, mark } = markOf(
+        q?.bid,
+        q?.ask,
+        r.last_trade?.price,
+      );
+      // Prefer Polygon's own midpoint when present.
+      const finalMark =
+        q?.midpoint != null && Number.isFinite(q.midpoint) && q.midpoint > 0
+          ? q.midpoint
+          : mark;
+      let asOf: string | null = null;
+      const tsNs = q?.last_updated ?? r.last_trade?.sip_timestamp;
+      if (tsNs) {
+        const d = new Date(Number(tsNs) / 1e6); // ns → ms
+        asOf = Number.isNaN(d.getTime()) ? null : d.toISOString();
+      }
+      out.set(occ, { occSymbol: occ, bid, ask, last, mark: finalMark, asOf });
+    };
+
+    // Bounded concurrency so a large batch doesn't open dozens of sockets
+    // or trip a rate limit all at once.
+    const LIMIT = 6;
+    for (let i = 0; i < occSymbols.length; i += LIMIT) {
+      await Promise.all(occSymbols.slice(i, i + LIMIT).map(fetchOne));
+    }
+    return out;
+  },
+};
+
+function activeProvider(): OptionsProvider | null {
+  switch (selectedProviderName()) {
+    case "polygon":
+      return polygonProvider;
+    case "tradier":
+      return tradierProvider;
+    default:
+      return null;
+  }
+}
 
 // Fetch marks for a set of option positions. Returns a map keyed by the
 // OCC symbol. Positions we can't build a symbol for, or that the provider
@@ -127,7 +243,8 @@ export async function getOptionMarks(
   positions: OptionPosition[],
 ): Promise<Map<string, OptionMark>> {
   const out = new Map<string, OptionMark>();
-  if (!isOptionsConfigured()) return out;
+  const provider = activeProvider();
+  if (!provider) return out;
 
   const now = Date.now();
   const misses: string[] = [];
