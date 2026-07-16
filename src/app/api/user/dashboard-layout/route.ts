@@ -58,14 +58,38 @@ export async function GET() {
 
   await connectDb();
   const user = await User.findById(session.user.id).select(
-    "dashboardLayout dashboardGlanceTiles dashboardWidgetSizes",
+    "dashboardLayout dashboardGlanceTiles dashboardWidgetSizes dashboardWidgetRows isPro dashInsightMigrated",
   );
   if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
+  let layout = user.dashboardLayout ?? null;
+
+  // One-time migration: drop the "Insight of the day" widget into an
+  // existing PRO user's saved layout (right after "At a glance"). Only runs
+  // once — the flag means we never re-add it if they later remove it. Users
+  // with no custom layout already get it from the client default.
+  if (user.isPro && !user.dashInsightMigrated) {
+    if (
+      Array.isArray(layout) &&
+      layout.length > 0 &&
+      !layout.includes("quillInsight")
+    ) {
+      const next = [...layout];
+      const at = next.indexOf("glance");
+      next.splice(at >= 0 ? at + 1 : next.length, 0, "quillInsight");
+      layout = next;
+      user.dashboardLayout = next;
+    }
+    user.dashInsightMigrated = true;
+    await user.save().catch(() => {
+      /* best-effort — still return the migrated layout in-memory */
+    });
+  }
+
   return NextResponse.json({
-    layout: user.dashboardLayout ?? null,
+    layout,
     glanceTiles: user.dashboardGlanceTiles ?? null,
     widgetSizes: user.dashboardWidgetSizes ?? null,
     widgetRows: user.dashboardWidgetRows ?? null,

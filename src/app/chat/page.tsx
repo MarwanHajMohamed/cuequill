@@ -19,6 +19,7 @@ import { useSession } from "next-auth/react";
 import { format } from "date-fns";
 import { Trade } from "@/app/types/Trades";
 import { useTrades } from "@/hooks/useTrades";
+import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
 import ViewTradeModal from "@/app/dashboard/components/modals/ViewTradeModal";
 import ChatUsage from "./ChatUsage";
@@ -231,6 +232,23 @@ function Page() {
   // above the composer instead of scrolling behind it. Recalculated
   // whenever the textarea grows from 1 line up to its 6-line max.
   const [composerH, setComposerH] = useState(0);
+
+  // Scroll-to-bottom affordance: shown only when the user has scrolled up
+  // far enough that they're no longer following the latest message.
+  const [showScrollDown, setShowScrollDown] = useState(false);
+
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
+    const inner = scrollRef.current;
+    if (inner) inner.scrollTo({ top: inner.scrollHeight, behavior });
+  }, []);
+
+  const onMessagesScroll = useCallback(() => {
+    const inner = scrollRef.current;
+    if (!inner) return;
+    const distanceFromBottom =
+      inner.scrollHeight - inner.scrollTop - inner.clientHeight;
+    setShowScrollDown(distanceFromBottom > 240);
+  }, []);
 
   // Word-drip plumbing - kept in refs because the producer (network
   // reader) and consumer (interval timer) both live outside React's
@@ -452,6 +470,18 @@ function Page() {
     }
   }, [messages]);
 
+  // Jump to the newest message when a conversation first loads (or the user
+  // switches threads) so they land at the bottom, not scrolled up in
+  // history. Instant, and after paint so scrollHeight is settled.
+  useEffect(() => {
+    if (!hydrated) return;
+    const id = requestAnimationFrame(() => {
+      scrollToBottom("auto");
+      setShowScrollDown(false);
+    });
+    return () => cancelAnimationFrame(id);
+  }, [hydrated, conversationId, scrollToBottom]);
+
   // Word-by-word drip ticker.
   const ensureTicker = useCallback(() => {
     if (tickerRef.current !== null) return;
@@ -642,6 +672,14 @@ function Page() {
 
   const submit = () => send(input, pendingImages);
 
+  // Tap-to-talk: dictate into the input, and auto-send the phrase once the
+  // user stops speaking — so a position can be closed hands-free
+  // ("close my 5 SPY 600 calls at $2.30").
+  const speech = useSpeechRecognition({
+    onResult: (t) => setInput(t),
+    onFinal: (t) => send(t, pendingImages),
+  });
+
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -786,6 +824,7 @@ function Page() {
           <div className="flex-1 min-h-0 relative">
             <div
               ref={scrollRef}
+              onScroll={onMessagesScroll}
               className="chat-scroll h-full overflow-y-auto pr-1"
             >
               <div
@@ -826,6 +865,25 @@ function Page() {
                   "linear-gradient(to top, #000 55%, transparent 100%)",
               }}
             />
+
+            {/* Jump-to-latest: appears when scrolled up, sits just above the
+                composer. */}
+            <AnimatePresence>
+              {showScrollDown && (
+                <motion.button
+                  type="button"
+                  onClick={() => scrollToBottom("smooth")}
+                  initial={{ opacity: 0, y: 6, scale: 0.9 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 6, scale: 0.9 }}
+                  transition={{ duration: 0.15, ease: "easeOut" }}
+                  aria-label="Scroll to latest"
+                  className="absolute left-1/2 -translate-x-1/2 bottom-3 z-20 w-9 h-9 inline-flex items-center justify-center rounded-full border border-white/15 bg-[var(--background)]/90 backdrop-blur-md text-white/70 hover:text-white hover:bg-white/[0.08] shadow-lg transition cursor-pointer"
+                >
+                  <i className="fa-solid fa-arrow-down text-[13px]" />
+                </motion.button>
+              )}
+            </AnimatePresence>
           </div>
         )}
 
@@ -897,6 +955,24 @@ function Page() {
             >
               <i className="fa-solid fa-paperclip text-[13px]" />
             </button>
+            {speech.supported && (
+              <button
+                type="button"
+                onClick={speech.toggle}
+                disabled={streaming}
+                title={speech.listening ? "Stop listening" : "Speak to Quill"}
+                aria-label={
+                  speech.listening ? "Stop listening" : "Speak to Quill"
+                }
+                className={`shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-full border transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+                  speech.listening
+                    ? "bg-red-500/20 text-red-300 border-red-500/40 animate-pulse"
+                    : "bg-white/[0.02] text-white/50 border-white/10 hover:bg-white/[0.06] hover:text-white/80"
+                }`}
+              >
+                <i className="fa-solid fa-microphone text-[13px]" />
+              </button>
+            )}
             <textarea
               ref={inputRef}
               value={input}
@@ -904,7 +980,11 @@ function Page() {
               onKeyDown={onKeyDown}
               onPaste={onPaste}
               rows={1}
-              placeholder="Ask about your trades, or attach a screenshot..."
+              placeholder={
+                speech.listening
+                  ? "Listening… speak now"
+                  : "Ask about your trades, or attach a screenshot..."
+              }
               className="flex-1 resize-none bg-transparent text-[14px] text-white placeholder:text-white/35 placeholder:text-[12px] focus:outline-none py-1.5 max-h-[160px]"
             />
             <button

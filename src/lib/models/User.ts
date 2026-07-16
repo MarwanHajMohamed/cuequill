@@ -94,6 +94,10 @@ export interface IUser extends Document {
   dashInsightDate?: string; // yyyy-MM-dd (user's tz) the insight belongs to
   dashInsightText?: string;
   dashInsightAt?: Date; // when it was generated
+  // One-time flag: the "Insight of the day" widget has been auto-inserted
+  // into this (Pro) user's saved layout, so we never fight a later manual
+  // removal by re-adding it.
+  dashInsightMigrated?: boolean;
 }
 
 const UserSchema = new Schema<IUser>({
@@ -160,6 +164,7 @@ const UserSchema = new Schema<IUser>({
   dashInsightDate: { type: String, default: "" },
   dashInsightText: { type: String, default: "" },
   dashInsightAt: { type: Date },
+  dashInsightMigrated: { type: Boolean, default: false },
 });
 
 // In dev, Next.js hot-reload keeps the previously-compiled model (with
