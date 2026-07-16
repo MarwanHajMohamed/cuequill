@@ -6,6 +6,8 @@ import { AnimatePresence } from "framer-motion";
 import { useTrades } from "@/hooks/useTrades";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useQuotes } from "@/hooks/useQuotes";
+import { useOptionMarks, type MarkPosition } from "@/hooks/useOptionMarks";
+import { fmtMoneySignedCompact } from "@/lib/helpers/fmt";
 import { Trade } from "@/app/types/Trades";
 import ViewTradeModal from "../modals/ViewTradeModal";
 import { CARD_CLASS } from "../DashboardCard";
@@ -31,10 +33,28 @@ export default function DashboardOpenPositions({ userId }: { userId: string }) {
       );
   }, [trades]);
 
-  // Live underlying quotes for the shown positions. The journal holds
-  // options, so this is the underlying share price + today's move — a
-  // directional read, not exact option P/L.
   const shown = useMemo(() => open.slice(0, 5), [open]);
+
+  // Real option marks (via Tradier, when configured) → genuine unrealized
+  // P/L per position. Falls back to the underlying's move when the options
+  // provider isn't set up.
+  const markPositions = useMemo<MarkPosition[]>(
+    () =>
+      shown
+        .filter((t) => t.expiryDate)
+        .map((t) => ({
+          symbol: t.symbol,
+          expiry: new Date(t.expiryDate).toISOString().slice(0, 10),
+          strike: t.strike,
+          type: t.option,
+        })),
+    [shown],
+  );
+  const { configured: optionsConfigured, markFor } =
+    useOptionMarks(markPositions);
+
+  // Underlying quotes: the fallback directional read (share price + today's
+  // move) used when we don't have a real option mark.
   const symbols = useMemo(
     () => Array.from(new Set(shown.map((t) => t.symbol))),
     [shown],
@@ -72,6 +92,22 @@ export default function DashboardOpenPositions({ userId }: { userId: string }) {
               ? daysBetween(new Date(), new Date(expiry))
               : null;
             const expirySoon = daysToExpiry !== null && daysToExpiry <= 3;
+
+            // Prefer a real option mark → unrealized P/L. Long option:
+            // (mark − entry) × qty × 100.
+            const mk = t.expiryDate
+              ? markFor({
+                  symbol: t.symbol,
+                  expiry: new Date(t.expiryDate).toISOString().slice(0, 10),
+                  strike: t.strike,
+                  type: t.option,
+                })
+              : null;
+            const mark = mk?.mark ?? null;
+            const unreal =
+              mark != null ? (mark - t.contractPrice) * t.qty * 100 : null;
+
+            // Fallback: the underlying's move today.
             const q = quotes?.[t.symbol.toUpperCase()];
             const pct = q?.changePct ?? null;
             const pctColor =
@@ -118,18 +154,37 @@ export default function DashboardOpenPositions({ userId }: { userId: string }) {
                       )}
                     </div>
                   </div>
-                  {q && (
+                  {mark != null ? (
                     <div className="flex flex-col items-end shrink-0 tabular-nums">
-                      <span className="text-xs md:text-sm text-white/80">
-                        ${q.price.toFixed(2)}
+                      <span
+                        className={`text-xs md:text-sm font-medium ${
+                          unreal == null
+                            ? "text-white/80"
+                            : unreal >= 0
+                              ? "text-green-500"
+                              : "text-red-500"
+                        }`}
+                      >
+                        {unreal != null ? fmtMoneySignedCompact(unreal) : "—"}
                       </span>
-                      {pct != null && (
-                        <span className={`text-[10px] ${pctColor}`}>
-                          {pct >= 0 ? "+" : ""}
-                          {pct.toFixed(2)}%
-                        </span>
-                      )}
+                      <span className="text-[10px] text-white/40">
+                        @ ${mark.toFixed(2)}
+                      </span>
                     </div>
+                  ) : (
+                    q && (
+                      <div className="flex flex-col items-end shrink-0 tabular-nums">
+                        <span className="text-xs md:text-sm text-white/80">
+                          ${q.price.toFixed(2)}
+                        </span>
+                        {pct != null && (
+                          <span className={`text-[10px] ${pctColor}`}>
+                            {pct >= 0 ? "+" : ""}
+                            {pct.toFixed(2)}%
+                          </span>
+                        )}
+                      </div>
+                    )
                   )}
                   <i className="fa-solid fa-chevron-right text-[10px] text-white/30"></i>
                 </button>
@@ -140,7 +195,9 @@ export default function DashboardOpenPositions({ userId }: { userId: string }) {
       )}
       {open.length > 0 && (
         <p className="text-[10px] text-white/30 mt-auto pt-1">
-          Underlying price · delayed. Options P/L differs.
+          {optionsConfigured
+            ? "Unrealized P/L at option mid · delayed."
+            : "Underlying price · delayed. Options P/L differs."}
         </p>
       )}
 
