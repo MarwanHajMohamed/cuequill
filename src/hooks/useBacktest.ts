@@ -29,6 +29,33 @@ export function useBacktestPrices(symbol: string | null) {
   });
 }
 
+// Turn a plain-English strategy description into a BacktestConfig via the
+// AI parser. The user reviews the result before running.
+export function useParseStrategy() {
+  return useMutation({
+    mutationFn: async (text: string): Promise<BacktestConfig> => {
+      const res = await fetch("/api/backtest/parse", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      if (!res.ok) {
+        let msg = "Failed to build strategy";
+        try {
+          const data = await res.json();
+          if (data?.error) msg = data.error;
+        } catch {
+          const t = await res.text();
+          if (t) msg = t;
+        }
+        throw new Error(msg);
+      }
+      const data = await res.json();
+      return data.config as BacktestConfig;
+    },
+  });
+}
+
 export function useSavedBacktests() {
   return useQuery({
     queryKey: ["backtests"],

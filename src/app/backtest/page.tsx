@@ -9,6 +9,7 @@ import {
   useSavedBacktests,
   useSaveBacktest,
   useDeleteBacktest,
+  useParseStrategy,
 } from "@/hooks/useBacktest";
 import { runBacktest } from "@/lib/backtest/engine";
 import {
@@ -294,6 +295,88 @@ function Kpi({
 const CARD =
   "rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5";
 
+const AI_EXAMPLES = [
+  "Buy the first red candle after 3 green ones, sell on the next green candle with a 3% stop.",
+  "Go long SPY when the 50-day SMA crosses above the 200-day, exit when it crosses back below.",
+  "Short QQQ when RSI(14) goes above 70, cover when it drops below 50 or after 10 days.",
+];
+
+// Plain-English → structured config. The result is applied to the form so
+// the user can review and tweak before running.
+function AiStrategyBuilder({
+  onBuilt,
+}: {
+  onBuilt: (c: BacktestConfig) => void;
+}) {
+  const [text, setText] = useState("");
+  const parse = useParseStrategy();
+
+  const build = async () => {
+    const t = text.trim();
+    if (!t) return;
+    const config = await parse.mutateAsync(t);
+    onBuilt(config);
+  };
+
+  return (
+    <div className="rounded-xl border border-teal-400/20 bg-teal-400/[0.04] p-3.5 flex flex-col gap-2.5">
+      <div className="flex items-center gap-2">
+        <i className="fa-solid fa-wand-magic-sparkles text-teal-300 text-[13px]" />
+        <span className="text-[13px] font-semibold text-white/85">
+          Describe your strategy
+        </span>
+      </div>
+      <p className="text-[11.5px] text-white/45 leading-relaxed">
+        Write your rules in plain English and let AI build the setup. Review
+        and tweak it below, then run.
+      </p>
+      <textarea
+        className={`${inputCls} w-full resize-y min-h-[72px] leading-relaxed`}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="e.g. Buy the first red candle after 3 green ones on SPY, sell on the next green candle with a 3% stop."
+        onKeyDown={(e) => {
+          if ((e.metaKey || e.ctrlKey) && e.key === "Enter") build();
+        }}
+      />
+      <div className="flex flex-wrap gap-1.5">
+        {AI_EXAMPLES.map((ex, i) => (
+          <button
+            key={i}
+            type="button"
+            onClick={() => setText(ex)}
+            className="text-[10.5px] text-white/50 hover:text-teal-200 border border-white/10 hover:border-teal-400/30 rounded-full px-2 py-0.5 transition cursor-pointer max-w-full truncate"
+            title={ex}
+          >
+            {ex.length > 42 ? ex.slice(0, 40) + "…" : ex}
+          </button>
+        ))}
+      </div>
+      <button
+        onClick={build}
+        disabled={parse.isPending || !text.trim()}
+        className="inline-flex items-center justify-center gap-2 text-[12.5px] font-semibold px-3 py-2 rounded-lg bg-teal-500/90 text-white hover:bg-teal-400 transition cursor-pointer disabled:opacity-50"
+      >
+        {parse.isPending ? (
+          <>
+            <i className="fa-solid fa-spinner fa-spin text-[11px]" /> Building…
+          </>
+        ) : (
+          <>
+            <i className="fa-solid fa-wand-magic-sparkles text-[11px]" /> Build
+            with AI
+          </>
+        )}
+      </button>
+      {parse.error && (
+        <div className="text-[11.5px] text-red-300 bg-red-500/10 border border-red-500/25 rounded-lg px-2.5 py-1.5">
+          {(parse.error as Error).message}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Page() {
   const [config, setConfig] = useLocalStorage<BacktestConfig>(
     "cuequill:backtest-config",
@@ -420,6 +503,15 @@ function Page() {
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,380px)_1fr] gap-6 items-start">
         {/* ── Config ── */}
         <div className={`${CARD} flex flex-col gap-5`}>
+          {/* Describe in plain English — AI builds the config below. */}
+          <AiStrategyBuilder
+            onBuilt={(c) => {
+              setConfig(c);
+              setLoadedId("");
+              setActiveSymbol(null);
+            }}
+          />
+
           {/* Templates — start from a working example, then tweak. */}
           <label className="flex flex-col gap-1 text-[11px] text-white/50">
             Start from a template
