@@ -21,7 +21,11 @@ import { Trade } from "@/app/types/Trades";
 import { useTrades } from "@/hooks/useTrades";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
-import ViewTradeModal from "@/app/dashboard/components/modals/ViewTradeModal";
+import TradeModal from "@/app/dashboard/components/modals/TradeModal";
+import {
+  handleSaveTrade,
+  handleDeleteTrade,
+} from "@/handlers/tradeHandlers";
 import ChatUsage from "./ChatUsage";
 import ChatHistory, { type ConversationMeta } from "./ChatHistory";
 import ConversationSidebar from "./ConversationSidebar";
@@ -1068,10 +1072,27 @@ function Page() {
         independent of the chat scroll container. AnimatePresence drives
         the modal's existing motion.div enter/exit animation. */}
     <AnimatePresence>
-      {viewingTrade && (
-        <ViewTradeModal
+      {viewingTrade && userId && (
+        <TradeModal
+          date={
+            viewingTrade.dateBought
+              ? new Date(viewingTrade.dateBought)
+              : new Date()
+          }
           initialTrade={viewingTrade}
           onClose={() => setViewingTrade(null)}
+          onSave={(t) =>
+            handleSaveTrade(t, userId, () => setViewingTrade(null), queryClient)
+          }
+          onDelete={() =>
+            handleDeleteTrade(
+              viewingTrade._id,
+              userId,
+              () => setViewingTrade(null),
+              () => setViewingTrade(null),
+              queryClient,
+            )
+          }
         />
       )}
     </AnimatePresence>
