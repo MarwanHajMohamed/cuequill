@@ -26,7 +26,28 @@ import ChatHistory, { type ConversationMeta } from "./ChatHistory";
 import ConversationSidebar from "./ConversationSidebar";
 
 import { fmtMoneySignedCompact } from "@/lib/helpers/fmt";
-type Msg = { role: "user" | "model"; text: string; pending?: boolean };
+type Msg = {
+  role: "user" | "model";
+  text: string;
+  pending?: boolean;
+  // Data-URL screenshots attached to a user turn (not persisted server-side,
+  // so they only appear during the live session).
+  images?: string[];
+};
+
+// Client-side image guardrails, mirroring the server's limits.
+const MAX_IMAGES = 4;
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const ACCEPTED_IMAGE = /^image\/(png|jpe?g|webp|gif)$/;
+
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
 
 // Supplied by the chat Page so that any `trade://<id>` link the Gemini
 // reply contains can both (a) look up the trade's data from the
@@ -93,6 +114,13 @@ const SUGGESTIONS: {
     prompt:
       "Show me my last 5 losing trades and what they had in common.",
   },
+  {
+    icon: "fa-solid fa-calendar-check",
+    title: "Review my week",
+    body: "A debrief: wins, leaks, rules, goals.",
+    prompt:
+      "Review my trading week. Give me a short debrief: my P/L and record for the week, what went well, the biggest mistake or leak in the data, any rules I broke, and where I stand on my goals. End with one thing to focus on next.",
+  },
 ];
 
 // Sentinel emitted by the server when the chat turn modified the user's
@@ -113,6 +141,9 @@ function Page() {
 
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
+  // Screenshots staged in the composer, waiting to be sent with the next
+  // message. Data URLs.
+  const [pendingImages, setPendingImages] = useState<string[]>([]);
   const [streaming, setStreaming] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   // Trade being viewed via a `trade://` link in the Gemini reply.
@@ -193,6 +224,7 @@ function Page() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Live height of the composer (fixed-positioned on mobile). Drives
   // the bottom padding of the messages column so the chat box ends
@@ -467,32 +499,38 @@ function Page() {
   );
 
   const send = useCallback(
-    async (text: string) => {
+    async (text: string, images: string[] = []) => {
       const trimmed = text.trim();
-      if (!trimmed || streaming) return;
+      if ((!trimmed && images.length === 0) || streaming) return;
       // The thread this turn belongs to. If the user switches conversations
       // mid-stream, we stop feeding tokens so they don't land in the wrong
       // thread.
       const activeConv = convIdRef.current;
       const next: Msg[] = [
         ...messages,
-        { role: "user", text: trimmed },
+        { role: "user", text: trimmed, images: images.length ? images : undefined },
         { role: "model", text: "", pending: true },
       ];
       setMessages(next);
       setInput("");
+      setPendingImages([]);
       setStreaming(true);
       networkOpenRef.current = true;
       renderQueueRef.current = [];
 
       try {
+        const outbound = next.filter((m) => !m.pending);
         const res = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            messages: next
-              .filter((m) => !m.pending)
-              .map(({ role, text }) => ({ role, text })),
+            // Attach images only to the final (current) user message so we
+            // don't re-ship earlier screenshots every turn.
+            messages: outbound.map((m, i) =>
+              i === outbound.length - 1 && images.length
+                ? { role: m.role, text: m.text, images }
+                : { role: m.role, text: m.text },
+            ),
           }),
         });
         if (!res.ok || !res.body) {
@@ -578,10 +616,36 @@ function Page() {
     [messages, streaming, enqueueChunk, queryClient, userId, refreshConversations],
   );
 
+  // Stage image files (from the picker, paste, or drop) as data URLs,
+  // skipping non-images, oversized files, and anything past the cap.
+  const stageFiles = useCallback(async (files: FileList | File[]) => {
+    const incoming = Array.from(files).filter(
+      (f) => ACCEPTED_IMAGE.test(f.type) && f.size <= MAX_IMAGE_BYTES,
+    );
+    if (incoming.length === 0) return;
+    const urls = await Promise.all(incoming.map(fileToDataUrl));
+    setPendingImages((prev) => [...prev, ...urls].slice(0, MAX_IMAGES));
+  }, []);
+
+  const onPickFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) stageFiles(e.target.files);
+    e.target.value = ""; // allow re-selecting the same file
+  };
+
+  const onPaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const files = Array.from(e.clipboardData.files ?? []);
+    if (files.length) {
+      e.preventDefault();
+      stageFiles(files);
+    }
+  };
+
+  const submit = () => send(input, pendingImages);
+
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      send(input);
+      submit();
     }
   };
 
@@ -736,6 +800,7 @@ function Page() {
                     role={m.role}
                     text={m.text}
                     pending={m.pending}
+                    images={m.images}
                   />
                 ))}
                 <div ref={bottomRef} />
@@ -772,35 +837,93 @@ function Page() {
           ref={formRef}
           onSubmit={(e) => {
             e.preventDefault();
-            send(input);
+            submit();
           }}
-          className="fixed left-5 right-5 z-30 bottom-[calc(74px+env(safe-area-inset-bottom))] bg-[var(--background)]/85 backdrop-blur-md md:static md:left-auto md:right-auto md:bottom-auto md:mt-3 md:bg-white/[0.04] md:backdrop-blur-0 flex items-end gap-2 rounded-2xl border border-white/10 px-3 py-2"
+          onDragOver={(e) => {
+            if (e.dataTransfer.types.includes("Files")) e.preventDefault();
+          }}
+          onDrop={(e) => {
+            if (e.dataTransfer.files.length) {
+              e.preventDefault();
+              stageFiles(e.dataTransfer.files);
+            }
+          }}
+          className="fixed left-5 right-5 z-30 bottom-[calc(74px+env(safe-area-inset-bottom))] bg-[var(--background)]/85 backdrop-blur-md md:static md:left-auto md:right-auto md:bottom-auto md:mt-3 md:bg-white/[0.04] md:backdrop-blur-0 flex flex-col gap-2 rounded-2xl border border-white/10 px-3 py-2"
         >
-          <textarea
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={onKeyDown}
-            rows={1}
-            placeholder="Ask about your trades..."
-            className="flex-1 resize-none bg-transparent text-[14px] text-white placeholder:text-white/35 placeholder:text-[12px] focus:outline-none py-1.5 max-h-[160px]"
-          />
-          <button
-            type="submit"
-            disabled={!input.trim() || streaming}
-            className={`shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-full border transition ${
-              !input.trim() || streaming
-                ? "bg-white/[0.02] text-white/30 border-white/10 cursor-not-allowed"
-                : "bg-teal-500/15 text-teal-300 border-teal-500/25 hover:bg-teal-500/25 cursor-pointer"
-            }`}
-            aria-label="Send"
-          >
-            {streaming ? (
-              <i className="fa-solid fa-circle-notch text-[12px] animate-spin" />
-            ) : (
-              <i className="fa-solid fa-chevron-up text-[12px]" />
-            )}
-          </button>
+          {/* Staged screenshot thumbnails, removable before send. */}
+          {pendingImages.length > 0 && (
+            <div className="flex flex-wrap gap-2 pt-1">
+              {pendingImages.map((src, i) => (
+                <div key={i} className="relative group">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={src}
+                    alt={`Attachment ${i + 1}`}
+                    className="h-14 w-14 object-cover rounded-lg border border-white/15"
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setPendingImages((prev) =>
+                        prev.filter((_, idx) => idx !== i),
+                      )
+                    }
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-black/80 border border-white/20 text-white/80 hover:text-white flex items-center justify-center cursor-pointer"
+                    aria-label="Remove attachment"
+                  >
+                    <i className="fa-solid fa-xmark text-[10px]" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="flex items-end gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              multiple
+              hidden
+              onChange={onPickFiles}
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={pendingImages.length >= MAX_IMAGES || streaming}
+              title="Attach a screenshot"
+              aria-label="Attach a screenshot"
+              className="shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-full border border-white/10 bg-white/[0.02] text-white/50 hover:bg-white/[0.06] hover:text-white/80 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <i className="fa-solid fa-paperclip text-[13px]" />
+            </button>
+            <textarea
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={onKeyDown}
+              onPaste={onPaste}
+              rows={1}
+              placeholder="Ask about your trades, or attach a screenshot..."
+              className="flex-1 resize-none bg-transparent text-[14px] text-white placeholder:text-white/35 placeholder:text-[12px] focus:outline-none py-1.5 max-h-[160px]"
+            />
+            <button
+              type="submit"
+              disabled={(!input.trim() && pendingImages.length === 0) || streaming}
+              className={`shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-full border transition ${
+                (!input.trim() && pendingImages.length === 0) || streaming
+                  ? "bg-white/[0.02] text-white/30 border-white/10 cursor-not-allowed"
+                  : "bg-teal-500/15 text-teal-300 border-teal-500/25 hover:bg-teal-500/25 cursor-pointer"
+              }`}
+              aria-label="Send"
+            >
+              {streaming ? (
+                <i className="fa-solid fa-circle-notch text-[12px] animate-spin" />
+              ) : (
+                <i className="fa-solid fa-chevron-up text-[12px]" />
+              )}
+            </button>
+          </div>
         </form>
 
         {/* Mobile bottom blend - the composer is fixed on phones and the
@@ -848,10 +971,12 @@ function Bubble({
   role,
   text,
   pending,
+  images,
 }: {
   role: "user" | "model";
   text: string;
   pending?: boolean;
+  images?: string[];
 }) {
   const isUser = role === "user";
   return (
@@ -868,10 +993,23 @@ function Bubble({
             : "bg-white/[0.04] text-white/90 border border-white/10"
         }`}
       >
+        {images && images.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            {images.map((src, i) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                key={i}
+                src={src}
+                alt={`Attachment ${i + 1}`}
+                className="max-h-40 max-w-[200px] rounded-lg border border-white/15 object-cover"
+              />
+            ))}
+          </div>
+        )}
         {!text && pending ? (
           <TypingDots />
         ) : isUser ? (
-          <span className="whitespace-pre-wrap">{text}</span>
+          text && <span className="whitespace-pre-wrap">{text}</span>
         ) : (
           <MarkdownText text={text} />
         )}

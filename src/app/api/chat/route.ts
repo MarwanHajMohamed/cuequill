@@ -3,12 +3,27 @@ import { authOptions } from "@/lib/auth";
 import connectDb from "@/lib/db";
 import Trade from "@/lib/models/Trade";
 import { User } from "@/lib/models/User";
+import Goal from "@/lib/models/Goal";
+import RulesBoard from "@/lib/models/RulesBoard";
+import Strategy from "@/lib/models/Strategy";
+import {
+  computeMetric,
+  goalProgress,
+  METRIC_LABEL,
+  TIMEFRAME_LABEL,
+  metricUnit,
+  type GoalMetric,
+  type GoalTimeframe,
+  type GoalDirection,
+  type MetricTrade,
+} from "@/lib/goals";
 import mongoose from "mongoose";
 import {
   GoogleGenerativeAI,
   SchemaType,
   type FunctionCall,
   type FunctionDeclaration,
+  type Part,
 } from "@google/generative-ai";
 import {
   DAILY_MESSAGE_LIMIT,
@@ -22,16 +37,37 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 // POST /api/chat
-// Body: { messages: [{ role: "user" | "model", text: string }, ...] }
-// Streams Gemini response as text/plain chunks (Server-Sent style but
-// raw text - the client just appends them).
+// Body: { messages: [{ role, text, images? }, ...] }
+// The last message may carry image data URLs (screenshots the user
+// attached — e.g. a broker fill to log). Streams Gemini's response as
+// text/plain chunks (the client just appends them).
 //
 // Free-tier setup:
 //   1. Get a key from https://aistudio.google.com/apikey
 //   2. Set GEMINI_API_KEY in env
 //   3. Model defaults to gemini-2.5-flash (generous free quota)
 
-type IncomingMsg = { role: "user" | "model"; text: string };
+type IncomingMsg = { role: "user" | "model"; text: string; images?: string[] };
+
+// Guardrails for attached images: a handful of screenshots per turn,
+// each within Gemini's inline-data comfort zone.
+const MAX_IMAGES = 4;
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // ~5MB decoded per image
+
+// Turns a data URL ("data:image/png;base64,....") into a Gemini inlineData
+// part. Returns null for anything that isn't a supported inline image or is
+// too large, so a malformed attachment is skipped rather than crashing the
+// request.
+function dataUrlToPart(url: string): Part | null {
+  const m = /^data:(image\/(?:png|jpe?g|webp|gif));base64,([A-Za-z0-9+/=]+)$/.exec(
+    url.trim(),
+  );
+  if (!m) return null;
+  const [, mimeType, data] = m;
+  // base64 length → decoded bytes (~3/4), rough but fine as a size gate.
+  if ((data.length * 3) / 4 > MAX_IMAGE_BYTES) return null;
+  return { inlineData: { mimeType, data } };
+}
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -94,16 +130,34 @@ export async function POST(req: Request) {
     return new Response("No messages", { status: 400 });
   }
 
-  // ── Load trades context for this user ───────────────────────────────
+  // ── Load trades + planning context for this user ────────────────────
   const userId = new mongoose.Types.ObjectId(session.user.id);
   // Pull a wide history. Gemini 2.5 Flash has a 1M-token context window;
-  // 1000 compact trade rows is ~80KB - trivial to ship.
-  const trades = (await Trade.find({ userID: userId, simulated: false })
-    .sort({ dateBought: -1 })
-    .limit(1000)
-    .lean()) as unknown as LeanTrade[];
+  // 1000 compact trade rows is ~80KB - trivial to ship. Rules, strategies
+  // and goals are small; load them alongside so Quill can check discipline
+  // and track progress.
+  const [trades, rulesBoard, strategies, goals] = await Promise.all([
+    Trade.find({ userID: userId, simulated: false })
+      .sort({ dateBought: -1 })
+      .limit(1000)
+      .lean() as unknown as Promise<LeanTrade[]>,
+    RulesBoard.findOne({ userId }).lean() as Promise<LeanRulesBoard | null>,
+    Strategy.find({ userId })
+      .select("name direction timeframes description tags")
+      .lean() as unknown as Promise<LeanStrategy[]>,
+    Goal.find({ userId }).sort({ order: 1 }).lean() as unknown as Promise<
+      LeanGoal[]
+    >,
+  ]);
 
-  const context = buildTradeContext(trades);
+  const context = [
+    buildTradeContext(trades),
+    buildRulesContext(rulesBoard),
+    buildStrategiesContext(strategies),
+    buildGoalsContext(goals, trades),
+  ]
+    .filter(Boolean)
+    .join("\n\n");
 
   // Build a today-reference block so Gemini can resolve relative dates
   // like "today", "Friday", "next Monday" correctly. LLMs don't know the
@@ -113,6 +167,7 @@ export async function POST(req: Request) {
 
   // ── Build Gemini request ────────────────────────────────────────────
   const genAI = new GoogleGenerativeAI(apiKey);
+  const TOOLS = [ADD_TRADE_TOOL, EDIT_TRADE_TOOL, DELETE_TRADE_TOOL];
   const model = genAI.getGenerativeModel({
     model: "gemini-2.5-flash",
     systemInstruction: SYSTEM_PROMPT(
@@ -120,20 +175,32 @@ export async function POST(req: Request) {
       context,
       dateBlock,
     ),
-    tools: [{ functionDeclarations: [ADD_TRADE_TOOL, EDIT_TRADE_TOOL] }],
+    tools: [{ functionDeclarations: TOOLS }],
   });
 
   // Convert our message history into Gemini's format. The last message
-  // is the new prompt; earlier ones become chat history.
+  // is the new prompt; earlier ones become chat history (text only —
+  // attached images aren't persisted, so history stays lightweight).
   const last = messages[messages.length - 1];
   const history = messages.slice(0, -1).map((m) => ({
     role: m.role,
     parts: [{ text: m.text }],
   }));
 
+  // The current turn may carry attached images (data URLs). Build a parts
+  // array: the text first, then each valid image as inlineData.
+  const lastParts: Part[] = [];
+  if (last.text) lastParts.push({ text: last.text });
+  const imageParts = (last.images ?? [])
+    .slice(0, MAX_IMAGES)
+    .map(dataUrlToPart)
+    .filter((p): p is Part => p !== null);
+  lastParts.push(...imageParts);
+  if (lastParts.length === 0) lastParts.push({ text: "" });
+
   const chat = model.startChat({
     history,
-    tools: [{ functionDeclarations: [ADD_TRADE_TOOL, EDIT_TRADE_TOOL] }],
+    tools: [{ functionDeclarations: TOOLS }],
   });
 
   // ── Stream the response back ────────────────────────────────────────
@@ -174,13 +241,15 @@ export async function POST(req: Request) {
 
       try {
         let touchedTrades = false;
-        let result = await chat.sendMessageStream(last.text);
+        let result = await chat.sendMessageStream(lastParts);
         let calls = await drainStream(result);
         await addUsage(result);
 
         // Loop in case Gemini chains tool calls. Bounded so a hallucinating
-        // model can't spin us forever.
-        for (let i = 0; i < 4 && calls.length > 0; i++) {
+        // model can't spin us forever, but generous enough for a bulk
+        // action (e.g. tagging several trades) that fans out into many
+        // edit_trade / delete_trade calls across a few rounds.
+        for (let i = 0; i < 8 && calls.length > 0; i++) {
           const fnResponses = [];
           for (const call of calls) {
             if (call.name === "add_trade") {
@@ -194,6 +263,15 @@ export async function POST(req: Request) {
               });
             } else if (call.name === "edit_trade") {
               const res = await executeEditTrade(
+                session.user.id,
+                call.args as Record<string, unknown>,
+              );
+              if (res.ok) touchedTrades = true;
+              fnResponses.push({
+                functionResponse: { name: call.name, response: res },
+              });
+            } else if (call.name === "delete_trade") {
+              const res = await executeDeleteTrade(
                 session.user.id,
                 call.args as Record<string, unknown>,
               );
@@ -625,6 +703,61 @@ async function executeEditTrade(
   }
 }
 
+// ── Tool: delete_trade ─────────────────────────────────────────────────
+
+const DELETE_TRADE_TOOL: FunctionDeclaration = {
+  name: "delete_trade",
+  description:
+    "Permanently delete a trade from the user's journal. Use ONLY when the user clearly asks to delete/remove a trade (e.g. a duplicate or a mistaken entry). The id MUST come from the [id:…] tag in the TRADER SNAPSHOT. This cannot be undone, so if there's any ambiguity about which trade, ASK the user to confirm first (read out date + symbol + qty). For a bulk delete, call this once per trade.",
+  parameters: {
+    type: SchemaType.OBJECT,
+    properties: {
+      id: {
+        type: SchemaType.STRING,
+        description:
+          "The 24-char Mongo ObjectId of the trade to delete — copy it from the [id:…] tag in the TRADER SNAPSHOT.",
+      },
+    },
+    required: ["id"],
+  },
+};
+
+async function executeDeleteTrade(
+  userId: string,
+  rawArgs: Record<string, unknown>,
+): Promise<
+  { ok: true; deleted: Record<string, unknown> } | { ok: false; error: string }
+> {
+  const id = (rawArgs.id ?? "").toString().trim();
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return { ok: false, error: "Invalid or missing trade id" };
+  }
+  try {
+    await connectDb();
+    const deleted = await Trade.findOneAndDelete({
+      _id: new mongoose.Types.ObjectId(id),
+      userID: new mongoose.Types.ObjectId(userId),
+    });
+    if (!deleted) return { ok: false, error: "Trade not found (or not yours)" };
+    return {
+      ok: true,
+      deleted: {
+        id,
+        symbol: deleted.symbol,
+        option: deleted.option,
+        qty: deleted.qty,
+        strike: deleted.strike,
+        dateBought: deleted.dateBought?.toISOString().slice(0, 10),
+      },
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Unknown error",
+    };
+  }
+}
+
 function parseDateOnly(s: string | undefined): Date | null {
   if (!s) return null;
   // Accept YYYY-MM-DD and parse as UTC so the calendar/journal don't
@@ -822,6 +955,123 @@ function groupBy<T>(arr: T[], key: (t: T) => string): Record<string, T[]> {
   return out;
 }
 
+// ── Rules / strategies / goals context ─────────────────────────────────
+
+type LeanRulesBoard = {
+  sections?: { title?: string; rules?: { title?: string; body?: string }[] }[];
+};
+type LeanStrategy = {
+  name?: string;
+  direction?: "CALL" | "PUT";
+  timeframes?: string[];
+  description?: string;
+  tags?: string[];
+};
+type LeanGoal = {
+  kind: "metric" | "manual";
+  title?: string;
+  metric?: GoalMetric;
+  target?: number;
+  timeframe?: GoalTimeframe;
+  direction?: GoalDirection;
+  done?: boolean;
+};
+
+// Strip HTML tags + collapse whitespace so a rich-text strategy
+// description becomes a compact plain-text line for the model.
+function stripHtml(s: string | undefined, max = 240): string {
+  if (!s) return "";
+  const text = s
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/\s+/g, " ")
+    .trim();
+  return text.length > max ? text.slice(0, max - 1) + "…" : text;
+}
+
+function buildRulesContext(board: LeanRulesBoard | null): string {
+  const sections = board?.sections ?? [];
+  const lines: string[] = [];
+  for (const sec of sections) {
+    const rules = sec.rules ?? [];
+    if (rules.length === 0) continue;
+    lines.push(`${sec.title || "Rules"}:`);
+    for (const r of rules) {
+      const body = r.body ? ` — ${stripHtml(r.body, 160)}` : "";
+      lines.push(`  - ${r.title || "(untitled)"}${body}`);
+    }
+  }
+  if (lines.length === 0) return "";
+  return [
+    "TRADING RULES (the user's own written rules — hold them to these):",
+    ...lines,
+  ].join("\n");
+}
+
+function buildStrategiesContext(strategies: LeanStrategy[]): string {
+  if (!strategies.length) return "";
+  const rows = strategies.map((s) => {
+    const tf = s.timeframes?.length ? ` [${s.timeframes.join(", ")}]` : "";
+    const tags = s.tags?.length ? ` #${s.tags.join(" #")}` : "";
+    const desc = stripHtml(s.description);
+    return `  - ${s.name ?? "(unnamed)"} (${s.direction ?? "?"})${tf}${tags}${
+      desc ? `: ${desc}` : ""
+    }`;
+  });
+  return [
+    "THE USER'S STRATEGIES (their documented setups — reference these by name):",
+    ...rows,
+  ].join("\n");
+}
+
+function buildGoalsContext(goals: LeanGoal[], trades: LeanTrade[]): string {
+  if (!goals.length) return "";
+  // Metric goals are computed against the same trades the snapshot uses.
+  const metricTrades: MetricTrade[] = trades.map((t) => ({
+    status: t.status,
+    profitLoss: t.profitLoss ?? null,
+    fees: t.fees ?? null,
+    dateBought: new Date(t.dateBought).toISOString().slice(0, 10),
+    dateClosed: t.dateClosed
+      ? new Date(t.dateClosed).toISOString().slice(0, 10)
+      : null,
+  }));
+
+  const fmt = (v: number | null, m: GoalMetric): string => {
+    if (v == null) return "—";
+    const unit = metricUnit(m);
+    if (unit === "currency")
+      return `${v >= 0 ? "+" : "-"}$${Math.abs(v).toFixed(2)}`;
+    if (unit === "percent") return `${v.toFixed(0)}%`;
+    if (unit === "ratio") return v.toFixed(2);
+    return `${Math.round(v)}`;
+  };
+
+  const rows = goals.map((g) => {
+    if (g.kind === "manual") {
+      return `  - ${g.title || "(untitled)"}: ${g.done ? "done ✓" : "not done"}`;
+    }
+    const metric = g.metric ?? "net_pl";
+    const tf = g.timeframe ?? "month";
+    const dir = g.direction ?? "at_least";
+    const current = computeMetric(metric, metricTrades, tf);
+    const { achieved } = goalProgress(current, g.target ?? 0, dir);
+    const targetStr = fmt(g.target ?? 0, metric);
+    const currentStr = fmt(current, metric);
+    const aim = dir === "at_least" ? "≥" : "≤";
+    return `  - ${METRIC_LABEL[metric]} ${TIMEFRAME_LABEL[tf].toLowerCase()} ${aim} ${targetStr}: currently ${currentStr} (${
+      achieved ? "on track ✓" : "not yet"
+    })`;
+  });
+  return [
+    "GOALS (the user's targets — track progress and call out where they stand):",
+    ...rows,
+  ].join("\n");
+}
+
 // Inject "today" reference + a calendar lookup for the next 10 days so
 // Gemini doesn't have to guess what day "Friday" or "next Monday" is.
 function buildDateContext(tz: string): string {
@@ -893,6 +1143,28 @@ Your job:
   pre-computed weekly and monthly aggregates. Use it as the source of
   truth. You CAN compare arbitrary weeks, months, or symbols directly
   from this data.
+- Hold them to their own plan. The snapshot may also include their written
+  TRADING RULES, their documented STRATEGIES, and their GOALS. When it's
+  relevant, check trades against their rules ("this one broke your 'no
+  trades after two losses' rule"), reference strategies by their real name,
+  and tell them where they stand against a goal. Don't invent rules, goals,
+  or strategies that aren't listed.
+
+WEEKLY / PERIODIC REVIEW
+If the user asks for a review of their week/month (or says "review my
+week"), give a short, structured debrief: headline P/L and record for the
+period, what went well, the biggest mistake or leak you can see in the
+data, any rule they broke, and where they stand on their goals. Finish with
+one concrete thing to focus on next. Keep it tight and specific — cite real
+trades (as cards) where useful.
+
+SCREENSHOTS & IMAGES
+The user may attach an image (e.g. a broker fill confirmation or a screenshot
+of a trade). Read it and act on it: if it clearly shows a trade they took,
+offer to log it (or log it with add_trade once you have the required
+fields), and ask for anything the image doesn't show. If it's a chart or
+P/L screenshot, describe what you see and tie it back to their journal. Never
+invent numbers the image doesn't actually contain.
 
 PRESENTING TRADES
 When you reference one or more specific trades, render each one as a
@@ -954,14 +1226,25 @@ STYLE & ANALYSIS
   advice, trade recommendations, or predictions.
 
 TOOLS
-You have two tools available:
+You have three tools available:
 
 - add_trade(...) - log a NEW open options trade in the user's journal.
   Call this when the user clearly says they took a trade (e.g. "I just
   bought 5 SPY 600 CALLs at $1.20 expiring Friday", "log a trade", "add
-  this to my journal"). If the user mentions a trade but ANY required
-  field is missing or unclear (symbol, option, qty, strike, entry price,
-  entry date, expiry), ASK them in plain English instead of guessing.
+  this to my journal"), including when the details come from an attached
+  screenshot. If ANY required field is missing or unclear (symbol, option,
+  qty, strike, entry price, entry date, expiry), ASK them in plain English
+  instead of guessing.
+
+- delete_trade(id) - permanently remove a trade (a duplicate or a mistaken
+  entry). The id MUST come from the "[id:…]" tag in the snapshot. Deletion
+  can't be undone: if there's any doubt about which trade they mean, ASK to
+  confirm first (read back date + symbol + qty). For a bulk delete, call it
+  once per trade.
+
+- For BULK actions ("close all my open SPY trades", "tag every NVDA loss as
+  revenge"), make one edit_trade / delete_trade call per matching trade,
+  using the ids from the snapshot. Confirm a brief summary of what changed.
 
 - edit_trade(id, ...fields) - update an EXISTING trade. Use this to
   close a trade (set status=WIN/LOSS, plus closingContractPrice,
