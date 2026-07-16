@@ -145,6 +145,8 @@ function Page() {
   // Screenshots staged in the composer, waiting to be sent with the next
   // message. Data URLs.
   const [pendingImages, setPendingImages] = useState<string[]>([]);
+  // Live speech transcript, shown in the voice indicator while dictating.
+  const [liveTranscript, setLiveTranscript] = useState("");
   const [streaming, setStreaming] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   // Trade being viewed via a `trade://` link in the Gemini reply.
@@ -676,9 +678,18 @@ function Page() {
   // user stops speaking — so a position can be closed hands-free
   // ("close my 5 SPY 600 calls at $2.30").
   const speech = useSpeechRecognition({
-    onResult: (t) => setInput(t),
-    onFinal: (t) => send(t, pendingImages),
+    onResult: (t) => setLiveTranscript(t),
+    onFinal: (t) => {
+      setLiveTranscript("");
+      send(t, pendingImages);
+    },
   });
+
+  // Clear the transcript indicator when dictation stops without a phrase
+  // (e.g. the user taps the mic off, or silence with nothing said).
+  useEffect(() => {
+    if (!speech.listening) setLiveTranscript("");
+  }, [speech.listening]);
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -936,6 +947,31 @@ function Page() {
             </div>
           )}
 
+          {/* Live voice transcript indicator. */}
+          <AnimatePresence>
+            {speech.listening && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.15 }}
+                className="overflow-hidden"
+              >
+                <div className="flex items-center gap-2.5 px-1 pt-1 pb-0.5">
+                  <span className="relative flex h-2.5 w-2.5 shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400/60" />
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500" />
+                  </span>
+                  <span className="text-[13px] leading-snug text-white/85 line-clamp-2">
+                    {liveTranscript || (
+                      <span className="text-white/40">Listening… speak now</span>
+                    )}
+                  </span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           <div className="flex items-end gap-2">
             <input
               ref={fileInputRef}
@@ -980,11 +1016,7 @@ function Page() {
               onKeyDown={onKeyDown}
               onPaste={onPaste}
               rows={1}
-              placeholder={
-                speech.listening
-                  ? "Listening… speak now"
-                  : "Ask about your trades, or attach a screenshot..."
-              }
+              placeholder="Ask about your trades, or attach a screenshot..."
               className="flex-1 resize-none bg-transparent text-[14px] text-white placeholder:text-white/35 placeholder:text-[12px] focus:outline-none py-1.5 max-h-[160px]"
             />
             <button
