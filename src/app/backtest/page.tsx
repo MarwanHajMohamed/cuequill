@@ -298,7 +298,7 @@ function Page() {
           </h1>
           <p className="text-[13px] text-white/45 mt-1">
             Test rule-based strategies on historical daily prices (US stocks
-            &amp; ETFs). Data via Stooq.
+            &amp; ETFs). Data via Yahoo Finance.
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
