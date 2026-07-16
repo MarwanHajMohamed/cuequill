@@ -17,13 +17,6 @@ import {
   type GoalDirection,
   type MetricTrade,
 } from "@/lib/goals";
-import { getQuotes } from "@/lib/marketData";
-import {
-  getOptionMarks,
-  occSymbol,
-  isOptionsConfigured,
-  type OptionPosition,
-} from "@/lib/optionsData";
 import mongoose from "mongoose";
 import {
   GoogleGenerativeAI,
@@ -174,22 +167,13 @@ export async function POST(req: Request) {
 
   // ── Build Gemini request ────────────────────────────────────────────
   const genAI = new GoogleGenerativeAI(apiKey);
-  const TOOLS = [
-    ADD_TRADE_TOOL,
-    EDIT_TRADE_TOOL,
-    DELETE_TRADE_TOOL,
-    GET_QUOTE_TOOL,
-    // Only offer the option-mark tool when a provider is actually
-    // configured, so Quill doesn't promise data it can't fetch.
-    ...(isOptionsConfigured() ? [GET_OPTION_MARKS_TOOL] : []),
-  ];
+  const TOOLS = [ADD_TRADE_TOOL, EDIT_TRADE_TOOL, DELETE_TRADE_TOOL];
   const model = genAI.getGenerativeModel({
     model: "gemini-2.5-flash",
     systemInstruction: SYSTEM_PROMPT(
       session.user.firstname ?? "trader",
       context,
       dateBlock,
-      isOptionsConfigured(),
     ),
     tools: [{ functionDeclarations: TOOLS }],
   });
@@ -292,20 +276,6 @@ export async function POST(req: Request) {
                 call.args as Record<string, unknown>,
               );
               if (res.ok) touchedTrades = true;
-              fnResponses.push({
-                functionResponse: { name: call.name, response: res },
-              });
-            } else if (call.name === "get_quote") {
-              const res = await executeGetQuote(
-                call.args as Record<string, unknown>,
-              );
-              fnResponses.push({
-                functionResponse: { name: call.name, response: res },
-              });
-            } else if (call.name === "get_option_marks") {
-              const res = await executeGetOptionMarks(
-                call.args as Record<string, unknown>,
-              );
               fnResponses.push({
                 functionResponse: { name: call.name, response: res },
               });
@@ -788,159 +758,6 @@ async function executeDeleteTrade(
   }
 }
 
-// ── Tool: get_quote ────────────────────────────────────────────────────
-
-const GET_QUOTE_TOOL: FunctionDeclaration = {
-  name: "get_quote",
-  description:
-    "Fetch the latest market price for one or more US stock/ETF symbols. Use it when the user asks where a symbol is trading, or when you need a current price to mark their OPEN positions to market (estimate live unrealized P/L). Prices are delayed (typically ~15 min), not real-time tick data — say 'roughly' / 'delayed' when it matters. Note: the journal tracks OPTIONS; a quote is the price of the UNDERLYING share, so use it for context/direction, not exact option P/L.",
-  parameters: {
-    type: SchemaType.OBJECT,
-    properties: {
-      symbols: {
-        type: SchemaType.ARRAY,
-        description:
-          "Uppercase US tickers to quote, e.g. ['SPY','AAPL']. No leading $.",
-        items: { type: SchemaType.STRING },
-      },
-    },
-    required: ["symbols"],
-  },
-};
-
-async function executeGetQuote(
-  rawArgs: Record<string, unknown>,
-): Promise<
-  | { ok: true; quotes: Record<string, unknown>; asOf: string }
-  | { ok: false; error: string }
-> {
-  const list = Array.isArray(rawArgs.symbols)
-    ? (rawArgs.symbols as unknown[]).map((s) => String(s)).filter(Boolean)
-    : typeof rawArgs.symbols === "string"
-      ? [rawArgs.symbols]
-      : [];
-  if (list.length === 0) return { ok: false, error: "No symbols provided" };
-  try {
-    const map = await getQuotes(list.slice(0, 25));
-    if (map.size === 0) {
-      return { ok: false, error: "No quotes found for those symbols" };
-    }
-    const quotes: Record<string, unknown> = {};
-    for (const [sym, q] of map) {
-      quotes[sym] = {
-        price: Number(q.price.toFixed(2)),
-        change: q.change == null ? null : Number(q.change.toFixed(2)),
-        changePct:
-          q.changePct == null ? null : Number(q.changePct.toFixed(2)),
-        currency: q.currency,
-        marketState: q.marketState,
-        name: q.name,
-        asOf: q.time,
-      };
-    }
-    return { ok: true, quotes, asOf: new Date().toISOString() };
-  } catch (err) {
-    return {
-      ok: false,
-      error: err instanceof Error ? err.message : "Quote lookup failed",
-    };
-  }
-}
-
-// ── Tool: get_option_marks ─────────────────────────────────────────────
-
-const GET_OPTION_MARKS_TOOL: FunctionDeclaration = {
-  name: "get_option_marks",
-  description:
-    "Fetch the current market mark (mid of bid/ask, or last) for specific OPTION contracts, so you can compute REAL unrealized P/L on the user's open option positions. Prefer this over get_quote when the user asks how an open options trade is doing right now. Build one entry per position from the TRADER SNAPSHOT (symbol, expiry, strike, CALL/PUT). Then unrealized P/L per position = (mark - entry contract price) × qty × 100. Prices are delayed. Only open positions are worth marking.",
-  parameters: {
-    type: SchemaType.OBJECT,
-    properties: {
-      positions: {
-        type: SchemaType.ARRAY,
-        description: "The option positions to mark.",
-        items: {
-          type: SchemaType.OBJECT,
-          properties: {
-            symbol: {
-              type: SchemaType.STRING,
-              description: "Underlying ticker, uppercase (e.g. SPY).",
-            },
-            expiry: {
-              type: SchemaType.STRING,
-              description: "Expiration date, YYYY-MM-DD.",
-            },
-            strike: { type: SchemaType.NUMBER, description: "Strike, USD." },
-            type: {
-              type: SchemaType.STRING,
-              format: "enum",
-              enum: ["CALL", "PUT"],
-            },
-          },
-          required: ["symbol", "expiry", "strike", "type"],
-        },
-      },
-    },
-    required: ["positions"],
-  },
-};
-
-async function executeGetOptionMarks(
-  rawArgs: Record<string, unknown>,
-): Promise<
-  | { ok: true; marks: Record<string, unknown>; asOf: string }
-  | { ok: false; error: string }
-> {
-  if (!isOptionsConfigured()) {
-    return { ok: false, error: "Option data provider is not configured" };
-  }
-  const raw = Array.isArray(rawArgs.positions) ? rawArgs.positions : [];
-  const positions: OptionPosition[] = [];
-  for (const p of raw.slice(0, 50)) {
-    const o = p as Record<string, unknown>;
-    const symbol = String(o.symbol ?? "").trim();
-    const expiry = String(o.expiry ?? "").trim();
-    const strike = Number(o.strike);
-    const type = o.type === "PUT" ? "PUT" : "CALL";
-    if (!symbol || !expiry || !Number.isFinite(strike)) continue;
-    positions.push({ symbol, expiry, strike, type });
-  }
-  if (positions.length === 0) return { ok: false, error: "No valid positions" };
-
-  try {
-    const map = await getOptionMarks(positions);
-    if (map.size === 0) {
-      return { ok: false, error: "No option marks found for those contracts" };
-    }
-    // Key results back to each requested position so the model can line
-    // them up unambiguously.
-    const marks: Record<string, unknown> = {};
-    for (const p of positions) {
-      const occ = occSymbol(p);
-      if (!occ) continue;
-      const m = map.get(occ);
-      if (!m) continue;
-      marks[`${p.symbol} ${p.expiry} ${p.strike}${p.type === "PUT" ? "P" : "C"}`] =
-        {
-          mark: m.mark == null ? null : Number(m.mark.toFixed(2)),
-          bid: m.bid,
-          ask: m.ask,
-          last: m.last,
-          asOf: m.asOf,
-        };
-    }
-    if (Object.keys(marks).length === 0) {
-      return { ok: false, error: "No option marks found for those contracts" };
-    }
-    return { ok: true, marks, asOf: new Date().toISOString() };
-  } catch (err) {
-    return {
-      ok: false,
-      error: err instanceof Error ? err.message : "Option lookup failed",
-    };
-  }
-}
-
 function parseDateOnly(s: string | undefined): Date | null {
   if (!s) return null;
   // Accept YYYY-MM-DD and parse as UTC so the calendar/journal don't
@@ -1312,7 +1129,6 @@ const SYSTEM_PROMPT = (
   name: string,
   context: string,
   dateBlock: string,
-  optionsConfigured: boolean,
 ) => `
 You are QuillAI, Cuequill's in-app trading assistant for ${name}, who trades
 US options discretionarily on IBKR (mostly SPY, AAPL, AMZN, TSLA, NVDA, QQQ).
@@ -1409,24 +1225,8 @@ STYLE & ANALYSIS
 - This is journaling and analysis only - do NOT give personalized investment
   advice, trade recommendations, or predictions.
 
-LIVE PRICES
-You can pull delayed market quotes with get_quote (the UNDERLYING share
-price). Use it when the user asks where something is trading, or for a
-quick directional read on their positions ("SPY's up 1.2% today, so your
-600 calls are likely in the green").${
-  optionsConfigured
-    ? `
-For EXACT unrealized P/L on an open OPTIONS position, use get_option_marks
-instead — it returns the option contract's real mark (mid of bid/ask). Per
-position: unrealized P/L = (mark − entry contract price) × qty × 100. Reach
-for this whenever the user asks how an open options trade is doing right now.`
-    : ""
-}
-Prices are delayed (~15 min); say so when it matters. Never quote a price
-you didn't get from a tool.
-
 TOOLS
-You have four tools available:
+You have three tools available:
 
 - add_trade(...) - log a NEW open options trade in the user's journal.
   Call this when the user clearly says they took a trade (e.g. "I just
