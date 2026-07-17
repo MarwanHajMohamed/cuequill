@@ -152,7 +152,7 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-white/10">
       <div className="max-w-[1200px] mx-auto px-6 md:px-10 py-12 grid grid-cols-2 md:grid-cols-12 gap-y-8 gap-x-6">
-        <div className="md:col-span-5 flex flex-col gap-3">
+        <div className="md:col-span-4 flex flex-col gap-3">
           <Link href="/" className="flex items-center gap-2.5">
             <CuequillLogo className="h-5 w-auto" />
             <span className="font-semibold tracking-tight text-[13.5px]">
@@ -182,6 +182,13 @@ export function SiteFooter() {
             { label: "Quill AI", href: "/#quill" },
             { label: "Numbers", href: "/#numbers" },
             { label: "IBKR sync", href: "/#ibkr" },
+          ]}
+        />
+        <FooterCol
+          title="Legal"
+          links={[
+            { label: "Privacy", href: "/privacy" },
+            { label: "Terms", href: "/terms" },
           ]}
         />
         <FooterCol
