@@ -715,15 +715,15 @@ function Page() {
     () => (
       <div className="flex flex-col md:items-start gap-8 w-full max-w-xl mx-auto">
         <div className="flex flex-col md:items-start text-center gap-2">
-          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-teal-500/10 text-teal-300 border border-teal-500/25 text-[11px] tracking-[0.08em] font-medium">
+          <div className="hidden md:inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-teal-500/10 text-teal-300 border border-teal-500/25 text-[11px] tracking-[0.08em] font-medium">
             <i className="fa-solid fa-wand-magic-sparkles text-[10px]" />
             QuillAI
           </div>
-          <h2 className="text-2xl md:text-3xl font-semibold tracking-tight">
+          <h2 className="text-lg md:text-3xl font-semibold tracking-tight">
             Ask anything about your trades
           </h2>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
+        <div className="grid grid-cols-2 gap-2 w-full">
           {SUGGESTIONS.map((s) => (
             <button
               key={s.title}
@@ -1024,7 +1024,7 @@ function Page() {
               onKeyDown={onKeyDown}
               onPaste={onPaste}
               rows={1}
-              placeholder="Ask about your trades, or attach a screenshot..."
+              placeholder="Ask about your trades…"
               className="flex-1 resize-none bg-transparent text-[14px] text-white placeholder:text-white/35 placeholder:text-[12px] focus:outline-none py-1.5 max-h-[160px]"
             />
             <button
