@@ -29,6 +29,12 @@ import AnimatedCalendar from "../reusablecalendar/AnimatedCalendar";
 import WeekView from "./WeekView";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
 import { AnimatePresence } from "framer-motion";
+import ShareImageModal from "@/components/ShareImageModal";
+import MonthlyShareCard, {
+  CARD_W as MONTH_CARD_W,
+  CARD_H as MONTH_CARD_H,
+  type MonthlyShareStats,
+} from "@/components/MonthlyShareCard";
 
 import { fmtMoneyCompact, fmtMoneySignedCompact } from "@/lib/helpers/fmt";
 type TradeEvent =
@@ -116,6 +122,8 @@ function Page() {
   // Track which month the AnimatedCalendar is showing, so the week-summary
   // sidebar can reflect the same view.
   const [displayedMonth, setDisplayedMonth] = useState<Date>(() => new Date());
+  // "Share this month" image modal.
+  const [showMonthShare, setShowMonthShare] = useState(false);
   // Mon-start of the currently visible week (week view). Updated via
   // WeekView's onWeekChange callback so we can show a week summary.
   const [displayedWeekStart, setDisplayedWeekStart] = useState<Date>(() =>
@@ -254,6 +262,32 @@ function Page() {
     return isClosed && t.dateClosed
       ? t.dateClosed.split("T")[0]
       : t.dateBought.split("T")[0];
+  };
+
+  // Aggregate the displayed month's trades for the shareable recap card.
+  const monthShareStats = (): MonthlyShareStats => {
+    const prefix = `${displayedMonth.getFullYear()}-${String(
+      displayedMonth.getMonth() + 1,
+    ).padStart(2, "0")}`;
+    const inMonth = (trades ?? []).filter((t) =>
+      bucketDateFor(t).startsWith(prefix),
+    );
+    const closed = inMonth.filter(
+      (t) => t.status === "WIN" || t.status === "LOSS",
+    );
+    const wins = closed.filter((t) => t.status === "WIN").length;
+    const losses = closed.filter((t) => t.status === "LOSS").length;
+    const netPL = closed.reduce((s, t) => s + tradeNetPL(t), 0);
+    return {
+      monthName: displayedMonth.toLocaleDateString("en-US", { month: "long" }),
+      year: `${displayedMonth.getFullYear()}`,
+      netPL,
+      trades: inMonth.length,
+      closed: closed.length,
+      wins,
+      losses,
+      winRate: closed.length ? (wins / closed.length) * 100 : null,
+    };
   };
 
   const handleDateClick = (date: Date) => {
@@ -522,7 +556,11 @@ function Page() {
         {/* Top-right event badges — stacked so a day with several
             (e.g. Fed + CPI) doesn't pile them on top of each other. */}
         {(isFed || isCpi || isPce || isPpi || (marketDay && marketDay.early)) && (
-          <div className="absolute top-1 right-1 flex flex-col items-end gap-0.5">
+          // On mobile the tiles are narrow, so a 2-digit day number (top-left)
+          // would collide with these pills if they sat at the very top-right.
+          // Drop them below the number row on mobile; keep them top-right on
+          // desktop where the tile is wide enough.
+          <div className="absolute top-7 right-1 md:top-1 flex flex-col items-end gap-0.5">
             {/* Red "no-trade" pills — one shared red style across every
                 high-impact release so the day reads as a single warning. */}
             {isFed && (
@@ -875,6 +913,16 @@ function Page() {
                 >
                   <i className="fa-solid fa-layer-group text-[11px]" />
                 </button>
+                {view === "month" && (
+                  <button
+                    onClick={() => setShowMonthShare(true)}
+                    className="w-8 h-8 inline-flex items-center justify-center rounded-full border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/75 hover:text-white transition cursor-pointer"
+                    title="Share this month's P/L as an image"
+                    aria-label="Share this month"
+                  >
+                    <i className="fa-solid fa-share-nodes text-[11px]" />
+                  </button>
+                )}
                 <button
                   onClick={goToToday}
                   className="inline-flex items-center px-3 py-1.5 rounded-full border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/75 hover:text-white transition text-[12px] font-medium cursor-pointer"
@@ -1067,6 +1115,20 @@ function Page() {
           />
         )}
       </AnimatePresence>
+
+      {showMonthShare && (
+        <ShareImageModal
+          cardW={MONTH_CARD_W}
+          cardH={MONTH_CARD_H}
+          fileName={`cuequill-${monthShareStats().monthName.toLowerCase()}-${monthShareStats().year}.png`}
+          shareTitle={`${monthShareStats().monthName} ${monthShareStats().year} — Cuequill`}
+          shareText={`My ${monthShareStats().monthName} trading recap — Cuequill`}
+          renderCard={(ref) => (
+            <MonthlyShareCard ref={ref} stats={monthShareStats()} />
+          )}
+          onClose={() => setShowMonthShare(false)}
+        />
+      )}
     </>
   );
 }
