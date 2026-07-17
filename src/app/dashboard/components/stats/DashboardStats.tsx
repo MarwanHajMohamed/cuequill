@@ -501,7 +501,7 @@ export default function DashboardStats({ userId }: { userId: string }) {
                     onClick={() => setAddOpen(false)}
                   />
                   <div className="absolute right-0 top-[calc(100%+6px)] z-50 w-52 rounded-xl border border-white/10 bg-[var(--surface-2,#1a1a1a)] backdrop-blur-md shadow-xl p-1.5 max-h-72 overflow-y-auto">
-                    <div className="px-2 py-1 text-[10px] uppercase tracking-wider text-white/40">
+                    <div className="px-2 py-1 text-[10px] tracking-wider text-white/40">
                       Add a tile
                     </div>
                     {disabledTiles.map((t) => (

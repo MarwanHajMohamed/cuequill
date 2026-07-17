@@ -97,7 +97,7 @@ function AddGoal({ onDone }: { onDone: () => void }) {
       {kind === "metric" ? (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
           <label className="flex flex-col gap-1 col-span-2 md:col-span-1">
-            <span className="text-[10.5px] tracking-wide text-white/40 uppercase">
+            <span className="text-[10.5px] tracking-wide text-white/40">
               Metric
             </span>
             <select
@@ -113,7 +113,7 @@ function AddGoal({ onDone }: { onDone: () => void }) {
             </select>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-[10.5px] tracking-wide text-white/40 uppercase">
+            <span className="text-[10.5px] tracking-wide text-white/40">
               Direction
             </span>
             <select
@@ -126,7 +126,7 @@ function AddGoal({ onDone }: { onDone: () => void }) {
             </select>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-[10.5px] tracking-wide text-white/40 uppercase">
+            <span className="text-[10.5px] tracking-wide text-white/40">
               Target
             </span>
             <input
@@ -138,7 +138,7 @@ function AddGoal({ onDone }: { onDone: () => void }) {
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-[10.5px] tracking-wide text-white/40 uppercase">
+            <span className="text-[10.5px] tracking-wide text-white/40">
               Timeframe
             </span>
             <select

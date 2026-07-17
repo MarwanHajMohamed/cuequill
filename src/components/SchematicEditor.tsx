@@ -1568,7 +1568,7 @@ function PropertyPanel({
 }) {
   return (
     <div className="flex flex-col gap-3">
-      <div className="text-[10.5px] tracking-[0.08em] uppercase text-teal-300/80">
+      <div className="text-[10.5px] tracking-[0.08em] capitalize text-teal-300/80">
         {element.kind}
       </div>
 
@@ -1682,7 +1682,7 @@ function NumField({
 
   return (
     <label className="flex flex-col gap-1">
-      <span className="text-[10.5px] tracking-[0.08em] uppercase text-white/45">
+      <span className="text-[10.5px] tracking-[0.08em] text-white/45">
         {label}
       </span>
       <input
@@ -1718,7 +1718,7 @@ function TextField({
 }) {
   return (
     <label className="flex flex-col gap-1">
-      <span className="text-[10.5px] tracking-[0.08em] uppercase text-white/45">
+      <span className="text-[10.5px] tracking-[0.08em] text-white/45">
         {label}
       </span>
       <input
@@ -1742,7 +1742,7 @@ function ColorField({
 }) {
   return (
     <label className="flex items-center justify-between gap-2">
-      <span className="text-[10.5px] tracking-[0.08em] uppercase text-white/45">
+      <span className="text-[10.5px] tracking-[0.08em] text-white/45">
         {label}
       </span>
       <input
@@ -1766,7 +1766,7 @@ function Toggle({
 }) {
   return (
     <label className="flex items-center justify-between gap-2 cursor-pointer">
-      <span className="text-[10.5px] tracking-[0.08em] uppercase text-white/45">
+      <span className="text-[10.5px] tracking-[0.08em] text-white/45">
         {label}
       </span>
       <button

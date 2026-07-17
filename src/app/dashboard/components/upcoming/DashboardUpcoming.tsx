@@ -180,7 +180,7 @@ function EventRow({ ev, n }: { ev: UpcomingEvent; n: number }) {
     <li className="flex items-center gap-3 md:gap-4 px-4 md:px-5 py-3">
       {/* Date block */}
       <div className="shrink-0 w-11 flex flex-col md:items-start">
-        <div className="text-[9px] tracking-[0.14em] text-white/40 uppercase leading-none">
+        <div className="text-[9px] tracking-[0.14em] text-white/40 leading-none">
           {format(d, "MMM")}
         </div>
         <div className="text-[19px] font-semibold tabular-nums leading-tight">

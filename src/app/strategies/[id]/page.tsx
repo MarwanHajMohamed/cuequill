@@ -283,7 +283,7 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
 
           {/* Description — rich-text editor */}
           <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 md:p-5 flex flex-col gap-2.5">
-            <span className="text-[10.5px] tracking-[0.12em] uppercase text-white/45">
+            <span className="text-[10.5px] tracking-[0.12em] text-white/45">
               Description
             </span>
             <RichNotesEditor
@@ -491,7 +491,7 @@ function ExamplesGallery({ examples }: { examples: StrategyExample[] }) {
     <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 md:p-5 flex flex-col gap-4">
       <div className="flex items-center gap-2">
         <i className="fa-solid fa-images text-[12px] text-teal-300/80" />
-        <span className="text-[10.5px] tracking-[0.12em] uppercase text-white/45">
+        <span className="text-[10.5px] tracking-[0.12em] text-white/45">
           Examples
         </span>
       </div>
@@ -541,7 +541,7 @@ function ExamplesEditor({
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-2">
           <i className="fa-solid fa-images text-[12px] text-teal-300/80" />
-          <span className="text-[10.5px] tracking-[0.12em] uppercase text-white/45">
+          <span className="text-[10.5px] tracking-[0.12em] text-white/45">
             Examples
           </span>
         </div>
@@ -682,7 +682,7 @@ function Field({
 }) {
   return (
     <div className={`flex flex-col gap-1.5 ${className}`}>
-      <span className="text-[10.5px] tracking-[0.12em] uppercase text-white/45">
+      <span className="text-[10.5px] tracking-[0.12em] text-white/45">
         {label}
       </span>
       {children}

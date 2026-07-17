@@ -171,7 +171,7 @@ export default function DashboardGrid({ userId }: { userId: string }) {
                     onClick={() => setAddOpen(false)}
                   />
                   <div className="absolute right-0 top-[calc(100%+6px)] z-50 w-56 rounded-xl border border-white/10 bg-[var(--surface-2,#1a1a1a)] backdrop-blur-md shadow-xl p-1.5">
-                    <div className="px-2 py-1 text-[10px] uppercase tracking-wider text-white/40">
+                    <div className="px-2 py-1 text-[10px] tracking-wider text-white/40">
                       Add a widget
                     </div>
                     {disabledWidgets.map((w) => (
