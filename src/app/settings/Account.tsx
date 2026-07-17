@@ -275,6 +275,12 @@ const Account = () => {
             value={selectedTimezone as string}
             onChange={handleTimezoneChange}
             components={{ Input: NoKeyboardInput }}
+            // Render the menu in a body-level portal (fixed position) so it
+            // isn't clipped by the settings card's height / overflow.
+            menuPortalTarget={
+              typeof document !== "undefined" ? document.body : undefined
+            }
+            menuPosition="fixed"
             styles={{
               control: (base, state) => ({
                 ...base,
@@ -305,13 +311,19 @@ const Account = () => {
                 color: "rgb(var(--fg-rgb))",
                 overflow: "hidden",
               }),
+              // Sits above everything else once portalled to the body.
+              menuPortal: (base) => ({ ...base, zIndex: 9999 }),
               menuList: (base) => ({ ...base, padding: 4 }),
               option: (base, state) => ({
                 ...base,
                 backgroundColor: state.isFocused
                   ? "rgb(var(--fg-rgb) / 0.06)"
                   : "transparent",
-                color: state.isSelected ? "var(--color-teal-400)" : "white",
+                // Theme-aware: readable in both light and dark. Selected row
+                // gets the teal accent.
+                color: state.isSelected
+                  ? "var(--color-teal-400)"
+                  : "rgb(var(--fg-rgb))",
                 fontSize: 13,
                 cursor: "pointer",
                 borderRadius: 8,
