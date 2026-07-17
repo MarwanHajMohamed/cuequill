@@ -96,7 +96,7 @@ export default function AutoImportNotifier() {
                     <i className="fa-solid fa-cloud-arrow-down text-teal-300 text-[13px]" />
                   </div>
                   <span className="text-[10px] tracking-[0.12em] text-teal-300 font-semibold">
-                    AUTO-SYNC
+                    Auto-sync
                   </span>
                 </div>
                 <div className="text-lg md:text-xl font-semibold tracking-tight">

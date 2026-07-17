@@ -74,7 +74,7 @@ export default function ChatHistory({
         {open && (
           <div className="absolute left-0 top-[calc(100%+8px)] z-30 w-72 max-w-[80vw] rounded-xl border border-white/10 bg-[var(--surface-2)]/95 backdrop-blur-md p-1.5 shadow-[0_24px_60px_var(--shadow)]">
             <div className="px-2.5 py-2 text-[11px] tracking-[0.08em] text-white/45 font-medium">
-              CONVERSATIONS
+              Conversations
             </div>
             <div className="max-h-[50vh] overflow-y-auto">
               {conversations.length === 0 ? (

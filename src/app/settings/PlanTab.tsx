@@ -132,7 +132,7 @@ export default function PlanTab() {
     <div className="p-5 md:p-7 flex flex-col gap-6 max-w-2xl">
       <div>
         <div className="text-[11px] tracking-[0.08em] text-white/45 font-medium mb-1">
-          CURRENT PLAN
+          Current plan
         </div>
         <div className="mt-3 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
           <div className="flex items-center justify-between gap-4 flex-wrap">

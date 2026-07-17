@@ -43,7 +43,7 @@ export default function ConversationSidebar({
     >
       <div className="w-64 flex flex-col min-h-0 h-full rounded-2xl border border-white/10 bg-white/[0.02]">
         <div className="px-3.5 py-3 text-[11px] tracking-[0.08em] text-white/45 font-medium border-b border-white/[0.06]">
-          CONVERSATIONS
+          Conversations
         </div>
         <div className="flex-1 min-h-0 overflow-y-auto p-1.5">
           {conversations.length === 0 ? (

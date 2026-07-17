@@ -85,7 +85,7 @@ export default function ChatUsage({ className = "" }: { className?: string }) {
       {open && (
         <div className="absolute right-0 top-[calc(100%+8px)] z-30 w-64 rounded-xl border border-white/10 bg-[var(--surface-2)]/95 backdrop-blur-md p-4 shadow-[0_24px_60px_var(--shadow)]">
           <div className="text-[11px] tracking-[0.08em] text-white/45 font-medium mb-3">
-            QUILL AI USAGE
+            Quill AI usage
           </div>
 
           <div className="mb-3">

@@ -360,7 +360,7 @@ function Page() {
             {metricGoals.length > 0 && (
               <section className="mt-8">
                 <h2 className="text-[11px] tracking-[0.1em] text-white/40 font-medium mb-3">
-                  TARGETS
+                  Targets
                 </h2>
                 <div className="grid md:grid-cols-2 gap-3">
                   {metricGoals.map((g) => (
@@ -374,7 +374,7 @@ function Page() {
             {manualGoals.length > 0 && (
               <section className="mt-8">
                 <h2 className="text-[11px] tracking-[0.1em] text-white/40 font-medium mb-3">
-                  CHECKLIST
+                  Checklist
                 </h2>
                 <div className="flex flex-col gap-2">
                   {manualGoals.map((g) => (
