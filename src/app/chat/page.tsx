@@ -744,6 +744,10 @@ function Page() {
             </button>
           ))}
         </div>
+        <p className="text-[11px] text-white/30 leading-relaxed text-center md:text-left">
+          Quill AI can make mistakes and does not give financial advice. It
+          analyses your journal for your own review only.
+        </p>
       </div>
     ),
     [send],

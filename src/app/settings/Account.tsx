@@ -1,6 +1,6 @@
 "use client";
 
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import React, { useEffect, useMemo, useState } from "react";
 import { GroupBase, InputProps, components } from "react-select";
 import TimezoneSelect, { type ITimezone } from "react-timezone-select";
@@ -52,6 +52,57 @@ const Account = () => {
   const [selectedTimezone, setSelectedTimezone] = useState<ITimezone | null>(
     null,
   );
+
+  // Danger zone: data export + account deletion.
+  const [exporting, setExporting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleteText, setDeleteText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [dangerError, setDangerError] = useState<string | null>(null);
+
+  const handleExport = async () => {
+    setDangerError(null);
+    setExporting(true);
+    try {
+      const res = await fetch("/api/account/export");
+      if (!res.ok) throw new Error("Export failed. Please try again.");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `cuequill-export-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setDangerError(e instanceof Error ? e.message : "Export failed.");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (deleteText !== "DELETE") return;
+    setDangerError(null);
+    setDeleting(true);
+    try {
+      const res = await fetch("/api/account", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirm: "DELETE" }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error ?? "Deletion failed. Please try again.");
+      }
+      // Account is gone — sign out and return to the marketing site.
+      await signOut({ callbackUrl: "/" });
+    } catch (e) {
+      setDangerError(e instanceof Error ? e.message : "Deletion failed.");
+      setDeleting(false);
+    }
+  };
 
   // Hydrate from session.
   useEffect(() => {
@@ -372,6 +423,101 @@ const Account = () => {
           </span>
         )}
       </div>
+
+      {/* Danger zone: data portability + account erasure. */}
+      <section className="mt-4 flex flex-col gap-4 rounded-2xl border border-red-500/20 bg-red-500/[0.03] p-4 md:p-5">
+        <div>
+          <h3 className="text-[14px] font-semibold text-white">Danger zone</h3>
+          <p className="text-[12px] text-white/45 mt-0.5">
+            Download everything we hold about you, or permanently delete your
+            account.
+          </p>
+        </div>
+
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <button
+            type="button"
+            onClick={handleExport}
+            disabled={exporting}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/80 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer disabled:opacity-50"
+          >
+            <i
+              className={`fa-solid ${
+                exporting ? "fa-circle-notch animate-spin" : "fa-download"
+              } text-[11px]`}
+            />
+            {exporting ? "Preparing…" : "Export my data"}
+          </button>
+
+          {!confirmDelete && (
+            <button
+              type="button"
+              onClick={() => {
+                setConfirmDelete(true);
+                setDangerError(null);
+              }}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full border border-red-500/30 bg-red-500/10 text-red-300 hover:bg-red-500/20 transition text-[13px] font-medium cursor-pointer"
+            >
+              <i className="fa-solid fa-trash text-[11px]" />
+              Delete account
+            </button>
+          )}
+        </div>
+
+        {confirmDelete && (
+          <div className="flex flex-col gap-2.5 rounded-xl border border-red-500/25 bg-red-500/[0.05] p-3.5">
+            <p className="text-[12.5px] text-white/70 leading-relaxed">
+              This permanently deletes your account and{" "}
+              <span className="text-white/90 font-medium">
+                all your trades, strategies, goals, rules, and chats
+              </span>
+              . Any active subscription is cancelled. This cannot be undone.
+              Type <span className="font-semibold text-red-300">DELETE</span> to
+              confirm.
+            </p>
+            <input
+              value={deleteText}
+              onChange={(e) => setDeleteText(e.target.value)}
+              placeholder="DELETE"
+              className="w-full max-w-[200px] px-3 py-2 rounded-lg bg-white/[0.03] border border-white/15 text-[14px] text-white placeholder:text-white/30 focus:border-red-400/50 focus:outline-none"
+            />
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleteText !== "DELETE" || deleting}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-red-500/90 text-white hover:bg-red-500 transition text-[13px] font-semibold cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {deleting ? (
+                  <i className="fa-solid fa-circle-notch animate-spin text-[11px]" />
+                ) : (
+                  <i className="fa-solid fa-trash text-[11px]" />
+                )}
+                {deleting ? "Deleting…" : "Permanently delete"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setConfirmDelete(false);
+                  setDeleteText("");
+                  setDangerError(null);
+                }}
+                disabled={deleting}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] transition text-[13px] font-medium cursor-pointer disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        {dangerError && (
+          <span className="inline-flex items-center gap-1.5 text-[12px] text-red-300">
+            <i className="fa-solid fa-triangle-exclamation text-[10px]" />{" "}
+            {dangerError}
+          </span>
+        )}
+      </section>
     </form>
   );
 };

@@ -191,11 +191,21 @@ export function SiteFooter() {
       </div>
 
       <div className="border-t border-white/10">
-        <div className="max-w-[1200px] mx-auto px-6 md:px-10 py-4 flex items-center justify-between text-[10.5px] tracking-[0.1em] text-white/35">
-          <span>© {new Date().getFullYear()} Cuequill</span>
-          <div className="flex items-center gap-4">
-            <span>Invite-only</span>
-            <ThemeToggle />
+        <div className="max-w-[1200px] mx-auto px-6 md:px-10 py-4 flex flex-col gap-3">
+          <p className="text-[11px] leading-relaxed text-white/40 max-w-[80ch]">
+            Cuequill is a trading journal and analytics tool for your own record
+            keeping. It is not a broker or financial adviser, and nothing in the
+            app — including any AI-generated observations — is financial,
+            investment, tax, or legal advice. Trading options involves
+            substantial risk of loss. You are solely responsible for your
+            trading decisions.
+          </p>
+          <div className="flex items-center justify-between text-[10.5px] tracking-[0.1em] text-white/35">
+            <span>© {new Date().getFullYear()} Cuequill</span>
+            <div className="flex items-center gap-4">
+              <span>Invite-only</span>
+              <ThemeToggle />
+            </div>
           </div>
         </div>
       </div>
