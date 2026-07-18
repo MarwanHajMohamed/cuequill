@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 
 // Lightweight cookie notice. Cuequill only sets cookies that are strictly
@@ -50,14 +49,7 @@ export default function CookieConsent() {
             <i className="fa-solid fa-cookie-bite text-teal-300 text-[14px] mt-0.5" />
             <p className="text-[12.5px] leading-relaxed text-white/70">
               We use only the cookies needed to keep you signed in and run
-              Cuequill — no ads or tracking. See our{" "}
-              <Link
-                href="/privacy"
-                className="text-teal-300 hover:underline"
-              >
-                Privacy Policy
-              </Link>
-              .
+              Cuequill — no ads or tracking.
             </p>
           </div>
           <div className="flex items-center justify-end">
