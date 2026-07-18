@@ -128,13 +128,13 @@ export default function Home() {
 function Hero() {
   return (
     <section className="px-6 md:px-10">
-      <div className="max-w-[1200px] mx-auto py-20 md:py-32">
-        <div className="flex flex-col">
+      <div className="max-w-[1200px] mx-auto py-16 md:py-28 grid md:grid-cols-12 gap-12 md:gap-10 items-center">
+        <div className="flex flex-col md:col-span-6">
           <motion.h1
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, ease: "easeOut" }}
-            className="text-[40px] sm:text-[60px] md:text-[76px] leading-[0.98] font-medium tracking-[-0.025em]"
+            className="text-[40px] sm:text-[60px] md:text-[68px] leading-[0.98] font-medium tracking-[-0.025em]"
           >
             Find the edge{" "}
             <span className="italic font-normal text-teal-300">
@@ -168,8 +168,132 @@ function Hero() {
             </Link>
           </motion.div>
         </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 18, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
+          className="md:col-span-6"
+        >
+          <HeroCalendar />
+        </motion.div>
       </div>
     </section>
+  );
+}
+
+// A self-contained, on-brand hero visual: a miniature month calendar with
+// each day tinted by its P/L (green wins, red losses) — a preview of the
+// product's signature "calendar tinted by your P/L". Pure JSX/CSS, no
+// external asset. Data is a fixed, believable mostly-green month.
+type HeroCell = { pl?: number; tone: "win" | "loss" | "flat" };
+const HERO_MONTH: HeroCell[] = [
+  { tone: "flat" }, { tone: "win", pl: 120 }, { tone: "flat" }, { tone: "loss", pl: -80 }, { tone: "win", pl: 260 }, { tone: "flat" }, { tone: "flat" },
+  { tone: "win", pl: 90 }, { tone: "flat" }, { tone: "flat" }, { tone: "win", pl: 540 }, { tone: "loss", pl: -210 }, { tone: "flat" }, { tone: "win", pl: 75 },
+  { tone: "flat" }, { tone: "win", pl: 320 }, { tone: "flat" }, { tone: "flat" }, { tone: "win", pl: 180 }, { tone: "flat" }, { tone: "loss", pl: -60 },
+  { tone: "win", pl: 410 }, { tone: "flat" }, { tone: "win", pl: 95 }, { tone: "flat" }, { tone: "flat" }, { tone: "win", pl: 230 }, { tone: "flat" },
+  { tone: "flat" }, { tone: "loss", pl: -140 }, { tone: "win", pl: 680 }, { tone: "flat" }, { tone: "win", pl: 150 }, { tone: "flat" }, { tone: "flat" },
+];
+const HERO_DOW = ["S", "M", "T", "W", "T", "F", "S"];
+
+function fmtCellPL(n: number): string {
+  const sign = n >= 0 ? "+" : "-";
+  const abs = Math.abs(n);
+  return abs >= 1000
+    ? `${sign}${(abs / 1000).toFixed(1)}k`
+    : `${sign}${abs}`;
+}
+
+function HeroCalendar() {
+  const net = HERO_MONTH.reduce((s, c) => s + (c.pl ?? 0), 0);
+  const wins = HERO_MONTH.filter((c) => c.tone === "win").length;
+  const closed = HERO_MONTH.filter((c) => c.tone !== "flat").length;
+  const winRate = closed ? Math.round((wins / closed) * 100) : 0;
+  let dayNo = 0;
+
+  return (
+    <div className="relative mx-auto w-full max-w-[440px]">
+      {/* Soft glow behind the card. */}
+      <div
+        aria-hidden
+        className="absolute -inset-6 -z-10 rounded-[32px] opacity-70"
+        style={{
+          background:
+            "radial-gradient(60% 60% at 70% 20%, rgba(45,212,191,0.18) 0%, rgba(45,212,191,0) 70%)",
+        }}
+      />
+      <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5 shadow-[0_30px_80px_rgba(0,0,0,0.45)]">
+        <div className="flex items-center justify-between mb-3">
+          <div className="text-[12px] tracking-[0.1em] text-white/45 font-medium">
+            This month
+          </div>
+          <div
+            className={`text-[15px] font-semibold tabular-nums ${
+              net >= 0 ? "text-green-400" : "text-red-400"
+            }`}
+          >
+            {net >= 0 ? "+" : "-"}${Math.abs(net).toLocaleString()}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-7 gap-1 mb-1.5">
+          {HERO_DOW.map((d, i) => (
+            <div
+              key={i}
+              className="text-center text-[9px] text-white/30 tracking-wide"
+            >
+              {d}
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-7 gap-1">
+          {HERO_MONTH.map((c, i) => {
+            dayNo += 1;
+            const tone =
+              c.tone === "win"
+                ? "bg-green-500/15 border-green-500/25"
+                : c.tone === "loss"
+                  ? "bg-red-500/15 border-red-500/25"
+                  : "bg-white/[0.02] border-white/[0.06]";
+            const plColor =
+              c.tone === "win" ? "text-green-300" : "text-red-300";
+            return (
+              <div
+                key={i}
+                className={`relative aspect-square rounded-md border ${tone} flex flex-col items-center justify-center`}
+              >
+                <span className="absolute top-0.5 left-1 text-[7.5px] text-white/30 tabular-nums">
+                  {dayNo}
+                </span>
+                {c.pl != null && (
+                  <span
+                    className={`text-[8.5px] md:text-[9.5px] font-semibold tabular-nums ${plColor}`}
+                  >
+                    {fmtCellPL(c.pl)}
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="flex items-center gap-4 mt-3 pt-3 border-t border-white/[0.06] text-[11px]">
+          <span className="text-white/45">
+            Win rate <span className="text-white/80 font-medium">{winRate}%</span>
+          </span>
+          <span className="text-white/45">
+            Trades <span className="text-white/80 font-medium">{closed}</span>
+          </span>
+        </div>
+      </div>
+
+      {/* Floating Quill AI hint chip. */}
+      <div className="absolute -bottom-3 -right-2 md:-right-4 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-[var(--surface-2)] border border-teal-500/25 text-teal-300 shadow-lg text-[11px] font-medium">
+        <i className="fa-solid fa-wand-magic-sparkles text-[10px]" />
+        Ask Quill AI
+      </div>
+    </div>
   );
 }
 
