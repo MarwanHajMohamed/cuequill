@@ -715,10 +715,6 @@ function Page() {
     () => (
       <div className="flex flex-col md:items-start gap-8 w-full max-w-xl mx-auto">
         <div className="flex flex-col md:items-start text-center gap-2">
-          <div className="hidden md:inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-teal-500/10 text-teal-300 border border-teal-500/25 text-[11px] tracking-[0.08em] font-medium">
-            <i className="fa-solid fa-wand-magic-sparkles text-[10px]" />
-            QuillAI
-          </div>
           <h2 className="text-lg md:text-3xl font-semibold tracking-tight">
             Ask anything about your trades
           </h2>
