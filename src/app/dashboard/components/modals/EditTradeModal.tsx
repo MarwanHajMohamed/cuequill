@@ -326,7 +326,7 @@ export default function EditTradeModal({
           </div>
 
           {/* ── Body (scrollable, takes remaining space) ── */}
-          <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-3.5 md:gap-5 px-5 md:px-6 py-4 md:py-6">
+          <div className="flex-1 min-h-0 overflow-y-auto thin-scroll flex flex-col gap-3.5 md:gap-5 px-5 md:px-6 py-4 md:py-6">
             {/* Symbol */}
             <Field label="Symbol" required>
               <input

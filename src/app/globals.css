@@ -399,20 +399,29 @@ body {
    the translucent fade that blends the conversation into the composer —
    it never bleeds into the blend. Colours use --fg-rgb so the thumb is
    visible in both light and dark themes. */
-.chat-scroll {
+/* .thin-scroll is the shared slim scrollbar look; .chat-scroll is the same
+   look plus chat-specific track margins that clear the bottom fade. Reuse
+   .thin-scroll anywhere the Quill-style scrollbar is wanted. */
+.chat-scroll,
+.thin-scroll {
   scrollbar-width: thin; /* Firefox */
   scrollbar-color: rgb(var(--fg-rgb) / 0.25) transparent;
 }
-.chat-scroll::-webkit-scrollbar {
+.chat-scroll::-webkit-scrollbar,
+.thin-scroll::-webkit-scrollbar {
   width: 8px;
 }
-.chat-scroll::-webkit-scrollbar-track {
+.chat-scroll::-webkit-scrollbar-track,
+.thin-scroll::-webkit-scrollbar-track {
   background: transparent;
-  /* Clear the ~64px bottom fade (h-16) plus a little gap. */
+}
+.chat-scroll::-webkit-scrollbar-track {
+  /* Clear the ~64px bottom fade (h-16) plus a little gap. Chat only. */
   margin-bottom: 72px;
   margin-top: 8px;
 }
-.chat-scroll::-webkit-scrollbar-thumb {
+.chat-scroll::-webkit-scrollbar-thumb,
+.thin-scroll::-webkit-scrollbar-thumb {
   /* content-box + transparent border renders a ~4px visible thumb inside
      the 8px track, for a slim look with breathing room. */
   background: rgb(var(--fg-rgb) / 0.18);
@@ -420,7 +429,8 @@ body {
   border: 2px solid transparent;
   border-radius: 9999px;
 }
-.chat-scroll:hover::-webkit-scrollbar-thumb {
+.chat-scroll:hover::-webkit-scrollbar-thumb,
+.thin-scroll:hover::-webkit-scrollbar-thumb {
   background: rgb(var(--fg-rgb) / 0.32);
   background-clip: content-box;
 }
