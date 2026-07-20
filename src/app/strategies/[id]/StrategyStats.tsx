@@ -4,8 +4,8 @@ import React, { useMemo } from "react";
 import { useSession } from "next-auth/react";
 import {
   ResponsiveContainer,
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   Tooltip as ReTooltip,
@@ -98,6 +98,13 @@ function computeStats(trades: Trade[] | undefined, name: string) {
     cum += tradeNetPL(t);
     return { i: i + 1, value: cum };
   });
+  // Where y=0 sits between the curve's max and min (0=top, 1=bottom) —
+  // used to split the chart's gradient green-above / red-below.
+  const eqVals = equity.map((e) => e.value);
+  const eqMax = eqVals.length ? Math.max(...eqVals, 0) : 0;
+  const eqMin = eqVals.length ? Math.min(...eqVals, 0) : 0;
+  const zeroOffset =
+    eqMax === eqMin ? 0.5 : Math.max(0, Math.min(1, eqMax / (eqMax - eqMin)));
 
   const byDirection = buildSlices(
     closed,
@@ -139,6 +146,7 @@ function computeStats(trades: Trade[] | undefined, name: string) {
     avgHoldWin: avgHold(wins),
     avgHoldLoss: avgHold(losses),
     equity,
+    zeroOffset,
     byDirection: byDirection.sort((a, b) => a.net - b.net),
     bySymbol: bySymbol.sort((a, b) => a.net - b.net),
     byWeekday,
@@ -274,7 +282,7 @@ export default function StrategyStats({ strategyName }: { strategyName: string }
       {/* Leak callout — the slice bleeding the most, or an all-clear. */}
       {s.closedCount >= 3 &&
         (s.leak ? (
-          <div className="rounded-xl border border-red-500/25 bg-red-500/[0.06] px-3.5 py-2.5 text-[12.5px] text-red-200/90 leading-relaxed">
+          <div className="rounded-xl border border-red-500/30 bg-red-500/[0.08] px-3.5 py-2.5 text-[12.5px] text-red-300 leading-relaxed">
             <i className="fa-solid fa-magnifying-glass-chart mr-1.5" />
             <span className="font-medium">Biggest leak:</span> {s.leak.label}{" "}
             {s.leak.dimension} — {s.leak.n} trades, {s.leak.winRate.toFixed(0)}%
@@ -330,10 +338,24 @@ export default function StrategyStats({ strategyName }: { strategyName: string }
           </div>
           <div className="w-full h-40">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart
+              <AreaChart
                 data={s.equity}
                 margin={{ top: 4, right: 6, left: 0, bottom: 0 }}
               >
+                {/* Split the fill + stroke at y=0 so the curve is green
+                    above break-even and red below it. */}
+                <defs>
+                  <linearGradient id="stratFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stopColor="#2dd4bf" stopOpacity={0.4} />
+                    <stop offset={s.zeroOffset} stopColor="#2dd4bf" stopOpacity={0.04} />
+                    <stop offset={s.zeroOffset} stopColor="#f87171" stopOpacity={0.04} />
+                    <stop offset="1" stopColor="#f87171" stopOpacity={0.4} />
+                  </linearGradient>
+                  <linearGradient id="stratStroke" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset={s.zeroOffset} stopColor="#2dd4bf" />
+                    <stop offset={s.zeroOffset} stopColor="#f87171" />
+                  </linearGradient>
+                </defs>
                 <CartesianGrid
                   strokeDasharray="3 3"
                   stroke="var(--hairline)"
@@ -361,15 +383,16 @@ export default function StrategyStats({ strategyName }: { strategyName: string }
                   labelFormatter={(l) => `Trade ${l}`}
                   formatter={(v: number) => [fmtMoneyCompact(v), "Cumulative"]}
                 />
-                <Line
+                <Area
                   type="monotone"
                   dataKey="value"
-                  stroke={s.netPL >= 0 ? "#2dd4bf" : "#f87171"}
+                  stroke="url(#stratStroke)"
                   strokeWidth={2}
+                  fill="url(#stratFill)"
                   dot={false}
                   isAnimationActive={false}
                 />
-              </LineChart>
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>

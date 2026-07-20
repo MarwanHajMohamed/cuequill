@@ -40,6 +40,8 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
   });
 
   const [mode, setMode] = useState<Mode>("view");
+  // The read-only animation canvas can be retracted to a small thumbnail.
+  const [canvasExpanded, setCanvasExpanded] = useState(true);
   // Tracks whether the edit buffer has been seeded from the loaded doc.
   const hydrated = useRef(false);
 
@@ -250,15 +252,46 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
         )}
       </div>
 
-      {/* Schematic — editable canvas in edit mode, static preview in view. */}
+      {/* Schematic — editable canvas in edit mode, static preview in view.
+          In view mode it can be retracted to a small square thumbnail. */}
       {editing ? (
         <SchematicEditor value={schematic} onChange={setSchematic} />
       ) : data.schematic.elements.length > 0 ? (
-        <div className="rounded-2xl border border-white/10 overflow-hidden bg-[#0c0c11]">
-          <SchematicPlayer
-            schematic={data.schematic}
-            className="w-full h-auto text-white"
-          />
+        <div className="flex items-start gap-2">
+          {canvasExpanded ? (
+            <div className="flex-1 min-w-0 rounded-2xl border border-white/10 overflow-hidden bg-[#0c0c11]">
+              <SchematicPlayer
+                schematic={data.schematic}
+                className="w-full h-auto text-white"
+              />
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setCanvasExpanded(true)}
+              title="Expand animation"
+              className="w-28 h-28 shrink-0 rounded-xl border border-white/10 overflow-hidden bg-[#0c0c11] flex items-center justify-center cursor-pointer hover:border-white/25 transition"
+            >
+              <SchematicPlayer
+                schematic={data.schematic}
+                showPlay={false}
+                className="w-full h-auto text-white"
+              />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setCanvasExpanded((v) => !v)}
+            title={canvasExpanded ? "Collapse animation" : "Expand animation"}
+            aria-label={canvasExpanded ? "Collapse animation" : "Expand animation"}
+            className="shrink-0 w-8 h-8 inline-flex items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/60 hover:bg-white/[0.06] hover:text-white transition cursor-pointer"
+          >
+            <i
+              className={`fa-solid ${
+                canvasExpanded ? "fa-compress" : "fa-expand"
+              } text-[11px]`}
+            />
+          </button>
         </div>
       ) : null}
 

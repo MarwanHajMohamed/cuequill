@@ -2004,9 +2004,11 @@ export function SchematicPreview({
 export function SchematicPlayer({
   schematic,
   className = "",
+  showPlay = true,
 }: {
   schematic: Schematic;
   className?: string;
+  showPlay?: boolean;
 }) {
   const { elements, width, height } = schematic;
   // Elapsed playback time in seconds; Infinity (the default) reveals
@@ -2081,15 +2083,25 @@ export function SchematicPlayer({
         )}
       </svg>
 
-      {elements.length > 0 && (
+      {showPlay && elements.length > 0 && (
+        // Colours are literal (not text-white/bg-black utilities) because
+        // the canvas is always dark; the light theme remaps --color-white
+        // to dark ink, which would make the label invisible here.
         <button
           type="button"
           onClick={play}
           disabled={playing}
+          style={{
+            color: playing
+              ? "rgba(244,244,245,0.6)"
+              : "rgba(244,244,245,0.92)",
+            backgroundColor: playing
+              ? "rgba(0,0,0,0.4)"
+              : "rgba(0,0,0,0.55)",
+            borderColor: "rgba(255,255,255,0.25)",
+          }}
           className={`absolute top-2 right-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-medium transition ${
-            playing
-              ? "border-white/10 bg-black/40 text-white/50 cursor-default"
-              : "border-white/15 bg-black/50 text-white/80 hover:bg-black/70 hover:text-white cursor-pointer"
+            playing ? "cursor-default" : "hover:brightness-125 cursor-pointer"
           }`}
         >
           <i
