@@ -204,11 +204,25 @@ function fmtCellPL(n: number): string {
     : `${sign}${abs}`;
 }
 
+const heroGrid = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.03, delayChildren: 0.35 } },
+};
+const heroCell = {
+  hidden: { opacity: 0, scale: 0.5 },
+  show: {
+    opacity: 1,
+    scale: 1,
+    transition: { type: "spring" as const, stiffness: 320, damping: 22 },
+  },
+};
+
 function HeroCalendar() {
   const net = HERO_MONTH.reduce((s, c) => s + (c.pl ?? 0), 0);
   const wins = HERO_MONTH.filter((c) => c.tone === "win").length;
   const closed = HERO_MONTH.filter((c) => c.tone !== "flat").length;
   const winRate = closed ? Math.round((wins / closed) * 100) : 0;
+  const animatedNet = Math.round(useCountUp(net, 1300, true));
   let dayNo = 0;
 
   return (
@@ -232,7 +246,7 @@ function HeroCalendar() {
               net >= 0 ? "text-green-400" : "text-red-400"
             }`}
           >
-            {net >= 0 ? "+" : "-"}${Math.abs(net).toLocaleString()}
+            {net >= 0 ? "+" : "-"}${Math.abs(animatedNet).toLocaleString()}
           </div>
         </div>
 
@@ -247,35 +261,61 @@ function HeroCalendar() {
           ))}
         </div>
 
-        <div className="grid grid-cols-7 gap-1">
-          {HERO_MONTH.map((c, i) => {
-            dayNo += 1;
-            const tone =
-              c.tone === "win"
-                ? "bg-green-500/15 border-green-500/25"
-                : c.tone === "loss"
-                  ? "bg-red-500/15 border-red-500/25"
-                  : "bg-white/[0.02] border-white/[0.06]";
-            const plColor =
-              c.tone === "win" ? "text-green-300" : "text-red-300";
-            return (
-              <div
-                key={i}
-                className={`relative aspect-square rounded-md border ${tone} flex flex-col items-center justify-center`}
-              >
-                <span className="absolute top-0.5 left-1 text-[7.5px] text-white/30 tabular-nums">
-                  {dayNo}
-                </span>
-                {c.pl != null && (
-                  <span
-                    className={`text-[8.5px] md:text-[9.5px] font-semibold tabular-nums ${plColor}`}
-                  >
-                    {fmtCellPL(c.pl)}
+        {/* Tiles stagger-fill in; a light sweep passes across on a loop. */}
+        <div className="relative overflow-hidden rounded-md">
+          <motion.div
+            className="grid grid-cols-7 gap-1"
+            variants={heroGrid}
+            initial="hidden"
+            animate="show"
+          >
+            {HERO_MONTH.map((c, i) => {
+              dayNo += 1;
+              const tone =
+                c.tone === "win"
+                  ? "bg-green-500/15 border-green-500/25"
+                  : c.tone === "loss"
+                    ? "bg-red-500/15 border-red-500/25"
+                    : "bg-white/[0.02] border-white/[0.06]";
+              const plColor =
+                c.tone === "win" ? "text-green-300" : "text-red-300";
+              return (
+                <motion.div
+                  key={i}
+                  variants={heroCell}
+                  className={`relative aspect-square rounded-md border ${tone} flex flex-col items-center justify-center`}
+                >
+                  <span className="absolute top-0.5 left-1 text-[7.5px] text-white/30 tabular-nums">
+                    {dayNo}
                   </span>
-                )}
-              </div>
-            );
-          })}
+                  {c.pl != null && (
+                    <span
+                      className={`text-[8.5px] md:text-[9.5px] font-semibold tabular-nums ${plColor}`}
+                    >
+                      {fmtCellPL(c.pl)}
+                    </span>
+                  )}
+                </motion.div>
+              );
+            })}
+          </motion.div>
+
+          {/* Looping diagonal light sweep. */}
+          <motion.div
+            aria-hidden
+            className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 skew-x-[-18deg]"
+            style={{
+              background:
+                "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.07) 50%, rgba(255,255,255,0) 100%)",
+            }}
+            animate={{ left: ["-33%", "133%"] }}
+            transition={{
+              duration: 2.6,
+              ease: "easeInOut",
+              repeat: Infinity,
+              repeatDelay: 3.2,
+            }}
+          />
         </div>
 
         <div className="flex items-center gap-4 mt-3 pt-3 border-t border-white/[0.06] text-[11px]">
@@ -288,11 +328,15 @@ function HeroCalendar() {
         </div>
       </div>
 
-      {/* Floating Quill AI hint chip. */}
-      <div className="absolute -bottom-3 -right-2 md:-right-4 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-[var(--surface-2)] border border-teal-500/25 text-teal-300 shadow-lg text-[11px] font-medium">
+      {/* Floating Quill AI hint chip — gently bobs. */}
+      <motion.div
+        className="absolute -bottom-3 -right-2 md:-right-4 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-[var(--surface-2)] border border-teal-500/25 text-teal-300 shadow-lg text-[11px] font-medium"
+        animate={{ y: [0, -5, 0] }}
+        transition={{ duration: 3.4, ease: "easeInOut", repeat: Infinity }}
+      >
         <i className="fa-solid fa-wand-magic-sparkles text-[10px]" />
         Ask Quill AI
-      </div>
+      </motion.div>
     </div>
   );
 }
