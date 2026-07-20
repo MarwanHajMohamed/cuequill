@@ -58,13 +58,27 @@ function EarningsPage() {
     if (view !== "month") return null;
     const events = byDay.get(format(date, "yyyy-MM-dd"));
     if (!events || events.length === 0) return null;
+
+    // 1–2 events stack in a single centered column. More than that packs
+    // into a 2-column grid (2×2, 3×2, …) up to a cap; anything beyond that
+    // collapses into a trailing "+n" chip.
+    const grid = events.length > 2;
+    const MAX_CELLS = 6; // 3 rows × 2 cols
+    const overflow = events.length > MAX_CELLS;
+    const shown = overflow ? events.slice(0, MAX_CELLS - 1) : events;
+    const remaining = events.length - shown.length;
+
     return (
-      <div className="mt-1 flex flex-col items-center gap-0.5 w-full px-0.5">
-        {events.slice(0, 2).map((e) => (
+      <div
+        className={`mt-1 w-full px-0.5 gap-0.5 ${
+          grid ? "grid grid-cols-2" : "flex flex-col items-center"
+        }`}
+      >
+        {shown.map((e) => (
           <span
             key={e.symbol}
             title={`${e.symbol}${e.isEstimate ? " (estimated)" : ""}`}
-            className={`max-w-full truncate text-[9px] md:text-[10px] font-medium tabular-nums leading-tight px-1 py-0.5 rounded ${
+            className={`max-w-full truncate text-center text-[9px] md:text-[10px] font-medium tabular-nums leading-tight px-1 py-0.5 rounded ${
               e.isEstimate
                 ? "bg-white/[0.06] text-white/55"
                 : "bg-teal-500/15 text-teal-300"
@@ -73,9 +87,9 @@ function EarningsPage() {
             {e.symbol}
           </span>
         ))}
-        {events.length > 2 && (
-          <span className="text-[9px] text-white/45 leading-none">
-            +{events.length - 2}
+        {overflow && (
+          <span className="flex items-center justify-center text-[9px] md:text-[10px] font-medium leading-tight text-white/45 bg-white/[0.04] rounded px-1 py-0.5">
+            +{remaining}
           </span>
         )}
       </div>
