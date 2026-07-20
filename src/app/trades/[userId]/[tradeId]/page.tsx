@@ -202,12 +202,13 @@ function TradeDetailPage() {
       {/* One container — trade fields on the left, the wider notes
           editor on the right, filling the viewport height. A
           full-width action row pins to the bottom of the card. */}
-      <div className="md:flex-1 md:min-h-0 flex flex-col rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md shadow-[0_2px_24px_var(--shadow-soft)] overflow-hidden">
+      <div className="md:flex-1 md:min-h-0 flex flex-col">
        {/* md–lg: proportional. xl+ (zoomed out / wide): fields fixed, notes
-           take all the extra width. */}
-       <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1.7fr)] xl:grid-cols-[520px_minmax(0,1fr)]">
-        {/* LEFT — Trade fields */}
-        <div className="md:overflow-y-auto thin-scroll p-4 md:p-5 flex flex-col gap-4 border-b md:border-b-0 md:border-r border-white/10">
+           take all the extra width. The left fields sit bare on the page;
+           only the notes editor keeps its own card. */}
+       <div className="flex-1 min-h-0 grid grid-cols-1 gap-5 md:gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,1.7fr)] xl:grid-cols-[440px_minmax(0,1fr)]">
+        {/* LEFT — Trade fields, no container */}
+        <div className="md:overflow-y-auto thin-scroll md:py-1 md:pr-1 flex flex-col gap-4">
           {/* Top row — back chevron + symbol input */}
           <div className="flex items-center gap-2.5">
             <Link
@@ -412,8 +413,8 @@ function TradeDetailPage() {
         </div>
        </div>
 
-        {/* Actions — full-width row pinned to the bottom of the card */}
-        <div className="shrink-0 px-5 md:px-6 py-3 flex items-center justify-between gap-2 border-t border-white/10">
+        {/* Actions — full-width row pinned to the bottom */}
+        <div className="shrink-0 pt-3 mt-1 flex items-center justify-between gap-2 border-t border-white/10">
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -508,9 +509,7 @@ const INPUT_CLS =
 
 function Label({ children }: { children: React.ReactNode }) {
   return (
-    <label className="text-[10.5px] tracking-[0.06em] uppercase text-white/40">
-      {children}
-    </label>
+    <label className="text-[11px] text-white/45">{children}</label>
   );
 }
 
