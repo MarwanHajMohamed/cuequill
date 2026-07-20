@@ -207,15 +207,15 @@ function TradeDetailPage() {
            take all the extra width. */}
        <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1.7fr)] xl:grid-cols-[520px_minmax(0,1fr)]">
         {/* LEFT — Trade fields */}
-        <div className="md:overflow-y-auto thin-scroll p-5 md:p-6 flex flex-col gap-5 border-b md:border-b-0 md:border-r border-white/10">
+        <div className="md:overflow-y-auto thin-scroll p-4 md:p-5 flex flex-col gap-4 border-b md:border-b-0 md:border-r border-white/10">
           {/* Top row — back chevron + symbol input */}
           <div className="flex items-center gap-2.5">
             <Link
               href={`/trades/${userId}`}
               aria-label="Back to trades"
-              className="shrink-0 inline-flex items-center justify-center text-white/55 hover:text-white transition cursor-pointer"
+              className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full text-white/55 hover:text-white hover:bg-white/[0.06] transition cursor-pointer"
             >
-              <i className="fa-solid fa-chevron-left text-[15px]" />
+              <i className="fa-solid fa-chevron-left text-[13px]" />
             </Link>
             <input
               type="text"
@@ -225,71 +225,73 @@ function TradeDetailPage() {
               autoCapitalize="characters"
               autoCorrect="off"
               spellCheck={false}
-              className="flex-1 min-w-0 p-2 text-base font-semibold text-white bg-white/[0.03] rounded border border-white/10 focus:border-white/30 focus:outline-none uppercase placeholder:normal-case placeholder:font-normal placeholder:text-white/30"
+              className="flex-1 min-w-0 px-2.5 py-1.5 text-[15px] font-semibold text-white bg-white/[0.03] rounded-lg border border-white/10 focus:border-white/25 focus:outline-none transition uppercase placeholder:normal-case placeholder:font-normal placeholder:text-white/30"
             />
           </div>
 
           {/* Direction + status */}
-          <div className="flex flex-col gap-2">
-            <Label>Direction</Label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setField("option", "CALL")}
-                className={`px-3 py-2 rounded-lg border text-sm font-semibold transition cursor-pointer ${
-                  isCall
-                    ? "bg-green-500/25 border-green-500 text-green-400"
-                    : "border-white/10 text-white/60 hover:bg-white/5"
-                }`}
-              >
-                <i className="fa-solid fa-arrow-trend-up mr-1.5 text-xs" />
-                CALL
-              </button>
-              <button
-                type="button"
-                onClick={() => setField("option", "PUT")}
-                className={`px-3 py-2 rounded-lg border text-sm font-semibold transition cursor-pointer ${
-                  isPut
-                    ? "bg-red-500/25 border-red-500 text-red-400"
-                    : "border-white/10 text-white/60 hover:bg-white/5"
-                }`}
-              >
-                <i className="fa-solid fa-arrow-trend-down mr-1.5 text-xs" />
-                PUT
-              </button>
+          <div className="grid grid-cols-2 gap-2.5">
+            <div className="flex flex-col gap-1.5">
+              <Label>Direction</Label>
+              <div className="grid grid-cols-2 gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setField("option", "CALL")}
+                  className={`px-2 py-1.5 rounded-lg border text-[12.5px] font-semibold transition cursor-pointer ${
+                    isCall
+                      ? "bg-green-500/20 border-green-500/70 text-green-400"
+                      : "border-white/10 text-white/55 hover:bg-white/5"
+                  }`}
+                >
+                  <i className="fa-solid fa-arrow-trend-up mr-1 text-[10px]" />
+                  CALL
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setField("option", "PUT")}
+                  className={`px-2 py-1.5 rounded-lg border text-[12.5px] font-semibold transition cursor-pointer ${
+                    isPut
+                      ? "bg-red-500/20 border-red-500/70 text-red-400"
+                      : "border-white/10 text-white/55 hover:bg-white/5"
+                  }`}
+                >
+                  <i className="fa-solid fa-arrow-trend-down mr-1 text-[10px]" />
+                  PUT
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label>Status</Label>
+              <div className="grid grid-cols-3 gap-1.5">
+                {(
+                  [
+                    { v: "OPEN", label: "Open", active: "bg-white/[0.08] border-white/30 text-white" },
+                    { v: "WIN", label: "Win", active: "bg-green-500/20 border-green-500/70 text-green-400" },
+                    { v: "LOSS", label: "Loss", active: "bg-red-500/20 border-red-500/70 text-red-400" },
+                  ] as { v: TradeEventType; label: string; active: string }[]
+                ).map((s) => {
+                  const active = form.status === s.v;
+                  return (
+                    <button
+                      key={s.v}
+                      type="button"
+                      onClick={() => setField("status", s.v)}
+                      className={`px-1.5 py-1.5 rounded-lg border text-[12px] font-semibold transition cursor-pointer ${
+                        active
+                          ? s.active
+                          : "border-white/10 text-white/55 hover:bg-white/5"
+                      }`}
+                    >
+                      {s.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <Label>Status</Label>
-            <div className="grid grid-cols-3 gap-2">
-              {(
-                [
-                  { v: "OPEN", label: "Open", active: "bg-white/[0.08] border-white/30 text-white" },
-                  { v: "WIN", label: "Win", active: "bg-green-500/25 border-green-500 text-green-400" },
-                  { v: "LOSS", label: "Loss", active: "bg-red-500/25 border-red-500 text-red-400" },
-                ] as { v: TradeEventType; label: string; active: string }[]
-              ).map((s) => {
-                const active = form.status === s.v;
-                return (
-                  <button
-                    key={s.v}
-                    type="button"
-                    onClick={() => setField("status", s.v)}
-                    className={`px-3 py-2 rounded-lg border text-sm font-semibold transition cursor-pointer ${
-                      active
-                        ? s.active
-                        : "border-white/10 text-white/60 hover:bg-white/5"
-                    }`}
-                  >
-                    {s.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
             <FieldGroup label="Contract" required>
               <NumberField
                 value={form.contractPrice}
@@ -318,7 +320,7 @@ function TradeDetailPage() {
             </FieldGroup>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2.5">
             <FieldGroup label="Date bought" required>
               <DateField
                 value={toDateInput(form.dateBought)}
@@ -337,10 +339,8 @@ function TradeDetailPage() {
           <FieldGroup label="Strategy">
             <select
               value={form.strategy}
-              onChange={(e) =>
-                setField("strategy", e.target.value)
-              }
-              className="w-full p-2 text-base bg-white/[0.03] text-white rounded border border-white/10 focus:border-white/30 focus:outline-none cursor-pointer"
+              onChange={(e) => setField("strategy", e.target.value)}
+              className={`${INPUT_CLS} cursor-pointer`}
             >
               {strategies.map((s) => (
                 <option key={s} value={s}>
@@ -351,8 +351,8 @@ function TradeDetailPage() {
           </FieldGroup>
 
           {isClosed && (
-            <div className="flex flex-col gap-3 p-3 md:p-4 border border-white/10 rounded-lg bg-white/[0.02]">
-              <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-2.5 p-3 border border-white/10 rounded-lg bg-white/[0.02]">
+              <div className="grid grid-cols-2 gap-2.5">
                 <FieldGroup label="Closing contract" required>
                   <NumberField
                     value={form.closingContractPrice ?? null}
@@ -393,9 +393,9 @@ function TradeDetailPage() {
               type="checkbox"
               checked={form.simulated}
               onChange={(e) => setField("simulated", e.target.checked)}
-              className="w-4 h-4 accent-orange-500 cursor-pointer"
+              className="w-3.5 h-3.5 accent-orange-500 cursor-pointer"
             />
-            <span className="text-sm text-white/70 group-hover:text-white transition">
+            <span className="text-[13px] text-white/65 group-hover:text-white transition">
               Mark as simulated
             </span>
           </label>
@@ -502,9 +502,13 @@ export default withAuth(TradeDetailPage);
 
 // ─── Form primitives ───────────────────────────────────────────────
 
+// Shared compact input look for the trade-fields panel.
+const INPUT_CLS =
+  "w-full min-w-0 px-2.5 py-1.5 text-[13px] text-white bg-white/[0.03] rounded-lg border border-white/10 focus:border-white/25 focus:outline-none transition placeholder:text-white/30";
+
 function Label({ children }: { children: React.ReactNode }) {
   return (
-    <label className="text-[11px] tracking-[0.04em] text-white/45">
+    <label className="text-[10.5px] tracking-[0.06em] uppercase text-white/40">
       {children}
     </label>
   );
@@ -553,7 +557,7 @@ function NumberField({
         onChange(Number.isNaN(v) ? null : v);
       }}
       placeholder={placeholder}
-      className="w-full min-w-0 p-2 text-base text-white bg-white/[0.03] rounded border border-white/10 focus:border-white/30 focus:outline-none placeholder:text-white/30"
+      className={INPUT_CLS}
     />
   );
 }
@@ -576,7 +580,7 @@ function DateField({
       min={min}
       max={max}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full min-w-0 p-2 text-base text-white bg-white/[0.03] rounded border border-white/10 focus:border-white/30 focus:outline-none appearance-none"
+      className={`${INPUT_CLS} appearance-none`}
     />
   );
 }
