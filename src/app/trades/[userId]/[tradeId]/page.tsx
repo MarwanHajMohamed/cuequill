@@ -205,7 +205,7 @@ function TradeDetailPage() {
       <div className="md:flex-1 md:min-h-0 flex flex-col rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md shadow-[0_2px_24px_var(--shadow-soft)] overflow-hidden">
        <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1.7fr)]">
         {/* LEFT — Trade fields */}
-        <div className="md:overflow-y-auto p-5 md:p-6 flex flex-col gap-5 border-b md:border-b-0 md:border-r border-white/10">
+        <div className="md:overflow-y-auto thin-scroll p-5 md:p-6 flex flex-col gap-5 border-b md:border-b-0 md:border-r border-white/10">
           {/* Top row — back chevron + symbol input */}
           <div className="flex items-center gap-2.5">
             <Link
