@@ -9,11 +9,14 @@ import { User } from "@/lib/models/User";
 import {
   METRICS,
   TIMEFRAMES,
+  RECURRENCES,
   computeMetric,
   goalProgress,
+  taskPeriodKey,
   type GoalMetric,
   type GoalTimeframe,
   type MetricTrade,
+  type TaskRecurrence,
 } from "@/lib/goals";
 
 export const runtime = "nodejs";
@@ -33,7 +36,11 @@ async function gate() {
   if (!u?.isPro) {
     return { ok: false as const, status: 403, error: "Pro membership required" };
   }
-  return { ok: true as const, userId: session.user.id };
+  return {
+    ok: true as const,
+    userId: session.user.id,
+    tz: session.user.timezone || "America/New_York",
+  };
 }
 
 type GoalLean = {
@@ -45,6 +52,9 @@ type GoalLean = {
   timeframe?: GoalTimeframe;
   direction?: "at_least" | "at_most";
   done?: boolean;
+  recurrence?: TaskRecurrence;
+  customDays?: number;
+  completedPeriod?: string;
   order: number;
   createdAt: Date;
 };
@@ -68,6 +78,15 @@ export async function GET() {
   const now = new Date();
 
   const enriched = goals.map((goal) => {
+    const recurrence: TaskRecurrence = goal.recurrence ?? "once";
+    // done is derived: the task is complete if it was completed for the
+    // current period. For a one-time task, fall back to the legacy `done`
+    // boolean so existing checklist items stay ticked.
+    const currentKey = taskPeriodKey(recurrence, now, g.tz, goal.customDays);
+    const done =
+      recurrence === "once"
+        ? goal.completedPeriod === "once" || !!goal.done
+        : goal.completedPeriod === currentKey;
     const base = {
       id: goal._id.toString(),
       kind: goal.kind,
@@ -76,7 +95,9 @@ export async function GET() {
       target: goal.target ?? null,
       timeframe: goal.timeframe ?? null,
       direction: goal.direction ?? "at_least",
-      done: !!goal.done,
+      recurrence,
+      customDays: goal.customDays ?? null,
+      done,
       createdAt: goal.createdAt,
     };
     if (goal.kind !== "metric" || !goal.metric || goal.target == null) {
@@ -123,6 +144,9 @@ export async function POST(req: NextRequest) {
   }
 
   const count = await Goal.countDocuments({ userId: g.userId });
+  const recurrence: TaskRecurrence = RECURRENCES.includes(body.recurrence)
+    ? body.recurrence
+    : "once";
   const created = await Goal.create({
     userId: new mongoose.Types.ObjectId(g.userId),
     kind,
@@ -137,7 +161,12 @@ export async function POST(req: NextRequest) {
             : "month") as GoalTimeframe,
           direction: body.direction === "at_most" ? "at_most" : "at_least",
         }
-      : {}),
+      : {
+          recurrence,
+          ...(recurrence === "custom"
+            ? { customDays: Math.max(1, Math.round(Number(body.customDays) || 1)) }
+            : {}),
+        }),
   });
 
   return NextResponse.json({ id: String(created._id) }, { status: 201 });

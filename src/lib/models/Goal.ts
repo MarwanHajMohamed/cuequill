@@ -4,6 +4,7 @@ import type {
   GoalMetric,
   GoalTimeframe,
   GoalDirection,
+  TaskRecurrence,
 } from "@/lib/goals";
 
 export type {
@@ -11,6 +12,7 @@ export type {
   GoalMetric,
   GoalTimeframe,
   GoalDirection,
+  TaskRecurrence,
 } from "@/lib/goals";
 
 // A single user goal — either a metric target auto-tracked against the
@@ -24,8 +26,14 @@ export interface IGoal extends Document {
   target?: number;
   timeframe?: GoalTimeframe;
   direction?: GoalDirection;
-  // manual goals
+  // manual goals (a.k.a. tasks)
   done?: boolean;
+  recurrence?: TaskRecurrence;
+  customDays?: number; // for recurrence "custom": repeat every N days
+  // The period key (see taskPeriodKey) this task was last completed for.
+  // done is derived by comparing it to the current period, so recurring
+  // tasks reset automatically when the period rolls over.
+  completedPeriod?: string;
   order: number;
   createdAt: Date;
   updatedAt: Date;
@@ -57,6 +65,13 @@ const GoalSchema = new Schema<IGoal>(
       default: "at_least",
     },
     done: { type: Boolean, default: false },
+    recurrence: {
+      type: String,
+      enum: ["once", "daily", "weekly", "monthly", "yearly", "custom"],
+      default: "once",
+    },
+    customDays: { type: Number },
+    completedPeriod: { type: String, default: "" },
     order: { type: Number, default: 0 },
   },
   { timestamps: true },

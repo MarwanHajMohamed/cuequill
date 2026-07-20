@@ -10,6 +10,82 @@ import { tradeNetPL } from "@/lib/helpers/tradeNet";
 // so both the client and the API can import the types and the maths.
 
 export type GoalKind = "metric" | "manual";
+
+// A "manual" goal is a checkable task with a recurrence. "once" is a plain
+// one-time checklist item; the others reset each period (a daily task ticks
+// off for today and comes back tomorrow, etc.). "custom" repeats every
+// `customDays` days.
+export type TaskRecurrence =
+  | "once"
+  | "daily"
+  | "weekly"
+  | "monthly"
+  | "yearly"
+  | "custom";
+
+export const RECURRENCES: TaskRecurrence[] = [
+  "once",
+  "daily",
+  "weekly",
+  "monthly",
+  "yearly",
+  "custom",
+];
+
+export const RECURRENCE_LABEL: Record<TaskRecurrence, string> = {
+  once: "One-time",
+  daily: "Daily",
+  weekly: "Weekly",
+  monthly: "Monthly",
+  yearly: "Yearly",
+  custom: "Custom",
+};
+
+// Local calendar date (yyyy-mm-dd) in the given timezone.
+function localYmd(now: Date, tz: string): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: tz,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
+}
+
+// A key identifying the current period for a recurrence. A task is "done"
+// when its stored completedPeriod equals this key; when the period rolls
+// over the key changes and the task resets automatically — no cron needed.
+export function taskPeriodKey(
+  rec: TaskRecurrence,
+  now: Date = new Date(),
+  tz = "UTC",
+  customDays = 1,
+): string {
+  const ymd = localYmd(now, tz);
+  switch (rec) {
+    case "once":
+      return "once";
+    case "daily":
+      return ymd;
+    case "monthly":
+      return ymd.slice(0, 7); // yyyy-mm
+    case "yearly":
+      return ymd.slice(0, 4); // yyyy
+    case "weekly": {
+      // Monday of the local week, as yyyy-mm-dd.
+      const d = new Date(ymd + "T00:00:00Z");
+      const dow = (d.getUTCDay() + 6) % 7; // Mon=0 … Sun=6
+      d.setUTCDate(d.getUTCDate() - dow);
+      return `w:${d.toISOString().slice(0, 10)}`;
+    }
+    case "custom": {
+      const n = Math.max(1, Math.round(customDays || 1));
+      const epochDay = Math.floor(
+        new Date(ymd + "T00:00:00Z").getTime() / 86_400_000,
+      );
+      return `c:${n}:${Math.floor(epochDay / n)}`;
+    }
+  }
+}
 export type GoalMetric =
   | "net_pl"
   | "win_rate"

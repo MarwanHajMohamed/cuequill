@@ -8,12 +8,15 @@ import { useGoals, useGoalMutations, type Goal } from "@/hooks/useGoals";
 import {
   METRICS,
   TIMEFRAMES,
+  RECURRENCES,
   METRIC_LABEL,
   TIMEFRAME_LABEL,
+  RECURRENCE_LABEL,
   metricUnit,
   type GoalMetric,
   type GoalTimeframe,
   type GoalDirection,
+  type TaskRecurrence,
 } from "@/lib/goals";
 import { fmtMoneyCompact } from "@/lib/helpers/fmt";
 
@@ -46,14 +49,23 @@ function AddGoal({ onDone }: { onDone: () => void }) {
   const [direction, setDirection] = useState<GoalDirection>("at_least");
   const [target, setTarget] = useState("");
   const [timeframe, setTimeframe] = useState<GoalTimeframe>("month");
+  const [recurrence, setRecurrence] = useState<TaskRecurrence>("once");
+  const [customDays, setCustomDays] = useState("3");
   const [error, setError] = useState<string | null>(null);
 
   const submit = async () => {
     setError(null);
     try {
       if (kind === "manual") {
-        if (!title.trim()) return setError("Give your goal a name.");
-        await create.mutateAsync({ kind: "manual", title: title.trim() });
+        if (!title.trim()) return setError("Give your task a name.");
+        await create.mutateAsync({
+          kind: "manual",
+          title: title.trim(),
+          recurrence,
+          ...(recurrence === "custom"
+            ? { customDays: Math.max(1, Number(customDays) || 1) }
+            : {}),
+        });
       } else {
         const t = Number(target);
         if (!Number.isFinite(t)) return setError("Enter a target number.");
@@ -89,7 +101,7 @@ function AddGoal({ onDone }: { onDone: () => void }) {
                 : "text-white/55 hover:text-white"
             }`}
           >
-            {k === "metric" ? "Target" : "Checklist"}
+            {k === "metric" ? "Target" : "Task"}
           </button>
         ))}
       </div>
@@ -161,13 +173,53 @@ function AddGoal({ onDone }: { onDone: () => void }) {
           />
         </div>
       ) : (
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="e.g. Journal every trade the same day"
-          className={inputCls}
-          onKeyDown={(e) => e.key === "Enter" && submit()}
-        />
+        <div className="flex flex-col gap-2.5">
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="e.g. Journal every trade the same day"
+            className={inputCls}
+            onKeyDown={(e) => e.key === "Enter" && submit()}
+          />
+          <div className="flex items-end gap-2 flex-wrap">
+            <label className="flex flex-col gap-1">
+              <span className="text-[10.5px] tracking-wide text-white/40">
+                Repeat
+              </span>
+              <select
+                value={recurrence}
+                onChange={(e) =>
+                  setRecurrence(e.target.value as TaskRecurrence)
+                }
+                className={`${inputCls} cursor-pointer w-auto`}
+              >
+                {RECURRENCES.map((r) => (
+                  <option key={r} value={r}>
+                    {RECURRENCE_LABEL[r]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {recurrence === "custom" && (
+              <label className="flex flex-col gap-1">
+                <span className="text-[10.5px] tracking-wide text-white/40">
+                  Every N days
+                </span>
+                <input
+                  value={customDays}
+                  onChange={(e) => setCustomDays(e.target.value)}
+                  inputMode="numeric"
+                  className={`${inputCls} w-24`}
+                />
+              </label>
+            )}
+            <span className="text-[11px] text-white/40 pb-2">
+              {recurrence === "once"
+                ? "Check off once."
+                : "Resets each period so you can tick it again."}
+            </span>
+          </div>
+        </div>
       )}
 
       {error && <div className="text-[12px] text-red-300">{error}</div>}
@@ -278,9 +330,17 @@ function ManualGoalRow({ g }: { g: Goal }) {
       >
         {g.title}
       </span>
+      {g.recurrence && g.recurrence !== "once" && (
+        <span className="shrink-0 inline-flex items-center gap-1 text-[10px] tracking-wide text-teal-200/80 bg-teal-500/10 border border-teal-400/25 rounded-full px-2 py-0.5">
+          <i className="fa-solid fa-rotate text-[8px]" />
+          {g.recurrence === "custom" && g.customDays
+            ? `Every ${g.customDays}d`
+            : RECURRENCE_LABEL[g.recurrence]}
+        </span>
+      )}
       <button
         onClick={() => remove.mutate(g.id)}
-        aria-label="Delete goal"
+        aria-label="Delete task"
         className="shrink-0 w-7 h-7 rounded-full inline-flex items-center justify-center text-white/30 hover:text-red-300 hover:bg-red-500/10 transition md:opacity-0 md:group-hover:opacity-100 cursor-pointer"
       >
         <i className="fa-regular fa-trash-can text-[12px]" />
@@ -370,11 +430,11 @@ function Page() {
               </section>
             )}
 
-            {/* Checklist */}
+            {/* Tasks */}
             {manualGoals.length > 0 && (
               <section className="mt-8">
                 <h2 className="text-[11px] tracking-[0.1em] text-white/40 font-medium mb-3">
-                  Checklist
+                  Tasks
                 </h2>
                 <div className="flex flex-col gap-2">
                   {manualGoals.map((g) => (

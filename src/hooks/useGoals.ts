@@ -6,6 +6,7 @@ import type {
   GoalMetric,
   GoalTimeframe,
   GoalDirection,
+  TaskRecurrence,
 } from "@/lib/goals";
 
 export type Goal = {
@@ -16,6 +17,8 @@ export type Goal = {
   target: number | null;
   timeframe: GoalTimeframe | null;
   direction: GoalDirection;
+  recurrence: TaskRecurrence;
+  customDays: number | null;
   done: boolean;
   createdAt: string;
   // computed for metric goals
@@ -32,6 +35,8 @@ export type NewGoal = {
   target?: number;
   timeframe?: GoalTimeframe;
   direction?: GoalDirection;
+  recurrence?: TaskRecurrence;
+  customDays?: number;
 };
 
 async function fetchGoals(): Promise<Goal[]> {

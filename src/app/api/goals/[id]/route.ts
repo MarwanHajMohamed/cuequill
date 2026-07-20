@@ -5,7 +5,14 @@ import connectDb from "@/lib/db";
 import mongoose from "mongoose";
 import Goal from "@/lib/models/Goal";
 import { User } from "@/lib/models/User";
-import { METRICS, TIMEFRAMES, type GoalMetric } from "@/lib/goals";
+import {
+  METRICS,
+  TIMEFRAMES,
+  RECURRENCES,
+  taskPeriodKey,
+  type GoalMetric,
+  type TaskRecurrence,
+} from "@/lib/goals";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,7 +28,11 @@ async function gate(id: string) {
     .select("isPro")
     .lean<{ isPro?: boolean }>();
   if (!u?.isPro) return { ok: false as const, status: 403 };
-  return { ok: true as const, userId: session.user.id };
+  return {
+    ok: true as const,
+    userId: session.user.id,
+    tz: session.user.timezone || "America/New_York",
+  };
 }
 
 export async function PATCH(
@@ -37,7 +48,6 @@ export async function PATCH(
   const body = await req.json().catch(() => ({}));
   const set: Record<string, unknown> = {};
   if (typeof body.title === "string") set.title = body.title.trim();
-  if (typeof body.done === "boolean") set.done = body.done;
   if (body.metric !== undefined && METRICS.includes(body.metric as GoalMetric)) {
     set.metric = body.metric;
   }
@@ -49,6 +59,27 @@ export async function PATCH(
   }
   if (body.direction === "at_least" || body.direction === "at_most") {
     set.direction = body.direction;
+  }
+  if (RECURRENCES.includes(body.recurrence)) set.recurrence = body.recurrence;
+  if (body.customDays !== undefined) {
+    set.customDays = Math.max(1, Math.round(Number(body.customDays) || 1));
+  }
+
+  // Toggling done is stored as the completed-period key so recurring tasks
+  // reset automatically. Needs the effective recurrence (a just-changed one
+  // wins over the stored value).
+  if (typeof body.done === "boolean") {
+    set.done = body.done;
+    const existing = await Goal.findOne({ _id: id, userId: g.userId })
+      .select("recurrence customDays")
+      .lean<{ recurrence?: TaskRecurrence; customDays?: number }>();
+    const recurrence: TaskRecurrence =
+      (set.recurrence as TaskRecurrence) ?? existing?.recurrence ?? "once";
+    const customDays =
+      (set.customDays as number) ?? existing?.customDays ?? 1;
+    set.completedPeriod = body.done
+      ? taskPeriodKey(recurrence, new Date(), g.tz, customDays)
+      : "";
   }
 
   const updated = await Goal.findOneAndUpdate(

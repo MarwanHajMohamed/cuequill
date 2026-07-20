@@ -82,7 +82,7 @@ export const WIDGETS: WidgetDef[] = [
   },
   {
     id: "goals",
-    title: "Goals",
+    title: "Goals & tasks",
     render: () => <DashboardGoals />,
   },
   {
