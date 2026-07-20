@@ -16,6 +16,7 @@ import { Skeleton } from "@/components/Loaders";
 import { fileToDownscaledDataUrl } from "@/lib/imageDataUrl";
 import type { StrategyExample, ExampleOutcome } from "@/lib/strategySeed";
 import StrategyStats from "./StrategyStats";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 type Direction = "CALL" | "PUT";
 type Mode = "view" | "edit";
@@ -41,7 +42,11 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
 
   const [mode, setMode] = useState<Mode>("view");
   // The read-only animation canvas can be retracted to a small thumbnail.
-  const [canvasExpanded, setCanvasExpanded] = useState(true);
+  // Defaults collapsed; the choice persists across visits.
+  const [canvasExpanded, setCanvasExpanded] = useLocalStorage<boolean>(
+    "cuequill:strategyCanvasExpanded",
+    false,
+  );
   // Tracks whether the edit buffer has been seeded from the loaded doc.
   const hydrated = useRef(false);
 
