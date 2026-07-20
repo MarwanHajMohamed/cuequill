@@ -56,7 +56,7 @@ export default function DayTradesModal({
     <AnimatePresence>
       <motion.div
         key="backdrop"
-        className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50 p-3 md:p-4"
+        className="fixed inset-0 modal-scrim backdrop-blur-md flex items-center justify-center z-50 p-3 md:p-4"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}

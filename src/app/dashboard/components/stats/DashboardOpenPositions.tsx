@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { AnimatePresence } from "framer-motion";
 import { useTrades } from "@/hooks/useTrades";
@@ -108,15 +109,21 @@ export default function DashboardOpenPositions({ userId }: { userId: string }) {
         </ul>
       )}
 
-      <AnimatePresence>
-        {selected && (
-          <ViewTradeModal
-            key="open-view-trade"
-            initialTrade={selected}
-            onClose={() => setSelected(null)}
-          />
+      {/* Portalled to <body> so the fixed modal isn't trapped/clipped by
+          the dashboard grid's transformed, scrollable widget cell. */}
+      {typeof document !== "undefined" &&
+        createPortal(
+          <AnimatePresence>
+            {selected && (
+              <ViewTradeModal
+                key="open-view-trade"
+                initialTrade={selected}
+                onClose={() => setSelected(null)}
+              />
+            )}
+          </AnimatePresence>,
+          document.body,
         )}
-      </AnimatePresence>
     </section>
   );
 }

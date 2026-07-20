@@ -92,6 +92,15 @@
   filter: saturate(1.4) brightness(1.03);
 }
 
+/* Modal backdrop scrim. Dark by default; lighter in light mode where a
+   near-black overlay reads far too heavy over the off-white UI. */
+.modal-scrim {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+:root.light .modal-scrim {
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
 /* Headings (and the `.font-display` marketing aliases) inherit the body
    typeface - DM Mono - so the whole app shares one font with no serif.
    `font-variation-settings: normal` clears the opsz axis the old serif
