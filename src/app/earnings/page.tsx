@@ -59,7 +59,7 @@ function EarningsPage() {
     const events = byDay.get(format(date, "yyyy-MM-dd"));
     if (!events || events.length === 0) return null;
     return (
-      <div className="mt-1 flex flex-col md:items-start gap-0.5 w-full px-0.5">
+      <div className="mt-1 flex flex-col items-center gap-0.5 w-full px-0.5">
         {events.slice(0, 2).map((e) => (
           <span
             key={e.symbol}
@@ -94,7 +94,7 @@ function EarningsPage() {
         }}
       />
 
-      <div className="w-full max-w-[1100px] px-4 md:px-6 pt-24 md:pt-8 flex flex-col gap-6">
+      <div className="w-full px-4 md:px-6 pt-24 md:pt-8 flex flex-col gap-6">
         {/* Watchlist editor */}
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md p-4 md:p-5">
           <div className="flex items-center justify-between gap-3 mb-3">
