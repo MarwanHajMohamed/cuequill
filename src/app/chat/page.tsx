@@ -652,6 +652,20 @@ function Page() {
     [messages, streaming, enqueueChunk, queryClient, userId, refreshConversations],
   );
 
+  // Deep-link: /chat?prompt=… (e.g. "Ask Quill" on a strategy) auto-sends
+  // the question once the thread is ready, then clears the URL so a refresh
+  // doesn't resend it.
+  const promptSentRef = useRef(false);
+  useEffect(() => {
+    if (!hydrated || promptSentRef.current) return;
+    const p = new URLSearchParams(window.location.search).get("prompt");
+    if (p && p.trim()) {
+      promptSentRef.current = true;
+      window.history.replaceState({}, "", "/chat");
+      send(p);
+    }
+  }, [hydrated, send]);
+
   // Stage image files (from the picker, paste, or drop) as data URLs,
   // skipping non-images, oversized files, and anything past the cap.
   const stageFiles = useCallback(async (files: FileList | File[]) => {

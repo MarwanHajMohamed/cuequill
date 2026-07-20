@@ -12,147 +12,10 @@ import {
   CartesianGrid,
   ReferenceLine,
 } from "recharts";
+import Link from "next/link";
 import { useTrades } from "@/hooks/useTrades";
-import { tradeNetPL } from "@/lib/helpers/tradeNet";
 import { fmtMoneySignedCompact, fmtMoneyCompact } from "@/lib/helpers/fmt";
-import type { Trade } from "@/app/types/Trades";
-
-const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-type Slice = {
-  key: string;
-  label: string;
-  dimension: string;
-  n: number;
-  wins: number;
-  net: number;
-  winRate: number;
-};
-
-function buildSlices(
-  closed: Trade[],
-  keyer: (t: Trade) => string | null,
-  dimension: string,
-  labeler: (k: string) => string = (k) => k,
-): Slice[] {
-  const groups = new Map<string, Trade[]>();
-  for (const t of closed) {
-    const k = keyer(t);
-    if (k == null) continue;
-    (groups.get(k) ?? groups.set(k, []).get(k)!).push(t);
-  }
-  return Array.from(groups.entries()).map(([k, ts]) => {
-    const wins = ts.filter((t) => t.status === "WIN").length;
-    const net = ts.reduce((s, t) => s + tradeNetPL(t), 0);
-    return {
-      key: k,
-      label: labeler(k),
-      dimension,
-      n: ts.length,
-      wins,
-      net,
-      winRate: ts.length ? (wins / ts.length) * 100 : 0,
-    };
-  });
-}
-
-function computeStats(trades: Trade[] | undefined, name: string) {
-  const strat = (trades ?? []).filter((t) => (t.strategy ?? "") === name);
-  const closed = strat.filter(
-    (t) => t.status === "WIN" || t.status === "LOSS",
-  );
-  const open = strat.filter((t) => t.status === "OPEN");
-  const wins = closed.filter((t) => t.status === "WIN");
-  const losses = closed.filter((t) => t.status === "LOSS");
-
-  const netPL = closed.reduce((s, t) => s + tradeNetPL(t), 0);
-  const grossWin = wins.reduce((s, t) => s + tradeNetPL(t), 0);
-  const grossLoss = -losses.reduce((s, t) => s + tradeNetPL(t), 0);
-  const winRate = closed.length ? (wins.length / closed.length) * 100 : 0;
-  const avgWin = wins.length ? grossWin / wins.length : 0;
-  const avgLoss = losses.length ? grossLoss / losses.length : 0;
-  const expectancy = closed.length ? netPL / closed.length : 0;
-  const profitFactor = grossLoss > 0 ? grossWin / grossLoss : null;
-  const payoff = avgLoss > 0 ? avgWin / avgLoss : null;
-
-  const holdDays = (t: Trade): number | null => {
-    if (!t.dateBought || !t.dateClosed) return null;
-    const d =
-      (new Date(t.dateClosed).getTime() - new Date(t.dateBought).getTime()) /
-      86_400_000;
-    return Number.isFinite(d) ? Math.max(0, d) : null;
-  };
-  const avgHold = (ts: Trade[]) => {
-    const ds = ts.map(holdDays).filter((d): d is number => d != null);
-    return ds.length ? ds.reduce((s, d) => s + d, 0) / ds.length : null;
-  };
-
-  // Cumulative equity over closed trades, oldest → newest by exit date.
-  const sorted = [...closed].sort(
-    (a, b) =>
-      new Date(a.dateClosed || a.dateBought).getTime() -
-      new Date(b.dateClosed || b.dateBought).getTime(),
-  );
-  let cum = 0;
-  const equity = sorted.map((t, i) => {
-    cum += tradeNetPL(t);
-    return { i: i + 1, value: cum };
-  });
-  // Where y=0 sits between the curve's max and min (0=top, 1=bottom) —
-  // used to split the chart's gradient green-above / red-below.
-  const eqVals = equity.map((e) => e.value);
-  const eqMax = eqVals.length ? Math.max(...eqVals, 0) : 0;
-  const eqMin = eqVals.length ? Math.min(...eqVals, 0) : 0;
-  const zeroOffset =
-    eqMax === eqMin ? 0.5 : Math.max(0, Math.min(1, eqMax / (eqMax - eqMin)));
-
-  const byDirection = buildSlices(
-    closed,
-    (t) => t.option ?? null,
-    "direction",
-  );
-  const bySymbol = buildSlices(closed, (t) => t.symbol || null, "symbol");
-  const byWeekday = buildSlices(
-    closed,
-    (t) => {
-      const d = t.dateClosed || t.dateBought;
-      if (!d) return null;
-      return String(new Date(d).getDay());
-    },
-    "weekday",
-    (k) => WEEKDAYS[Number(k)] ?? k,
-  );
-
-  // Leak finder: the slice (with ≥2 trades) that bleeds the most money.
-  const leak = [...byDirection, ...bySymbol, ...byWeekday]
-    .filter((s) => s.n >= 2 && s.net < 0)
-    .sort((a, b) => a.net - b.net)[0];
-
-  return {
-    total: strat.length,
-    closedCount: closed.length,
-    openCount: open.length,
-    wins: wins.length,
-    losses: losses.length,
-    winRate,
-    netPL,
-    avgWin,
-    avgLoss,
-    expectancy,
-    profitFactor,
-    payoff,
-    best: closed.length ? Math.max(...closed.map(tradeNetPL)) : 0,
-    worst: closed.length ? Math.min(...closed.map(tradeNetPL)) : 0,
-    avgHoldWin: avgHold(wins),
-    avgHoldLoss: avgHold(losses),
-    equity,
-    zeroOffset,
-    byDirection: byDirection.sort((a, b) => a.net - b.net),
-    bySymbol: bySymbol.sort((a, b) => a.net - b.net),
-    byWeekday,
-    leak,
-  };
-}
+import { computeStrategyStats, type Slice } from "@/lib/strategyStats";
 
 function Kpi({
   label,
@@ -249,7 +112,7 @@ export default function StrategyStats({ strategyName }: { strategyName: string }
   const userId = session?.user?.id;
   const { data: trades } = useTrades(userId, false);
   const s = useMemo(
-    () => computeStats(trades, strategyName),
+    () => computeStrategyStats(trades ?? [], strategyName),
     [trades, strategyName],
   );
 
@@ -271,11 +134,22 @@ export default function StrategyStats({ strategyName }: { strategyName: string }
 
   return (
     <div className={CARD}>
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="text-[13px] font-semibold">Performance</div>
-        <div className="text-[11px] text-white/40">
-          {s.total} used · {s.closedCount} closed
-          {s.openCount > 0 ? ` · ${s.openCount} open` : ""}
+        <div className="flex items-center gap-3">
+          <span className="text-[11px] text-white/40">
+            {s.total} used · {s.closedCount} closed
+            {s.openCount > 0 ? ` · ${s.openCount} open` : ""}
+          </span>
+          <Link
+            href={`/chat?prompt=${encodeURIComponent(
+              `Analyse my "${strategyName}" strategy using its stats — what's working, what's my biggest leak, and how can I tighten it up?`,
+            )}`}
+            className="inline-flex items-center gap-1.5 text-[11.5px] font-medium text-teal-300 hover:text-teal-200 border border-teal-500/25 hover:border-teal-400/40 rounded-full px-2.5 py-1 transition"
+          >
+            <i className="fa-solid fa-wand-magic-sparkles text-[10px]" />
+            Ask Quill
+          </Link>
         </div>
       </div>
 

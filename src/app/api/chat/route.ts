@@ -153,7 +153,7 @@ export async function POST(req: Request) {
   const context = [
     buildTradeContext(trades),
     buildRulesContext(rulesBoard),
-    buildStrategiesContext(strategies),
+    buildStrategiesContext(strategies, trades),
     buildGoalsContext(goals, trades),
   ]
     .filter(Boolean)

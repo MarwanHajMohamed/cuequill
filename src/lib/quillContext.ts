@@ -15,6 +15,10 @@ import {
   type GoalDirection,
   type MetricTrade,
 } from "@/lib/goals";
+import {
+  computeStrategyStats,
+  strategyStatsSummary,
+} from "@/lib/strategyStats";
 
 export type LeanTrade = {
   _id: mongoose.Types.ObjectId | string;
@@ -251,18 +255,28 @@ export function buildRulesContext(board: LeanRulesBoard | null): string {
   ].join("\n");
 }
 
-export function buildStrategiesContext(strategies: LeanStrategy[]): string {
+export function buildStrategiesContext(
+  strategies: LeanStrategy[],
+  trades: LeanTrade[] = [],
+): string {
   if (!strategies.length) return "";
-  const rows = strategies.map((s) => {
+  const rows = strategies.flatMap((s) => {
+    const name = s.name ?? "(unnamed)";
     const tf = s.timeframes?.length ? ` [${s.timeframes.join(", ")}]` : "";
     const tags = s.tags?.length ? ` #${s.tags.join(" #")}` : "";
     const desc = stripHtml(s.description);
-    return `  - ${s.name ?? "(unnamed)"} (${s.direction ?? "?"})${tf}${tags}${
+    const head = `  - ${name} (${s.direction ?? "?"})${tf}${tags}${
       desc ? `: ${desc}` : ""
     }`;
+    // Per-strategy performance / leak analysis from the user's actual
+    // trades, so advice matches the strategy stats page.
+    const perf = s.name ? strategyStatsSummary(name, computeStrategyStats(trades, name)) : "";
+    return perf ? [head, perf] : [head];
   });
   return [
-    "THE USER'S STRATEGIES (their documented setups — reference these by name):",
+    "THE USER'S STRATEGIES (documented setups + how they've actually",
+    "performed — reference by name; use the performance line to pinpoint",
+    "what's working and where each setup leaks):",
     ...rows,
   ].join("\n");
 }

@@ -163,7 +163,7 @@ export async function GET(req: NextRequest) {
   const context = [
     buildTradeContext(trades),
     buildRulesContext(rulesBoard),
-    buildStrategiesContext(strategies),
+    buildStrategiesContext(strategies, trades),
     buildGoalsContext(goals, trades),
   ]
     .filter(Boolean)
