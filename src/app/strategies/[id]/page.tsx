@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/useToast";
 import { Skeleton } from "@/components/Loaders";
 import { fileToDownscaledDataUrl } from "@/lib/imageDataUrl";
 import type { StrategyExample, ExampleOutcome } from "@/lib/strategySeed";
+import StrategyStats from "./StrategyStats";
 
 type Direction = "CALL" | "PUT";
 type Mode = "view" | "edit";
@@ -299,6 +300,10 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
         </>
       ) : (
         <>
+          {/* Performance — trades tagged with this strategy, geared to
+              surfacing where the setup leaks. */}
+          <StrategyStats strategyName={data.name} />
+
           {/* Description — read-only */}
           {data.description ? (
             <DescriptionDisplay html={data.description} />
