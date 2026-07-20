@@ -198,12 +198,14 @@ function TradeDetailPage() {
   const isPut = form.option === "PUT";
 
   return (
-    <div className="w-full max-w-[1500px] mx-auto md:mx-0 px-4 md:px-8 pt-24 md:pt-8 pb-6 flex flex-col gap-4 md:h-[100dvh]">
+    <div className="w-full px-4 md:px-8 pt-24 md:pt-8 pb-6 flex flex-col gap-4 md:h-[100dvh]">
       {/* One container — trade fields on the left, the wider notes
           editor on the right, filling the viewport height. A
           full-width action row pins to the bottom of the card. */}
       <div className="md:flex-1 md:min-h-0 flex flex-col rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md shadow-[0_2px_24px_var(--shadow-soft)] overflow-hidden">
-       <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1.7fr)]">
+       {/* md–lg: proportional. xl+ (zoomed out / wide): fields fixed, notes
+           take all the extra width. */}
+       <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1.7fr)] xl:grid-cols-[520px_minmax(0,1fr)]">
         {/* LEFT — Trade fields */}
         <div className="md:overflow-y-auto thin-scroll p-5 md:p-6 flex flex-col gap-5 border-b md:border-b-0 md:border-r border-white/10">
           {/* Top row — back chevron + symbol input */}

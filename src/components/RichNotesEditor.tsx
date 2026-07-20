@@ -222,7 +222,7 @@ export default function RichNotesEditor({
       <style>{`
         .notes-editor:empty:before {
           content: attr(data-placeholder);
-          color: rgb(255 255 255 / 0.3);
+          color: rgb(var(--fg-rgb) / 0.35);
           pointer-events: none;
         }
         .notes-editor h3 {
