@@ -146,14 +146,12 @@ export type Scope = {
   range: RangeKey;
   from: string;
   to: string;
-  includeSim: boolean;
 };
 
 export const DEFAULT_SCOPE: Scope = {
   range: "all",
   from: "",
   to: "",
-  includeSim: false,
 };
 
 // Resolve the active [from, to] day bounds for the chosen preset. The
@@ -177,13 +175,12 @@ function bounds(scope: Scope): { from: Date | null; to: Date | null } {
   return { from: null, to: null };
 }
 
-// Apply the scope (date range on entry date + simulated toggle) to a
-// trade list.
+// Apply the scope (date range on entry date) to a trade list. Real vs
+// simulated is decided upstream by which trades are fetched.
 export function scopeTrades(trades: Trade[], scope: Scope): Trade[] {
   const b = bounds(scope);
+  if (!b.from && !b.to) return trades;
   return trades.filter((t) => {
-    if (!scope.includeSim && t.simulated) return false;
-    if (!b.from && !b.to) return true;
     const d = t.dateBought ? new Date(t.dateBought).getTime() : NaN;
     if (Number.isNaN(d)) return false;
     if (b.from && d < b.from.getTime()) return false;
