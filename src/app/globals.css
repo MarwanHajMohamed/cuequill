@@ -434,3 +434,35 @@ body {
   background: rgb(var(--fg-rgb) / 0.32);
   background-clip: content-box;
 }
+
+/* Desktop sidebar offset. Driven by a class on <html> (set pre-paint from
+   localStorage) so the content sits at the right offset on first paint and
+   the padding animates when the sidebar is collapsed/expanded. Mobile is
+   full-width (bottom tab bar), so this only applies at md+. */
+@media (min-width: 768px) {
+  .content-shell {
+    padding-left: 252px;
+    transition: padding-left 0.3s ease;
+  }
+  :root.nav-collapsed .content-shell {
+    padding-left: 84px;
+  }
+}
+
+/* Trades filter drawer + its pull tab sit just right of the nav sidebar,
+   so their desktop offset tracks the collapsed rail too (same html class,
+   flash-free). Mobile keeps its own left via Tailwind. */
+@media (min-width: 768px) {
+  .filters-pull {
+    left: 244px;
+  }
+  :root.nav-collapsed .filters-pull {
+    left: 72px;
+  }
+  .filters-aside {
+    left: 260px;
+  }
+  :root.nav-collapsed .filters-aside {
+    left: 92px;
+  }
+}

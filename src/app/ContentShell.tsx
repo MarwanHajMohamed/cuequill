@@ -1,14 +1,15 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useSidebar } from "./navbar/SidebarContext";
 
 // Offsets page content to the right of the desktop sidebar. Only applies
 // when signed in (the sidebar renders for authenticated users) and only on
 // md+ (mobile uses the bottom tab bar and stays full-width). Padding — not
 // transform — so descendant `position: fixed` still resolves to the
-// viewport. The offset tracks the sidebar's collapsed state so content
-// slides over in step with the rail.
+// viewport. The actual offset (and its collapsed variant) lives in CSS
+// under `.content-shell`, keyed off the `nav-collapsed` class on <html>
+// that a pre-paint script sets — so the offset is correct on first paint
+// with no expand→collapse flash.
 export default function ContentShell({
   children,
 }: {
@@ -16,13 +17,5 @@ export default function ContentShell({
 }) {
   const { status } = useSession();
   const authed = status === "authenticated";
-  const { collapsed } = useSidebar();
-  const pad = collapsed ? "md:pl-[84px]" : "md:pl-[252px]";
-  return (
-    <div
-      className={authed ? `${pad} transition-[padding] duration-300 ease-out` : ""}
-    >
-      {children}
-    </div>
-  );
+  return <div className={authed ? "content-shell" : ""}>{children}</div>;
 }

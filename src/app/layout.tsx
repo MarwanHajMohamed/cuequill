@@ -67,6 +67,14 @@ export default function RootLayout({
               "(function(){try{var t=localStorage.getItem('cuequill:theme');var m=t==='light'?'light':'dark';var e=document.documentElement;e.classList.add(m);e.style.colorScheme=m;}catch(e){document.documentElement.classList.add('dark');}})();",
           }}
         />
+        {/* Apply the saved sidebar-collapsed state before first paint so the
+            content offset doesn't jump from expanded to collapsed on load. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){try{if(localStorage.getItem('cuequill:sidebar-collapsed')==='1'){document.documentElement.classList.add('nav-collapsed');}}catch(e){}})();",
+          }}
+        />
         <link
           rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css"

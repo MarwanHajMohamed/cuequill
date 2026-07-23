@@ -172,7 +172,7 @@ export default function Filters({
         onClick={() => setIsPanelOpen(true)}
         aria-label="Open filters"
         title="Filters"
-        className={`cursor-pointer fixed left-0 md:left-[244px] top-1/2 -translate-y-1/2 z-40 inline-flex items-center justify-center gap-1 w-7 h-12 rounded-r-xl bg-[var(--surface)] border border-l-0 border-white/15 text-white/80 hover:w-8 hover:text-white hover:bg-[var(--surface)] hover:border-white/30 opacity-95 hover:opacity-100 shadow-md transition-all duration-200 ${
+        className={`filters-pull cursor-pointer fixed left-0 top-1/2 -translate-y-1/2 z-40 inline-flex items-center justify-center gap-1 w-7 h-12 rounded-r-xl bg-[var(--surface)] border border-l-0 border-white/15 text-white/80 hover:w-8 hover:text-white hover:bg-[var(--surface)] hover:border-white/30 opacity-95 hover:opacity-100 shadow-md transition-all duration-200 ${
           isPanelOpen
             ? "opacity-0 pointer-events-none -translate-x-4"
             : "pointer-events-auto"
@@ -199,7 +199,7 @@ export default function Filters({
       {/* ── Pill sidebar - persistent push on desktop, modal overlay on
             mobile. Sits directly under the navbar pill. ── */}
       <aside
-        className={`fixed md:top-4 top-19 bottom-4 md:bottom-4 left-5 md:left-[260px] w-60 max-w-[85vw] bg-white/[0.03] md:backdrop-blur-md border border-white/10 rounded-2xl z-30 flex flex-col shadow-[0_8px_30px_var(--shadow,rgba(0,0,0,0.25))] transition-all duration-300 ease-out ${
+        className={`filters-aside fixed md:top-4 top-19 bottom-4 md:bottom-4 left-5 w-60 max-w-[85vw] bg-white/[0.03] md:backdrop-blur-md border border-white/10 rounded-2xl z-30 flex flex-col shadow-[0_8px_30px_var(--shadow,rgba(0,0,0,0.25))] transition-all duration-300 ease-out ${
           isPanelOpen
             ? "translate-x-0 opacity-100"
             : "-translate-x-[120%] opacity-0 pointer-events-none"

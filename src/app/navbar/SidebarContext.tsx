@@ -27,20 +27,28 @@ const Ctx = createContext<SidebarCtx>({
 const KEY = "cuequill:sidebar-collapsed";
 
 export function SidebarProvider({ children }: { children: ReactNode }) {
-  const [collapsed, setState] = useState(false);
+  // Initialise synchronously from the `nav-collapsed` class the pre-paint
+  // script set from localStorage, so the very first client render already
+  // matches the persisted choice (no flash). SSR has no document → false.
+  const [collapsed, setState] = useState<boolean>(() =>
+    typeof document !== "undefined"
+      ? document.documentElement.classList.contains("nav-collapsed")
+      : false,
+  );
 
+  // Keep the <html> class in sync in case another tab changed the setting.
   useEffect(() => {
-    try {
-      const v = localStorage.getItem(KEY);
-      if (v != null) setState(v === "1");
-    } catch {}
-  }, []);
+    document.documentElement.classList.toggle("nav-collapsed", collapsed);
+  }, [collapsed]);
 
   const setCollapsed = (v: boolean) => {
     setState(v);
     try {
       localStorage.setItem(KEY, v ? "1" : "0");
     } catch {}
+    if (typeof document !== "undefined") {
+      document.documentElement.classList.toggle("nav-collapsed", v);
+    }
   };
 
   return (
