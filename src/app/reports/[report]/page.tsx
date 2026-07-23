@@ -5,8 +5,18 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { format } from "date-fns";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  ReferenceLine,
+  Tooltip as ReTooltip,
+} from "recharts";
 import { withAuth } from "@/lib/withAuth";
-import ProGate from "@/components/ProGate";
 import { useTrades } from "@/hooks/useTrades";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { Spinner } from "@/components/Loaders";
@@ -215,8 +225,11 @@ function Page() {
             <Spinner size={20} />
           </div>
         ) : table ? (
-          <div className="mt-4 min-h-0 flex-1">
-            <div className="rounded-xl border border-white/10 bg-[var(--surface-2)] overflow-auto thin-scroll max-h-full">
+          <div className="mt-4 min-h-0 flex-1 flex flex-col gap-4">
+            {def.chart && table.rows.length > 0 && (
+              <ReportChart table={table} />
+            )}
+            <div className="min-h-0 flex-1 rounded-xl border border-white/10 bg-[var(--surface-2)] overflow-auto thin-scroll">
               <TableView table={table} />
             </div>
           </div>
@@ -333,16 +346,58 @@ function TableView({ table }: { table: ReportTable }) {
   );
 }
 
-function GatedPage() {
+// Net-P/L bar chart for single-category aggregate reports: first column
+// is the category, the "Net P/L" column is the value. Bars are tinted by
+// sign, matching the table.
+function ReportChart({ table }: { table: ReportTable }) {
+  const netIdx = table.columns.indexOf("Net P/L");
+  if (netIdx < 0) return null;
+
+  const data = table.rows.map((r) => ({
+    label: String(r[0]),
+    net: typeof r[netIdx] === "number" ? (r[netIdx] as number) : 0,
+  }));
+  const angled = data.length > 8;
+
   return (
-    <ProGate
-      feature="Reports"
-      description="Review your full trade history and performance, tax and strategy summaries, then export them as spreadsheet-ready files. Available on Pro."
-      className="min-h-screen"
-    >
-      <Page />
-    </ProGate>
+    <div className="shrink-0 h-[200px] rounded-xl border border-white/10 bg-[var(--surface-2)] p-3">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={data} margin={{ top: 6, right: 6, left: 0, bottom: 0 }}>
+          <CartesianGrid stroke="var(--hairline)" vertical={false} />
+          <XAxis
+            dataKey="label"
+            tick={{ fontSize: 10, fill: "var(--foreground)" }}
+            interval={0}
+            angle={angled ? -35 : 0}
+            textAnchor={angled ? "end" : "middle"}
+            height={angled ? 56 : 22}
+          />
+          <YAxis
+            tick={{ fontSize: 10, fill: "var(--foreground)" }}
+            width={52}
+            tickFormatter={(v) => fmtUsd(Number(v))}
+          />
+          <ReferenceLine y={0} stroke="var(--hairline)" />
+          <ReTooltip
+            cursor={{ fill: "rgb(var(--fg-rgb) / 0.05)" }}
+            contentStyle={{
+              background: "var(--surface)",
+              border: "1px solid var(--hairline)",
+              borderRadius: 8,
+              fontSize: 12,
+              color: "var(--foreground)",
+            }}
+            formatter={(v: number | string) => [fmtUsd(Number(v)), "Net P/L"]}
+          />
+          <Bar dataKey="net" radius={[3, 3, 0, 0]}>
+            {data.map((d, i) => (
+              <Cell key={i} fill={d.net >= 0 ? "#22c55e" : "#ef4444"} />
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
   );
 }
 
-export default withAuth(GatedPage);
+export default withAuth(Page);

@@ -25,6 +25,9 @@ export type ReportDef = {
   description: string;
   icon: string;
   section: ReportSection;
+  // When true, the viewer draws a net-P/L bar chart above the table
+  // (only meaningful for the single-category aggregate reports).
+  chart?: boolean;
 } & (
   | { kind: "table"; build: (trades: Trade[]) => ReportTable }
   | { kind: "json"; build: (trades: Trade[]) => string }
@@ -65,6 +68,7 @@ export const REPORTS: ReportDef[] = [
     icon: "fa-solid fa-calendar-check",
     section: "analytics",
     kind: "table",
+    chart: true,
     build: monthlyPerformanceTable,
   },
   {
@@ -74,6 +78,7 @@ export const REPORTS: ReportDef[] = [
     icon: "fa-solid fa-bezier-curve",
     section: "analytics",
     kind: "table",
+    chart: true,
     build: strategyPerformanceTable,
   },
   {
@@ -83,6 +88,7 @@ export const REPORTS: ReportDef[] = [
     icon: "fa-solid fa-coins",
     section: "analytics",
     kind: "table",
+    chart: true,
     build: symbolPerformanceTable,
   },
   {
@@ -92,6 +98,7 @@ export const REPORTS: ReportDef[] = [
     icon: "fa-solid fa-tag",
     section: "analytics",
     kind: "table",
+    chart: true,
     build: tagPerformanceTable,
   },
   {
@@ -101,6 +108,7 @@ export const REPORTS: ReportDef[] = [
     icon: "fa-solid fa-calendar-day",
     section: "analytics",
     kind: "table",
+    chart: true,
     build: weekdayPerformanceTable,
   },
   {
@@ -110,6 +118,7 @@ export const REPORTS: ReportDef[] = [
     icon: "fa-solid fa-clock",
     section: "analytics",
     kind: "table",
+    chart: true,
     build: hourPerformanceTable,
   },
 ];

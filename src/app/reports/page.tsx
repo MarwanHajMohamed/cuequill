@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { withAuth } from "@/lib/withAuth";
-import ProGate from "@/components/ProGate";
 import {
   REPORTS,
   SECTION_LABEL,
@@ -65,16 +64,4 @@ function Page() {
   );
 }
 
-function GatedPage() {
-  return (
-    <ProGate
-      feature="Reports"
-      description="Review your full trade history and performance, tax and strategy summaries, then export them as spreadsheet-ready files. Available on Pro."
-      className="min-h-screen"
-    >
-      <Page />
-    </ProGate>
-  );
-}
-
-export default withAuth(GatedPage);
+export default withAuth(Page);

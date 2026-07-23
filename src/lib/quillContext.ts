@@ -36,6 +36,9 @@ export type LeanTrade = {
   closingContractPrice?: number;
   strategy?: string;
   notes?: string;
+  tags?: string[];
+  // Entry time-of-day as "HH:mm", when recorded.
+  timeEntered?: string;
 };
 
 export type LeanRulesBoard = {
@@ -116,6 +119,70 @@ export function buildTradeContext(trades: LeanTrade[]): string {
       const w = ts.filter((t) => t.status === "WIN").length;
       return `  - ${k}: ${ts.length} closed, win ${((w / ts.length) * 100).toFixed(0)}%, net ${fmtMoney(n)}`;
     })
+    .join("\n");
+
+  // ── Per-tag (a trade contributes to each of its tags) ───────────────
+  const tagAgg = new Map<string, { n: number; wins: number; net: number }>();
+  for (const t of closed) {
+    const tags = t.tags && t.tags.length ? t.tags : ["Untagged"];
+    for (const tag of tags) {
+      const a = tagAgg.get(tag) ?? { n: 0, wins: 0, net: 0 };
+      a.n += 1;
+      a.net += net(t);
+      if (t.status === "WIN") a.wins += 1;
+      tagAgg.set(tag, a);
+    }
+  }
+  const tagRows = Array.from(tagAgg.entries())
+    .sort((a, b) => b[1].net - a[1].net)
+    .map(
+      ([k, v]) =>
+        `  - ${k}: ${v.n} closed, win ${((v.wins / v.n) * 100).toFixed(0)}%, net ${fmtMoney(v.net)}`,
+    )
+    .join("\n");
+
+  // ── Per weekday of entry, Mon → Sun ─────────────────────────────────
+  const WEEKDAYS = [
+    "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday",
+  ];
+  const weekdayAgg = new Map<number, { n: number; wins: number; net: number }>();
+  for (const t of closed) {
+    const d = new Date(t.dateBought);
+    if (Number.isNaN(d.getTime())) continue;
+    const idx = d.getUTCDay();
+    const a = weekdayAgg.get(idx) ?? { n: 0, wins: 0, net: 0 };
+    a.n += 1;
+    a.net += net(t);
+    if (t.status === "WIN") a.wins += 1;
+    weekdayAgg.set(idx, a);
+  }
+  const weekdayRows = [1, 2, 3, 4, 5, 6, 0]
+    .filter((i) => weekdayAgg.has(i))
+    .map((i) => {
+      const v = weekdayAgg.get(i)!;
+      return `  - ${WEEKDAYS[i]}: ${v.n} closed, win ${((v.wins / v.n) * 100).toFixed(0)}%, net ${fmtMoney(v.net)}`;
+    })
+    .join("\n");
+
+  // ── Per entry hour (only trades with a recorded entry time) ─────────
+  const hourAgg = new Map<string, { n: number; wins: number; net: number }>();
+  for (const t of closed) {
+    if (!t.timeEntered) continue;
+    const hh = t.timeEntered.slice(0, 2);
+    if (!/^\d\d$/.test(hh)) continue;
+    const key = `${hh}:00`;
+    const a = hourAgg.get(key) ?? { n: 0, wins: 0, net: 0 };
+    a.n += 1;
+    a.net += net(t);
+    if (t.status === "WIN") a.wins += 1;
+    hourAgg.set(key, a);
+  }
+  const hourRows = Array.from(hourAgg.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(
+      ([k, v]) =>
+        `  - ${k}: ${v.n} closed, win ${((v.wins / v.n) * 100).toFixed(0)}%, net ${fmtMoney(v.net)}`,
+    )
     .join("\n");
 
   // Buckets a closed trade on its exit date; an open trade on its
@@ -209,6 +276,15 @@ export function buildTradeContext(trades: LeanTrade[]): string {
     "",
     "By symbol:",
     symbolRows || "  (none)",
+    "",
+    "By tag (a trade counts toward each of its tags):",
+    tagRows || "  (none)",
+    "",
+    "By weekday (entry day):",
+    weekdayRows || "  (none)",
+    "",
+    "By entry hour (only trades with a recorded entry time):",
+    hourRows || "  (none)",
     "",
     "By month (closed trades, newest first):",
     monthlyRows || "  (none)",
