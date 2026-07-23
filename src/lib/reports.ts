@@ -196,7 +196,7 @@ function aggRow(a: Agg): (string | number)[] {
 }
 
 const AGG_TAIL = [
-  "Trades", "Wins", "Losses", "Win rate %",
+  "Trades", "Wins", "Losses", "Win rate",
   "Gross P/L", "Fees", "Net P/L", "Expectancy",
 ];
 

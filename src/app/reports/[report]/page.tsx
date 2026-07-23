@@ -201,18 +201,19 @@ function Page() {
           </span>
         </div>
 
-        {/* Report body */}
-        <div className="mt-5 flex-1 min-h-0 rounded-xl border border-white/10 bg-white/[0.015] overflow-hidden flex flex-col">
+        {/* Report body — hugs its content instead of stretching to fill
+            the viewport, so a short report doesn't leave a tall empty box. */}
+        <div className="mt-5 rounded-xl border border-white/10 bg-[var(--surface-2)] overflow-hidden">
           {isLoading ? (
             <div className="flex items-center justify-center py-20 text-white/40">
               <Spinner size={20} />
             </div>
           ) : table ? (
-            <div className="overflow-auto thin-scroll">
+            <div className="overflow-x-auto thin-scroll">
               <TableView table={table} />
             </div>
           ) : (
-            <pre className="overflow-auto thin-scroll p-4 text-[11.5px] leading-relaxed text-white/70 whitespace-pre font-mono">
+            <pre className="overflow-auto thin-scroll p-4 text-[11.5px] leading-relaxed text-white/70 whitespace-pre font-mono max-h-[75vh]">
               {json}
             </pre>
           )}
@@ -220,6 +221,34 @@ function Page() {
       </div>
     </div>
   );
+}
+
+// Columns rendered as USD.
+const CURRENCY_COLS = new Set([
+  "Gross P/L", "Net P/L", "Fees", "Expectancy",
+  "Proceeds", "Cost basis", "Gain/Loss",
+  "Contract price", "Closing price",
+]);
+
+function fmtUsd(n: number): string {
+  const sign = n < 0 ? "-" : "";
+  return (
+    sign +
+    "$" +
+    Math.abs(n).toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })
+  );
+}
+
+// Display string for a cell, adding $ / % where the column calls for it.
+// The underlying data (and the CSV export) stay raw numbers.
+function displayCell(col: string, cell: string | number): string {
+  if (typeof cell !== "number") return cell === "" ? "—" : cell;
+  if (col === "Win rate") return `${cell.toFixed(2)}%`;
+  if (CURRENCY_COLS.has(col)) return fmtUsd(cell);
+  return String(cell);
 }
 
 function TableView({ table }: { table: ReportTable }) {
@@ -232,15 +261,24 @@ function TableView({ table }: { table: ReportTable }) {
     );
   }
 
+  // A column is numeric (→ right-aligned header and cells) when every
+  // populated cell in it is a number. Aligning on the column, not the
+  // individual cell, keeps the numbers sitting under their header.
+  const numericCols = table.columns.map(
+    (_, ci) =>
+      table.rows.some((r) => typeof r[ci] === "number") &&
+      table.rows.every((r) => typeof r[ci] === "number" || r[ci] === ""),
+  );
+
   return (
     <table className="w-full border-collapse text-[12.5px]">
-      <thead className="sticky top-0 z-10 bg-[var(--surface-2)]">
-        <tr>
-          {table.columns.map((c) => (
+      <thead>
+        <tr className="border-b border-white/10">
+          {table.columns.map((c, ci) => (
             <th
               key={c}
-              className={`font-medium text-white/45 whitespace-nowrap px-3.5 py-2.5 border-b border-white/10 ${
-                SIGNED_COL.test(c) ? "text-right" : "text-left"
+              className={`font-medium text-white/45 whitespace-nowrap px-3.5 py-2.5 ${
+                numericCols[ci] ? "text-right" : "text-left"
               }`}
             >
               {c}
@@ -252,12 +290,12 @@ function TableView({ table }: { table: ReportTable }) {
         {table.rows.map((row, ri) => (
           <tr
             key={ri}
-            className="odd:bg-white/[0.012] hover:bg-white/[0.04] transition-colors"
+            className="odd:bg-white/[0.02] hover:bg-white/[0.05] transition-colors"
           >
             {row.map((cell, ci) => {
               const col = table.columns[ci];
-              const isNum = typeof cell === "number";
-              const signed = SIGNED_COL.test(col) && isNum;
+              const num = numericCols[ci];
+              const signed = SIGNED_COL.test(col) && typeof cell === "number";
               const tone = signed
                 ? (cell as number) > 0
                   ? "text-green-400"
@@ -271,11 +309,11 @@ function TableView({ table }: { table: ReportTable }) {
                 <td
                   key={ci}
                   className={`px-3.5 py-2 whitespace-nowrap border-b border-white/[0.04] ${
-                    isNum ? "text-right tabular-nums" : "text-left"
+                    num ? "text-right tabular-nums" : "text-left"
                   } ${tone} ${col === "Notes" ? "max-w-[320px] truncate" : ""}`}
                   title={col === "Notes" ? String(cell) : undefined}
                 >
-                  {cell === "" ? "—" : String(cell)}
+                  {displayCell(col, cell)}
                 </td>
               );
             })}
