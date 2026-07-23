@@ -6,6 +6,7 @@ import "@/app/calendar/custom-calendar.css";
 import Providers from "./providers";
 import NavbarWrapper from "./navbar/NavbarWrapper";
 import ContentShell from "./ContentShell";
+import { SidebarProvider } from "./navbar/SidebarContext";
 import { ToastProvider } from "@/hooks/useToast";
 import PWARegister from "./PWARegister";
 import NativeBridge from "./NativeBridge";
@@ -74,8 +75,10 @@ export default function RootLayout({
       <body className={dmMono.className}>
         <Providers>
           <ToastProvider>
-            <NavbarWrapper />
-            <ContentShell>{children}</ContentShell>
+            <SidebarProvider>
+              <NavbarWrapper />
+              <ContentShell>{children}</ContentShell>
+            </SidebarProvider>
             <PWARegister />
             <NativeBridge />
             <CookieConsent />

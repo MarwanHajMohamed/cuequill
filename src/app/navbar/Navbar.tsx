@@ -21,6 +21,32 @@ import ThemeToggle from "@/components/ThemeToggle";
 import TimezoneDisplay from "@/helpers/TimezoneDisplay";
 import ProTag from "@/components/ProTag";
 import { isMarketOpenAt } from "@/lib/marketHolidays";
+import { useSidebar } from "./SidebarContext";
+
+// Small chevron button that collapses / expands the desktop sidebar.
+function CollapseToggle({
+  collapsed,
+  onClick,
+}: {
+  collapsed: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+      title={collapsed ? "Expand" : "Collapse"}
+      className="shrink-0 w-7 h-7 inline-flex items-center justify-center rounded-lg text-white/45 hover:text-white hover:bg-white/[0.06] transition cursor-pointer"
+    >
+      <i
+        className={`fa-solid ${
+          collapsed ? "fa-chevron-right" : "fa-chevron-left"
+        } text-[11px]`}
+      />
+    </button>
+  );
+}
 
 const CuequillLogo = ({ className = "" }: { className?: string }) => (
   <svg
@@ -57,6 +83,7 @@ export default function Navbar() {
   // rendering the next route.
   const [isNavPending, startTransition] = useTransition();
   const activePath = pendingPath ?? pathname;
+  const { collapsed, toggle } = useSidebar();
   const { data: session } = useSession();
   const userId = session?.user?.id;
   const userFullName = session?.user
@@ -569,13 +596,21 @@ export default function Navbar() {
         {/* -------- DESKTOP NAV -------- */}
         <div
           ref={desktopBarRef}
-          className="hidden md:flex flex-col fixed left-4 top-4 bottom-4 z-50 w-[228px] px-3 py-4 bg-white/[0.03] backdrop-blur-md rounded-3xl border border-white/10 shadow-[0_2px_24px_var(--shadow-soft)]"
+          className={`hidden md:flex flex-col fixed left-4 top-4 bottom-4 z-50 py-4 bg-white/[0.03] backdrop-blur-md rounded-3xl border border-white/10 shadow-[0_2px_24px_var(--shadow-soft)] transition-[width] duration-300 ease-out ${
+            collapsed ? "w-[60px] px-2" : "w-[228px] px-3"
+          }`}
         >
           {/* Active state is a per-item highlight in the vertical sidebar
               (no sliding pill). */}
 
-          {/* BRAND + market status */}
-          <div className="flex items-center justify-between gap-2 pl-1">
+          {/* BRAND + market status + collapse toggle */}
+          <div
+            className={`flex gap-2 ${
+              collapsed
+                ? "flex-col items-center"
+                : "items-center justify-between pl-1"
+            }`}
+          >
             <Link
               ref={(el) => {
                 itemRefs.current["__brand__"] = el;
@@ -590,27 +625,36 @@ export default function Navbar() {
               aria-label="Cuequill - dashboard"
             >
               <CuequillLogo className="h-7 w-auto" />
-              <span className="text-[15px] font-semibold tracking-tight">
-                Cuequill
-              </span>
+              {!collapsed && (
+                <span className="text-[15px] font-semibold tracking-tight">
+                  Cuequill
+                </span>
+              )}
             </Link>
 
-            {/* Market status - compact */}
-            <div
-              className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border ${
-                marketOpen
-                  ? "bg-green-500/10 text-green-400 border-green-500/20"
-                  : "bg-red-500/10 text-red-400 border-red-500/20"
-              }`}
-              title={marketOpen ? "US market open" : "US market closed"}
-            >
-              <span
-                className={`w-1 h-1 rounded-full ${
-                  marketOpen ? "bg-green-400 animate-pulse" : "bg-red-400"
-                }`}
-              />
-              <span>{marketOpen ? "Open" : "Closed"}</span>
-            </div>
+            {collapsed ? (
+              <CollapseToggle collapsed={collapsed} onClick={toggle} />
+            ) : (
+              <div className="flex items-center gap-1.5">
+                {/* Market status - compact */}
+                <div
+                  className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border ${
+                    marketOpen
+                      ? "bg-green-500/10 text-green-400 border-green-500/20"
+                      : "bg-red-500/10 text-red-400 border-red-500/20"
+                  }`}
+                  title={marketOpen ? "US market open" : "US market closed"}
+                >
+                  <span
+                    className={`w-1 h-1 rounded-full ${
+                      marketOpen ? "bg-green-400 animate-pulse" : "bg-red-400"
+                    }`}
+                  />
+                  <span>{marketOpen ? "Open" : "Closed"}</span>
+                </div>
+                <CollapseToggle collapsed={collapsed} onClick={toggle} />
+              </div>
+            )}
           </div>
 
           {/* NAV - a flat list of links, sections split by a plain divider */}
@@ -634,7 +678,10 @@ export default function Navbar() {
                         e.preventDefault();
                         navigate(item.slug);
                       }}
-                      className={`flex items-center gap-3 px-3 py-2 rounded-xl cursor-pointer transition-colors ${
+                      title={collapsed ? item.label : undefined}
+                      className={`flex items-center rounded-xl cursor-pointer transition-colors ${
+                        collapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2"
+                      } ${
                         active
                           ? "bg-white/[0.08] text-white"
                           : "text-white/60 hover:bg-white/5 hover:text-white"
@@ -643,7 +690,7 @@ export default function Navbar() {
                       <i
                         className={`${item.icon} w-4 text-center text-[13px]`}
                       />
-                      <span>{item.label}</span>
+                      {!collapsed && <span>{item.label}</span>}
                     </Link>
                   );
                 })}
@@ -657,23 +704,30 @@ export default function Navbar() {
             <div ref={dropdownRef} className="relative">
               <button
                 onClick={() => setOpen((o) => !o)}
-                className="w-full flex items-center gap-2.5 px-2 py-2 rounded-xl hover:bg-white/[0.06] transition cursor-pointer"
+                className={`w-full flex items-center rounded-xl hover:bg-white/[0.06] transition cursor-pointer ${
+                  collapsed ? "justify-center px-0 py-2" : "gap-2.5 px-2 py-2"
+                }`}
                 aria-label="account menu"
+                title={collapsed ? userFullName || "Account" : undefined}
               >
                 <div className="w-8 h-8 shrink-0 rounded-full bg-gradient-to-br from-teal-500/80 to-emerald-600/80 border border-white/15 flex items-center justify-center text-[12.5px] font-semibold text-white">
                   {userInitial}
                 </div>
-                <div className="min-w-0 flex-1 text-left">
-                  <div className="text-[12.5px] font-medium truncate leading-tight">
-                    {userFullName || "Account"}
-                  </div>
-                  {session?.user?.email && (
-                    <div className="text-[10.5px] text-white/45 truncate leading-tight">
-                      {session.user.email}
+                {!collapsed && (
+                  <>
+                    <div className="min-w-0 flex-1 text-left">
+                      <div className="text-[12.5px] font-medium truncate leading-tight">
+                        {userFullName || "Account"}
+                      </div>
+                      {session?.user?.email && (
+                        <div className="text-[10.5px] text-white/45 truncate leading-tight">
+                          {session.user.email}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-                <i className="fa-solid fa-ellipsis-vertical text-[11px] text-white/40" />
+                    <i className="fa-solid fa-ellipsis-vertical text-[11px] text-white/40" />
+                  </>
+                )}
               </button>
 
               <AnimatePresence>
