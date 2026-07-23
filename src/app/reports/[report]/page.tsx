@@ -110,10 +110,9 @@ function Page() {
 
   return (
     <div className="w-full flex justify-center">
-      {/* Fixed to the viewport height so the page itself never scrolls; the
-          table panel below flexes into the leftover space and scrolls
-          internally. Bottom padding clears the mobile tab bar. */}
-      <div className="w-full px-5 md:px-8 pt-24 md:pt-8 pb-24 md:pb-6 h-[100dvh] flex flex-col">
+      {/* Natural page flow — the window scrolls when the report is long.
+          Bottom padding clears the mobile tab bar. */}
+      <div className="w-full px-5 md:px-8 pt-24 md:pt-8 pb-24 md:pb-16">
         {/* Breadcrumb + heading */}
         <Link
           href="/reports"
@@ -225,20 +224,20 @@ function Page() {
             <Spinner size={20} />
           </div>
         ) : table ? (
-          <div className="mt-4 min-h-0 flex-1 flex flex-col gap-4">
+          <div className="mt-4 flex flex-col gap-4">
             {def.chart && table.rows.length > 0 && (
               <ReportChart table={table} />
             )}
-            <div className="min-h-0 flex-1 rounded-xl border border-white/10 bg-[var(--surface-2)] overflow-auto thin-scroll">
+            {/* Own scroll container so a wide table scrolls horizontally
+                inside the panel instead of widening the page. */}
+            <div className="rounded-xl border border-white/10 bg-[var(--surface-2)] overflow-x-auto thin-scroll">
               <TableView table={table} />
             </div>
           </div>
         ) : (
-          <div className="mt-4 min-h-0 flex-1">
-            <pre className="rounded-xl border border-white/10 bg-[var(--surface-2)] overflow-auto thin-scroll p-4 text-[11.5px] leading-relaxed text-white/70 whitespace-pre font-mono max-h-full">
-              {json}
-            </pre>
-          </div>
+          <pre className="mt-4 rounded-xl border border-white/10 bg-[var(--surface-2)] overflow-auto thin-scroll p-4 text-[11.5px] leading-relaxed text-white/70 whitespace-pre font-mono max-h-[70vh]">
+            {json}
+          </pre>
         )}
       </div>
     </div>
@@ -357,12 +356,16 @@ function ReportChart({ table }: { table: ReportTable }) {
     label: String(r[0]),
     net: typeof r[netIdx] === "number" ? (r[netIdx] as number) : 0,
   }));
-  const angled = data.length > 8;
+  // Angle the labels once they'd collide, and reserve enough axis height
+  // for the longest one so nothing gets clipped.
+  const angled = data.length > 6;
+  const longest = data.reduce((m, d) => Math.max(m, d.label.length), 0);
+  const axisH = angled ? Math.min(120, 30 + longest * 6) : 24;
 
   return (
-    <div className="shrink-0 h-[200px] rounded-xl border border-white/10 bg-[var(--surface-2)] p-3">
+    <div className="shrink-0 h-[300px] rounded-xl border border-white/10 bg-[var(--surface-2)] p-3">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 6, right: 6, left: 0, bottom: 0 }}>
+        <BarChart data={data} margin={{ top: 8, right: 8, left: 4, bottom: 4 }}>
           <CartesianGrid stroke="var(--hairline)" vertical={false} />
           <XAxis
             dataKey="label"
@@ -370,7 +373,7 @@ function ReportChart({ table }: { table: ReportTable }) {
             interval={0}
             angle={angled ? -35 : 0}
             textAnchor={angled ? "end" : "middle"}
-            height={angled ? 56 : 22}
+            height={axisH}
           />
           <YAxis
             tick={{ fontSize: 10, fill: "var(--foreground)" }}
