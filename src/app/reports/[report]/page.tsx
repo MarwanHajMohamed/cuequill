@@ -100,7 +100,7 @@ function Page() {
 
   return (
     <div className="w-full flex justify-center min-h-screen pb-24">
-      <div className="w-full max-w-[1180px] px-5 md:px-8 pt-24 md:pt-12 flex flex-col min-h-screen">
+      <div className="w-full px-5 md:px-8 pt-24 md:pt-12 flex flex-col min-h-screen">
         {/* Breadcrumb + heading */}
         <Link
           href="/reports"
