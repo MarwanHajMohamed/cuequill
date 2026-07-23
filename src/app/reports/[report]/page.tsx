@@ -110,9 +110,11 @@ function Page() {
 
   return (
     <div className="w-full flex justify-center">
-      {/* Natural page flow — the window scrolls when the report is long.
-          Bottom padding clears the mobile tab bar. */}
-      <div className="w-full px-5 md:px-8 pt-24 md:pt-8 pb-24 md:pb-16">
+      {/* Viewport-height column: the header/filters/chart stay fixed while
+          the table region below scrolls internally (with a sticky header),
+          so the filters and column headers stay pinned to the top. Bottom
+          padding clears the mobile tab bar. */}
+      <div className="w-full px-5 md:px-8 pt-24 md:pt-8 pb-24 md:pb-6 h-[100dvh] flex flex-col">
         {/* Breadcrumb + heading */}
         <Link
           href="/reports"
@@ -224,18 +226,19 @@ function Page() {
             <Spinner size={20} />
           </div>
         ) : table ? (
-          <div className="mt-4 flex flex-col gap-4">
+          <div className="mt-4 min-h-0 flex-1 flex flex-col gap-4">
             {def.chart && table.rows.length > 0 && (
               <ReportChart table={table} />
             )}
-            {/* Own scroll container so a wide table scrolls horizontally
-                inside the panel instead of widening the page. */}
-            <div className="rounded-xl border border-white/10 bg-[var(--surface-2)] overflow-x-auto thin-scroll">
+            {/* Own scroll container (both axes): a wide table scrolls
+                horizontally inside the panel, a tall one scrolls vertically
+                with the column header pinned to the top. */}
+            <div className="min-h-0 flex-1 rounded-xl border border-white/10 bg-[var(--surface-2)] overflow-auto thin-scroll">
               <TableView table={table} />
             </div>
           </div>
         ) : (
-          <pre className="mt-4 rounded-xl border border-white/10 bg-[var(--surface-2)] overflow-auto thin-scroll p-4 text-[11.5px] leading-relaxed text-white/70 whitespace-pre font-mono max-h-[70vh]">
+          <pre className="mt-4 min-h-0 flex-1 rounded-xl border border-white/10 bg-[var(--surface-2)] overflow-auto thin-scroll p-4 text-[11.5px] leading-relaxed text-white/70 whitespace-pre font-mono">
             {json}
           </pre>
         )}
