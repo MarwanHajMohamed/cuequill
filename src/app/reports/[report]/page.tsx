@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -62,6 +62,7 @@ function Page() {
     DEFAULT_SCOPE,
   );
   const patch = (p: Partial<Scope>) => setScope({ ...scope, ...p });
+  const [filtersOpen, setFiltersOpen] = useState(true);
 
   const trades = useMemo(
     () => scopeTrades(allTrades, scope),
@@ -110,12 +111,12 @@ function Page() {
 
   return (
     <div className="w-full flex justify-center">
-      {/* Viewport-height column: the header/filters/chart stay fixed while
-          the table region below scrolls internally (with a sticky header),
-          so the filters and column headers stay pinned to the top. Bottom
-          padding clears the mobile tab bar. */}
-      <div className="w-full px-5 md:px-8 pt-24 md:pt-8 pb-24 md:pb-6 h-[100dvh] flex flex-col">
-        {/* Breadcrumb + heading */}
+      {/* Natural page flow — the window scrolls when a report is long. The
+          heading + filters below sit in one sticky bar, so they pin to the
+          top once you scroll past them. Bottom padding clears the mobile
+          tab bar. */}
+      <div className="w-full px-5 md:px-8 pt-24 md:pt-8 pb-24 md:pb-16">
+        {/* Breadcrumb (scrolls away) */}
         <Link
           href="/reports"
           className="inline-flex items-center gap-1.5 text-[12.5px] text-white/50 hover:text-white transition w-fit"
@@ -124,121 +125,146 @@ function Page() {
           Reports
         </Link>
 
-        <div className="mt-3 flex items-end justify-between gap-4 flex-wrap pb-5 border-b border-white/10">
-          <div className="min-w-0">
-            <h1 className="text-[22px] font-semibold tracking-tight">
-              {def.title}
-            </h1>
-            <p className="text-[13px] text-white/50 mt-1">{def.description}</p>
+        {/* Sticky bar: heading on top, filters floating underneath. Full-
+            bleed background so scrolled rows disappear cleanly behind it. */}
+        <div className="sticky top-0 z-30 -mx-5 md:-mx-8 px-5 md:px-8 bg-[rgb(var(--bg-rgb))]">
+          <div className="mt-3 flex items-end justify-between gap-4 flex-wrap pb-4 border-b border-white/10">
+            <div className="min-w-0">
+              <h1 className="text-[22px] font-semibold tracking-tight">
+                {def.title}
+              </h1>
+              <p className="text-[13px] text-white/50 mt-1">
+                {def.description}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={download}
+              disabled={def.kind === "table" && empty}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/[0.06] text-white/90 border border-white/15 hover:bg-white/10 hover:border-white/25 transition text-[13px] font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <i className="fa-solid fa-arrow-down text-[11px]" />
+              Download {def.kind === "json" ? "JSON" : "CSV"}
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={download}
-            disabled={def.kind === "table" && empty}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/[0.06] text-white/90 border border-white/15 hover:bg-white/10 hover:border-white/25 transition text-[13px] font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <i className="fa-solid fa-arrow-down text-[11px]" />
-            Download {def.kind === "json" ? "JSON" : "CSV"}
-          </button>
-        </div>
 
-        {/* Scope toolbar — stays above the table, which scrolls within its
-            own container below. */}
-        <div className="mt-5 flex items-center justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-3 flex-wrap">
-            {/* Segmented range control */}
-            <div className="inline-flex items-center p-0.5 rounded-lg bg-white/[0.04] border border-white/10">
-              {RANGES.map((r) => (
-                <button
-                  key={r.key}
-                  type="button"
-                  onClick={() => patch({ range: r.key as RangeKey })}
-                  className={`px-3 py-1.5 rounded-md text-[12px] font-medium transition cursor-pointer ${
-                    scope.range === r.key
-                      ? "bg-white/[0.10] text-white"
-                      : "text-white/55 hover:text-white/85"
+          {/* Filters — collapsible. The toggle hides the controls, leaving a
+              compact summary so the sticky bar shrinks. */}
+          <div className="py-3 flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-3 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setFiltersOpen((o) => !o)}
+                className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-white/70 hover:text-white transition cursor-pointer"
+                aria-expanded={filtersOpen}
+              >
+                <i
+                  className={`fa-solid fa-chevron-down text-[10px] transition-transform ${
+                    filtersOpen ? "" : "-rotate-90"
                   }`}
-                >
-                  {r.label}
-                </button>
-              ))}
+                />
+                <i className="fa-solid fa-sliders text-[11px]" />
+                Filters
+              </button>
+
+              {filtersOpen ? (
+                <>
+                  {/* Segmented range control */}
+                  <div className="inline-flex items-center p-0.5 rounded-lg bg-white/[0.04] border border-white/10">
+                    {RANGES.map((r) => (
+                      <button
+                        key={r.key}
+                        type="button"
+                        onClick={() => patch({ range: r.key as RangeKey })}
+                        className={`px-3 py-1.5 rounded-md text-[12px] font-medium transition cursor-pointer ${
+                          scope.range === r.key
+                            ? "bg-white/[0.10] text-white"
+                            : "text-white/55 hover:text-white/85"
+                        }`}
+                      >
+                        {r.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {scope.range === "custom" && (
+                    <div className="inline-flex items-center gap-2">
+                      <input
+                        type="date"
+                        value={scope.from}
+                        max={scope.to || undefined}
+                        onChange={(e) => patch({ from: e.target.value })}
+                        className="px-2.5 py-1.5 text-[12.5px] bg-white/[0.04] rounded-lg border border-white/10 focus:border-white/25 focus:outline-none transition appearance-none"
+                      />
+                      <span className="text-[12px] text-white/40">–</span>
+                      <input
+                        type="date"
+                        value={scope.to}
+                        min={scope.from || undefined}
+                        onChange={(e) => patch({ to: e.target.value })}
+                        className="px-2.5 py-1.5 text-[12.5px] bg-white/[0.04] rounded-lg border border-white/10 focus:border-white/25 focus:outline-none transition appearance-none"
+                      />
+                    </div>
+                  )}
+
+                  <label className="inline-flex items-center gap-2 cursor-pointer group select-none">
+                    <input
+                      type="checkbox"
+                      checked={scope.includeSim}
+                      onChange={(e) => patch({ includeSim: e.target.checked })}
+                      className="w-3.5 h-3.5 accent-teal-500 cursor-pointer"
+                    />
+                    <span className="text-[12.5px] text-white/55 group-hover:text-white/85 transition">
+                      Include simulated
+                    </span>
+                  </label>
+                </>
+              ) : (
+                <span className="text-[12px] text-white/45">
+                  {RANGES.find((r) => r.key === scope.range)?.label}
+                  {scope.includeSim ? " · incl. simulated" : ""}
+                </span>
+              )}
             </div>
 
-            {scope.range === "custom" && (
-              <div className="inline-flex items-center gap-2">
-                <input
-                  type="date"
-                  value={scope.from}
-                  max={scope.to || undefined}
-                  onChange={(e) => patch({ from: e.target.value })}
-                  className="px-2.5 py-1.5 text-[12.5px] bg-white/[0.04] rounded-lg border border-white/10 focus:border-white/25 focus:outline-none transition appearance-none"
-                />
-                <span className="text-[12px] text-white/40">–</span>
-                <input
-                  type="date"
-                  value={scope.to}
-                  min={scope.from || undefined}
-                  onChange={(e) => patch({ to: e.target.value })}
-                  className="px-2.5 py-1.5 text-[12.5px] bg-white/[0.04] rounded-lg border border-white/10 focus:border-white/25 focus:outline-none transition appearance-none"
-                />
-              </div>
-            )}
-
-            <label className="inline-flex items-center gap-2 cursor-pointer group select-none">
-              <input
-                type="checkbox"
-                checked={scope.includeSim}
-                onChange={(e) => patch({ includeSim: e.target.checked })}
-                className="w-3.5 h-3.5 accent-teal-500 cursor-pointer"
-              />
-              <span className="text-[12.5px] text-white/55 group-hover:text-white/85 transition">
-                Include simulated
-              </span>
-            </label>
+            <span className="text-[12px] text-white/40 tabular-nums inline-flex items-center gap-2">
+              {isLoading ? (
+                <>
+                  <Spinner size={12} /> Loading…
+                </>
+              ) : def.kind === "table" ? (
+                <>
+                  {rowCount} row{rowCount === 1 ? "" : "s"}
+                  {" · "}
+                  {closedCount} closed
+                </>
+              ) : (
+                <>
+                  {trades.length} trade{trades.length === 1 ? "" : "s"}
+                </>
+              )}
+            </span>
           </div>
-
-          <span className="text-[12px] text-white/40 tabular-nums inline-flex items-center gap-2">
-            {isLoading ? (
-              <>
-                <Spinner size={12} /> Loading…
-              </>
-            ) : def.kind === "table" ? (
-              <>
-                {rowCount} row{rowCount === 1 ? "" : "s"}
-                {" · "}
-                {closedCount} closed
-              </>
-            ) : (
-              <>
-                {trades.length} trade{trades.length === 1 ? "" : "s"}
-              </>
-            )}
-          </span>
         </div>
 
-        {/* Report body. The table lives in its own scroll container so a
-            wide table scrolls horizontally inside the panel instead of
-            widening the whole page; a tall one scrolls vertically with the
-            header pinned. The container hugs its content up to a cap, so a
-            short report leaves no empty box and adds no page scrollbar. */}
+        {/* Report body — flows below the sticky bar; the window scrolls. */}
         {isLoading ? (
           <div className="mt-4 flex items-center justify-center py-20 text-white/40">
             <Spinner size={20} />
           </div>
         ) : table ? (
-          <div className="mt-4 min-h-0 flex-1 flex flex-col gap-4">
+          <div className="mt-4 flex flex-col gap-4">
             {def.chart && table.rows.length > 0 && (
               <ReportChart table={table} />
             )}
-            {/* Own scroll container (both axes): a wide table scrolls
-                horizontally inside the panel, a tall one scrolls vertically
-                with the column header pinned to the top. */}
-            <div className="min-h-0 flex-1 rounded-xl border border-white/10 bg-[var(--surface-2)] overflow-auto thin-scroll">
+            {/* Own horizontal-scroll container so a wide table scrolls
+                inside the panel rather than widening the page. */}
+            <div className="rounded-xl border border-white/10 bg-[var(--surface-2)] overflow-x-auto thin-scroll">
               <TableView table={table} />
             </div>
           </div>
         ) : (
-          <pre className="mt-4 min-h-0 flex-1 rounded-xl border border-white/10 bg-[var(--surface-2)] overflow-auto thin-scroll p-4 text-[11.5px] leading-relaxed text-white/70 whitespace-pre font-mono">
+          <pre className="mt-4 rounded-xl border border-white/10 bg-[var(--surface-2)] overflow-auto thin-scroll p-4 text-[11.5px] leading-relaxed text-white/70 whitespace-pre font-mono max-h-[70vh]">
             {json}
           </pre>
         )}
