@@ -239,6 +239,11 @@ export default function Navbar() {
         label: "Calendar",
         slug: "calendar",
       },
+      {
+        icon: "fa-solid fa-file-arrow-down",
+        label: "Reports",
+        slug: "reports",
+      },
     ],
     [
       {
@@ -256,11 +261,6 @@ export default function Navbar() {
         icon: "fa-regular fa-circle-check",
         label: "Affirmations",
         slug: "affirmations",
-      },
-      {
-        icon: "fa-solid fa-file-arrow-down",
-        label: "Reports",
-        slug: "reports",
       },
     ],
   ];

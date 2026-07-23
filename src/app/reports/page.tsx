@@ -34,7 +34,7 @@ const DATA_REPORTS: ReportDef[] = [
   {
     id: "all-trades",
     title: "All trades",
-    description: "Every trade with all fields — the complete journal.",
+    description: "Every trade, all fields.",
     icon: "fa-solid fa-table-list",
     ext: "csv",
     build: allTradesCsv,
@@ -42,7 +42,7 @@ const DATA_REPORTS: ReportDef[] = [
   {
     id: "closed-trades",
     title: "Closed trades",
-    description: "Realized trades as a blotter, ordered by close date.",
+    description: "Realized trade blotter.",
     icon: "fa-solid fa-receipt",
     ext: "csv",
     build: closedTradesCsv,
@@ -50,7 +50,7 @@ const DATA_REPORTS: ReportDef[] = [
   {
     id: "backup",
     title: "Full backup",
-    description: "Raw JSON of everything in scope, ready to re-import.",
+    description: "Raw JSON of everything.",
     icon: "fa-solid fa-database",
     ext: "json",
     build: backupJson,
@@ -61,7 +61,7 @@ const ANALYTICS_REPORTS: ReportDef[] = [
   {
     id: "tax",
     title: "Tax report",
-    description: "Proceeds, cost basis and gain/loss per closed position.",
+    description: "Gain/loss per position.",
     icon: "fa-solid fa-file-invoice-dollar",
     ext: "csv",
     build: taxReportCsv,
@@ -69,7 +69,7 @@ const ANALYTICS_REPORTS: ReportDef[] = [
   {
     id: "monthly",
     title: "Monthly performance",
-    description: "Win rate and net P/L broken down by month.",
+    description: "Net P/L by month.",
     icon: "fa-solid fa-calendar-check",
     ext: "csv",
     build: monthlyPerformanceCsv,
@@ -77,7 +77,7 @@ const ANALYTICS_REPORTS: ReportDef[] = [
   {
     id: "strategy",
     title: "Strategy performance",
-    description: "Per-strategy expectancy, win rate and net P/L.",
+    description: "Net P/L by strategy.",
     icon: "fa-solid fa-bezier-curve",
     ext: "csv",
     build: strategyPerformanceCsv,
@@ -85,7 +85,7 @@ const ANALYTICS_REPORTS: ReportDef[] = [
   {
     id: "symbol",
     title: "Symbol performance",
-    description: "Net P/L and win rate for each underlying you trade.",
+    description: "Net P/L by symbol.",
     icon: "fa-solid fa-coins",
     ext: "csv",
     build: symbolPerformanceCsv,
@@ -298,7 +298,7 @@ function Page() {
 
         {/* Data exports */}
         <section className="flex flex-col gap-3">
-          <h2 className="text-[11px] tracking-[0.12em] uppercase text-white/40 font-medium">
+          <h2 className="text-[13px] text-white/50 font-medium">
             Data exports
           </h2>
           <div className="grid sm:grid-cols-2 gap-3">
@@ -308,7 +308,7 @@ function Page() {
 
         {/* Performance & tax */}
         <section className="flex flex-col gap-3">
-          <h2 className="text-[11px] tracking-[0.12em] uppercase text-white/40 font-medium">
+          <h2 className="text-[13px] text-white/50 font-medium">
             Performance &amp; tax
           </h2>
           <div className="grid sm:grid-cols-2 gap-3">
