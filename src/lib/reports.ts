@@ -1,14 +1,20 @@
 // Report builders for the /reports page. Pure and framework-free: each
-// takes the already-fetched trades and returns a plain string (CSV or
-// JSON) the page turns into a file download. Keeping the maths here (a)
-// mirrors the numbers shown elsewhere in the app via tradeNetPL and (b)
-// makes every report unit-testable without a browser.
+// tabular report returns a { columns, rows } table the page can render on
+// screen and, on demand, serialize to CSV via tableToCsv. Keeping the
+// maths here (a) mirrors the numbers shown elsewhere in the app via
+// tradeNetPL and (b) makes every report unit-testable without a browser.
 
 import { format } from "date-fns";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
 import type { Trade } from "@/app/types/Trades";
 
 const OPTION_MULTIPLIER = 100;
+
+// A rendered report: column headers plus row cells in the same order.
+export type ReportTable = {
+  columns: string[];
+  rows: (string | number)[][];
+};
 
 // ---- CSV plumbing --------------------------------------------------------
 
@@ -21,16 +27,19 @@ function csvCell(value: string | number | null | undefined): string {
   return s;
 }
 
-function toCsv(header: string[], rows: (string | number | null | undefined)[][]): string {
-  const lines = [header, ...rows].map((r) => r.map(csvCell).join(","));
-  // Leading BOM so Excel opens UTF-8 (notes/symbols) without mojibake.
+// Serialize a report table to CSV. Leading BOM so Excel opens UTF-8
+// (notes/symbols) without mojibake.
+export function tableToCsv(table: ReportTable): string {
+  const lines = [table.columns, ...table.rows].map((r) =>
+    r.map(csvCell).join(","),
+  );
   return "﻿" + lines.join("\r\n");
 }
 
 // ---- shared helpers ------------------------------------------------------
 
 // Stored dates are ISO timestamps; render the local calendar day. Empty
-// string for missing/unparseable values so CSV cells stay clean.
+// string for missing/unparseable values so cells stay clean.
 function ymd(value?: string | null): string {
   if (!value) return "";
   const d = new Date(value);
@@ -75,8 +84,8 @@ function holdDays(t: Trade): number | null {
 // ---- reports -------------------------------------------------------------
 
 // Every trade, every field — the "give me all my data" export.
-export function allTradesCsv(trades: Trade[]): string {
-  const header = [
+export function allTradesTable(trades: Trade[]): ReportTable {
+  const columns = [
     "Symbol", "Type", "Status", "Qty", "Strike",
     "Contract price", "Closing price",
     "Date bought", "Time entered", "Expiry",
@@ -105,42 +114,13 @@ export function allTradesCsv(trades: Trade[]): string {
     t.simulated ? "yes" : "no",
     plainNotes(t.notes),
   ]);
-  return toCsv(header, rows);
-}
-
-// Closed trades only, with the realized net front and centre. Sorted by
-// close date so it reads like a trade blotter.
-export function closedTradesCsv(trades: Trade[]): string {
-  const header = [
-    "Date closed", "Symbol", "Type", "Qty", "Strike",
-    "Open price", "Close price", "Hold (days)",
-    "Result", "Gross P/L", "Fees", "Net P/L", "Strategy",
-  ];
-  const rows = trades
-    .filter(isClosed)
-    .sort((a, b) => ymd(a.dateClosed).localeCompare(ymd(b.dateClosed)))
-    .map((t) => [
-      ymd(t.dateClosed),
-      t.symbol,
-      t.option,
-      t.qty,
-      t.strike,
-      t.contractPrice,
-      t.closingContractPrice ?? "",
-      holdDays(t) ?? "",
-      t.status,
-      round2(t.profitLoss ?? 0),
-      t.fees ?? 0,
-      round2(tradeNetPL(t)),
-      t.strategy ?? "",
-    ]);
-  return toCsv(header, rows);
+  return { columns, rows };
 }
 
 // Schedule-D-style realized gains: proceeds vs cost basis per closed
 // position, with a short/long term tag on the 365-day boundary.
-export function taxReportCsv(trades: Trade[]): string {
-  const header = [
+export function taxReportTable(trades: Trade[]): ReportTable {
+  const columns = [
     "Symbol", "Type", "Qty", "Strike",
     "Date acquired", "Date sold", "Term",
     "Proceeds", "Cost basis", "Fees", "Gain/Loss",
@@ -170,7 +150,7 @@ export function taxReportCsv(trades: Trade[]): string {
         round2(proceeds - cost - fees),
       ];
     });
-  return toCsv(header, rows);
+  return { columns, rows };
 }
 
 type Agg = { n: number; wins: number; losses: number; gross: number; fees: number };
@@ -221,32 +201,32 @@ const AGG_TAIL = [
 ];
 
 // Per calendar month (of the close date), ascending.
-export function monthlyPerformanceCsv(trades: Trade[]): string {
+export function monthlyPerformanceTable(trades: Trade[]): ReportTable {
   const m = aggBy(trades, (t) => ymd(t.dateClosed).slice(0, 7) || "Unknown");
   const rows = Array.from(m.entries())
     .sort((a, b) => a[0].localeCompare(b[0]))
     .map(([month, a]) => [month, ...aggRow(a)]);
-  return toCsv(["Month", ...AGG_TAIL], rows);
+  return { columns: ["Month", ...AGG_TAIL], rows };
 }
 
 // Per strategy, richest-first by net P/L.
-export function strategyPerformanceCsv(trades: Trade[]): string {
+export function strategyPerformanceTable(trades: Trade[]): ReportTable {
   const m = aggBy(trades, (t) => t.strategy || "Unassigned");
   const rows = Array.from(m.entries())
     .map(([name, a]) => ({ name, a, net: a.gross - a.fees }))
     .sort((x, y) => y.net - x.net)
     .map(({ name, a }) => [name, ...aggRow(a)]);
-  return toCsv(["Strategy", ...AGG_TAIL], rows);
+  return { columns: ["Strategy", ...AGG_TAIL], rows };
 }
 
 // Per underlying symbol, richest-first by net P/L.
-export function symbolPerformanceCsv(trades: Trade[]): string {
+export function symbolPerformanceTable(trades: Trade[]): ReportTable {
   const m = aggBy(trades, (t) => t.symbol || "—");
   const rows = Array.from(m.entries())
     .map(([sym, a]) => ({ sym, a, net: a.gross - a.fees }))
     .sort((x, y) => y.net - x.net)
     .map(({ sym, a }) => [sym, ...aggRow(a)]);
-  return toCsv(["Symbol", ...AGG_TAIL], rows);
+  return { columns: ["Symbol", ...AGG_TAIL], rows };
 }
 
 // Full raw backup — round-trips back into the app / another tool.

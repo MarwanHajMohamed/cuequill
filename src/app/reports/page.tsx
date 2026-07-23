@@ -3,32 +3,35 @@
 import { useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import { format } from "date-fns";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { withAuth } from "@/lib/withAuth";
 import ProGate from "@/components/ProGate";
 import { useTrades } from "@/hooks/useTrades";
+import { useScrollLock } from "@/hooks/useScrollLock";
 import { Spinner } from "@/components/Loaders";
 import type { Trade } from "@/app/types/Trades";
 import {
-  allTradesCsv,
-  closedTradesCsv,
-  taxReportCsv,
-  monthlyPerformanceCsv,
-  strategyPerformanceCsv,
-  symbolPerformanceCsv,
+  allTradesTable,
+  taxReportTable,
+  monthlyPerformanceTable,
+  strategyPerformanceTable,
+  symbolPerformanceTable,
   backupJson,
+  tableToCsv,
+  type ReportTable,
 } from "@/lib/reports";
 
-// A single downloadable report. `build` runs against the in-scope trades
-// and returns the file contents as a string.
+// A single report. Table reports render on screen and export to CSV; the
+// JSON backup previews as formatted text and exports as .json.
 type ReportDef = {
   id: string;
   title: string;
   description: string;
   icon: string;
-  ext: "csv" | "json";
-  build: (trades: Trade[]) => string;
-};
+} & (
+  | { kind: "table"; build: (trades: Trade[]) => ReportTable }
+  | { kind: "json"; build: (trades: Trade[]) => string }
+);
 
 const DATA_REPORTS: ReportDef[] = [
   {
@@ -36,23 +39,15 @@ const DATA_REPORTS: ReportDef[] = [
     title: "All trades",
     description: "Every trade, all fields.",
     icon: "fa-solid fa-table-list",
-    ext: "csv",
-    build: allTradesCsv,
-  },
-  {
-    id: "closed-trades",
-    title: "Closed trades",
-    description: "Realized trade blotter.",
-    icon: "fa-solid fa-receipt",
-    ext: "csv",
-    build: closedTradesCsv,
+    kind: "table",
+    build: allTradesTable,
   },
   {
     id: "backup",
     title: "Full backup",
     description: "Raw JSON of everything.",
     icon: "fa-solid fa-database",
-    ext: "json",
+    kind: "json",
     build: backupJson,
   },
 ];
@@ -63,32 +58,32 @@ const ANALYTICS_REPORTS: ReportDef[] = [
     title: "Tax report",
     description: "Gain/loss per position.",
     icon: "fa-solid fa-file-invoice-dollar",
-    ext: "csv",
-    build: taxReportCsv,
+    kind: "table",
+    build: taxReportTable,
   },
   {
     id: "monthly",
     title: "Monthly performance",
     description: "Net P/L by month.",
     icon: "fa-solid fa-calendar-check",
-    ext: "csv",
-    build: monthlyPerformanceCsv,
+    kind: "table",
+    build: monthlyPerformanceTable,
   },
   {
     id: "strategy",
     title: "Strategy performance",
     description: "Net P/L by strategy.",
     icon: "fa-solid fa-bezier-curve",
-    ext: "csv",
-    build: strategyPerformanceCsv,
+    kind: "table",
+    build: strategyPerformanceTable,
   },
   {
     id: "symbol",
     title: "Symbol performance",
     description: "Net P/L by symbol.",
     icon: "fa-solid fa-coins",
-    ext: "csv",
-    build: symbolPerformanceCsv,
+    kind: "table",
+    build: symbolPerformanceTable,
   },
 ];
 
@@ -115,6 +110,14 @@ function downloadFile(filename: string, content: string, ext: "csv" | "json") {
   URL.revokeObjectURL(url);
 }
 
+// Columns whose numeric cells should be tinted by sign.
+const SIGNED_COL = /(P\/L|Gain\/Loss|Expectancy)/;
+
+// The report currently open in the preview modal.
+type Preview =
+  | { def: ReportDef; kind: "table"; table: ReportTable }
+  | { def: ReportDef; kind: "json"; text: string };
+
 function Page() {
   const { data: session } = useSession();
   const userId = session?.user?.id;
@@ -125,6 +128,7 @@ function Page() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [includeSim, setIncludeSim] = useState(false);
+  const [preview, setPreview] = useState<Preview | null>(null);
 
   // Resolve the active [from, to] day bounds for the chosen preset. The
   // range filters on entry date (dateBought).
@@ -164,16 +168,37 @@ function Page() {
   ).length;
   const empty = trades.length === 0;
 
-  const handleDownload = (r: ReportDef) => {
+  const openPreview = (r: ReportDef) => {
+    if (r.kind === "table") {
+      setPreview({ def: r, kind: "table", table: r.build(trades) });
+    } else {
+      setPreview({ def: r, kind: "json", text: r.build(trades) });
+    }
+  };
+
+  const downloadPreview = () => {
+    if (!preview) return;
     const stamp = format(new Date(), "yyyyMMdd");
-    downloadFile(`cuequill-${r.id}-${stamp}.${r.ext}`, r.build(trades), r.ext);
+    if (preview.kind === "table") {
+      downloadFile(
+        `cuequill-${preview.def.id}-${stamp}.csv`,
+        tableToCsv(preview.table),
+        "csv",
+      );
+    } else {
+      downloadFile(
+        `cuequill-${preview.def.id}-${stamp}.json`,
+        preview.text,
+        "json",
+      );
+    }
   };
 
   const renderCard = (r: ReportDef, i: number) => (
     <motion.button
       key={r.id}
       type="button"
-      onClick={() => handleDownload(r)}
+      onClick={() => openPreview(r)}
       disabled={empty}
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
@@ -189,14 +214,14 @@ function Page() {
             {r.title}
           </span>
           <span className="text-[9px] uppercase tracking-wide text-white/40 border border-white/15 rounded px-1 py-0.5">
-            {r.ext}
+            {r.kind === "json" ? "json" : "csv"}
           </span>
         </div>
         <p className="text-[12px] text-white/50 mt-0.5 leading-snug">
           {r.description}
         </p>
       </div>
-      <i className="fa-solid fa-arrow-down shrink-0 text-white/30 group-hover:text-teal-300 transition mt-1 text-[12px]" />
+      <i className="fa-solid fa-eye shrink-0 text-white/30 group-hover:text-teal-300 transition mt-1 text-[12px]" />
     </motion.button>
   );
 
@@ -216,8 +241,8 @@ function Page() {
         <div>
           <h1 className="text-[22px] font-semibold tracking-tight">Reports</h1>
           <p className="text-[13px] text-white/50 mt-1">
-            Download your trading data and performance summaries as
-            spreadsheet-ready files.
+            Preview your trading data and performance summaries, then download
+            any of them as spreadsheet-ready files.
           </p>
         </div>
 
@@ -316,7 +341,158 @@ function Page() {
           </div>
         </section>
       </div>
+
+      <AnimatePresence>
+        {preview && (
+          <PreviewModal
+            preview={preview}
+            onClose={() => setPreview(null)}
+            onDownload={downloadPreview}
+          />
+        )}
+      </AnimatePresence>
     </div>
+  );
+}
+
+function PreviewModal({
+  preview,
+  onClose,
+  onDownload,
+}: {
+  preview: Preview;
+  onClose: () => void;
+  onDownload: () => void;
+}) {
+  useScrollLock();
+
+  const rowCount =
+    preview.kind === "table" ? preview.table.rows.length : undefined;
+
+  return (
+    <motion.div
+      className="fixed inset-0 z-[60] flex items-center justify-center p-3 md:p-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <div className="modal-scrim absolute inset-0" onClick={onClose} />
+
+      <motion.div
+        initial={{ opacity: 0, y: 12, scale: 0.99 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 12, scale: 0.99 }}
+        transition={{ type: "spring", stiffness: 320, damping: 30 }}
+        className="relative w-full max-w-5xl max-h-[86vh] flex flex-col rounded-2xl border border-white/10 bg-[var(--surface-2)] shadow-[0_24px_80px_var(--shadow)] overflow-hidden"
+      >
+        {/* Header */}
+        <div className="shrink-0 flex items-center justify-between gap-3 px-4 md:px-5 py-3.5 border-b border-white/10">
+          <div className="min-w-0">
+            <h3 className="text-[15px] font-semibold tracking-tight truncate">
+              {preview.def.title}
+            </h3>
+            <p className="text-[12px] text-white/45">
+              {rowCount != null
+                ? `${rowCount} row${rowCount === 1 ? "" : "s"}`
+                : "JSON preview"}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={onDownload}
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 transition text-[12.5px] font-medium cursor-pointer"
+            >
+              <i className="fa-solid fa-arrow-down text-[11px]" />
+              Download {preview.kind === "json" ? "JSON" : "CSV"}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close"
+              className="w-9 h-9 rounded-full flex items-center justify-center text-white/55 hover:text-white hover:bg-white/[0.06] transition cursor-pointer"
+            >
+              <i className="fa-solid fa-xmark text-[14px]" />
+            </button>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 min-h-0 overflow-auto thin-scroll">
+          {preview.kind === "table" ? (
+            <ReportTableView table={preview.table} />
+          ) : (
+            <pre className="p-4 text-[11.5px] leading-relaxed text-white/75 whitespace-pre-wrap break-words font-mono">
+              {preview.text}
+            </pre>
+          )}
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function ReportTableView({ table }: { table: ReportTable }) {
+  if (table.rows.length === 0) {
+    return (
+      <p className="text-[13px] text-white/40 p-6 text-center">
+        This report has no rows for the current scope.
+      </p>
+    );
+  }
+
+  return (
+    <table className="w-full border-collapse text-[12px]">
+      <thead className="sticky top-0 z-10 bg-[var(--surface-2)]">
+        <tr>
+          {table.columns.map((c) => {
+            const signed = SIGNED_COL.test(c);
+            return (
+              <th
+                key={c}
+                className={`text-white/55 font-medium whitespace-nowrap px-3 py-2.5 border-b border-white/10 ${
+                  signed ? "text-right" : "text-left"
+                }`}
+              >
+                {c}
+              </th>
+            );
+          })}
+        </tr>
+      </thead>
+      <tbody>
+        {table.rows.map((row, ri) => (
+          <tr
+            key={ri}
+            className="border-b border-white/[0.05] hover:bg-white/[0.03] transition-colors"
+          >
+            {row.map((cell, ci) => {
+              const col = table.columns[ci];
+              const isNum = typeof cell === "number";
+              const signed = SIGNED_COL.test(col) && isNum;
+              const tone = signed
+                ? (cell as number) > 0
+                  ? "text-green-400"
+                  : (cell as number) < 0
+                    ? "text-red-400"
+                    : "text-white/70"
+                : "text-white/75";
+              return (
+                <td
+                  key={ci}
+                  className={`px-3 py-2 whitespace-nowrap ${
+                    isNum ? "text-right tabular-nums" : "text-left"
+                  } ${tone} ${col === "Notes" ? "max-w-[280px] truncate" : ""}`}
+                  title={col === "Notes" ? String(cell) : undefined}
+                >
+                  {cell === "" ? "—" : String(cell)}
+                </td>
+              );
+            })}
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }
 
@@ -324,7 +500,7 @@ function GatedPage() {
   return (
     <ProGate
       feature="Reports"
-      description="Export your full trade history and performance, tax and strategy summaries as spreadsheet-ready files. Available on Pro."
+      description="Preview your full trade history and performance, tax and strategy summaries, then export them as spreadsheet-ready files. Available on Pro."
       className="min-h-screen"
     >
       <Page />
