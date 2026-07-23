@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -58,6 +58,20 @@ function Page() {
     [allTrades, scope],
   );
 
+  // Measure the sticky toolbar so the table header can pin flush beneath
+  // it (the toolbar grows a row when it wraps on narrow screens).
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  const [toolbarH, setToolbarH] = useState(60);
+  useEffect(() => {
+    const el = toolbarRef.current;
+    if (!el) return;
+    const measure = () => setToolbarH(el.offsetHeight);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   const closedCount = trades.filter(
     (t) => t.status === "WIN" || t.status === "LOSS",
   ).length;
@@ -99,8 +113,8 @@ function Page() {
   const empty = table != null && rowCount === 0;
 
   return (
-    <div className="w-full flex justify-center min-h-screen pb-24">
-      <div className="w-full px-5 md:px-8 pt-24 md:pt-12 flex flex-col min-h-screen">
+    <div className="w-full flex justify-center">
+      <div className="w-full px-5 md:px-8 pt-24 md:pt-12 pb-16">
         {/* Breadcrumb + heading */}
         <Link
           href="/reports"
@@ -128,8 +142,13 @@ function Page() {
           </button>
         </div>
 
-        {/* Scope toolbar */}
-        <div className="mt-5 flex items-center justify-between gap-4 flex-wrap">
+        {/* Scope toolbar — sticks to the top as the table scrolls under it.
+            Full-bleed background (negative margins cancel the page padding)
+            so rows disappear cleanly behind it. */}
+        <div
+          ref={toolbarRef}
+          className="sticky top-0 z-30 -mx-5 md:-mx-8 px-5 md:px-8 py-3.5 bg-[rgb(var(--bg-rgb))] flex items-center justify-between gap-4 flex-wrap"
+        >
           <div className="flex items-center gap-3 flex-wrap">
             {/* Segmented range control */}
             <div className="inline-flex items-center p-0.5 rounded-lg bg-white/[0.04] border border-white/10">
@@ -201,23 +220,22 @@ function Page() {
           </span>
         </div>
 
-        {/* Report body — hugs its content instead of stretching to fill
-            the viewport, so a short report doesn't leave a tall empty box. */}
-        <div className="mt-5 rounded-xl border border-white/10 bg-[var(--surface-2)] overflow-hidden">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-20 text-white/40">
-              <Spinner size={20} />
-            </div>
-          ) : table ? (
-            <div className="overflow-x-auto thin-scroll">
-              <TableView table={table} />
-            </div>
-          ) : (
-            <pre className="overflow-auto thin-scroll p-4 text-[11.5px] leading-relaxed text-white/70 whitespace-pre font-mono max-h-[75vh]">
-              {json}
-            </pre>
-          )}
-        </div>
+        {/* Report body. No scroll container here — the window scrolls, so
+            the table's <thead> can stick to the viewport (below the sticky
+            toolbar) via CSS. */}
+        {isLoading ? (
+          <div className="mt-4 flex items-center justify-center py-20 text-white/40">
+            <Spinner size={20} />
+          </div>
+        ) : table ? (
+          <div className="mt-1 border-t border-white/10">
+            <TableView table={table} stickyTop={toolbarH} />
+          </div>
+        ) : (
+          <pre className="mt-4 rounded-xl border border-white/10 bg-[var(--surface-2)] overflow-auto thin-scroll p-4 text-[11.5px] leading-relaxed text-white/70 whitespace-pre font-mono max-h-[75vh]">
+            {json}
+          </pre>
+        )}
       </div>
     </div>
   );
@@ -251,7 +269,13 @@ function displayCell(col: string, cell: string | number): string {
   return String(cell);
 }
 
-function TableView({ table }: { table: ReportTable }) {
+function TableView({
+  table,
+  stickyTop,
+}: {
+  table: ReportTable;
+  stickyTop: number;
+}) {
   if (table.rows.length === 0) {
     return (
       <p className="text-[13px] text-white/40 py-16 text-center">
@@ -272,7 +296,10 @@ function TableView({ table }: { table: ReportTable }) {
 
   return (
     <table className="w-full border-collapse text-[12.5px]">
-      <thead>
+      <thead
+        className="sticky z-10 bg-[rgb(var(--bg-rgb))]"
+        style={{ top: stickyTop }}
+      >
         <tr className="border-b border-white/10">
           {table.columns.map((c, ci) => (
             <th
