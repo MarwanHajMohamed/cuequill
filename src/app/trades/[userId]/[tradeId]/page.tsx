@@ -230,8 +230,8 @@ function TradeDetailPage() {
             />
           </div>
 
-          {/* Direction + status */}
-          <div className="grid grid-cols-2 gap-2.5">
+          {/* Direction */}
+          <div className="flex flex-col gap-3">
             <div className="flex flex-col gap-1.5">
               <Label>Direction</Label>
               <div className="grid grid-cols-2 gap-1.5">
@@ -262,6 +262,7 @@ function TradeDetailPage() {
               </div>
             </div>
 
+            {/* Status — on its own line below Direction */}
             <div className="flex flex-col gap-1.5">
               <Label>Status</Label>
               <div className="grid grid-cols-3 gap-1.5">
@@ -418,30 +419,6 @@ function TradeDetailPage() {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setDelConfirm(true)}
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full border border-red-500/25 bg-red-500/[0.08] text-red-300 hover:bg-red-500/15 transition text-[12.5px] font-medium cursor-pointer"
-            >
-              <i className="fa-solid fa-trash text-[11px]" />
-              <span className="hidden sm:inline">Delete</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setShareOpen(true)}
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[12.5px] font-medium cursor-pointer"
-            >
-              <i className="fa-solid fa-share-nodes text-[11px]" />
-              Share
-            </button>
-          </div>
-          <div className="flex items-center gap-2">
-            <Link
-              href={`/trades/${userId}`}
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[12.5px] font-medium cursor-pointer"
-            >
-              Cancel
-            </Link>
-            <button
-              type="button"
               onClick={handleSave}
               disabled={!dirty || saving}
               className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border transition text-[12.5px] font-medium ${
@@ -452,6 +429,32 @@ function TradeDetailPage() {
             >
               <i className="fa-solid fa-check text-[11px]" />
               {saving ? "Saving…" : dirty ? "Save changes" : "Saved"}
+            </button>
+            <Link
+              href={`/trades/${userId}`}
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[12.5px] font-medium cursor-pointer"
+            >
+              Cancel
+            </Link>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShareOpen(true)}
+              aria-label="Share"
+              title="Share"
+              className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition cursor-pointer"
+            >
+              <i className="fa-solid fa-share-nodes text-[12px]" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setDelConfirm(true)}
+              aria-label="Delete"
+              title="Delete"
+              className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-red-500/25 bg-red-500/[0.08] text-red-300 hover:bg-red-500/15 transition cursor-pointer"
+            >
+              <i className="fa-solid fa-trash text-[12px]" />
             </button>
           </div>
         </div>

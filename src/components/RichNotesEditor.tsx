@@ -135,9 +135,9 @@ export default function RichNotesEditor({
   }, [selectedImage, onChange]);
 
   return (
-    <div className="flex flex-col min-h-0 h-full">
+    <div className="flex flex-col min-h-0 h-full rounded-xl border border-white/10 focus-within:border-white/20 overflow-hidden transition">
       {!hideToolbar && (
-        <div className="px-2 md:px-3 py-1.5 border-b border-white/[0.06] flex items-center gap-1 flex-wrap rounded-t-xl bg-white/[0.02]">
+        <div className="px-2 md:px-3 py-1.5 border-b border-white/[0.06] flex items-center gap-1 flex-wrap bg-white/[0.02]">
           <ToolbarButton
             icon="fa-solid fa-bold"
             label="Bold"
@@ -206,9 +206,7 @@ export default function RichNotesEditor({
             onChange((e.target as HTMLDivElement).innerHTML)
           }
           onMouseDown={handleEditorMouseDown}
-          className={`notes-editor w-full flex-1 min-h-0 overflow-y-auto p-3.5 bg-white/[0.03] border border-white/10 focus:border-white/20 focus:outline-none text-[14px] text-white/90 leading-relaxed transition ${
-            hideToolbar ? "rounded-xl" : "rounded-b-xl border-t-0"
-          } ${className}`}
+          className={`notes-editor w-full flex-1 min-h-0 overflow-y-auto p-3.5 bg-white/[0.03] focus:outline-none text-[14px] text-white/90 leading-relaxed transition ${className}`}
         />
         <ResizeOverlay
           key={overlayTick}
