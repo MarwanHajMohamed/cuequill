@@ -37,6 +37,10 @@ export type TradeDraft = {
   dateBought: Date;
   expiryDate: Date;
   dateClosed?: Date;
+  // Execution time-of-day as an "HH:mm" string in market (ET) time,
+  // carried over from the fills so imported trades show entry/exit times.
+  timeEntered?: string;
+  timeExited?: string;
   closingContractPrice?: number;
   profitLoss?: number;
   fees: number;
@@ -61,6 +65,20 @@ type OpenLot = {
 function commissionPerContract(fill: NormalizedFill): number {
   const qty = Math.abs(fill.signedQty);
   return qty > 0 ? fill.fee / qty : 0;
+}
+
+// Format a fill's execution instant as an "HH:mm" 24h string in market
+// (Eastern) time — the same wall-clock the flex report reported — so it
+// matches the manually-entered timeEntered/timeExited convention.
+function etTime(d: Date): string {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  })
+    .format(d)
+    .replace(/^24:/, "00:");
 }
 
 // Fees are stored to 2dp — brokers quote commissions in cents, so
@@ -137,6 +155,8 @@ export function matchFills(fills: NormalizedFill[]): TradeDraft[] {
             dateBought: buy.time,
             expiryDate: buy.expiry,
             dateClosed: fill.time,
+            timeEntered: etTime(buy.time),
+            timeExited: etTime(fill.time),
             closingContractPrice: fill.price,
             profitLoss: pnl,
             fees,
@@ -173,6 +193,7 @@ export function matchFills(fills: NormalizedFill[]): TradeDraft[] {
         contractPrice: buy.price,
         dateBought: buy.time,
         expiryDate: buy.expiry,
+        timeEntered: etTime(buy.time),
         fees,
         status: "OPEN",
         simulated: false,
