@@ -100,7 +100,10 @@ function Page() {
 
   return (
     <div className="w-full flex justify-center">
-      <div className="w-full px-5 md:px-8 pt-24 md:pt-12 pb-16">
+      {/* Fixed to the viewport height so the page itself never scrolls; the
+          table panel below flexes into the leftover space and scrolls
+          internally. Bottom padding clears the mobile tab bar. */}
+      <div className="w-full px-5 md:px-8 pt-24 md:pt-8 pb-24 md:pb-6 h-[100dvh] flex flex-col">
         {/* Breadcrumb + heading */}
         <Link
           href="/reports"
@@ -212,13 +215,17 @@ function Page() {
             <Spinner size={20} />
           </div>
         ) : table ? (
-          <div className="mt-4 rounded-xl border border-white/10 bg-[var(--surface-2)] overflow-auto thin-scroll max-h-[calc(100dvh-230px)]">
-            <TableView table={table} />
+          <div className="mt-4 min-h-0 flex-1">
+            <div className="rounded-xl border border-white/10 bg-[var(--surface-2)] overflow-auto thin-scroll max-h-full">
+              <TableView table={table} />
+            </div>
           </div>
         ) : (
-          <pre className="mt-4 rounded-xl border border-white/10 bg-[var(--surface-2)] overflow-auto thin-scroll p-4 text-[11.5px] leading-relaxed text-white/70 whitespace-pre font-mono max-h-[calc(100dvh-230px)]">
-            {json}
-          </pre>
+          <div className="mt-4 min-h-0 flex-1">
+            <pre className="rounded-xl border border-white/10 bg-[var(--surface-2)] overflow-auto thin-scroll p-4 text-[11.5px] leading-relaxed text-white/70 whitespace-pre font-mono max-h-full">
+              {json}
+            </pre>
+          </div>
         )}
       </div>
     </div>

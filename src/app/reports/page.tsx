@@ -29,9 +29,6 @@ function Row({ r }: { r: ReportDef }) {
           {r.description}
         </div>
       </div>
-      <span className="text-[10px] uppercase tracking-wide text-white/35 tabular-nums">
-        {r.kind === "json" ? "JSON" : "CSV"}
-      </span>
       <i className="fa-solid fa-chevron-right text-[11px] text-white/25 group-hover:text-white/50 transition-colors" />
     </Link>
   );
