@@ -229,6 +229,77 @@ export function symbolPerformanceTable(trades: Trade[]): ReportTable {
   return { columns: ["Symbol", ...AGG_TAIL], rows };
 }
 
+// Per tag, richest-first by net P/L. A trade carries several tags, so it
+// contributes to each of them — the per-tag trade counts can therefore
+// sum to more than the number of closed trades. Untagged trades fall into
+// their own bucket.
+export function tagPerformanceTable(trades: Trade[]): ReportTable {
+  const m = new Map<string, Agg>();
+  for (const t of trades.filter(isClosed)) {
+    const tags = t.tags && t.tags.length ? t.tags : ["Untagged"];
+    for (const tag of tags) {
+      const a = m.get(tag) ?? emptyAgg();
+      addTrade(a, t);
+      m.set(tag, a);
+    }
+  }
+  const rows = Array.from(m.entries())
+    .map(([tag, a]) => ({ tag, a, net: a.gross - a.fees }))
+    .sort((x, y) => y.net - x.net)
+    .map(({ tag, a }) => [tag, ...aggRow(a)]);
+  return { columns: ["Tag", ...AGG_TAIL], rows };
+}
+
+// Trading-week order (Mon → Sun), paired with JS getDay() indices.
+const WEEKDAY_ORDER: { idx: number; label: string }[] = [
+  { idx: 1, label: "Monday" },
+  { idx: 2, label: "Tuesday" },
+  { idx: 3, label: "Wednesday" },
+  { idx: 4, label: "Thursday" },
+  { idx: 5, label: "Friday" },
+  { idx: 6, label: "Saturday" },
+  { idx: 0, label: "Sunday" },
+];
+
+// Per weekday of entry (from the buy date), in trading-week order. Only
+// weekdays that actually have trades are listed.
+export function weekdayPerformanceTable(trades: Trade[]): ReportTable {
+  const byIdx = new Map<number, Agg>();
+  for (const t of trades.filter(isClosed)) {
+    if (!t.dateBought) continue;
+    const d = new Date(t.dateBought);
+    if (Number.isNaN(d.getTime())) continue;
+    const a = byIdx.get(d.getDay()) ?? emptyAgg();
+    addTrade(a, t);
+    byIdx.set(d.getDay(), a);
+  }
+  const rows = WEEKDAY_ORDER.filter((w) => byIdx.has(w.idx)).map((w) => [
+    w.label,
+    ...aggRow(byIdx.get(w.idx)!),
+  ]);
+  return { columns: ["Day", ...AGG_TAIL], rows };
+}
+
+// Per entry hour, ascending. Uses the "HH:mm" timeEntered field, so it
+// only covers trades that have an entry time recorded (imported trades,
+// or manual ones where you filled it in).
+export function hourPerformanceTable(trades: Trade[]): ReportTable {
+  const byHour = new Map<string, Agg>();
+  for (const t of trades.filter(isClosed)) {
+    if (!t.timeEntered) continue;
+    const hh = t.timeEntered.slice(0, 2);
+    if (!/^\d\d$/.test(hh)) continue;
+    const key = `${hh}:00`;
+    const a = byHour.get(key) ?? emptyAgg();
+    addTrade(a, t);
+    byHour.set(key, a);
+  }
+  const rows = Array.from(byHour.entries())
+    .sort((x, y) => x[0].localeCompare(y[0]))
+    .map(([hour, a]) => [hour, ...aggRow(a)]);
+  return { columns: ["Hour", ...AGG_TAIL], rows };
+}
+
 // Full raw backup — round-trips back into the app / another tool.
 export function backupJson(trades: Trade[]): string {
   return JSON.stringify(

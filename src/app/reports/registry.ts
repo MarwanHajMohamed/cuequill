@@ -10,6 +10,9 @@ import {
   monthlyPerformanceTable,
   strategyPerformanceTable,
   symbolPerformanceTable,
+  tagPerformanceTable,
+  weekdayPerformanceTable,
+  hourPerformanceTable,
   backupJson,
   type ReportTable,
 } from "@/lib/reports";
@@ -81,6 +84,33 @@ export const REPORTS: ReportDef[] = [
     section: "analytics",
     kind: "table",
     build: symbolPerformanceTable,
+  },
+  {
+    id: "tag",
+    title: "Tag performance",
+    description: "Net P/L and win rate by tag.",
+    icon: "fa-solid fa-tag",
+    section: "analytics",
+    kind: "table",
+    build: tagPerformanceTable,
+  },
+  {
+    id: "weekday",
+    title: "Day of week",
+    description: "Net P/L and win rate by weekday.",
+    icon: "fa-solid fa-calendar-day",
+    section: "analytics",
+    kind: "table",
+    build: weekdayPerformanceTable,
+  },
+  {
+    id: "hour",
+    title: "Time of day",
+    description: "Net P/L and win rate by entry hour.",
+    icon: "fa-solid fa-clock",
+    section: "analytics",
+    kind: "table",
+    build: hourPerformanceTable,
   },
 ];
 
