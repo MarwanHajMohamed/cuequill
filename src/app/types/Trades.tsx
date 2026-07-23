@@ -27,6 +27,9 @@ export interface Trade {
   dateBought: string;
   expiryDate: string;
   dateClosed: string;
+  // Time of day entered / exited, as an "HH:mm" 24h string.
+  timeEntered?: string;
+  timeExited?: string;
   option: "CALL" | "PUT";
   // Free-text now that strategies are user-owned. The legacy
   // StrategyList union remains as a filter shape only.

@@ -21,6 +21,11 @@ const TradeSchema = new mongoose.Schema({
   expiryDate: { type: Date, required: true },
   dateClosed: { type: Date },
 
+  // Time of day the position was entered / exited, stored as a plain
+  // "HH:mm" 24h string so there's no timezone drift against the dates.
+  timeEntered: { type: String },
+  timeExited: { type: String },
+
   closingContractPrice: { type: Number },
 
   simulated: { type: Boolean, required: true },

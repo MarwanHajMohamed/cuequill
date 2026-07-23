@@ -131,6 +131,7 @@ function TradeDetailPage() {
             ? form.closingContractPrice
             : null,
         fees: form.status === "OPEN" ? null : form.fees ?? null,
+        timeExited: form.status === "OPEN" ? "" : form.timeExited ?? "",
       };
       await fetch(`/api/trades/${tradeId}`, {
         method: "PATCH",
@@ -329,14 +330,21 @@ function TradeDetailPage() {
                 onChange={(v) => setField("dateBought", v)}
               />
             </FieldGroup>
-            <FieldGroup label="Expiry" required>
-              <DateField
-                value={toDateInput(form.expiryDate)}
-                min={toDateInput(form.dateBought)}
-                onChange={(v) => setField("expiryDate", v)}
+            <FieldGroup label="Time entered">
+              <TimeField
+                value={form.timeEntered ?? ""}
+                onChange={(v) => setField("timeEntered", v)}
               />
             </FieldGroup>
           </div>
+
+          <FieldGroup label="Expiry" required>
+            <DateField
+              value={toDateInput(form.expiryDate)}
+              min={toDateInput(form.dateBought)}
+              onChange={(v) => setField("expiryDate", v)}
+            />
+          </FieldGroup>
 
           <FieldGroup label="Strategy">
             <select
@@ -372,14 +380,22 @@ function TradeDetailPage() {
                   />
                 </FieldGroup>
               </div>
-              <FieldGroup label="Fees / commissions">
-                <NumberField
-                  value={form.fees ?? null}
-                  onChange={(v) => setField("fees", v)}
-                  placeholder="e.g. 2.10"
-                  step="0.01"
-                />
-              </FieldGroup>
+              <div className="grid grid-cols-2 gap-2.5">
+                <FieldGroup label="Time exited">
+                  <TimeField
+                    value={form.timeExited ?? ""}
+                    onChange={(v) => setField("timeExited", v)}
+                  />
+                </FieldGroup>
+                <FieldGroup label="Fees / commissions">
+                  <NumberField
+                    value={form.fees ?? null}
+                    onChange={(v) => setField("fees", v)}
+                    placeholder="e.g. 2.10"
+                    step="0.01"
+                  />
+                </FieldGroup>
+              </div>
             </div>
           )}
 
@@ -581,6 +597,23 @@ function DateField({
       value={value}
       min={min}
       max={max}
+      onChange={(e) => onChange(e.target.value)}
+      className={`${INPUT_CLS} appearance-none`}
+    />
+  );
+}
+
+function TimeField({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <input
+      type="time"
+      value={value}
       onChange={(e) => onChange(e.target.value)}
       className={`${INPUT_CLS} appearance-none`}
     />
