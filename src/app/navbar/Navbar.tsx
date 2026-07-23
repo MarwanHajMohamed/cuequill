@@ -210,6 +210,7 @@ export default function Navbar() {
       slug: "earnings",
     },
     { icon: "fa-solid fa-list-check", label: "Rules", slug: "rules" },
+    { icon: "fa-solid fa-file-arrow-down", label: "Reports", slug: "reports" },
     { icon: "fa-solid fa-tag", label: "Plans & pricing", slug: "pricing" },
     { icon: "fa-solid fa-gear", label: "Settings", slug: "settings" },
   ];
@@ -255,6 +256,11 @@ export default function Navbar() {
         icon: "fa-regular fa-circle-check",
         label: "Affirmations",
         slug: "affirmations",
+      },
+      {
+        icon: "fa-solid fa-file-arrow-down",
+        label: "Reports",
+        slug: "reports",
       },
     ],
   ];
