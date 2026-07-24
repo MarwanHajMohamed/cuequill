@@ -240,7 +240,11 @@ function Page() {
             {def.chart && table.rows.length > 0 && (
               <ReportChart table={table} />
             )}
-            <TableView table={table} />
+            {/* Horizontal scroll is contained to the table so the page
+                never scrolls sideways; the page still scrolls vertically. */}
+            <div className="rounded-xl border border-white/10 bg-[var(--surface-2)] overflow-x-auto thin-scroll">
+              <TableView table={table} />
+            </div>
           </div>
         ) : (
           <pre className="mt-4 rounded-xl border border-white/10 bg-[var(--surface-2)] overflow-auto thin-scroll p-4 text-[11.5px] leading-relaxed text-white/70 whitespace-pre font-mono max-h-[70vh]">
@@ -300,8 +304,8 @@ function TableView({ table }: { table: ReportTable }) {
 
   return (
     <table className="w-full border-collapse text-[12.5px]">
-      <thead className="sticky top-0 z-10 bg-[rgb(var(--bg-rgb))]">
-        <tr className="border-y border-white/10">
+      <thead className="sticky top-0 z-10 bg-[var(--surface-2)]">
+        <tr className="border-b border-white/10">
           {table.columns.map((c, ci) => (
             <th
               key={c}
