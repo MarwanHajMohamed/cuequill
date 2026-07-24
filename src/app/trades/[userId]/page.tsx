@@ -10,15 +10,18 @@ import React, {
   use,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import NotesModal from "../NotesModal";
 import ImportedTradesModal from "../ImportedTradesModal";
 import { useToast } from "@/hooks/useToast";
 import {
   handleDeleteTrade,
+  handleFavourite,
   handleSaveNotes,
   handleSaveTrade,
 } from "../../../handlers/tradeHandlers";
@@ -79,6 +82,64 @@ const COLUMN_LABELS: Record<TradeColumnKey, string> = {
   notes: "Notes",
 };
 
+// Columns whose values are numbers — right-aligned with tabular figures,
+// and sorted numerically.
+const NUMERIC_COLUMNS = new Set<TradeColumnKey>([
+  "netpl",
+  "change",
+  "contractPrice",
+  "qty",
+  "strike",
+  "closingContractPrice",
+]);
+
+// Page-size options for the trades table.
+const PAGE_SIZES = [15, 25, 50, 100];
+
+// Where the floating sticky header pins beneath the viewport top.
+const TRADES_STICKY_TOP = 8;
+
+// Comparable value for a column when sorting. Numbers sort numerically,
+// strings alphabetically; open trades (no realized figure) sort to the
+// bottom for the P/L-style columns.
+function sortValue(key: TradeColumnKey, t: Trade): number | string {
+  const closed = t.status === "WIN" || t.status === "LOSS";
+  switch (key) {
+    case "symbol":
+      return t.symbol ?? "";
+    case "option":
+      return t.option ?? "";
+    case "status":
+      return t.status ?? "";
+    case "strategy":
+      return t.strategy ?? "";
+    case "netpl":
+      return closed ? tradeNetPL(t) : -Infinity;
+    case "change":
+      return closed && t.contractPrice
+        ? ((Number(t.closingContractPrice) - t.contractPrice) /
+            t.contractPrice) *
+            100
+        : -Infinity;
+    case "contractPrice":
+      return t.contractPrice ?? 0;
+    case "qty":
+      return t.qty ?? 0;
+    case "strike":
+      return t.strike ?? 0;
+    case "closingContractPrice":
+      return t.closingContractPrice ?? -Infinity;
+    case "dateBought":
+      return new Date(t.dateBought).getTime();
+    case "expiryDate":
+      return new Date(t.expiryDate).getTime();
+    case "notes":
+      return t.notes ? 1 : 0;
+    default:
+      return "";
+  }
+}
+
 // Reconcile a stored order with the known columns: keep the saved order,
 // drop unknown keys, and append any columns added since (so a new release
 // that introduces a column doesn't leave it permanently hidden).
@@ -125,7 +186,51 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
   const [syncing, setSyncing] = useState<boolean>(false);
   const [showImported, setShowImported] = useState<boolean>(false);
   const [isFiltersOpen, setIsFiltersOpen] = useState<boolean>(false);
-  const tradesPerPage = 15;
+  const [pageSize, setPageSize] = useLocalStorage<number>(
+    "trades:pageSize",
+    15,
+  );
+  const tradesPerPage = pageSize;
+
+  // ── Sorting ────────────────────────────────────────────────────────
+  const [sortKey, setSortKey] = useState<TradeColumnKey | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  // A drag on a header shouldn't also register as a sort click.
+  const suppressSortClick = useRef(false);
+  const handleSort = (key: TradeColumnKey) => {
+    setCurrentPage(1);
+    setPageDir(1);
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      // Numbers and dates read best high-to-low first; text A→Z.
+      setSortDir(
+        NUMERIC_COLUMNS.has(key) ||
+          key === "dateBought" ||
+          key === "expiryDate"
+          ? "desc"
+          : "asc",
+      );
+    }
+  };
+
+  // Inline per-row delete confirmation (hover actions).
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  // ── Floating sticky header ─────────────────────────────────────────
+  // The table lives in a horizontal-scroll wrapper, so a CSS-sticky header
+  // can't pin to the viewport. Instead a fixed clone of the header row is
+  // shown once the real header scrolls above TRADES_STICKY_TOP, matching the
+  // column widths and following the wrapper's horizontal scroll.
+  const theadRef = useRef<HTMLTableSectionElement>(null);
+  const [headClone, setHeadClone] = useState<{
+    left: number;
+    width: number;
+  } | null>(null);
+  const [headColW, setHeadColW] = useState<number[]>([]);
+  const [headTableW, setHeadTableW] = useState(0);
+  const [headScrollLeft, setHeadScrollLeft] = useState(0);
 
   // ── Merge state ────────────────────────────────────────────────────
   // Selection mode: shows a checkbox column and turns row clicks into
@@ -401,6 +506,105 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
     setCurrentPage(1);
   }, [filter, strategy, symbol, option, startDate, endDate]);
 
+  // Memoised so scroll-driven re-renders (the floating header) don't
+  // recompute the whole filter/sort each frame.
+  const filteredTrades = useMemo(
+    () =>
+      trades?.filter((trade) => {
+        if (filter === "Win" && trade.status !== "WIN") return false;
+        if (filter === "Loss" && trade.status !== "LOSS") return false;
+        if (strategy !== "All" && trade.strategy !== strategy) return false;
+        if (symbol !== "All" && trade.symbol !== symbol) return false;
+        if (option !== "All" && trade.option !== option) return false;
+
+        // Date range matches on the trade's EXIT date for closed trades
+        // and ENTRY date for open ones - same convention used by the
+        // calendar, monthly stats, and P/L attribution.
+        const isClosed = trade.status === "WIN" || trade.status === "LOSS";
+        const tradeDateStr =
+          isClosed && trade.dateClosed ? trade.dateClosed : trade.dateBought;
+        const tradeDate = new Date(tradeDateStr);
+        const from = startDate ? new Date(startDate) : null;
+        const to = endDate ? new Date(endDate + "T23:59:59") : null;
+        if (from && tradeDate < from) return false;
+        if (to && tradeDate > to) return false;
+        return true;
+      }),
+    [trades, filter, strategy, symbol, option, startDate, endDate],
+  );
+
+  const sortedTrades = useMemo(() => {
+    if (!filteredTrades) return filteredTrades;
+    if (!sortKey) return filteredTrades;
+    const dir = sortDir === "asc" ? 1 : -1;
+    return [...filteredTrades].sort((a, b) => {
+      const va = sortValue(sortKey, a);
+      const vb = sortValue(sortKey, b);
+      const cmp =
+        typeof va === "number" && typeof vb === "number"
+          ? va - vb
+          : String(va).localeCompare(String(vb));
+      return cmp * dir;
+    });
+  }, [filteredTrades, sortKey, sortDir]);
+
+  // Measure + position the floating header clone.
+  useEffect(() => {
+    const wrap = tableWrapRef.current;
+    const head = theadRef.current;
+    if (!wrap || !head) {
+      setHeadClone(null);
+      return;
+    }
+    const measure = () => {
+      const ths = Array.from(head.querySelectorAll("th")) as HTMLElement[];
+      setHeadColW(ths.map((th) => th.getBoundingClientRect().width));
+      const tbl = head.parentElement as HTMLElement | null;
+      if (tbl) setHeadTableW(tbl.getBoundingClientRect().width);
+    };
+    const update = () => {
+      const wrapRect = wrap.getBoundingClientRect();
+      const headRect = head.getBoundingClientRect();
+      const show =
+        headRect.top < TRADES_STICKY_TOP &&
+        wrapRect.bottom > TRADES_STICKY_TOP + headRect.height;
+      setHeadClone((prev) => {
+        if (!show) return prev ? null : prev;
+        const left = wrapRect.left;
+        const width = wrap.clientWidth;
+        if (prev && prev.left === left && prev.width === width) return prev;
+        return { left, width };
+      });
+    };
+    const onWrapScroll = () => setHeadScrollLeft(wrap.scrollLeft);
+    measure();
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    wrap.addEventListener("scroll", onWrapScroll, { passive: true });
+    const ro = new ResizeObserver(() => {
+      measure();
+      update();
+    });
+    ro.observe(wrap);
+    ro.observe(head);
+    return () => {
+      window.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+      wrap.removeEventListener("scroll", onWrapScroll);
+      ro.disconnect();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    visibleColumns.join(","),
+    selectMode,
+    sortKey,
+    sortDir,
+    currentPage,
+    pageSize,
+    filteredTrades,
+  ]);
+
   if (isLoading)
     return (
       <div className="w-full flex justify-center md:justify-start mt-19 md:mt-8">
@@ -557,45 +761,10 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
     }
   };
 
-  const filteredTrades =
-    trades &&
-    trades.filter((trade) => {
-      // Filter by status
-      if (filter === "Win" && trade.status !== "WIN") return false;
-      if (filter === "Loss" && trade.status !== "LOSS") return false;
-
-      // Filter by strategy
-      if (strategy !== "All" && trade.strategy !== strategy) return false;
-
-      // Filter by symbol
-      if (symbol !== "All" && trade.symbol !== symbol) return false;
-
-      // Filter by option
-      if (option !== "All" && trade.option !== option) return false;
-
-      // Date range matches on the trade's EXIT date for closed trades
-      // and ENTRY date for open ones - same convention used by the
-      // calendar, monthly stats, and P/L attribution. This keeps WTD /
-      // MTD / YTD totals consistent across every section of the page.
-      const isClosed = trade.status === "WIN" || trade.status === "LOSS";
-      const tradeDateStr =
-        isClosed && trade.dateClosed ? trade.dateClosed : trade.dateBought;
-      const tradeDate = new Date(tradeDateStr);
-      const from = startDate ? new Date(startDate) : null;
-      // Use inclusive end-of-day for `to` so a trade closed at 3:55pm on
-      // the end date isn't excluded by midnight comparison.
-      const to = endDate ? new Date(endDate + "T23:59:59") : null;
-
-      if (from && tradeDate < from) return false;
-      if (to && tradeDate > to) return false;
-
-      return true;
-    });
-
   // Pagination controls
   const indexOfLastTrade = currentPage * tradesPerPage;
   const indexOfFirstTrade = indexOfLastTrade - tradesPerPage;
-  const currentTrades = filteredTrades?.slice(
+  const currentTrades = sortedTrades?.slice(
     indexOfFirstTrade,
     indexOfLastTrade,
   );
@@ -831,7 +1000,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
               ) : (
                 <>
                   <table className="border-collapse table-auto min-w-full">
-                    <thead>
+                    <thead ref={theadRef}>
                       <tr>
                         {/* Fixed quick-edit column — sits outside the
                             user-customisable column set so it can't be
@@ -850,6 +1019,8 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                           const isDragging = draggingKey === key;
                           const isDragOver =
                             dragOverKey === key && draggingKey !== key;
+                          const numeric = NUMERIC_COLUMNS.has(key);
+                          const sorted = sortKey === key;
                           return (
                             <th
                               key={key}
@@ -887,19 +1058,52 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                                 dragKey.current = null;
                                 setDragOverKey(null);
                                 setDraggingKey(null);
+                                // A drag just fired — swallow the click that
+                                // some browsers dispatch right after.
+                                suppressSortClick.current = true;
+                                setTimeout(() => {
+                                  suppressSortClick.current = false;
+                                }, 0);
                               }}
-                              className={`${ci === 0 ? "pl-1 pr-1 md:pr-1.5" : "px-1 md:px-1.5"} py-2 whitespace-nowrap md:text-[11px] text-[10px] text-left tracking-[0.04em] font-medium cursor-grab active:cursor-grabbing select-none transition ${
+                              onClick={() => {
+                                if (suppressSortClick.current) return;
+                                handleSort(key);
+                              }}
+                              title={`Sort by ${COLUMN_LABELS[key]}`}
+                              className={`${ci === 0 ? "pl-1 pr-1 md:pr-1.5" : "px-1 md:px-1.5"} py-2 whitespace-nowrap md:text-[11px] text-[10px] ${numeric ? "text-right" : "text-left"} tracking-[0.04em] font-medium cursor-pointer active:cursor-grabbing select-none transition ${
                                 isDragging
                                   ? "bg-white/[0.06] text-white"
                                   : isDragOver
                                     ? "text-white bg-teal-500/10"
-                                    : "text-white/40 hover:text-white/70"
+                                    : sorted
+                                      ? "text-white/80"
+                                      : "text-white/40 hover:text-white/70"
                               }`}
                             >
-                              {COLUMN_LABELS[key]}
+                              <span
+                                className={`inline-flex items-center gap-1 ${
+                                  numeric ? "flex-row-reverse" : ""
+                                }`}
+                              >
+                                {COLUMN_LABELS[key]}
+                                {sorted && (
+                                  <i
+                                    className={`fa-solid ${
+                                      sortDir === "asc"
+                                        ? "fa-arrow-up"
+                                        : "fa-arrow-down"
+                                    } text-[8px] text-teal-300`}
+                                  />
+                                )}
+                              </span>
                             </th>
                           );
                         })}
+                        {/* Trailing actions column (hover cluster). */}
+                        <th
+                          className="pr-2 md:pr-3 pl-0 py-2 w-16"
+                          aria-label="Actions"
+                        />
                       </tr>
                     </thead>
                     <AnimatePresence
@@ -1006,7 +1210,11 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                                 <td
                                   key={key}
                                   className={`${ci === 0 ? "pl-1 pr-1 md:pr-1.5" : "px-1 md:px-1.5"} py-1 whitespace-nowrap transition ${
-                                    key === "notes" ? "text-center" : ""
+                                    key === "notes"
+                                      ? "text-center"
+                                      : NUMERIC_COLUMNS.has(key)
+                                        ? "text-right tabular-nums"
+                                        : ""
                                   } ${
                                     draggingKey === key
                                       ? "bg-white/[0.06]"
@@ -1019,12 +1227,184 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                                   {renderCell(key, trade)}
                                 </td>
                               ))}
+                              {/* Hover actions — favourite + delete (with an
+                                  inline confirm). Hidden until the row is
+                                  hovered; stops propagation so the row-click
+                                  navigation doesn't fire. */}
+                              <td className="pr-2 md:pr-3 pl-0 py-1 w-16 align-middle text-right">
+                                <div className="inline-flex items-center justify-end gap-0.5">
+                                  {confirmDeleteId === tradeId ? (
+                                    <>
+                                      <button
+                                        type="button"
+                                        aria-label="Confirm delete"
+                                        title="Confirm delete"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleDeleteTrade(
+                                            tradeId,
+                                            userId,
+                                            setIsModalOpen,
+                                            setEditingTrade,
+                                            queryClient,
+                                          );
+                                          setConfirmDeleteId(null);
+                                        }}
+                                        className="w-7 h-7 rounded-md inline-flex items-center justify-center text-red-300 hover:text-white hover:bg-red-500/20 transition cursor-pointer"
+                                      >
+                                        <i className="fa-solid fa-check text-[11px]" />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        aria-label="Cancel delete"
+                                        title="Cancel"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setConfirmDeleteId(null);
+                                        }}
+                                        className="w-7 h-7 rounded-md inline-flex items-center justify-center text-white/50 hover:text-white hover:bg-white/[0.08] transition cursor-pointer"
+                                      >
+                                        <i className="fa-solid fa-xmark text-[11px]" />
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <button
+                                        type="button"
+                                        aria-label={
+                                          trade.favourite
+                                            ? "Unfavourite"
+                                            : "Favourite"
+                                        }
+                                        title={
+                                          trade.favourite
+                                            ? "Unfavourite"
+                                            : "Favourite"
+                                        }
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleFavourite(
+                                            tradeId,
+                                            userId,
+                                            !trade.favourite,
+                                            queryClient,
+                                          );
+                                        }}
+                                        className={`w-7 h-7 rounded-md inline-flex items-center justify-center transition cursor-pointer ${
+                                          trade.favourite
+                                            ? "text-amber-300 hover:text-amber-200 hover:bg-white/[0.08]"
+                                            : "text-white/30 opacity-0 group-hover:opacity-100 hover:text-white hover:bg-white/[0.08]"
+                                        }`}
+                                      >
+                                        <i
+                                          className={`${
+                                            trade.favourite
+                                              ? "fa-solid"
+                                              : "fa-regular"
+                                          } fa-star text-[11px]`}
+                                        />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        aria-label="Delete trade"
+                                        title="Delete"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setConfirmDeleteId(tradeId);
+                                        }}
+                                        className="w-7 h-7 rounded-md inline-flex items-center justify-center text-white/30 opacity-0 group-hover:opacity-100 hover:text-red-300 hover:bg-red-500/15 transition cursor-pointer"
+                                      >
+                                        <i className="fa-solid fa-trash text-[11px]" />
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
+                              </td>
                             </tr>
                           );
                         })}
                       </motion.tbody>
                     </AnimatePresence>
                   </table>
+
+                  {/* Floating header clone — pinned beneath the viewport top
+                      once the real header scrolls away, matching column
+                      widths and following horizontal scroll. Visual only. */}
+                  {headClone &&
+                    createPortal(
+                      <div
+                        aria-hidden
+                        style={{
+                          position: "fixed",
+                          top: TRADES_STICKY_TOP,
+                          left: headClone.left,
+                          width: headClone.width,
+                          overflow: "hidden",
+                          zIndex: 20,
+                          pointerEvents: "none",
+                          background: "rgb(var(--bg-rgb))",
+                        }}
+                      >
+                        <div
+                          className="rounded-t-2xl border border-b-0 border-white/10 bg-[var(--surface,#141419)] box-border overflow-hidden"
+                          style={{ paddingLeft: 8, paddingRight: 8 }}
+                        >
+                          <div
+                            style={{
+                              transform: `translateX(${-headScrollLeft}px)`,
+                            }}
+                          >
+                            <table
+                              className="border-collapse"
+                              style={{ width: headTableW, tableLayout: "fixed" }}
+                            >
+                              <colgroup>
+                                {headColW.map((w, i) => (
+                                  <col key={i} style={{ width: w }} />
+                                ))}
+                              </colgroup>
+                              <thead>
+                                <tr>
+                                  <th className="pl-2 md:pl-3 pr-0 py-2" />
+                                  {selectMode && <th className="pl-1 pr-1 py-2" />}
+                                  {visibleColumns.map((key, ci) => {
+                                    const numeric = NUMERIC_COLUMNS.has(key);
+                                    const sorted = sortKey === key;
+                                    return (
+                                      <th
+                                        key={key}
+                                        className={`${ci === 0 ? "pl-1 pr-1 md:pr-1.5" : "px-1 md:px-1.5"} py-2 whitespace-nowrap md:text-[11px] text-[10px] ${numeric ? "text-right" : "text-left"} tracking-[0.04em] font-medium ${
+                                          sorted ? "text-white/80" : "text-white/40"
+                                        }`}
+                                      >
+                                        <span
+                                          className={`inline-flex items-center gap-1 ${
+                                            numeric ? "flex-row-reverse" : ""
+                                          }`}
+                                        >
+                                          {COLUMN_LABELS[key]}
+                                          {sorted && (
+                                            <i
+                                              className={`fa-solid ${
+                                                sortDir === "asc"
+                                                  ? "fa-arrow-up"
+                                                  : "fa-arrow-down"
+                                              } text-[8px] text-teal-300`}
+                                            />
+                                          )}
+                                        </span>
+                                      </th>
+                                    );
+                                  })}
+                                  <th className="pr-2 md:pr-3 pl-0 py-2" />
+                                </tr>
+                              </thead>
+                            </table>
+                          </div>
+                        </div>
+                      </div>,
+                      document.body,
+                    )}
                 </>
               )}
             </div>
@@ -1093,6 +1473,26 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                       {selectMode ? "Cancel merge" : "Merge trades"}
                     </span>
                   </button>
+                </div>
+
+                {/* Rows-per-page control */}
+                <div className="hidden md:flex items-center gap-2">
+                  <span className="text-[12px] text-white/45">Rows</span>
+                  <select
+                    value={pageSize}
+                    onChange={(e) => {
+                      setPageSize(Number(e.target.value));
+                      setCurrentPage(1);
+                      setPageDir(1);
+                    }}
+                    className="px-2.5 py-1.5 text-[12.5px] bg-white/[0.03] rounded-lg border border-white/10 focus:border-white/25 focus:outline-none transition cursor-pointer"
+                  >
+                    {PAGE_SIZES.map((n) => (
+                      <option key={n} value={n}>
+                        {n}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
             )}
