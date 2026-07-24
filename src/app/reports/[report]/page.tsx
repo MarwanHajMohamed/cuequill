@@ -242,9 +242,9 @@ function Page() {
               className="inline-flex items-center justify-center w-7 h-7 rounded-lg border border-white/10 bg-white/[0.04] text-white/55 hover:text-white hover:bg-white/[0.08] transition cursor-pointer"
             >
               <i
-                className={`fa-solid ${
-                  filtersOpen ? "fa-chevron-left" : "fa-chevron-right"
-                } text-[11px]`}
+                className={`fa-solid fa-chevron-left text-[11px] transition-transform duration-[180ms] ease-out ${
+                  filtersOpen ? "" : "rotate-180"
+                }`}
               />
             </button>
           </div>
