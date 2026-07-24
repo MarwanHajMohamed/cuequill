@@ -234,12 +234,14 @@ function Page() {
               )}
             </AnimatePresence>
 
-            <button
+            <motion.button
+              layout
+              transition={{ duration: 0.18, ease: "easeOut" }}
               type="button"
               onClick={() => setFiltersOpen((o) => !o)}
               aria-label={filtersOpen ? "Collapse filters" : "Expand filters"}
               title={filtersOpen ? "Collapse filters" : "Expand filters"}
-              className="inline-flex items-center justify-center w-7 h-7 rounded-lg border border-white/10 bg-white/[0.04] text-white/55 hover:text-white hover:bg-white/[0.08] transition cursor-pointer"
+              className="inline-flex items-center justify-center w-7 h-7 shrink-0 rounded-lg border border-white/10 bg-white/[0.04] text-white/55 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer"
             >
               <i
                 className="fa-solid fa-chevron-left text-[11px]"
@@ -248,7 +250,7 @@ function Page() {
                   transition: "transform 180ms ease-out",
                 }}
               />
-            </button>
+            </motion.button>
           </div>
 
           <span className="text-[12px] text-white/40 tabular-nums inline-flex items-center gap-2">
