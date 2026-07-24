@@ -21,7 +21,6 @@ import ImportedTradesModal from "../ImportedTradesModal";
 import { useToast } from "@/hooks/useToast";
 import {
   handleDeleteTrade,
-  handleFavourite,
   handleSaveNotes,
   handleSaveTrade,
 } from "../../../handlers/tradeHandlers";
@@ -1268,55 +1267,18 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                                       </button>
                                     </>
                                   ) : (
-                                    <>
-                                      <button
-                                        type="button"
-                                        aria-label={
-                                          trade.favourite
-                                            ? "Unfavourite"
-                                            : "Favourite"
-                                        }
-                                        title={
-                                          trade.favourite
-                                            ? "Unfavourite"
-                                            : "Favourite"
-                                        }
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleFavourite(
-                                            tradeId,
-                                            userId,
-                                            !trade.favourite,
-                                            queryClient,
-                                          );
-                                        }}
-                                        className={`w-7 h-7 rounded-md inline-flex items-center justify-center transition cursor-pointer ${
-                                          trade.favourite
-                                            ? "text-amber-300 hover:text-amber-200 hover:bg-white/[0.08]"
-                                            : "text-white/30 opacity-0 group-hover:opacity-100 hover:text-white hover:bg-white/[0.08]"
-                                        }`}
-                                      >
-                                        <i
-                                          className={`${
-                                            trade.favourite
-                                              ? "fa-solid"
-                                              : "fa-regular"
-                                          } fa-star text-[11px]`}
-                                        />
-                                      </button>
-                                      <button
-                                        type="button"
-                                        aria-label="Delete trade"
-                                        title="Delete"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setConfirmDeleteId(tradeId);
-                                        }}
-                                        className="w-7 h-7 rounded-md inline-flex items-center justify-center text-white/30 opacity-0 group-hover:opacity-100 hover:text-red-300 hover:bg-red-500/15 transition cursor-pointer"
-                                      >
-                                        <i className="fa-solid fa-trash text-[11px]" />
-                                      </button>
-                                    </>
+                                    <button
+                                      type="button"
+                                      aria-label="Delete trade"
+                                      title="Delete"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setConfirmDeleteId(tradeId);
+                                      }}
+                                      className="w-7 h-7 rounded-md inline-flex items-center justify-center text-white/30 opacity-0 group-hover:opacity-100 hover:text-red-300 hover:bg-red-500/15 transition cursor-pointer"
+                                    >
+                                      <i className="fa-solid fa-trash text-[11px]" />
+                                    </button>
                                   )}
                                 </div>
                               </td>
@@ -1346,8 +1308,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                         }}
                       >
                         <div
-                          className="rounded-t-2xl border border-b-0 border-white/10 bg-[var(--surface,#141419)] box-border overflow-hidden"
-                          style={{ paddingLeft: 8, paddingRight: 8 }}
+                          className="rounded-t-2xl border border-b-0 border-white/10 bg-white/[0.03] box-border overflow-hidden px-2 md:px-3 pt-2 md:pt-3"
                         >
                           <div
                             style={{
