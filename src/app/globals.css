@@ -466,3 +466,15 @@ body {
     left: 92px;
   }
 }
+
+/* When the sidebar is collapsed, let the main content containers expand to
+   fill the reclaimed width instead of staying capped. Targets the shared
+   1500px content cap used across pages (trades, chat, strategies, rules,
+   stocks, affirmations, calendar, …). Unlayered so it beats the Tailwind
+   utility. Only at md+ where the sidebar exists. */
+@media (min-width: 768px) {
+  :root.nav-collapsed .max-w-\[1500px\],
+  :root.nav-collapsed .md\:max-w-\[1500px\] {
+    max-width: none;
+  }
+}
