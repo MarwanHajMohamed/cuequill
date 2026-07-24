@@ -444,7 +444,7 @@ function ScrollTable({
       setClone((prev) => {
         if (!show) return prev ? null : prev;
         const left = wrapRect.left;
-        const width = wrap.clientWidth;
+        const width = wrapRect.width;
         if (prev && prev.left === left && prev.width === width) return prev;
         return { left, width };
       });
@@ -496,6 +496,7 @@ function ScrollTable({
         createPortal(
           <div
             aria-hidden
+            className="rounded-t-xl border border-b-0 border-white/10 bg-[var(--surface-2)] box-border"
             style={{
               position: "fixed",
               top: stickyTop,
