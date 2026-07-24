@@ -242,9 +242,11 @@ function Page() {
               className="inline-flex items-center justify-center w-7 h-7 rounded-lg border border-white/10 bg-white/[0.04] text-white/55 hover:text-white hover:bg-white/[0.08] transition cursor-pointer"
             >
               <i
-                className={`fa-solid fa-chevron-left text-[11px] transition-transform duration-[180ms] ease-out ${
-                  filtersOpen ? "" : "rotate-180"
-                }`}
+                className="fa-solid fa-chevron-left text-[11px]"
+                style={{
+                  transform: filtersOpen ? "rotate(0deg)" : "rotate(180deg)",
+                  transition: "transform 180ms ease-out",
+                }}
               />
             </button>
           </div>
@@ -496,31 +498,37 @@ function ScrollTable({
         createPortal(
           <div
             aria-hidden
-            className="rounded-t-xl border border-b-0 border-white/10 bg-[var(--surface-2)] box-border"
             style={{
               position: "fixed",
               top: stickyTop,
               left: clone.left,
               width: clone.width,
-              overflow: "hidden",
               zIndex: 20,
               pointerEvents: "none",
+              // Page-coloured backing so the rounded corners blend into the
+              // page instead of revealing the rows scrolling behind.
+              background: "rgb(var(--bg-rgb))",
             }}
           >
-            <div style={{ transform: `translateX(${-scrollLeft}px)` }}>
-              <table
-                className="border-collapse text-[12.5px] bg-[var(--surface-2)]"
-                style={{ width: tableW, tableLayout: "fixed" }}
-              >
-                <colgroup>
-                  {colW.map((w, i) => (
-                    <col key={i} style={{ width: w }} />
-                  ))}
-                </colgroup>
-                <thead>
-                  <HeaderRow columns={table.columns} numericCols={numericCols} />
-                </thead>
-              </table>
+            <div className="rounded-t-xl border border-b-0 border-white/10 bg-[var(--surface-2)] box-border overflow-hidden">
+              <div style={{ transform: `translateX(${-scrollLeft}px)` }}>
+                <table
+                  className="border-collapse text-[12.5px] bg-[var(--surface-2)]"
+                  style={{ width: tableW, tableLayout: "fixed" }}
+                >
+                  <colgroup>
+                    {colW.map((w, i) => (
+                      <col key={i} style={{ width: w }} />
+                    ))}
+                  </colgroup>
+                  <thead>
+                    <HeaderRow
+                      columns={table.columns}
+                      numericCols={numericCols}
+                    />
+                  </thead>
+                </table>
+              </div>
             </div>
           </div>,
           document.body,
