@@ -35,6 +35,11 @@ import {
 // Columns whose numeric cells should be tinted by sign.
 const SIGNED_COL = /(P\/L|Gain\/Loss|Expectancy)/;
 
+// One transition shared by every part of the filter collapse animation
+// (the range container's resize, each pill, the custom-date block, and the
+// chevron's slide) so they all move at exactly the same speed.
+const FILTER_TRANSITION = { duration: 0.18, ease: "easeOut" } as const;
+
 function downloadFile(filename: string, content: string, ext: "csv" | "json") {
   const mime =
     ext === "csv" ? "text/csv;charset=utf-8" : "application/json;charset=utf-8";
@@ -175,6 +180,7 @@ function Page() {
           <div className="inline-flex items-center gap-2">
             <motion.div
               layout
+              transition={FILTER_TRANSITION}
               className="inline-flex items-center p-0.5 rounded-lg bg-white/[0.04] border border-white/10 overflow-hidden"
             >
               {RANGES.map((r) => {
@@ -188,7 +194,7 @@ function Page() {
                         initial={{ opacity: 0, scale: 0.85 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.85 }}
-                        transition={{ duration: 0.18, ease: "easeOut" }}
+                        transition={FILTER_TRANSITION}
                         type="button"
                         onClick={() => patch({ range: r.key as RangeKey })}
                         className={`px-3 py-1.5 rounded-md text-[12px] font-medium whitespace-nowrap cursor-pointer ${
@@ -212,7 +218,7 @@ function Page() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  transition={{ duration: 0.18 }}
+                  transition={FILTER_TRANSITION}
                   className="inline-flex items-center gap-2"
                 >
                   <input
@@ -236,7 +242,7 @@ function Page() {
 
             <motion.button
               layout
-              transition={{ duration: 0.18, ease: "easeOut" }}
+              transition={FILTER_TRANSITION}
               type="button"
               onClick={() => setFiltersOpen((o) => !o)}
               aria-label={filtersOpen ? "Collapse filters" : "Expand filters"}
