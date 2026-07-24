@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { format } from "date-fns";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   ResponsiveContainer,
   BarChart,
@@ -69,6 +71,20 @@ function Page() {
   );
   const patch = (p: Partial<Scope>) => setScope({ ...scope, ...p });
   const [filtersOpen, setFiltersOpen] = useState(true);
+
+  // The filters bar sticks to the top; measure its height so the floating
+  // table header pins directly beneath it.
+  const filtersRef = useRef<HTMLDivElement>(null);
+  const [stickyTop, setStickyTop] = useState(52);
+  useEffect(() => {
+    const el = filtersRef.current;
+    if (!el) return;
+    const measure = () => setStickyTop(el.offsetHeight);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const trades = useMemo(
     () => scopeTrades(allTrades, scope),
@@ -149,50 +165,74 @@ function Page() {
           </button>
         </div>
 
-        {/* Filters — a collapsible pill with the collapse chevron on its
-            right (points left to close, right to open). */}
-        <div className="mt-5 flex items-center justify-between gap-3 flex-wrap">
+        {/* Filters — a sticky bar that pins to the top on scroll. Collapsing
+            animates the inactive ranges away toward the selected one; the
+            chevron on the right points left to close, right to open. */}
+        <div
+          ref={filtersRef}
+          className="sticky top-0 z-30 -mx-5 md:-mx-8 px-5 md:px-8 py-3 bg-[rgb(var(--bg-rgb))] flex items-center justify-between gap-3 flex-wrap"
+        >
           <div className="inline-flex items-center gap-2">
-            {filtersOpen && (
-              <>
-                <div className="inline-flex items-center p-0.5 rounded-lg bg-white/[0.04] border border-white/10">
-                  {RANGES.map((r) => (
-                    <button
-                      key={r.key}
-                      type="button"
-                      onClick={() => patch({ range: r.key as RangeKey })}
-                      className={`px-3 py-1.5 rounded-md text-[12px] font-medium transition cursor-pointer ${
-                        scope.range === r.key
-                          ? "bg-white/[0.10] text-white"
-                          : "text-white/55 hover:text-white/85"
-                      }`}
-                    >
-                      {r.label}
-                    </button>
-                  ))}
-                </div>
+            <motion.div
+              layout
+              className="inline-flex items-center p-0.5 rounded-lg bg-white/[0.04] border border-white/10 overflow-hidden"
+            >
+              {RANGES.map((r) => {
+                const active = scope.range === r.key;
+                const visible = filtersOpen || active;
+                return (
+                  <AnimatePresence key={r.key} initial={false} mode="popLayout">
+                    {visible && (
+                      <motion.button
+                        layout
+                        initial={{ opacity: 0, scale: 0.85 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.85 }}
+                        transition={{ duration: 0.18, ease: "easeOut" }}
+                        type="button"
+                        onClick={() => patch({ range: r.key as RangeKey })}
+                        className={`px-3 py-1.5 rounded-md text-[12px] font-medium whitespace-nowrap cursor-pointer ${
+                          active
+                            ? "bg-white/[0.10] text-white"
+                            : "text-white/55 hover:text-white/85"
+                        }`}
+                      >
+                        {r.label}
+                      </motion.button>
+                    )}
+                  </AnimatePresence>
+                );
+              })}
+            </motion.div>
 
-                {scope.range === "custom" && (
-                  <div className="inline-flex items-center gap-2">
-                    <input
-                      type="date"
-                      value={scope.from}
-                      max={scope.to || undefined}
-                      onChange={(e) => patch({ from: e.target.value })}
-                      className="px-2.5 py-1.5 text-[12.5px] bg-white/[0.04] rounded-lg border border-white/10 focus:border-white/25 focus:outline-none transition appearance-none"
-                    />
-                    <span className="text-[12px] text-white/40">–</span>
-                    <input
-                      type="date"
-                      value={scope.to}
-                      min={scope.from || undefined}
-                      onChange={(e) => patch({ to: e.target.value })}
-                      className="px-2.5 py-1.5 text-[12.5px] bg-white/[0.04] rounded-lg border border-white/10 focus:border-white/25 focus:outline-none transition appearance-none"
-                    />
-                  </div>
-                )}
-              </>
-            )}
+            <AnimatePresence initial={false}>
+              {filtersOpen && scope.range === "custom" && (
+                <motion.div
+                  layout
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.18 }}
+                  className="inline-flex items-center gap-2"
+                >
+                  <input
+                    type="date"
+                    value={scope.from}
+                    max={scope.to || undefined}
+                    onChange={(e) => patch({ from: e.target.value })}
+                    className="px-2.5 py-1.5 text-[12.5px] bg-white/[0.04] rounded-lg border border-white/10 focus:border-white/25 focus:outline-none transition appearance-none"
+                  />
+                  <span className="text-[12px] text-white/40">–</span>
+                  <input
+                    type="date"
+                    value={scope.to}
+                    min={scope.from || undefined}
+                    onChange={(e) => patch({ to: e.target.value })}
+                    className="px-2.5 py-1.5 text-[12.5px] bg-white/[0.04] rounded-lg border border-white/10 focus:border-white/25 focus:outline-none transition appearance-none"
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             <button
               type="button"
@@ -228,9 +268,9 @@ function Page() {
           </span>
         </div>
 
-        {/* Report body — flows below; the window scrolls and the table's
-            column header pins to the top. No overflow wrapper, so the
-            sticky header resolves against the viewport. */}
+        {/* Report body — flows below; the window scrolls. Horizontal scroll
+            stays inside the table, and a JS-synced floating clone keeps the
+            column header pinned beneath the sticky filters. */}
         {isLoading ? (
           <div className="mt-4 flex items-center justify-center py-20 text-white/40">
             <Spinner size={20} />
@@ -240,11 +280,7 @@ function Page() {
             {def.chart && table.rows.length > 0 && (
               <ReportChart table={table} />
             )}
-            {/* Horizontal scroll is contained to the table so the page
-                never scrolls sideways; the page still scrolls vertically. */}
-            <div className="rounded-xl border border-white/10 bg-[var(--surface-2)] overflow-x-auto thin-scroll">
-              <TableView table={table} />
-            </div>
+            <ScrollTable table={table} stickyTop={stickyTop} />
           </div>
         ) : (
           <pre className="mt-4 rounded-xl border border-white/10 bg-[var(--surface-2)] overflow-auto thin-scroll p-4 text-[11.5px] leading-relaxed text-white/70 whitespace-pre font-mono max-h-[70vh]">
@@ -284,75 +320,211 @@ function displayCell(col: string, cell: string | number): string {
   return String(cell);
 }
 
-function TableView({ table }: { table: ReportTable }) {
+// Header cells for a report table — shared by the real header and the
+// floating clone so they render identically.
+function HeaderRow({
+  columns,
+  numericCols,
+}: {
+  columns: string[];
+  numericCols: boolean[];
+}) {
+  return (
+    <tr className="border-b border-white/10">
+      {columns.map((c, ci) => (
+        <th
+          key={c}
+          className={`font-medium text-white/45 whitespace-nowrap px-3.5 py-2.5 ${
+            numericCols[ci] ? "text-right" : "text-left"
+          }`}
+        >
+          {c}
+        </th>
+      ))}
+    </tr>
+  );
+}
+
+// Memoised body so scroll-driven re-renders of the wrapper (clone position,
+// horizontal offset) don't re-render every row.
+const TableBody = memo(function TableBody({
+  table,
+  numericCols,
+}: {
+  table: ReportTable;
+  numericCols: boolean[];
+}) {
+  return (
+    <tbody>
+      {table.rows.map((row, ri) => (
+        <tr
+          key={ri}
+          className="odd:bg-white/[0.02] hover:bg-white/[0.05] transition-colors"
+        >
+          {row.map((cell, ci) => {
+            const col = table.columns[ci];
+            const num = numericCols[ci];
+            const signed = SIGNED_COL.test(col) && typeof cell === "number";
+            const tone = signed
+              ? (cell as number) > 0
+                ? "text-green-400"
+                : (cell as number) < 0
+                  ? "text-red-400"
+                  : "text-white/70"
+              : ci === 0
+                ? "text-white/90 font-medium"
+                : "text-white/70";
+            return (
+              <td
+                key={ci}
+                className={`px-3.5 py-2 whitespace-nowrap border-b border-white/[0.04] ${
+                  num ? "text-right tabular-nums" : "text-left"
+                } ${tone} ${col === "Notes" ? "max-w-[320px] truncate" : ""}`}
+                title={col === "Notes" ? String(cell) : undefined}
+              >
+                {displayCell(col, cell)}
+              </td>
+            );
+          })}
+        </tr>
+      ))}
+    </tbody>
+  );
+});
+
+// Table in a horizontal-scroll panel (so the page never scrolls sideways),
+// with a JS-synced floating header: once the real header scrolls above the
+// sticky filters bar, a fixed clone appears pinned beneath it, matching the
+// column widths and following the panel's horizontal scroll.
+function ScrollTable({
+  table,
+  stickyTop,
+}: {
+  table: ReportTable;
+  stickyTop: number;
+}) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const headRef = useRef<HTMLTableSectionElement>(null);
+  const [clone, setClone] = useState<{ left: number; width: number } | null>(
+    null,
+  );
+  const [colW, setColW] = useState<number[]>([]);
+  const [tableW, setTableW] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+
+  const numericCols = useMemo(
+    () =>
+      table.columns.map(
+        (_, ci) =>
+          table.rows.some((r) => typeof r[ci] === "number") &&
+          table.rows.every((r) => typeof r[ci] === "number" || r[ci] === ""),
+      ),
+    [table],
+  );
+
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    const head = headRef.current;
+    if (!wrap || !head) return;
+
+    const measure = () => {
+      const ths = Array.from(head.querySelectorAll("th")) as HTMLElement[];
+      setColW(ths.map((th) => th.getBoundingClientRect().width));
+      const tbl = head.parentElement as HTMLElement | null;
+      if (tbl) setTableW(tbl.getBoundingClientRect().width);
+    };
+    const update = () => {
+      const wrapRect = wrap.getBoundingClientRect();
+      const headRect = head.getBoundingClientRect();
+      const show =
+        headRect.top < stickyTop &&
+        wrapRect.bottom > stickyTop + headRect.height;
+      // Only touch state when it actually changes so vertical scrolling
+      // with the clone already shown doesn't re-render.
+      setClone((prev) => {
+        if (!show) return prev ? null : prev;
+        const left = wrapRect.left;
+        const width = wrap.clientWidth;
+        if (prev && prev.left === left && prev.width === width) return prev;
+        return { left, width };
+      });
+    };
+    const onWrapScroll = () => setScrollLeft(wrap.scrollLeft);
+
+    measure();
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    wrap.addEventListener("scroll", onWrapScroll, { passive: true });
+    const ro = new ResizeObserver(() => {
+      measure();
+      update();
+    });
+    ro.observe(wrap);
+    ro.observe(head);
+    return () => {
+      window.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+      wrap.removeEventListener("scroll", onWrapScroll);
+      ro.disconnect();
+    };
+  }, [stickyTop, table]);
+
   if (table.rows.length === 0) {
     return (
-      <p className="text-[13px] text-white/40 py-16 text-center">
-        No rows for the current scope. Try widening the date range.
-      </p>
+      <div className="rounded-xl border border-white/10 bg-[var(--surface-2)]">
+        <p className="text-[13px] text-white/40 py-16 text-center">
+          No rows for the current scope. Try widening the date range.
+        </p>
+      </div>
     );
   }
 
-  // A column is numeric (→ right-aligned header and cells) when every
-  // populated cell in it is a number. Aligning on the column, not the
-  // individual cell, keeps the numbers sitting under their header.
-  const numericCols = table.columns.map(
-    (_, ci) =>
-      table.rows.some((r) => typeof r[ci] === "number") &&
-      table.rows.every((r) => typeof r[ci] === "number" || r[ci] === ""),
-  );
-
   return (
-    <table className="w-full border-collapse text-[12.5px]">
-      <thead className="sticky top-0 z-10 bg-[var(--surface-2)]">
-        <tr className="border-b border-white/10">
-          {table.columns.map((c, ci) => (
-            <th
-              key={c}
-              className={`font-medium text-white/45 whitespace-nowrap px-3.5 py-2.5 ${
-                numericCols[ci] ? "text-right" : "text-left"
-              }`}
-            >
-              {c}
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {table.rows.map((row, ri) => (
-          <tr
-            key={ri}
-            className="odd:bg-white/[0.02] hover:bg-white/[0.05] transition-colors"
+    <div
+      ref={wrapRef}
+      className="rounded-xl border border-white/10 bg-[var(--surface-2)] overflow-x-auto thin-scroll"
+    >
+      <table className="w-full border-collapse text-[12.5px]">
+        <thead ref={headRef}>
+          <HeaderRow columns={table.columns} numericCols={numericCols} />
+        </thead>
+        <TableBody table={table} numericCols={numericCols} />
+      </table>
+
+      {clone &&
+        createPortal(
+          <div
+            aria-hidden
+            style={{
+              position: "fixed",
+              top: stickyTop,
+              left: clone.left,
+              width: clone.width,
+              overflow: "hidden",
+              zIndex: 20,
+              pointerEvents: "none",
+            }}
           >
-            {row.map((cell, ci) => {
-              const col = table.columns[ci];
-              const num = numericCols[ci];
-              const signed = SIGNED_COL.test(col) && typeof cell === "number";
-              const tone = signed
-                ? (cell as number) > 0
-                  ? "text-green-400"
-                  : (cell as number) < 0
-                    ? "text-red-400"
-                    : "text-white/70"
-                : ci === 0
-                  ? "text-white/90 font-medium"
-                  : "text-white/70";
-              return (
-                <td
-                  key={ci}
-                  className={`px-3.5 py-2 whitespace-nowrap border-b border-white/[0.04] ${
-                    num ? "text-right tabular-nums" : "text-left"
-                  } ${tone} ${col === "Notes" ? "max-w-[320px] truncate" : ""}`}
-                  title={col === "Notes" ? String(cell) : undefined}
-                >
-                  {displayCell(col, cell)}
-                </td>
-              );
-            })}
-          </tr>
-        ))}
-      </tbody>
-    </table>
+            <div style={{ transform: `translateX(${-scrollLeft}px)` }}>
+              <table
+                className="border-collapse text-[12.5px] bg-[var(--surface-2)]"
+                style={{ width: tableW, tableLayout: "fixed" }}
+              >
+                <colgroup>
+                  {colW.map((w, i) => (
+                    <col key={i} style={{ width: w }} />
+                  ))}
+                </colgroup>
+                <thead>
+                  <HeaderRow columns={table.columns} numericCols={numericCols} />
+                </thead>
+              </table>
+            </div>
+          </div>,
+          document.body,
+        )}
+    </div>
   );
 }
 
