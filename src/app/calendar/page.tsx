@@ -556,49 +556,52 @@ function Page() {
         {/* Top-right event badges — stacked so a day with several
             (e.g. Fed + CPI) doesn't pile them on top of each other. */}
         {(isFed || isCpi || isPce || isPpi || (marketDay && marketDay.early)) && (
-          // On mobile the tiles are narrow, so a 2-digit day number (top-left)
-          // would collide with these pills if they sat at the very top-right.
-          // Drop them below the number row on mobile; keep them top-right on
-          // desktop where the tile is wide enough.
           <div className="absolute top-7 right-1 md:top-1 flex flex-col items-end gap-0.5">
-            {/* Red "no-trade" pills — one shared red style across every
-                high-impact release so the day reads as a single warning. */}
-            {isFed && (
-              <span
-                title="FOMC meeting — high volatility, avoid trading"
-                className={NO_TRADE_PILL}
-              >
-                <span className="w-1 h-1 rounded-full bg-red-200" aria-hidden />
-                Fed
-              </span>
-            )}
-            {isCpi && (
-              <span
-                title="CPI inflation report — 8:30am ET — avoid trading"
-                className={NO_TRADE_PILL}
-              >
-                <i className="fa-solid fa-percent text-[7px]" aria-hidden />
-                CPI
-              </span>
-            )}
-            {isPpi && (
-              <span
-                title="PPI producer inflation report — 8:30am ET — avoid trading"
-                className={NO_TRADE_PILL}
-              >
-                <i className="fa-solid fa-industry text-[7px]" aria-hidden />
-                PPI
-              </span>
-            )}
-            {isPce && (
-              <span
-                title="PCE — Fed's preferred inflation gauge — 8:30am ET — avoid trading"
-                className={NO_TRADE_PILL}
-              >
-                <i className="fa-solid fa-landmark text-[7px]" aria-hidden />
-                PCE
-              </span>
-            )}
+            {/* Economic-release pills (Fed / CPI / PPI / PCE). Desktop only —
+                on phones the tiles are too small and the pills overlap the
+                day's P/L, so this "economic calendar" overlay is dropped. One
+                shared red style so a day reads as a single warning. */}
+            <div className="hidden md:flex flex-col items-end gap-0.5">
+              {isFed && (
+                <span
+                  title="FOMC meeting — high volatility, avoid trading"
+                  className={NO_TRADE_PILL}
+                >
+                  <span
+                    className="w-1 h-1 rounded-full bg-red-200"
+                    aria-hidden
+                  />
+                  Fed
+                </span>
+              )}
+              {isCpi && (
+                <span
+                  title="CPI inflation report — 8:30am ET — avoid trading"
+                  className={NO_TRADE_PILL}
+                >
+                  <i className="fa-solid fa-percent text-[7px]" aria-hidden />
+                  CPI
+                </span>
+              )}
+              {isPpi && (
+                <span
+                  title="PPI producer inflation report — 8:30am ET — avoid trading"
+                  className={NO_TRADE_PILL}
+                >
+                  <i className="fa-solid fa-industry text-[7px]" aria-hidden />
+                  PPI
+                </span>
+              )}
+              {isPce && (
+                <span
+                  title="PCE — Fed's preferred inflation gauge — 8:30am ET — avoid trading"
+                  className={NO_TRADE_PILL}
+                >
+                  <i className="fa-solid fa-landmark text-[7px]" aria-hidden />
+                  PCE
+                </span>
+              )}
+            </div>
             {marketDay && marketDay.early && (
               <span
                 title={`Early close 1:00pm ET — ${marketDay.name}`}
