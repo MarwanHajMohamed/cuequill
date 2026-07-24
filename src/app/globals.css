@@ -467,14 +467,15 @@ body {
   }
 }
 
-/* When the sidebar is collapsed, let the main content containers expand to
-   fill the reclaimed width instead of staying capped. Targets the shared
-   1500px content cap used across pages (trades, chat, strategies, rules,
-   stocks, affirmations, calendar, …). Unlayered so it beats the Tailwind
-   utility. Only at md+ where the sidebar exists. */
+/* Let the main content containers fill the width right up to the edge on
+   desktop, so only the left offset changes with the sidebar — collapsing
+   or expanding it never re-caps the content and pulls the right edge in.
+   Targets the shared 1500px content cap used across pages (trades, chat,
+   strategies, rules, stocks, affirmations, calendar, …). Unlayered so it
+   beats the Tailwind utility. Only at md+ where the sidebar exists. */
 @media (min-width: 768px) {
-  :root.nav-collapsed .max-w-\[1500px\],
-  :root.nav-collapsed .md\:max-w-\[1500px\] {
+  .max-w-\[1500px\],
+  .md\:max-w-\[1500px\] {
     max-width: none;
   }
 }
