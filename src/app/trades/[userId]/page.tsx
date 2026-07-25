@@ -45,6 +45,7 @@ type TradeColumnKey =
   | "strike"
   | "dateBought"
   | "expiryDate"
+  | "dateClosed"
   | "closingContractPrice"
   | "strategy"
   | "notes";
@@ -60,6 +61,7 @@ const DEFAULT_COLUMN_ORDER: TradeColumnKey[] = [
   "strike",
   "dateBought",
   "expiryDate",
+  "dateClosed",
   "closingContractPrice",
   "strategy",
   "notes",
@@ -76,6 +78,7 @@ const COLUMN_LABELS: Record<TradeColumnKey, string> = {
   strike: "Strike",
   dateBought: "Date bought",
   expiryDate: "Expiry date",
+  dateClosed: "Date closed",
   closingContractPrice: "Exit price",
   strategy: "Strategy",
   notes: "Notes",
@@ -132,6 +135,8 @@ function sortValue(key: TradeColumnKey, t: Trade): number | string {
       return new Date(t.dateBought).getTime();
     case "expiryDate":
       return new Date(t.expiryDate).getTime();
+    case "dateClosed":
+      return t.dateClosed ? new Date(t.dateClosed).getTime() : -Infinity;
     case "notes":
       return t.notes ? 1 : 0;
     default:
@@ -727,6 +732,10 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
         return new Date(trade.dateBought).toLocaleDateString("en-GB");
       case "expiryDate":
         return new Date(trade.expiryDate).toLocaleDateString("en-GB");
+      case "dateClosed":
+        return trade.dateClosed
+          ? new Date(trade.dateClosed).toLocaleDateString("en-GB")
+          : "-";
       case "closingContractPrice":
         return trade.closingContractPrice === null
           ? "-"
