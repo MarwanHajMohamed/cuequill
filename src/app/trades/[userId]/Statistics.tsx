@@ -2409,7 +2409,7 @@ export default function Statistics({
                       <>
                         {/* Hero card - net P/L + headline metrics */}
                         <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-5 md:p-6">
-                          <div className="flex items-start justify-between gap-4 flex-wrap">
+                          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                             <div className="flex flex-col gap-1 min-w-0">
                               <div className="text-[10px] md:text-[11px] tracking-[0.1em] text-white/45 font-medium flex items-center gap-1.5">
                                 Net P/L
@@ -2418,7 +2418,7 @@ export default function Statistics({
                               <CountUpMoney
                                 key={`${year}-${date.monthIndex}`}
                                 value={monthSummary.netPL}
-                                className={`text-3xl md:text-5xl font-semibold tracking-tight tabular-nums truncate ${
+                                className={`text-3xl md:text-5xl font-semibold tracking-tight tabular-nums ${
                                   monthSummary.netPL >= 0
                                     ? "text-green-400"
                                     : "text-red-400"
@@ -2452,7 +2452,7 @@ export default function Statistics({
                                   </span>
                                 </div>
                               )}
-                              <div className="text-[12px] text-white/50">
+                              <div className="text-[12px] text-white/50 mt-0.5">
                                 {monthSummary.n} trade
                                 {monthSummary.n === 1 ? "" : "s"} ·{" "}
                                 {monthSummary.winRate.toFixed(0)}% win rate ·{" "}
@@ -2470,8 +2470,8 @@ export default function Statistics({
                               </div>
                             </div>
                             {tradedDays > 0 && (
-                              <div className="flex items-center gap-3">
-                                <div className="flex flex-col items-end">
+                              <div className="flex items-center justify-between md:justify-start gap-3 shrink-0 border-t border-white/[0.06] pt-3 md:border-t-0 md:pt-0 md:pl-4">
+                                <div className="flex flex-col items-start md:items-end">
                                   <div className="text-[10px] tracking-[0.08em] text-white/40">
                                     Days traded
                                   </div>
@@ -2602,7 +2602,7 @@ export default function Statistics({
                                 </div>
                               </div>
                               <div
-                                className="grid gap-1 mb-1 mx-auto text-center text-[9px] text-white/35"
+                                className="grid gap-1 mb-1 justify-center text-center text-[9px] text-white/35"
                                 style={{ gridTemplateColumns: "repeat(7, 2.25rem)" }}
                               >
                                 {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => (
@@ -2610,7 +2610,7 @@ export default function Statistics({
                                 ))}
                               </div>
                               <div
-                                className="grid gap-1 mx-auto"
+                                className="grid gap-1 justify-center"
                                 style={{ gridTemplateColumns: "repeat(7, 2.25rem)" }}
                               >
                                 {heatCells.map((c, i) => {
