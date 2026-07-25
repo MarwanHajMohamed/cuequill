@@ -2586,8 +2586,10 @@ export default function Statistics({
                             (fills the rest) side by side. */}
                         {tradedDays > 0 && (
                           <div className="flex flex-col md:flex-row gap-4 md:gap-5">
-                            {/* Calendar heatmap — each day tinted by P/L */}
-                            <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5 w-fit shrink-0">
+                            {/* Calendar heatmap — each day tinted by P/L.
+                                Full-width card on mobile (grid centred), hugs
+                                its grid beside the strip on desktop. */}
+                            <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5 md:w-fit md:shrink-0">
                               <div className="flex items-center justify-between gap-4 mb-3">
                                 <div className="text-[10px] md:text-[11px] tracking-[0.1em] text-white/45 font-medium flex items-center gap-1.5">
                                   Heatmap
@@ -2600,7 +2602,7 @@ export default function Statistics({
                                 </div>
                               </div>
                               <div
-                                className="grid gap-1 mb-1 text-center text-[9px] text-white/35"
+                                className="grid gap-1 mb-1 mx-auto text-center text-[9px] text-white/35"
                                 style={{ gridTemplateColumns: "repeat(7, 2.25rem)" }}
                               >
                                 {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => (
@@ -2608,7 +2610,7 @@ export default function Statistics({
                                 ))}
                               </div>
                               <div
-                                className="grid gap-1"
+                                className="grid gap-1 mx-auto"
                                 style={{ gridTemplateColumns: "repeat(7, 2.25rem)" }}
                               >
                                 {heatCells.map((c, i) => {
@@ -2656,8 +2658,10 @@ export default function Statistics({
                               </div>
                             </div>
 
-                            {/* Daily P/L strip */}
-                            <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5 flex-1 min-w-0 flex flex-col">
+                            {/* Daily P/L strip — desktop only; on phones the
+                                heatmap already covers per-day and the strip
+                                just adds an empty box. */}
+                            <div className="hidden md:flex rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5 flex-1 min-w-0 flex-col">
                               <div className="flex items-center justify-between mb-3">
                                 <div className="text-[10px] md:text-[11px] tracking-[0.1em] text-white/45 font-medium flex items-center gap-1.5">
                                   Daily P/L
