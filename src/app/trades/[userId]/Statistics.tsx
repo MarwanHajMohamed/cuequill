@@ -18,6 +18,16 @@ import EquityCurve from "./EquityCurve";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
 import { motion, AnimatePresence } from "framer-motion";
 import ProGate from "@/components/ProGate";
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  ReferenceLine,
+  Tooltip as ReTooltip,
+} from "recharts";
 
 import { fmtMoneyCompact, fmtMoneySignedCompact } from "@/lib/helpers/fmt";
 type StatsVisibility = {
@@ -2211,6 +2221,27 @@ export default function Statistics({
             1,
           );
 
+          // Running cumulative net P/L through the month, one point per day
+          // (untraded days keep the line flat). Drives the equity curve.
+          let cum = 0;
+          const equitySeries = dailyBars.map((b) => {
+            cum += b.pl ?? 0;
+            return { day: b.day, cum: Math.round(cum * 100) / 100 };
+          });
+          const eqMax = Math.max(0, ...equitySeries.map((p) => p.cum));
+          const eqMin = Math.min(0, ...equitySeries.map((p) => p.cum));
+          // Vertical fraction where zero sits, for the green-above/red-below
+          // gradient split.
+          const eqZero =
+            eqMax <= 0 ? 0 : eqMin >= 0 ? 1 : eqMax / (eqMax - eqMin);
+
+          // Calendar heatmap layout: blank leading cells to align day 1 to
+          // its weekday (Mon-first), then one cell per day.
+          const firstWeekday = (new Date(year, date.monthIndex, 1).getDay() + 6) % 7;
+          const heatCells: Array<
+            { day: number; pl: number | null; isWeekend: boolean } | null
+          > = [...Array(firstWeekday).fill(null), ...dailyBars];
+
           const isCurrentMonth =
             date.monthIndex === new Date().getMonth() &&
             date.year === new Date().getFullYear();
@@ -2395,68 +2426,145 @@ export default function Statistics({
                         </div>
 
                         {/* Daily P/L strip */}
+                        {/* Equity curve — running cumulative P/L for the month */}
+                        {tradedDays > 0 && (
+                          <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5">
+                            <div className="text-[10px] md:text-[11px] tracking-[0.1em] text-white/45 font-medium flex items-center gap-1.5 mb-3">
+                              Equity curve
+                              <InfoTooltip text="Running cumulative net P/L through the month — the line's slope shows momentum." />
+                            </div>
+                            <div className="h-40 md:h-52">
+                              <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart
+                                  data={equitySeries}
+                                  margin={{ top: 6, right: 6, left: 0, bottom: 0 }}
+                                >
+                                  <defs>
+                                    <linearGradient
+                                      id="monthEqFill"
+                                      x1="0"
+                                      y1="0"
+                                      x2="0"
+                                      y2="1"
+                                    >
+                                      <stop offset={0} stopColor="#22c55e" stopOpacity={0.35} />
+                                      <stop offset={eqZero} stopColor="#22c55e" stopOpacity={0.04} />
+                                      <stop offset={eqZero} stopColor="#ef4444" stopOpacity={0.04} />
+                                      <stop offset={1} stopColor="#ef4444" stopOpacity={0.35} />
+                                    </linearGradient>
+                                    <linearGradient
+                                      id="monthEqStroke"
+                                      x1="0"
+                                      y1="0"
+                                      x2="0"
+                                      y2="1"
+                                    >
+                                      <stop offset={eqZero} stopColor="#22c55e" />
+                                      <stop offset={eqZero} stopColor="#ef4444" />
+                                    </linearGradient>
+                                  </defs>
+                                  <CartesianGrid stroke="var(--hairline)" vertical={false} />
+                                  <XAxis
+                                    dataKey="day"
+                                    tick={{ fontSize: 10, fill: "var(--foreground)" }}
+                                    minTickGap={22}
+                                    stroke="var(--hairline)"
+                                  />
+                                  <YAxis
+                                    tick={{ fontSize: 10, fill: "var(--foreground)" }}
+                                    width={48}
+                                    stroke="var(--hairline)"
+                                    tickFormatter={(v) => fmtMoneyCompact(Number(v))}
+                                  />
+                                  <ReferenceLine y={0} stroke="var(--hairline)" />
+                                  <ReTooltip
+                                    contentStyle={{
+                                      background: "var(--surface)",
+                                      border: "1px solid var(--hairline)",
+                                      borderRadius: 8,
+                                      fontSize: 12,
+                                      color: "var(--foreground)",
+                                    }}
+                                    labelFormatter={(l) => `${currentMonth} ${l}`}
+                                    formatter={(v: number | string) => [
+                                      fmtMoneySignedCompact(Number(v)),
+                                      "Cumulative",
+                                    ]}
+                                  />
+                                  <Area
+                                    type="monotone"
+                                    dataKey="cum"
+                                    stroke="url(#monthEqStroke)"
+                                    strokeWidth={2}
+                                    fill="url(#monthEqFill)"
+                                    dot={false}
+                                    isAnimationActive={false}
+                                  />
+                                </AreaChart>
+                              </ResponsiveContainer>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Calendar heatmap — each day tinted by P/L intensity */}
                         {tradedDays > 0 && (
                           <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5">
                             <div className="flex items-center justify-between mb-3">
                               <div className="text-[10px] md:text-[11px] tracking-[0.1em] text-white/45 font-medium flex items-center gap-1.5">
-                                Daily P/L
-                                <InfoTooltip text="Each bar is one calendar day's net P/L. Greyed = weekend, faint dash = no trades that day." />
+                                Calendar heatmap
+                                <InfoTooltip text="Each cell is a day, tinted by its net P/L — deeper green is a bigger up day, deeper red a bigger down day." />
                               </div>
-                              <div className="text-[11px] text-white/40 flex items-center gap-3">
-                                <span className="flex items-center gap-1">
-                                  <span className="inline-block w-2 h-2 rounded-sm bg-green-500/70" />
-                                  Win
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <span className="inline-block w-2 h-2 rounded-sm bg-red-500/70" />
-                                  Loss
-                                </span>
+                              <div className="flex items-center gap-1.5 text-[10px] text-white/40">
+                                <span>Loss</span>
+                                <span className="inline-block w-3 h-3 rounded-sm bg-red-500/70" />
+                                <span className="inline-block w-3 h-3 rounded-sm bg-white/[0.06]" />
+                                <span className="inline-block w-3 h-3 rounded-sm bg-green-500/70" />
+                                <span>Win</span>
                               </div>
                             </div>
-                            <div className="flex items-end gap-[2px] md:gap-[3px] h-20 md:h-24">
-                              {dailyBars.map((b) => {
-                                if (b.pl === null) {
+                            <div className="grid grid-cols-7 gap-1 mb-1 text-center text-[9px] text-white/35">
+                              {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => (
+                                <span key={i}>{d}</span>
+                              ))}
+                            </div>
+                            <div className="grid grid-cols-7 gap-1">
+                              {heatCells.map((c, i) => {
+                                if (!c)
+                                  return <div key={`b${i}`} className="aspect-square" />;
+                                if (c.pl === null || c.pl === undefined) {
                                   return (
                                     <div
-                                      key={b.day}
-                                      title={`${currentMonth} ${b.day}: no trades`}
-                                      className={`flex-1 self-center h-px ${
-                                        b.isWeekend
-                                          ? "bg-white/[0.04]"
-                                          : "bg-white/10"
+                                      key={c.day}
+                                      title={`${currentMonth} ${c.day}: no trades`}
+                                      className={`aspect-square rounded-md flex items-start justify-end p-1 text-[9px] leading-none ${
+                                        c.isWeekend
+                                          ? "bg-white/[0.02] text-white/20"
+                                          : "bg-white/[0.04] text-white/30"
                                       }`}
-                                    />
+                                    >
+                                      {c.day}
+                                    </div>
                                   );
                                 }
-                                const heightPct =
-                                  (Math.abs(b.pl) / maxAbsDayPL) * 100;
-                                const isProfit = b.pl >= 0;
+                                const intensity = Math.min(
+                                  1,
+                                  Math.abs(c.pl) / maxAbsDayPL,
+                                );
+                                const op = 0.18 + intensity * 0.62;
+                                const rgb = c.pl >= 0 ? "34,197,94" : "239,68,68";
                                 return (
                                   <div
-                                    key={b.day}
-                                    title={`${currentMonth} ${b.day}: ${
-                                      isProfit ? "+" : "−"
-                                    }$${Math.abs(b.pl).toFixed(2)}`}
-                                    className="flex-1 flex items-end justify-center min-w-0 h-full"
+                                    key={c.day}
+                                    title={`${currentMonth} ${c.day}: ${
+                                      c.pl >= 0 ? "+" : "−"
+                                    }$${Math.abs(c.pl).toFixed(2)}`}
+                                    style={{ backgroundColor: `rgba(${rgb},${op})` }}
+                                    className="aspect-square rounded-md flex items-start justify-end p-1 text-[9px] leading-none text-white/80 font-medium"
                                   >
-                                    <div
-                                      style={{
-                                        height: `${Math.max(heightPct, 4)}%`,
-                                      }}
-                                      className={`w-full rounded-sm transition ${
-                                        isProfit
-                                          ? "bg-green-500/65 hover:bg-green-500/85"
-                                          : "bg-red-500/65 hover:bg-red-500/85"
-                                      }`}
-                                    />
+                                    {c.day}
                                   </div>
                                 );
                               })}
-                            </div>
-                            <div className="flex justify-between text-[10px] text-white/35 mt-2 tabular-nums">
-                              <span>1</span>
-                              <span>{Math.ceil(daysInMonth / 2)}</span>
-                              <span>{daysInMonth}</span>
                             </div>
                           </div>
                         )}
