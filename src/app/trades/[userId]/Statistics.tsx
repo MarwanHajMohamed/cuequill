@@ -2409,13 +2409,6 @@ export default function Statistics({
                                       : "text-red-400/90"
                                   }`}
                                 >
-                                  <i
-                                    className={`fa-solid ${
-                                      momDelta >= 0
-                                        ? "fa-arrow-trend-up"
-                                        : "fa-arrow-trend-down"
-                                    } text-[9px]`}
-                                  />
                                   {fmtMoneySignedCompact(momDelta)}
                                   {momPct !== null && (
                                     <span className="text-white/40">
