@@ -2522,12 +2522,12 @@ export default function Statistics({
                                 <span>Win</span>
                               </div>
                             </div>
-                            <div className="grid grid-cols-7 gap-1 mb-1 text-center text-[9px] text-white/35">
+                            <div className="grid grid-cols-7 gap-1 mb-1 max-w-[360px] text-center text-[9px] text-white/35">
                               {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => (
                                 <span key={i}>{d}</span>
                               ))}
                             </div>
-                            <div className="grid grid-cols-7 gap-1">
+                            <div className="grid grid-cols-7 gap-1 max-w-[360px]">
                               {heatCells.map((c, i) => {
                                 if (!c)
                                   return <div key={`b${i}`} className="aspect-square" />;
