@@ -18,16 +18,6 @@ import EquityCurve from "./EquityCurve";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
 import { motion, AnimatePresence } from "framer-motion";
 import ProGate from "@/components/ProGate";
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  ReferenceLine,
-  Tooltip as ReTooltip,
-} from "recharts";
 
 import { fmtMoneyCompact, fmtMoneySignedCompact } from "@/lib/helpers/fmt";
 type StatsVisibility = {
@@ -2257,20 +2247,6 @@ export default function Statistics({
             1,
           );
 
-          // Running cumulative net P/L through the month, one point per day
-          // (untraded days keep the line flat). Drives the equity curve.
-          let cum = 0;
-          const equitySeries = dailyBars.map((b) => {
-            cum += b.pl ?? 0;
-            return { day: b.day, cum: Math.round(cum * 100) / 100 };
-          });
-          const eqMax = Math.max(0, ...equitySeries.map((p) => p.cum));
-          const eqMin = Math.min(0, ...equitySeries.map((p) => p.cum));
-          // Vertical fraction where zero sits, for the green-above/red-below
-          // gradient split.
-          const eqZero =
-            eqMax <= 0 ? 0 : eqMin >= 0 ? 1 : eqMax / (eqMax - eqMin);
-
           // Calendar heatmap layout: blank leading cells to align day 1 to
           // its weekday (Mon-first), then one cell per day.
           const firstWeekday = (new Date(year, date.monthIndex, 1).getDay() + 6) % 7;
@@ -2500,87 +2476,6 @@ export default function Statistics({
                             )}
                           </div>
                         </div>
-
-                        {/* Daily P/L strip */}
-                        {/* Equity curve — running cumulative P/L for the month */}
-                        {tradedDays > 0 && (
-                          <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5">
-                            <div className="text-[10px] md:text-[11px] tracking-[0.1em] text-white/45 font-medium flex items-center gap-1.5 mb-3">
-                              Equity curve
-                              <InfoTooltip text="Running cumulative net P/L through the month — the line's slope shows momentum." />
-                            </div>
-                            <div className="h-40 md:h-52">
-                              <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart
-                                  data={equitySeries}
-                                  margin={{ top: 6, right: 6, left: 0, bottom: 0 }}
-                                >
-                                  <defs>
-                                    <linearGradient
-                                      id="monthEqFill"
-                                      x1="0"
-                                      y1="0"
-                                      x2="0"
-                                      y2="1"
-                                    >
-                                      <stop offset={0} stopColor="#22c55e" stopOpacity={0.35} />
-                                      <stop offset={eqZero} stopColor="#22c55e" stopOpacity={0.04} />
-                                      <stop offset={eqZero} stopColor="#ef4444" stopOpacity={0.04} />
-                                      <stop offset={1} stopColor="#ef4444" stopOpacity={0.35} />
-                                    </linearGradient>
-                                    <linearGradient
-                                      id="monthEqStroke"
-                                      x1="0"
-                                      y1="0"
-                                      x2="0"
-                                      y2="1"
-                                    >
-                                      <stop offset={eqZero} stopColor="#22c55e" />
-                                      <stop offset={eqZero} stopColor="#ef4444" />
-                                    </linearGradient>
-                                  </defs>
-                                  <CartesianGrid stroke="var(--hairline)" vertical={false} />
-                                  <XAxis
-                                    dataKey="day"
-                                    tick={{ fontSize: 10, fill: "var(--foreground)" }}
-                                    minTickGap={22}
-                                    stroke="var(--hairline)"
-                                  />
-                                  <YAxis
-                                    tick={{ fontSize: 10, fill: "var(--foreground)" }}
-                                    width={48}
-                                    stroke="var(--hairline)"
-                                    tickFormatter={(v) => fmtMoneyCompact(Number(v))}
-                                  />
-                                  <ReferenceLine y={0} stroke="var(--hairline)" />
-                                  <ReTooltip
-                                    contentStyle={{
-                                      background: "var(--surface)",
-                                      border: "1px solid var(--hairline)",
-                                      borderRadius: 8,
-                                      fontSize: 12,
-                                      color: "var(--foreground)",
-                                    }}
-                                    labelFormatter={(l) => `${currentMonth} ${l}`}
-                                    formatter={(v: number | string) => [
-                                      fmtMoneySignedCompact(Number(v)),
-                                      "Cumulative",
-                                    ]}
-                                  />
-                                  <Area
-                                    type="monotone"
-                                    dataKey="cum"
-                                    stroke="url(#monthEqStroke)"
-                                    strokeWidth={2}
-                                    fill="url(#monthEqFill)"
-                                    dot={false}
-                                    isAnimationActive={false}
-                                  />
-                                </AreaChart>
-                              </ResponsiveContainer>
-                            </div>
-                          </div>
-                        )}
 
                         {/* Calendar heatmap (hugs its grid) + daily P/L strip
                             (fills the rest) side by side. */}
