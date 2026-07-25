@@ -856,6 +856,42 @@ function BreakdownTable({
   );
 }
 
+// Eased 0 → target count-up; re-runs whenever `target` changes (e.g. on a
+// month switch), so the headline number animates each time.
+function useCountUp(target: number, durationMs = 900) {
+  const [v, setV] = useState(0);
+  useEffect(() => {
+    let raf: number;
+    const start = performance.now();
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / durationMs);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setV(target * eased);
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, durationMs]);
+  return v;
+}
+
+// Renders an animated, sign-formatted dollar value. Kept as a component so
+// the hook can live inside the conditionally-rendered monthly section.
+function CountUpMoney({
+  value,
+  className,
+}: {
+  value: number;
+  className?: string;
+}) {
+  const v = useCountUp(value);
+  return (
+    <span className={className}>
+      {v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(2)}
+    </span>
+  );
+}
+
 export default function Statistics({
   data,
   filteredData,
@@ -2242,6 +2278,25 @@ export default function Statistics({
             { day: number; pl: number | null; isWeekend: boolean } | null
           > = [...Array(firstWeekday).fill(null), ...dailyBars];
 
+          // Month-over-month: realized net for the previous month (closed
+          // trades attributed to their exit month), and the delta vs it.
+          const prevM = date.monthIndex === 0 ? 11 : date.monthIndex - 1;
+          const prevY = date.monthIndex === 0 ? year - 1 : year;
+          const prevMonthClosed = dataIgnoringDateRange.filter((t) => {
+            if (t.status !== "WIN" && t.status !== "LOSS") return false;
+            const d = new Date(t.dateClosed ? t.dateClosed : t.dateBought);
+            return d.getMonth() === prevM && d.getFullYear() === prevY;
+          });
+          const prevMonthNet = prevMonthClosed.reduce(
+            (s, t) => s + tradeNetPL(t),
+            0,
+          );
+          const momDelta = monthSummary.netPL - prevMonthNet;
+          const momPct =
+            prevMonthNet !== 0
+              ? (momDelta / Math.abs(prevMonthNet)) * 100
+              : null;
+
           const isCurrentMonth =
             date.monthIndex === new Date().getMonth() &&
             date.year === new Date().getFullYear();
@@ -2353,29 +2408,50 @@ export default function Statistics({
                     ) : (
                       <>
                         {/* Hero card - net P/L + headline metrics */}
-                        <div
-                          className={`relative overflow-hidden rounded-2xl border md:backdrop-blur-md p-5 md:p-6 ${
-                            monthSummary.netPL >= 0
-                              ? "border-green-500/20 bg-gradient-to-br from-green-500/[0.06] via-white/[0.03] to-white/[0.02]"
-                              : "border-red-500/20 bg-gradient-to-br from-red-500/[0.06] via-white/[0.03] to-white/[0.02]"
-                          }`}
-                        >
+                        <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-5 md:p-6">
                           <div className="flex items-start justify-between gap-4 flex-wrap">
                             <div className="flex flex-col gap-1 min-w-0">
                               <div className="text-[10px] md:text-[11px] tracking-[0.1em] text-white/45 font-medium flex items-center gap-1.5">
                                 Net P/L
                                 <InfoTooltip text="Total realized profit/loss for trades closed this month, after fees." />
                               </div>
-                              <div
+                              <CountUpMoney
+                                key={`${year}-${date.monthIndex}`}
+                                value={monthSummary.netPL}
                                 className={`text-3xl md:text-5xl font-semibold tracking-tight tabular-nums truncate ${
                                   monthSummary.netPL >= 0
                                     ? "text-green-400"
                                     : "text-red-400"
                                 }`}
-                              >
-                                {monthSummary.netPL >= 0 ? "+" : "−"}$
-                                {Math.abs(monthSummary.netPL).toFixed(2)}
-                              </div>
+                              />
+                              {/* Month-over-month trend */}
+                              {prevMonthClosed.length > 0 && (
+                                <div
+                                  className={`mt-0.5 inline-flex items-center gap-1 text-[11px] font-medium w-fit ${
+                                    momDelta >= 0
+                                      ? "text-green-400/90"
+                                      : "text-red-400/90"
+                                  }`}
+                                >
+                                  <i
+                                    className={`fa-solid ${
+                                      momDelta >= 0
+                                        ? "fa-arrow-trend-up"
+                                        : "fa-arrow-trend-down"
+                                    } text-[9px]`}
+                                  />
+                                  {fmtMoneySignedCompact(momDelta)}
+                                  {momPct !== null && (
+                                    <span className="text-white/40">
+                                      ({momPct >= 0 ? "+" : ""}
+                                      {momPct.toFixed(0)}%)
+                                    </span>
+                                  )}
+                                  <span className="text-white/40">
+                                    vs last month
+                                  </span>
+                                </div>
+                              )}
                               <div className="text-[12px] text-white/50">
                                 {monthSummary.n} trade
                                 {monthSummary.n === 1 ? "" : "s"} ·{" "}
@@ -2506,65 +2582,143 @@ export default function Statistics({
                           </div>
                         )}
 
-                        {/* Calendar heatmap — each day tinted by P/L intensity */}
+                        {/* Calendar heatmap (hugs its grid) + daily P/L strip
+                            (fills the rest) side by side. */}
                         {tradedDays > 0 && (
-                          <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5">
-                            <div className="flex items-center justify-between mb-3">
-                              <div className="text-[10px] md:text-[11px] tracking-[0.1em] text-white/45 font-medium flex items-center gap-1.5">
-                                Calendar heatmap
-                                <InfoTooltip text="Each cell is a day, tinted by its net P/L — deeper green is a bigger up day, deeper red a bigger down day." />
+                          <div className="flex flex-col md:flex-row gap-4 md:gap-5">
+                            {/* Calendar heatmap — each day tinted by P/L */}
+                            <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5 w-fit shrink-0">
+                              <div className="flex items-center justify-between gap-4 mb-3">
+                                <div className="text-[10px] md:text-[11px] tracking-[0.1em] text-white/45 font-medium flex items-center gap-1.5">
+                                  Heatmap
+                                  <InfoTooltip text="Each cell is a day, tinted by its net P/L — deeper green is a bigger up day, deeper red a bigger down day." />
+                                </div>
+                                <div className="flex items-center gap-1 text-[10px] text-white/40">
+                                  <span className="inline-block w-3 h-3 rounded-sm bg-red-500/70" />
+                                  <span className="inline-block w-3 h-3 rounded-sm bg-white/[0.06]" />
+                                  <span className="inline-block w-3 h-3 rounded-sm bg-green-500/70" />
+                                </div>
                               </div>
-                              <div className="flex items-center gap-1.5 text-[10px] text-white/40">
-                                <span>Loss</span>
-                                <span className="inline-block w-3 h-3 rounded-sm bg-red-500/70" />
-                                <span className="inline-block w-3 h-3 rounded-sm bg-white/[0.06]" />
-                                <span className="inline-block w-3 h-3 rounded-sm bg-green-500/70" />
-                                <span>Win</span>
+                              <div
+                                className="grid gap-1 mb-1 text-center text-[9px] text-white/35"
+                                style={{ gridTemplateColumns: "repeat(7, 2.25rem)" }}
+                              >
+                                {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => (
+                                  <span key={i}>{d}</span>
+                                ))}
                               </div>
-                            </div>
-                            <div className="grid grid-cols-7 gap-1 mb-1 max-w-[360px] text-center text-[9px] text-white/35">
-                              {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => (
-                                <span key={i}>{d}</span>
-                              ))}
-                            </div>
-                            <div className="grid grid-cols-7 gap-1 max-w-[360px]">
-                              {heatCells.map((c, i) => {
-                                if (!c)
-                                  return <div key={`b${i}`} className="aspect-square" />;
-                                if (c.pl === null || c.pl === undefined) {
+                              <div
+                                className="grid gap-1"
+                                style={{ gridTemplateColumns: "repeat(7, 2.25rem)" }}
+                              >
+                                {heatCells.map((c, i) => {
+                                  if (!c)
+                                    return (
+                                      <div key={`b${i}`} className="aspect-square" />
+                                    );
+                                  if (c.pl === null || c.pl === undefined) {
+                                    return (
+                                      <div
+                                        key={c.day}
+                                        title={`${currentMonth} ${c.day}: no trades`}
+                                        className={`aspect-square rounded-md flex items-start justify-end p-1 text-[9px] leading-none ${
+                                          c.isWeekend
+                                            ? "bg-white/[0.02] text-white/20"
+                                            : "bg-white/[0.04] text-white/30"
+                                        }`}
+                                      >
+                                        {c.day}
+                                      </div>
+                                    );
+                                  }
+                                  const intensity = Math.min(
+                                    1,
+                                    Math.abs(c.pl) / maxAbsDayPL,
+                                  );
+                                  const op = 0.18 + intensity * 0.62;
+                                  const rgb =
+                                    c.pl >= 0 ? "34,197,94" : "239,68,68";
                                   return (
                                     <div
                                       key={c.day}
-                                      title={`${currentMonth} ${c.day}: no trades`}
-                                      className={`aspect-square rounded-md flex items-start justify-end p-1 text-[9px] leading-none ${
-                                        c.isWeekend
-                                          ? "bg-white/[0.02] text-white/20"
-                                          : "bg-white/[0.04] text-white/30"
-                                      }`}
+                                      title={`${currentMonth} ${c.day}: ${
+                                        c.pl >= 0 ? "+" : "−"
+                                      }$${Math.abs(c.pl).toFixed(2)}`}
+                                      style={{
+                                        backgroundColor: `rgba(${rgb},${op})`,
+                                      }}
+                                      className="aspect-square rounded-md flex items-start justify-end p-1 text-[9px] leading-none text-white/80 font-medium"
                                     >
                                       {c.day}
                                     </div>
                                   );
-                                }
-                                const intensity = Math.min(
-                                  1,
-                                  Math.abs(c.pl) / maxAbsDayPL,
-                                );
-                                const op = 0.18 + intensity * 0.62;
-                                const rgb = c.pl >= 0 ? "34,197,94" : "239,68,68";
-                                return (
-                                  <div
-                                    key={c.day}
-                                    title={`${currentMonth} ${c.day}: ${
-                                      c.pl >= 0 ? "+" : "−"
-                                    }$${Math.abs(c.pl).toFixed(2)}`}
-                                    style={{ backgroundColor: `rgba(${rgb},${op})` }}
-                                    className="aspect-square rounded-md flex items-start justify-end p-1 text-[9px] leading-none text-white/80 font-medium"
-                                  >
-                                    {c.day}
-                                  </div>
-                                );
-                              })}
+                                })}
+                              </div>
+                            </div>
+
+                            {/* Daily P/L strip */}
+                            <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5 flex-1 min-w-0 flex flex-col">
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="text-[10px] md:text-[11px] tracking-[0.1em] text-white/45 font-medium flex items-center gap-1.5">
+                                  Daily P/L
+                                  <InfoTooltip text="Each bar is one calendar day's net P/L." />
+                                </div>
+                                <div className="text-[11px] text-white/40 flex items-center gap-3">
+                                  <span className="flex items-center gap-1">
+                                    <span className="inline-block w-2 h-2 rounded-sm bg-green-500/70" />
+                                    Win
+                                  </span>
+                                  <span className="flex items-center gap-1">
+                                    <span className="inline-block w-2 h-2 rounded-sm bg-red-500/70" />
+                                    Loss
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex-1 flex items-end gap-[2px] md:gap-[3px] min-h-[80px]">
+                                {dailyBars.map((b) => {
+                                  if (b.pl === null) {
+                                    return (
+                                      <div
+                                        key={b.day}
+                                        title={`${currentMonth} ${b.day}: no trades`}
+                                        className={`flex-1 self-center h-px ${
+                                          b.isWeekend
+                                            ? "bg-white/[0.04]"
+                                            : "bg-white/10"
+                                        }`}
+                                      />
+                                    );
+                                  }
+                                  const heightPct =
+                                    (Math.abs(b.pl) / maxAbsDayPL) * 100;
+                                  const isProfit = b.pl >= 0;
+                                  return (
+                                    <div
+                                      key={b.day}
+                                      title={`${currentMonth} ${b.day}: ${
+                                        isProfit ? "+" : "−"
+                                      }$${Math.abs(b.pl).toFixed(2)}`}
+                                      className="flex-1 flex items-end justify-center min-w-0 h-full"
+                                    >
+                                      <div
+                                        style={{
+                                          height: `${Math.max(heightPct, 4)}%`,
+                                        }}
+                                        className={`w-full rounded-sm transition ${
+                                          isProfit
+                                            ? "bg-green-500/65 hover:bg-green-500/85"
+                                            : "bg-red-500/65 hover:bg-red-500/85"
+                                        }`}
+                                      />
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                              <div className="flex justify-between text-[10px] text-white/35 mt-2 tabular-nums">
+                                <span>1</span>
+                                <span>{Math.ceil(daysInMonth / 2)}</span>
+                                <span>{daysInMonth}</span>
+                              </div>
                             </div>
                           </div>
                         )}
