@@ -144,12 +144,10 @@ function Page() {
   const ppiDates = usePpiDates();
   const holidays = useMarketHolidays();
 
-  // Detailed mode — overlays watchlist earnings dates and open-trade
-  // expiries on the month grid. Persisted so the preference sticks.
-  const [detailed, setDetailed] = useLocalStorage<boolean>(
-    "calendar:detailed",
-    false,
-  );
+  // The earnings/expiry overlay ("detailed" mode) has been removed, so it's
+  // permanently off — the economic-release pills stay, but no earnings pill
+  // and no expand toggle.
+  const detailed = false;
   const { data: watchlist = [] } = useWatchlist();
   // Only fetch earnings while detailed mode is on — the hook no-ops on
   // an empty symbol list.
@@ -557,51 +555,44 @@ function Page() {
             (e.g. Fed + CPI) doesn't pile them on top of each other. */}
         {(isFed || isCpi || isPce || isPpi || (marketDay && marketDay.early)) && (
           <div className="absolute top-7 right-1 md:top-1 flex flex-col items-end gap-0.5">
-            {/* Economic-release pills (Fed / CPI / PPI / PCE). Desktop only —
-                on phones the tiles are too small and the pills overlap the
-                day's P/L, so this "economic calendar" overlay is dropped. One
-                shared red style so a day reads as a single warning. */}
-            <div className="hidden md:flex flex-col items-end gap-0.5">
-              {isFed && (
-                <span
-                  title="FOMC meeting — high volatility, avoid trading"
-                  className={NO_TRADE_PILL}
-                >
-                  <span
-                    className="w-1 h-1 rounded-full bg-red-200"
-                    aria-hidden
-                  />
-                  Fed
-                </span>
-              )}
-              {isCpi && (
-                <span
-                  title="CPI inflation report — 8:30am ET — avoid trading"
-                  className={NO_TRADE_PILL}
-                >
-                  <i className="fa-solid fa-percent text-[7px]" aria-hidden />
-                  CPI
-                </span>
-              )}
-              {isPpi && (
-                <span
-                  title="PPI producer inflation report — 8:30am ET — avoid trading"
-                  className={NO_TRADE_PILL}
-                >
-                  <i className="fa-solid fa-industry text-[7px]" aria-hidden />
-                  PPI
-                </span>
-              )}
-              {isPce && (
-                <span
-                  title="PCE — Fed's preferred inflation gauge — 8:30am ET — avoid trading"
-                  className={NO_TRADE_PILL}
-                >
-                  <i className="fa-solid fa-landmark text-[7px]" aria-hidden />
-                  PCE
-                </span>
-              )}
-            </div>
+            {/* Red "no-trade" pills — one shared red style across every
+                high-impact release so the day reads as a single warning. */}
+            {isFed && (
+              <span
+                title="FOMC meeting — high volatility, avoid trading"
+                className={NO_TRADE_PILL}
+              >
+                <span className="w-1 h-1 rounded-full bg-red-200" aria-hidden />
+                Fed
+              </span>
+            )}
+            {isCpi && (
+              <span
+                title="CPI inflation report — 8:30am ET — avoid trading"
+                className={NO_TRADE_PILL}
+              >
+                <i className="fa-solid fa-percent text-[7px]" aria-hidden />
+                CPI
+              </span>
+            )}
+            {isPpi && (
+              <span
+                title="PPI producer inflation report — 8:30am ET — avoid trading"
+                className={NO_TRADE_PILL}
+              >
+                <i className="fa-solid fa-industry text-[7px]" aria-hidden />
+                PPI
+              </span>
+            )}
+            {isPce && (
+              <span
+                title="PCE — Fed's preferred inflation gauge — 8:30am ET — avoid trading"
+                className={NO_TRADE_PILL}
+              >
+                <i className="fa-solid fa-landmark text-[7px]" aria-hidden />
+                PCE
+              </span>
+            )}
             {marketDay && marketDay.early && (
               <span
                 title={`Early close 1:00pm ET — ${marketDay.name}`}
@@ -903,19 +894,6 @@ function Page() {
                 );
               })()}
               <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setDetailed((v) => !v)}
-                  className={`w-8 h-8 inline-flex items-center justify-center rounded-full border transition cursor-pointer ${
-                    detailed
-                      ? "bg-teal-500/15 text-teal-300 border-teal-500/30 hover:bg-teal-500/25"
-                      : "border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/75 hover:text-white"
-                  }`}
-                  title="Overlay watchlist earnings and open-position expiries"
-                  aria-label={detailed ? "Hide overlays" : "Show overlays"}
-                  aria-pressed={detailed}
-                >
-                  <i className="fa-solid fa-layer-group text-[11px]" />
-                </button>
                 {view === "month" && (
                   <button
                     onClick={() => setShowMonthShare(true)}
