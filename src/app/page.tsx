@@ -227,10 +227,12 @@ function HeroCalendar() {
 
   return (
     <div className="relative mx-auto w-full max-w-[440px]">
-      {/* Soft glow behind the card. */}
+      {/* Soft glow behind the card. Clipped to the card's own bounds
+          (inset-0 + matching rounded corners) so it doesn't bleed out
+          into the page below the calendar. */}
       <div
         aria-hidden
-        className="absolute -inset-6 -z-10 rounded-[32px] opacity-70"
+        className="absolute inset-0 -z-10 rounded-2xl opacity-70 overflow-hidden"
         style={{
           background:
             "radial-gradient(60% 60% at 70% 20%, rgba(45,212,191,0.18) 0%, rgba(45,212,191,0) 70%)",
