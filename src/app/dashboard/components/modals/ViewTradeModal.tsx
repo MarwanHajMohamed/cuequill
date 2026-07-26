@@ -292,6 +292,13 @@ export default function ViewTradeModal({
                 }
                 .notes-display a { color: #5eead4; text-decoration: underline; }
                 .notes-display p { margin: 0.25em 0; }
+                .notes-display blockquote {
+                  margin: 0.5em 0;
+                  padding: 0.25em 0.75em;
+                  border-left: 3px solid rgb(20 184 166 / 0.55);
+                  color: rgb(var(--fg-rgb) / 0.85);
+                  font-style: italic;
+                }
               `}</style>
             </div>
           )}

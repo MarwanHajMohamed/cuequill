@@ -6,12 +6,31 @@ import { useSession } from "next-auth/react";
 import React, { useState, useEffect } from "react";
 import { getMarketDay, isMarketOpenAt } from "@/lib/marketHolidays";
 
-// New-York "now" for market-hour math. Returns a Date whose getHours /
-// getDay etc. read out the wall-clock time in America/New_York.
-const getNyNow = () =>
-  new Date(
-    new Date().toLocaleString("en-US", { timeZone: "America/New_York" }),
-  );
+// Returns a Date whose getHours / getDay etc. read out the wall-clock
+// time in the given IANA timezone. Used both for NY-based market math
+// and for the user-local greeting.
+const getNowIn = (tz: string) =>
+  new Date(new Date().toLocaleString("en-US", { timeZone: tz }));
+
+const getNyNow = () => getNowIn("America/New_York");
+
+// Short display label for the user's timezone (e.g. "BST", "PDT",
+// "GMT+1"). Falls back to the trailing IANA segment ("New_York" →
+// "New York") if Intl doesn't return a name part.
+const tzLabel = (tz: string): string => {
+  try {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz,
+      timeZoneName: "short",
+    }).formatToParts(new Date());
+    const name = parts.find((p) => p.type === "timeZoneName")?.value;
+    if (name) return name;
+  } catch {
+    /* fall through */
+  }
+  const tail = tz.split("/").pop() ?? tz;
+  return tail.replace(/_/g, " ");
+};
 
 // Compute the next market open or close as a relative duration string
 // (e.g. "Opens in 2h 14m" / "Closes in 47m"). Returns null on weekends.
@@ -92,10 +111,16 @@ export default function Time() {
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
   const { data: session } = useSession();
   const name = session?.user.firstname;
+  const userTz =
+    session?.user.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const userTzLabel = tzLabel(userTz);
   const countdown = useMarketCountdown();
 
   useEffect(() => {
-    const updateTime = () => setCurrentTime(getNyNow());
+    // Greeting reads out the USER's wall-clock hour (not NY's), so
+    // London at 2pm doesn't get "Good morning" because it's still
+    // 9am ET. Re-derived when the user's tz changes.
+    const updateTime = () => setCurrentTime(getNowIn(userTz));
     updateTime();
 
     const msUntilNextMinute =
@@ -107,7 +132,7 @@ export default function Time() {
     }, msUntilNextMinute);
 
     return () => clearTimeout(timeout);
-  }, []);
+  }, [userTz]);
 
   if (!currentTime) {
     return (
@@ -182,13 +207,14 @@ export default function Time() {
           transition={{ duration: 0.4, delay: 0.06, ease: "easeOut" }}
           className="flex flex-col gap-1 md:items-end"
         >
-          {/* Big NY clock */}
+          {/* Big clock — user's own timezone, labelled with their
+              tz's short name (BST / PDT / GMT+1 / …). */}
           <div className="flex items-baseline gap-2">
             <div className="text-2xl md:text-3xl font-light tracking-tight tabular-nums text-white">
               <TimezoneDisplay showSeconds={false} />
             </div>
             <div className="text-[11px] text-white/40 uppercase tracking-wider">
-              NY
+              {userTzLabel}
             </div>
           </div>
 

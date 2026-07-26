@@ -846,17 +846,28 @@ function BreakdownTable({
   );
 }
 
-// Eased 0 → target count-up; re-runs whenever `target` changes (e.g. on a
-// month switch), so the headline number animates each time.
+// Eased tween towards `target`. Starts from the previously-rendered
+// value (or straight at `target` on first mount), so the first paint
+// never shows the wrong sign — the old `useState(0)` would flash
+// "+$0.00" for one frame on a negative target, then invert to red.
 function useCountUp(target: number, durationMs = 900) {
-  const [v, setV] = useState(0);
+  const [v, setV] = useState(target);
+  const vRef = useRef(target);
+  vRef.current = v;
+  const firstRun = useRef(true);
   useEffect(() => {
+    if (firstRun.current) {
+      firstRun.current = false;
+      setV(target);
+      return;
+    }
     let raf: number;
+    const from = vRef.current;
     const start = performance.now();
     const tick = (now: number) => {
       const t = Math.min(1, (now - start) / durationMs);
       const eased = 1 - Math.pow(1 - t, 3);
-      setV(target * eased);
+      setV(from + (target - from) * eased);
       if (t < 1) raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
@@ -2256,12 +2267,20 @@ export default function Statistics({
 
           // Month-over-month: realized net for the previous month (closed
           // trades attributed to their exit month), and the delta vs it.
+          // Compare the stored ISO date STRING's yyyy-MM prefix rather
+          // than `new Date(str).getMonth()` — date-only strings ("2025-08-01")
+          // parse as UTC midnight, so `.getMonth()` shifts an August-1 trade
+          // into July for anyone west of UTC. The string prefix reflects the
+          // date the user actually saw when they entered / imported the trade.
           const prevM = date.monthIndex === 0 ? 11 : date.monthIndex - 1;
           const prevY = date.monthIndex === 0 ? year - 1 : year;
+          const prevYMPrefix = `${prevY}-${String(prevM + 1).padStart(2, "0")}`;
           const prevMonthClosed = dataIgnoringDateRange.filter((t) => {
             if (t.status !== "WIN" && t.status !== "LOSS") return false;
-            const d = new Date(t.dateClosed ? t.dateClosed : t.dateBought);
-            return d.getMonth() === prevM && d.getFullYear() === prevY;
+            const dateStr = t.dateClosed || t.dateBought;
+            return (
+              typeof dateStr === "string" && dateStr.startsWith(prevYMPrefix)
+            );
           });
           const prevMonthNet = prevMonthClosed.reduce(
             (s, t) => s + tradeNetPL(t),

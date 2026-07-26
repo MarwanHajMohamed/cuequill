@@ -462,6 +462,13 @@ function DescriptionDisplay({ html }: { html: string }) {
         .strategy-desc p { margin: 0.35em 0; }
         .strategy-desc img { max-width: 100%; height: auto; border-radius: 8px; margin: 0.5em 0; display: block; }
         .strategy-desc a { color: #5eead4; text-decoration: underline; }
+        .strategy-desc blockquote {
+          margin: 0.5em 0;
+          padding: 0.25em 0.75em;
+          border-left: 3px solid rgb(20 184 166 / 0.55);
+          color: rgb(var(--fg-rgb) / 0.85);
+          font-style: italic;
+        }
       `}</style>
     </div>
   );

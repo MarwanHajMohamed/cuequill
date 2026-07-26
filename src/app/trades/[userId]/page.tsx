@@ -101,46 +101,60 @@ const PAGE_SIZES = [15, 25, 50, 100];
 // Where the floating sticky header pins beneath the viewport top.
 const TRADES_STICKY_TOP = 8;
 
-// Comparable value for a column when sorting. Numbers sort numerically,
-// strings alphabetically; open trades (no realized figure) sort to the
-// bottom for the P/L-style columns.
-function sortValue(key: TradeColumnKey, t: Trade): number | string {
+// Comparable value for a column when sorting. Returns `{ missing }` so
+// the comparator can push nullish rows to the end regardless of sort
+// direction — using a sentinel like `-Infinity` only stays at the
+// bottom when the column is desc, so ascending clicks were surfacing
+// every open trade at the top.
+type SortValue = { missing: boolean; value: number | string };
+const present = (value: number | string): SortValue => ({
+  missing: false,
+  value,
+});
+const missing: SortValue = { missing: true, value: 0 };
+
+function sortValue(key: TradeColumnKey, t: Trade): SortValue {
   const closed = t.status === "WIN" || t.status === "LOSS";
   switch (key) {
     case "symbol":
-      return t.symbol ?? "";
+      return present(t.symbol ?? "");
     case "option":
-      return t.option ?? "";
+      return present(t.option ?? "");
     case "status":
-      return t.status ?? "";
+      return present(t.status ?? "");
     case "strategy":
-      return t.strategy ?? "";
+      return present(t.strategy ?? "");
     case "netpl":
-      return closed ? tradeNetPL(t) : -Infinity;
+      return closed ? present(tradeNetPL(t)) : missing;
     case "change":
-      return closed && t.contractPrice
-        ? ((Number(t.closingContractPrice) - t.contractPrice) /
-            t.contractPrice) *
-            100
-        : -Infinity;
+      return closed && t.contractPrice && t.closingContractPrice != null
+        ? present(
+            ((t.closingContractPrice - t.contractPrice) / t.contractPrice) *
+              100,
+          )
+        : missing;
     case "contractPrice":
-      return t.contractPrice ?? 0;
+      return t.contractPrice == null ? missing : present(t.contractPrice);
     case "qty":
-      return t.qty ?? 0;
+      return t.qty == null ? missing : present(t.qty);
     case "strike":
-      return t.strike ?? 0;
+      return t.strike == null || t.strike === 0 ? missing : present(t.strike);
     case "closingContractPrice":
-      return t.closingContractPrice ?? -Infinity;
+      return t.closingContractPrice == null
+        ? missing
+        : present(t.closingContractPrice);
     case "dateBought":
-      return new Date(t.dateBought).getTime();
+      return present(new Date(t.dateBought).getTime());
     case "expiryDate":
-      return new Date(t.expiryDate).getTime();
+      return present(new Date(t.expiryDate).getTime());
     case "dateClosed":
-      return t.dateClosed ? new Date(t.dateClosed).getTime() : -Infinity;
+      return t.dateClosed
+        ? present(new Date(t.dateClosed).getTime())
+        : missing;
     case "notes":
-      return t.notes ? 1 : 0;
+      return present(t.notes ? 1 : 0);
     default:
-      return "";
+      return present("");
   }
 }
 
@@ -212,7 +226,8 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
       setSortDir(
         NUMERIC_COLUMNS.has(key) ||
           key === "dateBought" ||
-          key === "expiryDate"
+          key === "expiryDate" ||
+          key === "dateClosed"
           ? "desc"
           : "asc",
       );
@@ -234,7 +249,13 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
   } | null>(null);
   const [headColW, setHeadColW] = useState<number[]>([]);
   const [headTableW, setHeadTableW] = useState(0);
-  const [headScrollLeft, setHeadScrollLeft] = useState(0);
+  // The clone's horizontal offset follows the wrapper's scrollLeft, but
+  // we don't want that to re-render the whole page on every scroll frame.
+  // Instead we keep it in a ref and write the translate directly to the
+  // clone's inner div (see `translateRef` below). setState is used only
+  // when the clone first appears, to seed the initial transform.
+  const headScrollLeftRef = useRef(0);
+  const cloneTranslateRef = useRef<HTMLDivElement | null>(null);
 
   // ── Merge state ────────────────────────────────────────────────────
   // Selection mode: shows a checkbox column and turns row clicks into
@@ -544,10 +565,14 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
     return [...filteredTrades].sort((a, b) => {
       const va = sortValue(sortKey, a);
       const vb = sortValue(sortKey, b);
+      // Missing rows always land at the bottom, regardless of direction.
+      if (va.missing && !vb.missing) return 1;
+      if (!va.missing && vb.missing) return -1;
+      if (va.missing && vb.missing) return 0;
       const cmp =
-        typeof va === "number" && typeof vb === "number"
-          ? va - vb
-          : String(va).localeCompare(String(vb));
+        typeof va.value === "number" && typeof vb.value === "number"
+          ? va.value - vb.value
+          : String(va.value).localeCompare(String(vb.value));
       return cmp * dir;
     });
   }, [filteredTrades, sortKey, sortDir]);
@@ -580,7 +605,11 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
         return { left, width };
       });
     };
-    const onWrapScroll = () => setHeadScrollLeft(wrap.scrollLeft);
+    const onWrapScroll = () => {
+      headScrollLeftRef.current = wrap.scrollLeft;
+      const el = cloneTranslateRef.current;
+      if (el) el.style.transform = `translateX(${-wrap.scrollLeft}px)`;
+    };
     measure();
     update();
     window.addEventListener("scroll", update, { passive: true });
@@ -1300,11 +1329,12 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
 
                   {/* Floating header clone — pinned beneath the viewport top
                       once the real header scrolls away, matching column
-                      widths and following horizontal scroll. Visual only. */}
+                      widths and following horizontal scroll. Clicks on
+                      the cloned <th>s trigger sorting so the user
+                      doesn't need to scroll back to the real thead. */}
                   {headClone &&
                     createPortal(
                       <div
-                        aria-hidden
                         style={{
                           position: "fixed",
                           top: TRADES_STICKY_TOP,
@@ -1312,7 +1342,6 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                           width: headClone.width,
                           overflow: "hidden",
                           zIndex: 20,
-                          pointerEvents: "none",
                           background: "rgb(var(--bg-rgb))",
                         }}
                       >
@@ -1320,8 +1349,11 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                           className="rounded-t-2xl border border-b-0 border-white/10 bg-white/[0.03] box-border overflow-hidden px-2 md:px-3 pt-2 md:pt-3"
                         >
                           <div
-                            style={{
-                              transform: `translateX(${-headScrollLeft}px)`,
+                            ref={(el) => {
+                              cloneTranslateRef.current = el;
+                              if (el) {
+                                el.style.transform = `translateX(${-headScrollLeftRef.current}px)`;
+                              }
                             }}
                           >
                             <table
@@ -1340,12 +1372,18 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                                   {visibleColumns.map((key, ci) => {
                                     const numeric = NUMERIC_COLUMNS.has(key);
                                     const sorted = sortKey === key;
+                                    const isSortable = key !== "notes";
                                     return (
                                       <th
                                         key={key}
+                                        onClick={
+                                          isSortable
+                                            ? () => handleSort(key)
+                                            : undefined
+                                        }
                                         className={`${ci === 0 ? "pl-1 pr-1 md:pr-1.5" : "px-1 md:px-1.5"} py-2 whitespace-nowrap md:text-[11px] text-[10px] ${numeric ? "text-right" : "text-left"} tracking-[0.04em] font-medium ${
                                           sorted ? "text-white/80" : "text-white/40"
-                                        }`}
+                                        } ${isSortable ? "cursor-pointer hover:text-white/70" : ""}`}
                                       >
                                         <span
                                           className={`inline-flex items-center gap-1 ${

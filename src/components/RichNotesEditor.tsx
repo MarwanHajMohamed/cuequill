@@ -42,11 +42,66 @@ export default function RichNotesEditor({
   const [overlayTick, setOverlayTick] = useState(0);
 
   // Apply a document-level rich-text command to the current selection
-  // and push the new innerHTML up.
+  // and push the new innerHTML up. styleWithCSS makes size/colour
+  // wrap the selection in `<span style="…">` rather than the legacy
+  // `<font>` tag, so the styles round-trip cleanly through storage.
   const exec = (cmd: string, arg?: string) => {
     editorRef.current?.focus();
+    try {
+      document.execCommand("styleWithCSS", false, "true");
+    } catch {
+      /* older engines don't ack styleWithCSS — fine, fallback still runs */
+    }
     document.execCommand(cmd, false, arg);
     onChange(editorRef.current?.innerHTML ?? "");
+  };
+
+  // Wrap the selection in a `<span style="font-size: Xpx">` so the
+  // size shows up literally in stored HTML. execCommand("fontSize")
+  // only accepts the legacy 1–7 scale (browsers map it to CSS named
+  // sizes, not pixels), so drop down to Selection/Range directly.
+  const applyFontSize = (px: number) => {
+    const el = editorRef.current;
+    if (!el) return;
+    el.focus();
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
+    const range = sel.getRangeAt(0);
+    // Only wrap if the selection actually lives inside the editor —
+    // otherwise the user picked a size with focus elsewhere.
+    if (!el.contains(range.commonAncestorContainer)) return;
+    const span = document.createElement("span");
+    span.style.fontSize = `${px}px`;
+    span.appendChild(range.extractContents());
+    range.insertNode(span);
+    // Re-select the wrapped content so a follow-up format applies to
+    // the same range without a manual re-select.
+    sel.removeAllRanges();
+    const next = document.createRange();
+    next.selectNodeContents(span);
+    sel.addRange(next);
+    onChange(el.innerHTML);
+  };
+
+  // Insert / clear a hyperlink on the selection.
+  const insertLink = () => {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) {
+      // Nothing selected → give the user a hint rather than silently
+      // dropping the click.
+      alert("Select some text first, then click Link.");
+      return;
+    }
+    const current = (sel.anchorNode?.parentElement as HTMLElement | null)
+      ?.closest("a")
+      ?.getAttribute("href");
+    const url = window.prompt("Link URL", current ?? "https://");
+    if (url === null) return;
+    if (url === "") {
+      exec("unlink");
+      return;
+    }
+    exec("createLink", url);
   };
 
   // Read an image file as a base64 data URL and insert it inline.
@@ -138,6 +193,33 @@ export default function RichNotesEditor({
     <div className="flex flex-col min-h-0 h-full rounded-xl border border-white/10 focus-within:border-white/20 overflow-hidden transition">
       {!hideToolbar && (
         <div className="px-2 md:px-3 py-1.5 border-b border-white/[0.06] flex items-center gap-1 flex-wrap bg-white/[0.02]">
+          {/* Font size — direct pixel values. Wraps the selection in
+              a `<span style="font-size: Xpx">` so the number the user
+              picks matches what's stored and rendered. */}
+          <select
+            aria-label="Font size"
+            title="Font size"
+            defaultValue=""
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v) {
+                applyFontSize(Number(v));
+                e.target.value = "";
+              }
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+            className="h-8 rounded-md px-2 text-[12px] bg-transparent text-white/70 hover:text-white hover:bg-white/[0.06] focus:outline-none cursor-pointer border-0"
+          >
+            <option value="" disabled>
+              Size
+            </option>
+            {[10, 12, 14, 16, 18, 20, 24, 28, 32, 40, 48].map((px) => (
+              <option key={px} value={px}>
+                {px}
+              </option>
+            ))}
+          </select>
+          <ToolbarSeparator />
           <ToolbarButton
             icon="fa-solid fa-bold"
             label="Bold"
@@ -153,11 +235,37 @@ export default function RichNotesEditor({
             label="Underline"
             onClick={() => exec("underline")}
           />
+          <ToolbarButton
+            icon="fa-solid fa-strikethrough"
+            label="Strikethrough"
+            onClick={() => exec("strikeThrough")}
+          />
+          {/* Text colour — hidden input triggered by the paint-roller
+              icon. `input type="color"` gives a native swatch picker
+              on every platform. */}
+          <label
+            title="Text colour"
+            aria-label="Text colour"
+            onMouseDown={(e) => e.preventDefault()}
+            className="w-8 h-8 rounded-md flex items-center justify-center text-white/55 hover:text-white hover:bg-white/[0.06] transition cursor-pointer relative"
+          >
+            <i className="fa-solid fa-palette text-[12px]" />
+            <input
+              type="color"
+              className="absolute inset-0 opacity-0 cursor-pointer"
+              onChange={(e) => exec("foreColor", e.target.value)}
+            />
+          </label>
           <ToolbarSeparator />
           <ToolbarButton
             icon="fa-solid fa-heading"
             label="Heading"
             onClick={() => exec("formatBlock", "<h3>")}
+          />
+          <ToolbarButton
+            icon="fa-solid fa-quote-right"
+            label="Quote"
+            onClick={() => exec("formatBlock", "<blockquote>")}
           />
           <ToolbarButton
             icon="fa-solid fa-list-ul"
@@ -170,6 +278,27 @@ export default function RichNotesEditor({
             onClick={() => exec("insertOrderedList")}
           />
           <ToolbarSeparator />
+          <ToolbarButton
+            icon="fa-solid fa-align-left"
+            label="Align left"
+            onClick={() => exec("justifyLeft")}
+          />
+          <ToolbarButton
+            icon="fa-solid fa-align-center"
+            label="Align center"
+            onClick={() => exec("justifyCenter")}
+          />
+          <ToolbarButton
+            icon="fa-solid fa-align-right"
+            label="Align right"
+            onClick={() => exec("justifyRight")}
+          />
+          <ToolbarSeparator />
+          <ToolbarButton
+            icon="fa-solid fa-link"
+            label="Link"
+            onClick={insertLink}
+          />
           <ToolbarButton
             icon="fa-solid fa-image"
             label="Insert image"
@@ -251,6 +380,15 @@ export default function RichNotesEditor({
           color: #5eead4;
           text-decoration: underline;
         }
+        .notes-editor blockquote {
+          margin: 0.5em 0;
+          padding: 0.25em 0.75em;
+          border-left: 3px solid rgb(20 184 166 / 0.55);
+          color: rgb(var(--fg-rgb) / 0.85);
+          font-style: italic;
+        }
+        /* execCommand justify* writes text-align on the block wrapper. */
+        .notes-editor [style*="text-align"] { text-align: inherit; }
       `}</style>
     </div>
   );
