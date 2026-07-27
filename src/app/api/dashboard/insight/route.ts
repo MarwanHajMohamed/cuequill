@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
   await connectDb();
   const user = await User.findById(session.user.id)
     .select(
-      "isPro chatDailyDate chatDailyCount chatMonth chatMonthTokens dashInsightDate dashInsightText dashInsightAt",
+      "isPro chatDailyDate chatDailyCount chatMonth chatMonthTokens dashInsightDate dashInsightText dashInsightAt dashInsightRecent",
     )
     .lean<{
       isPro?: boolean;
@@ -86,6 +86,7 @@ export async function GET(req: NextRequest) {
       dashInsightDate?: string;
       dashInsightText?: string;
       dashInsightAt?: Date;
+      dashInsightRecent?: string[];
     }>();
   if (!user?.isPro) {
     return NextResponse.json(
@@ -169,13 +170,22 @@ export async function GET(req: NextRequest) {
     .filter(Boolean)
     .join("\n\n");
 
+  // Last N insights (newest first). Injected into the system prompt
+  // so the model steers clear of the same angle two days running.
+  const recent = (user.dashInsightRecent ?? []).slice(0, 14);
+  const recentBlock = recent.length
+    ? `\n\nRecent insights you've given this trader — do NOT repeat these or ` +
+      `say anything close in meaning (pick a different angle):\n` +
+      recent.map((r, i) => `${i + 1}. ${r}`).join("\n")
+    : "";
+
   let insight = "";
   let tokens = 0;
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
       model: "gemini-2.5-flash",
-      systemInstruction: `${INSIGHT_PROMPT}\n\nToday: ${today} (${tz}).`,
+      systemInstruction: `${INSIGHT_PROMPT}\n\nToday: ${today} (${tz}).${recentBlock}`,
     });
     const result = await model.generateContent(
       `TRADER SNAPSHOT\n---\n${context}\n---\n\nWrite today's insight.`,
@@ -202,12 +212,20 @@ export async function GET(req: NextRequest) {
   }
 
   const now = new Date();
+  // Push into the ring buffer, newest first, dedup against the very
+  // last entry (a manual refresh that produced the same text
+  // shouldn't fill two slots) and cap at 14.
+  const nextRecent = [
+    insight,
+    ...recent.filter((r, i) => !(i === 0 && r === insight)),
+  ].slice(0, 14);
   try {
     await User.findByIdAndUpdate(session.user.id, {
       $set: {
         dashInsightDate: today,
         dashInsightText: insight,
         dashInsightAt: now,
+        dashInsightRecent: nextRecent,
         chatDailyDate: dKey,
         chatDailyCount: usedToday + 1,
         chatMonth: mKey,

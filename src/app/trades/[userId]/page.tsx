@@ -14,7 +14,6 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import NotesModal from "../NotesModal";
 import ImportedTradesModal from "../ImportedTradesModal";
@@ -97,9 +96,6 @@ const NUMERIC_COLUMNS = new Set<TradeColumnKey>([
 
 // Page-size options for the trades table.
 const PAGE_SIZES = [15, 25, 50, 100];
-
-// Where the floating sticky header pins beneath the viewport top.
-const TRADES_STICKY_TOP = 8;
 
 // Comparable value for a column when sorting. Returns `{ missing }` so
 // the comparator can push nullish rows to the end regardless of sort
@@ -236,26 +232,6 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
 
   // Inline per-row delete confirmation (hover actions).
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-
-  // ── Floating sticky header ─────────────────────────────────────────
-  // The table lives in a horizontal-scroll wrapper, so a CSS-sticky header
-  // can't pin to the viewport. Instead a fixed clone of the header row is
-  // shown once the real header scrolls above TRADES_STICKY_TOP, matching the
-  // column widths and following the wrapper's horizontal scroll.
-  const theadRef = useRef<HTMLTableSectionElement>(null);
-  const [headClone, setHeadClone] = useState<{
-    left: number;
-    width: number;
-  } | null>(null);
-  const [headColW, setHeadColW] = useState<number[]>([]);
-  const [headTableW, setHeadTableW] = useState(0);
-  // The clone's horizontal offset follows the wrapper's scrollLeft, but
-  // we don't want that to re-render the whole page on every scroll frame.
-  // Instead we keep it in a ref and write the translate directly to the
-  // clone's inner div (see `translateRef` below). setState is used only
-  // when the clone first appears, to seed the initial transform.
-  const headScrollLeftRef = useRef(0);
-  const cloneTranslateRef = useRef<HTMLDivElement | null>(null);
 
   // ── Merge state ────────────────────────────────────────────────────
   // Selection mode: shows a checkbox column and turns row clicks into
@@ -576,67 +552,6 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
       return cmp * dir;
     });
   }, [filteredTrades, sortKey, sortDir]);
-
-  // Measure + position the floating header clone.
-  useEffect(() => {
-    const wrap = tableWrapRef.current;
-    const head = theadRef.current;
-    if (!wrap || !head) {
-      setHeadClone(null);
-      return;
-    }
-    const measure = () => {
-      const ths = Array.from(head.querySelectorAll("th")) as HTMLElement[];
-      setHeadColW(ths.map((th) => th.getBoundingClientRect().width));
-      const tbl = head.parentElement as HTMLElement | null;
-      if (tbl) setHeadTableW(tbl.getBoundingClientRect().width);
-    };
-    const update = () => {
-      const wrapRect = wrap.getBoundingClientRect();
-      const headRect = head.getBoundingClientRect();
-      const show =
-        headRect.top < TRADES_STICKY_TOP &&
-        wrapRect.bottom > TRADES_STICKY_TOP + headRect.height;
-      setHeadClone((prev) => {
-        if (!show) return prev ? null : prev;
-        const left = wrapRect.left;
-        const width = wrap.clientWidth;
-        if (prev && prev.left === left && prev.width === width) return prev;
-        return { left, width };
-      });
-    };
-    const onWrapScroll = () => {
-      headScrollLeftRef.current = wrap.scrollLeft;
-      const el = cloneTranslateRef.current;
-      if (el) el.style.transform = `translateX(${-wrap.scrollLeft}px)`;
-    };
-    measure();
-    update();
-    window.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
-    wrap.addEventListener("scroll", onWrapScroll, { passive: true });
-    const ro = new ResizeObserver(() => {
-      measure();
-      update();
-    });
-    ro.observe(wrap);
-    ro.observe(head);
-    return () => {
-      window.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
-      wrap.removeEventListener("scroll", onWrapScroll);
-      ro.disconnect();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    visibleColumns.join(","),
-    selectMode,
-    sortKey,
-    sortDir,
-    currentPage,
-    pageSize,
-    filteredTrades,
-  ]);
 
   if (isLoading)
     return (
@@ -1035,9 +950,8 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                   No trades match the current filters.
                 </div>
               ) : (
-                <>
                   <table className="border-collapse table-auto min-w-full">
-                    <thead ref={theadRef}>
+                    <thead>
                       <tr>
                         {/* Fixed quick-edit column — sits outside the
                             user-customisable column set so it can't be
@@ -1326,94 +1240,6 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                       </motion.tbody>
                     </AnimatePresence>
                   </table>
-
-                  {/* Floating header clone — pinned beneath the viewport top
-                      once the real header scrolls away, matching column
-                      widths and following horizontal scroll. Clicks on
-                      the cloned <th>s trigger sorting so the user
-                      doesn't need to scroll back to the real thead. */}
-                  {headClone &&
-                    createPortal(
-                      <div
-                        style={{
-                          position: "fixed",
-                          top: TRADES_STICKY_TOP,
-                          left: headClone.left,
-                          width: headClone.width,
-                          overflow: "hidden",
-                          zIndex: 20,
-                          background: "rgb(var(--bg-rgb))",
-                        }}
-                      >
-                        <div
-                          className="rounded-t-2xl border border-b-0 border-white/10 bg-white/[0.03] box-border overflow-hidden px-2 md:px-3 pt-2 md:pt-3"
-                        >
-                          <div
-                            ref={(el) => {
-                              cloneTranslateRef.current = el;
-                              if (el) {
-                                el.style.transform = `translateX(${-headScrollLeftRef.current}px)`;
-                              }
-                            }}
-                          >
-                            <table
-                              className="border-collapse"
-                              style={{ width: headTableW, tableLayout: "fixed" }}
-                            >
-                              <colgroup>
-                                {headColW.map((w, i) => (
-                                  <col key={i} style={{ width: w }} />
-                                ))}
-                              </colgroup>
-                              <thead>
-                                <tr>
-                                  <th className="pl-2 md:pl-3 pr-0 py-2" />
-                                  {selectMode && <th className="pl-1 pr-1 py-2" />}
-                                  {visibleColumns.map((key, ci) => {
-                                    const numeric = NUMERIC_COLUMNS.has(key);
-                                    const sorted = sortKey === key;
-                                    const isSortable = key !== "notes";
-                                    return (
-                                      <th
-                                        key={key}
-                                        onClick={
-                                          isSortable
-                                            ? () => handleSort(key)
-                                            : undefined
-                                        }
-                                        className={`${ci === 0 ? "pl-1 pr-1 md:pr-1.5" : "px-1 md:px-1.5"} py-2 whitespace-nowrap md:text-[11px] text-[10px] ${numeric ? "text-right" : "text-left"} tracking-[0.04em] font-medium ${
-                                          sorted ? "text-white/80" : "text-white/40"
-                                        } ${isSortable ? "cursor-pointer hover:text-white/70" : ""}`}
-                                      >
-                                        <span
-                                          className={`inline-flex items-center gap-1 ${
-                                            numeric ? "flex-row-reverse" : ""
-                                          }`}
-                                        >
-                                          {COLUMN_LABELS[key]}
-                                          {sorted && (
-                                            <i
-                                              className={`fa-solid ${
-                                                sortDir === "asc"
-                                                  ? "fa-arrow-up"
-                                                  : "fa-arrow-down"
-                                              } text-[8px] text-teal-300`}
-                                            />
-                                          )}
-                                        </span>
-                                      </th>
-                                    );
-                                  })}
-                                  <th className="pr-2 md:pr-3 pl-0 py-2" />
-                                </tr>
-                              </thead>
-                            </table>
-                          </div>
-                        </div>
-                      </div>,
-                      document.body,
-                    )}
-                </>
               )}
             </div>
             {filteredTrades?.length !== 0 && (

@@ -94,6 +94,11 @@ export interface IUser extends Document {
   dashInsightDate?: string; // yyyy-MM-dd (user's tz) the insight belongs to
   dashInsightText?: string;
   dashInsightAt?: Date; // when it was generated
+  // Ring buffer of the most recent insights (newest first, bounded to
+  // ~14 entries). Injected into the prompt as an "avoid repeating"
+  // list so QuillAI doesn't keep surfacing the same observation two
+  // days running.
+  dashInsightRecent?: string[];
   // One-time flag: the "Insight of the day" widget has been auto-inserted
   // into this (Pro) user's saved layout, so we never fight a later manual
   // removal by re-adding it.
@@ -164,6 +169,7 @@ const UserSchema = new Schema<IUser>({
   dashInsightDate: { type: String, default: "" },
   dashInsightText: { type: String, default: "" },
   dashInsightAt: { type: Date },
+  dashInsightRecent: { type: [String], default: [] },
   dashInsightMigrated: { type: Boolean, default: false },
 });
 
