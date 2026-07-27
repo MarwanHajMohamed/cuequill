@@ -41,8 +41,8 @@ const GROUPS: FeatureGroup[] = [
     items: [
       {
         title: "Manual entry",
-        body: "Symbol, direction, contract, qty, strike, dates, P/L. Fields validate as you type and the form remembers where you were the next time you open it.",
-        detail: "5 fields · ⌘+Enter to save",
+        body: "Symbol, direction, contract, qty, strike, open and close dates, entry and exit times, P/L. Fields validate as you type and the form remembers where you were the next time you open it.",
+        detail: "Full trade detail · with entry/exit times",
         tiers: ["Free", "Pro"],
       },
       {
@@ -53,8 +53,8 @@ const GROUPS: FeatureGroup[] = [
       },
       {
         title: "IBKR Flex auto-sync",
-        body: "Drop your Flex Web Service token in settings. Cuequill imports every fill weeknight after close, commissions and taxes folded in, duplicates flagged before they're saved.",
-        detail: "Nightly · ~3 min setup",
+        body: "Drop your Flex Web Service token in settings. Cuequill imports every fill weeknight after close — entry and exit times pulled from the fills, commissions and taxes folded in, duplicates flagged before they're saved.",
+        detail: "Nightly · times included · ~3 min setup",
         tiers: ["Pro"],
       },
       {
@@ -65,8 +65,8 @@ const GROUPS: FeatureGroup[] = [
       },
       {
         title: "Trade notes",
-        body: "A textarea per trade. ⌘+Enter saves; Esc closes. Word count and unsaved-state pill sit in the corner so you don't lose anything.",
-        detail: "Markdown supported",
+        body: "A rich editor per trade — headings, lists, links, and font sizing. A word count and an unsaved-changes pill sit in the corner so you never lose a line, whether you edit inline or in the quick-notes modal.",
+        detail: "Rich text · autosave-aware",
         tiers: ["Free", "Pro"],
       },
       {
@@ -90,8 +90,8 @@ const GROUPS: FeatureGroup[] = [
     items: [
       {
         title: "P/L calendar",
-        body: "Every trading day tinted by net P/L. Weekends collapsed, Fed days flagged, mobile swipe between months. Open a day and see what you did and why.",
-        detail: "Mon–Fri grid · Net of fees",
+        body: "Every trading day tinted by net P/L, with economic-event pills — Fed, CPI, and the rest — marked right on the day. Weekends collapsed, mobile swipe between months. Open a day and see what you did and why.",
+        detail: "Mon–Fri grid · economic pills · net of fees",
         tiers: ["Free", "Pro"],
       },
       {
@@ -102,15 +102,21 @@ const GROUPS: FeatureGroup[] = [
       },
       {
         title: "Statistics page",
-        body: "Expectancy, profit factor, win rate, R:R, streaks — the headline stats are free. On Pro, slice them by symbol and strategy, with a monthly section and equity curve.",
-        detail: "Core free · per-strategy & per-symbol on Pro",
+        body: "Expectancy, profit factor, win rate, R:R, streaks — the headline stats are free. On Pro, slice them by symbol and strategy, plus a monthly section with an animated net-P/L headline, a day-by-day heatmap, a daily-P/L strip, and a month-over-month trend.",
+        detail: "Core free · monthly heatmap & trend on Pro",
         tiers: ["Free", "Pro"],
       },
       {
         title: "Trades table",
-        body: "Reorder and hide columns. Filters slide in from the side and live in the URL — so you can share a view or come back to it. Pagination is keyboard-friendly.",
-        detail: "Customisable · URL-stateful",
+        body: "Sort any column, sticky header as you scroll, and a page-size control. Numbers are right-aligned, filters slide in from the side and live in the URL, and each row reveals a quick delete on hover. Date closed sits alongside the open date.",
+        detail: "Sortable · sticky header · URL-stateful",
         tiers: ["Free", "Pro"],
+      },
+      {
+        title: "Downloadable reports",
+        body: "Build performance, tax, and activity reports across any date range, then export to CSV. Filters live in a collapsible panel and the report header stays pinned while you scroll a long table.",
+        detail: "CSV export · date-scoped · Pro",
+        tiers: ["Pro"],
       },
       {
         title: "Dashboard insights",
@@ -236,9 +242,9 @@ const GROUPS: FeatureGroup[] = [
         tiers: ["Free", "Pro"],
       },
       {
-        title: "Keyboard shortcuts",
-        body: "⌘+Enter to save in any modal, Esc to close, slash-keys to jump between pages on desktop.",
-        detail: "Modal-aware",
+        title: "Collapsible sidebar",
+        body: "Collapse the navigation to give charts and tables the full width of the screen. Your choice is remembered across pages and reloads, and the layout snaps into place with no flash of the wrong state.",
+        detail: "Persists across pages",
         tiers: ["Free", "Pro"],
       },
       {
