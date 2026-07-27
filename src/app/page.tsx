@@ -238,7 +238,7 @@ function HeroCalendar() {
             "radial-gradient(60% 60% at 70% 20%, rgba(45,212,191,0.18) 0%, rgba(45,212,191,0) 70%)",
         }}
       />
-      <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5 shadow-[0_30px_80px_rgba(0,0,0,0.45)]">
+      <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5 shadow-[0_8px_40px_var(--shadow-soft)]">
         <div className="flex items-center justify-between mb-3">
           <div className="text-[12px] tracking-[0.1em] text-white/45 font-medium">
             This month
