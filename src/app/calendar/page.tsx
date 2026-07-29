@@ -574,66 +574,53 @@ function Page() {
 
     return (
       <>
-        {/* Extended mode — a single left-aligned overlay stack holding
-            earnings, expiry, then the econ pills, so on a narrow mobile
-            tile nothing competes for the top row with the Fed/CPI badges. */}
-        {detailed &&
-          (dayEarnings.length > 0 || dayExpiries.length > 0 || anyEcon) && (
-            <div
-              className={`relative flex flex-col items-start gap-0.5 max-w-full pt-6 pl-1.5 pr-1.5 ${
-                tradeCount > 0 ? "pb-12" : "pb-1.5"
-              }`}
-            >
-              {/* One pill per reporting company so a symbol never gets
-                  truncated — they stack in the left overlay column. Capped
-                  at 3 with a "+N" overflow so a busy day can't push the
-                  stack down into the P/L readout below. */}
-              {dayEarnings.slice(0, 3).map((e) => (
-                <span
-                  key={e.symbol}
-                  title={`Earnings: ${e.symbol}${e.isEstimate ? " (estimated date)" : ""}`}
-                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/40 text-[8.5px] md:text-[9.5px] font-bold tracking-wide leading-none"
-                >
-                  <i className="fa-solid fa-bullhorn text-[7px]" aria-hidden />
-                  {e.symbol}
-                  {e.isEstimate && (
-                    <span className="opacity-60 font-medium">est</span>
-                  )}
+        {/* All day badges live in one right-aligned column, top-right —
+            earnings and expiry pills (extended mode only) above the econ
+            pills. Right-aligned so the stack stays clear of the P/L readout
+            pinned bottom-left, without having to grow the tile. */}
+        {(dayEarnings.length > 0 || dayExpiries.length > 0 || anyEcon) && (
+          <div className="absolute top-7 right-1 md:top-1 flex flex-col items-end gap-0.5 max-w-[85%]">
+            {/* One pill per reporting company so a symbol never gets
+                truncated. Capped at 3 with a "+N" overflow. */}
+            {dayEarnings.slice(0, 3).map((e) => (
+              <span
+                key={e.symbol}
+                title={`Earnings: ${e.symbol}${e.isEstimate ? " (estimated date)" : ""}`}
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/40 text-[8.5px] md:text-[9.5px] font-bold tracking-wide leading-none"
+              >
+                <i className="fa-solid fa-bullhorn text-[7px]" aria-hidden />
+                {e.symbol}
+                {e.isEstimate && (
+                  <span className="opacity-60 font-medium">est</span>
+                )}
+              </span>
+            ))}
+            {dayEarnings.length > 3 && (
+              <span
+                title={`Also reporting: ${dayEarnings
+                  .slice(3)
+                  .map((e) => e.symbol)
+                  .join(", ")}`}
+                className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-teal-500/15 text-teal-300/80 border border-teal-500/30 text-[8.5px] md:text-[9.5px] font-bold tracking-wide leading-none"
+              >
+                +{dayEarnings.length - 3}
+              </span>
+            )}
+            {dayExpiries.length > 0 && (
+              <span
+                title={`Open positions expiring: ${dayExpiries.join(", ")}`}
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/40 text-[8.5px] md:text-[9.5px] font-bold tracking-wide leading-none max-w-full"
+              >
+                <i
+                  className="fa-solid fa-hourglass-end text-[7px]"
+                  aria-hidden
+                />
+                <span className="truncate">
+                  {dayExpiries.slice(0, 2).join(" ")}
+                  {dayExpiries.length > 2 && ` +${dayExpiries.length - 2}`}
                 </span>
-              ))}
-              {dayEarnings.length > 3 && (
-                <span
-                  title={`Also reporting: ${dayEarnings
-                    .slice(3)
-                    .map((e) => e.symbol)
-                    .join(", ")}`}
-                  className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-teal-500/15 text-teal-300/80 border border-teal-500/30 text-[8.5px] md:text-[9.5px] font-bold tracking-wide leading-none"
-                >
-                  +{dayEarnings.length - 3}
-                </span>
-              )}
-              {dayExpiries.length > 0 && (
-                <span
-                  title={`Open positions expiring: ${dayExpiries.join(", ")}`}
-                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/40 text-[8.5px] md:text-[9.5px] font-bold tracking-wide leading-none max-w-full"
-                >
-                  <i
-                    className="fa-solid fa-hourglass-end text-[7px]"
-                    aria-hidden
-                  />
-                  <span className="truncate">
-                    {dayExpiries.slice(0, 2).join(" ")}
-                    {dayExpiries.length > 2 && ` +${dayExpiries.length - 2}`}
-                  </span>
-                </span>
-              )}
-              {econBadges}
-            </div>
-          )}
-        {/* Default (non-extended) — econ badges stay top-right, stacked so a
-            day with several (e.g. Fed + CPI) doesn't pile them up. */}
-        {!detailed && anyEcon && (
-          <div className="absolute top-7 right-1 md:top-1 flex flex-col items-end gap-0.5">
+              </span>
+            )}
             {econBadges}
           </div>
         )}
