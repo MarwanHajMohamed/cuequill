@@ -640,9 +640,6 @@ function Page() {
             </span>
           </>
         )}
-        {isToday && (
-          <span className="absolute top-2 right-1 w-1.5 h-1.5 rounded-full bg-blue-400" />
-        )}
         {/* Bottom-left: P/L, trade count, then W/L bars underneath */}
         {tradeCount > 0 && (
           <div className="absolute bottom-1.5 left-1.5 right-1.5 flex flex-col items-start gap-1 text-[10px] md:text-xs">
