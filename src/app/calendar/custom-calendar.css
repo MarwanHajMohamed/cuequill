@@ -302,6 +302,29 @@
 }
 
 
+/* ─── Extended (earnings) mode: let tiles grow ───────────────────────
+   In extended mode a day's earnings / expiry / econ pills render in
+   normal flow, so the tile must be allowed to grow to fit them (instead
+   of the fixed, overflow-hidden day cell) — otherwise the pills would
+   overlap the P/L readout pinned at the bottom. Applies on every screen
+   size; the mobile block below only bumps the minimum row height. */
+.react-calendar.custom-calendar_full-view.calendar-detailed
+  .react-calendar__month-view__days {
+  grid-auto-rows: minmax(110px, auto) !important;
+  overflow: visible !important;
+}
+.react-calendar.custom-calendar_full-view.calendar-detailed
+  .react-calendar__month-view {
+  overflow: visible !important;
+}
+.react-calendar.custom-calendar_full-view.calendar-detailed
+  .react-calendar__month-view__days
+  button {
+  height: auto !important;
+  min-height: 110px;
+  overflow: visible !important;
+}
+
 /* ─── Mobile: extended (earnings) mode ───────────────────────────────
    In extended mode the tiles carry earnings / expiry chips, so the
    "fit the whole month into the viewport" sizing crams everything

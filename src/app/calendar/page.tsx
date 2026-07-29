@@ -579,7 +579,11 @@ function Page() {
             tile nothing competes for the top row with the Fed/CPI badges. */}
         {detailed &&
           (dayEarnings.length > 0 || dayExpiries.length > 0 || anyEcon) && (
-            <div className="absolute top-7 left-1.5 flex flex-col items-start gap-0.5 max-w-[85%]">
+            <div
+              className={`relative flex flex-col items-start gap-0.5 max-w-full pt-6 pl-1.5 pr-1.5 ${
+                tradeCount > 0 ? "pb-12" : "pb-1.5"
+              }`}
+            >
               {/* One pill per reporting company so a symbol never gets
                   truncated — they stack in the left overlay column. Capped
                   at 3 with a "+N" overflow so a busy day can't push the
