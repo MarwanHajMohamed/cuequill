@@ -85,7 +85,7 @@ function Page() {
   ];
 
   return (
-    <div className="w-full flex flex-col md:items-start min-h-screen pb-16">
+    <div className="w-full flex justify-center min-h-screen pb-24">
       {/* Aurora */}
       <div
         aria-hidden
@@ -96,11 +96,14 @@ function Page() {
         }}
       />
 
-      <div className="w-full max-w-[1100px] mt-30 md:mt-10 px-5 md:px-10">
-        {/* Card */}
-        <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md overflow-hidden flex flex-col md:flex-row">
-          {/* Tabs */}
-          <nav className="md:w-56 md:shrink-0 md:border-r border-b md:border-b-0 border-white/10 p-2 flex md:flex-col overflow-x-auto">
+      <div className="w-full max-w-[1500px] px-5 md:px-8 pt-24 md:pt-12 flex flex-col">
+        <header className="pb-6 border-b border-white/10">
+          <h1 className="text-[24px] font-semibold tracking-tight">Settings</h1>
+        </header>
+
+        <div className="mt-6 flex flex-col md:flex-row gap-6 md:gap-10">
+          {/* Nav rail — sticky on desktop, a horizontal scroller on mobile */}
+          <nav className="md:w-56 md:shrink-0 flex md:flex-col gap-1 overflow-x-auto md:overflow-visible md:sticky md:top-12 md:self-start">
             {settingsTabs.map((tab) => {
               const active = selectedSetting === tab.title;
               return (
@@ -123,7 +126,7 @@ function Page() {
           </nav>
 
           {/* Content */}
-          <div className="flex-1 min-w-0 min-h-[520px]">
+          <div className="flex-1 min-w-0 min-h-[520px] rounded-2xl border border-white/10 bg-white/[0.02] md:backdrop-blur-md overflow-hidden">
             {settingsTabs.map((tab) =>
               selectedSetting === tab.title ? (
                 <div key={tab.title}>{tab.content}</div>
