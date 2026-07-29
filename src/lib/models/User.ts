@@ -21,6 +21,9 @@ export interface IUser extends Document {
   riskPerTrade?: number;
   avatarColor?: string;
   avatarFrame?: string;
+  // App-wide accent pack id (recolours teal→accent across the UI). A
+  // level-gated reward; defaults to "teal".
+  accentColor?: string;
   ibkrToken: string;
   ibkrQueryId: string;
   ibkrLastSync: Date;
@@ -155,6 +158,7 @@ const UserSchema = new Schema<IUser>({
   riskPerTrade: { type: Number },
   avatarColor: { type: String, default: "teal" },
   avatarFrame: { type: String, default: "none" },
+  accentColor: { type: String, default: "teal" },
   ibkrToken: { type: String },
   ibkrQueryId: { type: String },
   ibkrLastSync: { type: Date },

@@ -8,6 +8,7 @@ import bcrypt from "bcryptjs";
 import Trade from "@/lib/models/Trade";
 import { CHALLENGES, levelInfo, type EvalTrade } from "@/lib/challenges";
 import { availableTitles, type TrophyStats } from "@/lib/trophies";
+import { normalizeAccent } from "@/lib/accents";
 
 // GET /api/user/profile — display preferences + read-only account info.
 export async function GET() {
@@ -18,7 +19,7 @@ export async function GET() {
 
   await connectDb();
   const user = await User.findById(session.user.id).select(
-    "currency startingBalance riskPerTrade avatarColor avatarFrame equippedTitle xp isPro proManualOverride stripeCurrentPeriodEnd stripeCancelAtPeriodEnd",
+    "currency startingBalance riskPerTrade avatarColor avatarFrame accentColor equippedTitle xp isPro proManualOverride stripeCurrentPeriodEnd stripeCancelAtPeriodEnd",
   );
   if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -30,6 +31,7 @@ export async function GET() {
     riskPerTrade: user.riskPerTrade ?? null,
     avatarColor: user.avatarColor ?? "teal",
     avatarFrame: user.avatarFrame ?? "none",
+    accentColor: user.accentColor ?? "teal",
     equippedTitle: user.equippedTitle ?? "",
     ...levelInfo(user.xp ?? 0),
     isPro: !!user.isPro,
@@ -65,6 +67,7 @@ export async function PATCH(req: Request) {
     riskPerTrade?: number | null;
     avatarColor?: string;
     avatarFrame?: string;
+    accentColor?: string;
     equippedTitle?: string;
   };
   try {
@@ -184,6 +187,9 @@ export async function PATCH(req: Request) {
   if (body.avatarFrame !== undefined) {
     user.avatarFrame = String(body.avatarFrame).slice(0, 20);
   }
+  if (body.accentColor !== undefined) {
+    user.accentColor = normalizeAccent(String(body.accentColor));
+  }
   if (body.equippedTitle !== undefined) {
     const wanted = String(body.equippedTitle).trim();
     if (wanted === "") {
@@ -242,6 +248,7 @@ export async function PATCH(req: Request) {
     riskPerTrade: user.riskPerTrade ?? null,
     avatarColor: user.avatarColor,
     avatarFrame: user.avatarFrame,
+    accentColor: user.accentColor,
     equippedTitle: user.equippedTitle ?? "",
   });
 }

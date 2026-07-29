@@ -82,6 +82,167 @@
   --color-rose-300: #be123c;
 }
 
+/* ── Accent packs ──────────────────────────────────────────────────────
+   The whole UI is painted with teal-* utilities (+ emerald-* as the
+   companion in gradients), which Tailwind compiles to var(--color-teal-*)
+   / var(--color-emerald-*). Selecting an accent sets data-accent on <html>
+   and we remap those variables to the pack's hue — recolouring buttons,
+   links, active states, rings and chips app-wide with no per-callsite work.
+
+   Two contexts per pack, mirroring the light theme's own teal overrides:
+   - dark ([data-accent]) remaps the full 100–600 range;
+   - light (.light[data-accent]) darkens only the pale 200/300/400 shades
+     (and emerald 300/400) so they stay legible on white, leaving 500/600
+     at their saturated dark-mode values exactly as the default does.
+   `teal` is the default and needs no block. */
+
+/* Violet */
+:root[data-accent="violet"] {
+  --color-teal-100: #ede9fe;
+  --color-teal-200: #ddd6fe;
+  --color-teal-300: #c4b5fd;
+  --color-teal-400: #a78bfa;
+  --color-teal-500: #8b5cf6;
+  --color-teal-600: #7c3aed;
+  --color-emerald-300: #f0abfc;
+  --color-emerald-400: #e879f9;
+  --color-emerald-500: #d946ef;
+  --color-emerald-600: #c026d3;
+}
+:root.light[data-accent="violet"] {
+  --color-teal-200: #5b21b6;
+  --color-teal-300: #6d28d9;
+  --color-teal-400: #7c3aed;
+  --color-emerald-300: #a21caf;
+  --color-emerald-400: #c026d3;
+}
+
+/* Ocean (blue + cyan) */
+:root[data-accent="ocean"] {
+  --color-teal-100: #dbeafe;
+  --color-teal-200: #bfdbfe;
+  --color-teal-300: #93c5fd;
+  --color-teal-400: #60a5fa;
+  --color-teal-500: #3b82f6;
+  --color-teal-600: #2563eb;
+  --color-emerald-300: #67e8f9;
+  --color-emerald-400: #22d3ee;
+  --color-emerald-500: #06b6d4;
+  --color-emerald-600: #0891b2;
+}
+:root.light[data-accent="ocean"] {
+  --color-teal-200: #1e40af;
+  --color-teal-300: #1d4ed8;
+  --color-teal-400: #2563eb;
+  --color-emerald-300: #0e7490;
+  --color-emerald-400: #0891b2;
+}
+
+/* Rose (rose + pink) */
+:root[data-accent="rose"] {
+  --color-teal-100: #ffe4e6;
+  --color-teal-200: #fecdd3;
+  --color-teal-300: #fda4af;
+  --color-teal-400: #fb7185;
+  --color-teal-500: #f43f5e;
+  --color-teal-600: #e11d48;
+  --color-emerald-300: #f9a8d4;
+  --color-emerald-400: #f472b6;
+  --color-emerald-500: #ec4899;
+  --color-emerald-600: #db2777;
+}
+:root.light[data-accent="rose"] {
+  --color-teal-200: #9f1239;
+  --color-teal-300: #be123c;
+  --color-teal-400: #e11d48;
+  --color-emerald-300: #be185d;
+  --color-emerald-400: #db2777;
+}
+
+/* Sunset (amber + orange) */
+:root[data-accent="sunset"] {
+  --color-teal-100: #fef3c7;
+  --color-teal-200: #fde68a;
+  --color-teal-300: #fcd34d;
+  --color-teal-400: #fbbf24;
+  --color-teal-500: #f59e0b;
+  --color-teal-600: #d97706;
+  --color-emerald-300: #fdba74;
+  --color-emerald-400: #fb923c;
+  --color-emerald-500: #f97316;
+  --color-emerald-600: #ea580c;
+}
+:root.light[data-accent="sunset"] {
+  --color-teal-200: #92400e;
+  --color-teal-300: #b45309;
+  --color-teal-400: #d97706;
+  --color-emerald-300: #c2410c;
+  --color-emerald-400: #ea580c;
+}
+
+/* Forest (emerald + green) */
+:root[data-accent="forest"] {
+  --color-teal-100: #d1fae5;
+  --color-teal-200: #a7f3d0;
+  --color-teal-300: #6ee7b7;
+  --color-teal-400: #34d399;
+  --color-teal-500: #10b981;
+  --color-teal-600: #059669;
+  --color-emerald-300: #86efac;
+  --color-emerald-400: #4ade80;
+  --color-emerald-500: #22c55e;
+  --color-emerald-600: #16a34a;
+}
+:root.light[data-accent="forest"] {
+  --color-teal-200: #065f46;
+  --color-teal-300: #047857;
+  --color-teal-400: #059669;
+  --color-emerald-300: #15803d;
+  --color-emerald-400: #16a34a;
+}
+
+/* Ice (cyan + sky) */
+:root[data-accent="ice"] {
+  --color-teal-100: #cffafe;
+  --color-teal-200: #a5f3fc;
+  --color-teal-300: #67e8f9;
+  --color-teal-400: #22d3ee;
+  --color-teal-500: #06b6d4;
+  --color-teal-600: #0891b2;
+  --color-emerald-300: #7dd3fc;
+  --color-emerald-400: #38bdf8;
+  --color-emerald-500: #0ea5e9;
+  --color-emerald-600: #0284c7;
+}
+:root.light[data-accent="ice"] {
+  --color-teal-200: #155e75;
+  --color-teal-300: #0e7490;
+  --color-teal-400: #0891b2;
+  --color-emerald-300: #0369a1;
+  --color-emerald-400: #0284c7;
+}
+
+/* Midnight (indigo + violet) */
+:root[data-accent="midnight"] {
+  --color-teal-100: #e0e7ff;
+  --color-teal-200: #c7d2fe;
+  --color-teal-300: #a5b4fc;
+  --color-teal-400: #818cf8;
+  --color-teal-500: #6366f1;
+  --color-teal-600: #4f46e5;
+  --color-emerald-300: #c4b5fd;
+  --color-emerald-400: #a78bfa;
+  --color-emerald-500: #8b5cf6;
+  --color-emerald-600: #7c3aed;
+}
+:root.light[data-accent="midnight"] {
+  --color-teal-200: #3730a3;
+  --color-teal-300: #4338ca;
+  --color-teal-400: #4f46e5;
+  --color-emerald-300: #6d28d9;
+  --color-emerald-400: #7c3aed;
+}
+
 /* Light-mode aurora boost. The radial-gradient washes are inline on
    the page hero divs (~13 of them) using the same structural class
    signature - rather than rewriting each, bump saturation + a touch of

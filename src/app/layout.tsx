@@ -67,6 +67,14 @@ export default function RootLayout({
               "(function(){try{var t=localStorage.getItem('cuequill:theme');var m=t==='light'?'light':'dark';var e=document.documentElement;e.classList.add(m);e.style.colorScheme=m;}catch(e){document.documentElement.classList.add('dark');}})();",
           }}
         />
+        {/* Apply the saved accent pack before first paint so the UI is
+            painted in the chosen accent with no flash of teal. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){try{var a=localStorage.getItem('cuequill:accent');if(a){document.documentElement.setAttribute('data-accent',a);}}catch(e){}})();",
+          }}
+        />
         {/* Apply the saved sidebar-collapsed state before first paint so the
             content offset doesn't jump from expanded to collapsed on load. */}
         <script
