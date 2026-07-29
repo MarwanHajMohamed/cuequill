@@ -11,18 +11,20 @@ export const ACCENTS: {
   id: string;
   label: string;
   minLevel: number;
-  // Preview swatch for the settings picker. Uses the pack's *own* hue
-  // utilities (not the remapped teal slot) so previews always show true
-  // colours regardless of the active accent.
+  // Preview swatch for the settings picker. Must show the pack's TRUE
+  // colours regardless of the active accent, so any teal/emerald stop uses
+  // a literal hex (`from-[#…]`) rather than the theme utility — otherwise
+  // the accent's own remap of --color-teal-*/--color-emerald-* would repaint
+  // the Teal and Forest swatches to the active accent.
   swatch: string;
 }[] = [
-  { id: "teal", label: "Teal", minLevel: 1, swatch: "from-teal-400 to-emerald-400" },
+  { id: "teal", label: "Teal", minLevel: 1, swatch: "from-[#2dd4bf] to-[#34d399]" },
   { id: "violet", label: "Violet", minLevel: 1, swatch: "from-violet-400 to-fuchsia-400" },
   { id: "ocean", label: "Ocean", minLevel: 1, swatch: "from-blue-400 to-cyan-400" },
   // Rewards
   { id: "rose", label: "Rose", minLevel: 2, swatch: "from-rose-400 to-pink-400" },
   { id: "sunset", label: "Sunset", minLevel: 3, swatch: "from-amber-400 to-orange-400" },
-  { id: "forest", label: "Forest", minLevel: 4, swatch: "from-emerald-400 to-green-400" },
+  { id: "forest", label: "Forest", minLevel: 4, swatch: "from-[#34d399] to-[#4ade80]" },
   { id: "ice", label: "Ice", minLevel: 6, swatch: "from-cyan-300 to-sky-400" },
   { id: "midnight", label: "Midnight", minLevel: 8, swatch: "from-indigo-400 to-violet-400" },
 ];
