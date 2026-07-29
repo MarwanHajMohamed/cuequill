@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
 import { withAuth } from "@/lib/withAuth";
 import { useBalanceTimeline } from "@/hooks/useBalanceTimeline";
@@ -142,7 +141,7 @@ function Page() {
 
   return (
     <div className="w-full flex justify-center min-h-screen pb-24">
-      <div className="w-full max-w-[900px] px-5 md:px-8 pt-24 md:pt-12 flex flex-col">
+      <div className="w-full max-w-[1500px] px-5 md:px-8 pt-24 md:pt-12 flex flex-col">
         <div
           aria-hidden
           className="pointer-events-none fixed inset-0 -z-10"
@@ -151,14 +150,6 @@ function Page() {
               "radial-gradient(50% 50% at 50% 0%, rgba(20,184,166,0.14) 0%, rgba(20,184,166,0) 75%), radial-gradient(40% 45% at 80% 5%, rgba(99,102,241,0.10) 0%, rgba(99,102,241,0) 75%)",
           }}
         />
-
-        <header className="pb-6 border-b border-white/10">
-          <h1 className="text-[24px] font-semibold tracking-tight">Balance</h1>
-          <p className="text-[13.5px] text-white/50 mt-1.5 leading-relaxed max-w-lg">
-            Your running account balance: deposits and withdrawals you log,
-            plus the realized profit and loss from every closed trade.
-          </p>
-        </header>
 
         {status && (
           <div className="mt-4 text-[12.5px] text-white/60">{status}</div>
@@ -174,8 +165,8 @@ function Page() {
                 {/* Summary + controls */}
                 <div className="mt-8 flex items-end justify-between gap-4 flex-wrap">
                   <div className="flex flex-col gap-1">
-                    <div className="text-[11px] tracking-[0.1em] text-white/40 font-medium uppercase">
-                      Current balance
+                    <div className="text-[11px] tracking-[0.1em] text-white/40 font-medium">
+                      balance
                     </div>
                     <div className="text-[32px] md:text-[40px] leading-none font-medium tracking-tight tabular-nums">
                       {fmtMoneyFull(summary!.latest)}
@@ -290,7 +281,7 @@ function Page() {
                         </defs>
                         <XAxis
                           dataKey="date"
-                          tick={{ fill: "rgba(255,255,255,0.35)", fontSize: 10 }}
+                          tick={{ fill: "rgb(var(--fg-rgb) / 0.55)", fontSize: 10 }}
                           tickLine={false}
                           axisLine={false}
                           minTickGap={40}
@@ -303,7 +294,7 @@ function Page() {
                         />
                         <YAxis
                           width={58}
-                          tick={{ fill: "rgba(255,255,255,0.35)", fontSize: 10 }}
+                          tick={{ fill: "rgb(var(--fg-rgb) / 0.55)", fontSize: 10 }}
                           tickLine={false}
                           axisLine={false}
                           domain={["auto", "auto"]}
@@ -426,17 +417,6 @@ function Page() {
                   {saving ? "Saving…" : "Add"}
                 </button>
               </div>
-              <p className="mt-2 text-[11.5px] text-white/40 max-w-lg leading-relaxed">
-                Closed trades feed the balance automatically from your{" "}
-                <Link
-                  href="/trades"
-                  className="text-teal-300 hover:text-teal-200 underline-offset-4 hover:underline"
-                >
-                  journal
-                </Link>
-                . A back-dated deposit re-bases the whole line, so today&apos;s
-                balance updates too.
-              </p>
             </div>
 
             {/* Deposits / withdrawals history */}
