@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useState } from "react";
+import { useChatUsage } from "@/hooks/useChatUsage";
 
 // Current plan + upgrade/cancel controls, backed by Stripe.
 //
@@ -41,6 +42,47 @@ const PRO_ADDS = [
   "Downloadable CSV reports",
 ];
 
+const compactNum = new Intl.NumberFormat("en-US", {
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
+
+// A labelled usage bar (used / limit) with the fill turning amber near
+// the cap.
+function Meter({
+  label,
+  used,
+  limit,
+  format = (n: number) => n.toLocaleString(),
+}: {
+  label: string;
+  used: number;
+  limit: number;
+  format?: (n: number) => string;
+}) {
+  const pct = limit > 0 ? Math.min(100, (used / limit) * 100) : 0;
+  const near = pct >= 90;
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center justify-between text-[12.5px]">
+        <span className="text-white/70">{label}</span>
+        <span className="tabular-nums text-white/85">
+          {format(used)}{" "}
+          <span className="text-white/40">/ {format(limit)}</span>
+        </span>
+      </div>
+      <div className="h-2 rounded-full bg-white/[0.06] overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-[width] duration-500 ${
+            near ? "bg-amber-400" : "bg-teal-400"
+          }`}
+          style={{ width: `${Math.max(pct, used > 0 ? 2 : 0)}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
 function fmtDate(iso: string | null): string {
   if (!iso) return "";
   try {
@@ -56,6 +98,7 @@ function fmtDate(iso: string | null): string {
 
 export default function PlanTab() {
   const { data: session, update } = useSession();
+  const { data: usage } = useChatUsage(!!session?.user?.isPro);
 
   const [plan, setPlan] = useState<PlanInfo | null>(null);
   // Fall back to the session flag until the detailed plan loads so the
@@ -152,8 +195,20 @@ export default function PlanTab() {
         <div className="text-[11px] tracking-[0.08em] text-white/45 font-medium mb-1">
           Current plan
         </div>
-        <div className="mt-3 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div
+          className={`mt-3 relative overflow-hidden rounded-2xl border p-5 ${
+            isPro
+              ? "border-teal-500/25 bg-gradient-to-br from-teal-500/[0.10] via-transparent to-indigo-500/[0.06]"
+              : "border-white/10 bg-white/[0.03]"
+          }`}
+        >
+          {isPro && (
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -top-16 -right-16 w-48 h-48 rounded-full bg-teal-400/15 blur-3xl"
+            />
+          )}
+          <div className="relative flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-3">
               <div
                 className={`w-10 h-10 rounded-full border flex items-center justify-center ${
@@ -268,6 +323,33 @@ export default function PlanTab() {
         <div className="text-[12px] text-red-300 inline-flex items-center gap-1.5">
           <i className="fa-solid fa-triangle-exclamation text-[10px]" />
           {error}
+        </div>
+      )}
+
+      {/* Quill AI usage — the fair-use counters, Pro-only. */}
+      {isPro && usage && (
+        <div>
+          <div className="text-[11px] tracking-[0.08em] text-white/45 font-medium mb-3">
+            Quill AI usage
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5 flex flex-col gap-4">
+            <Meter
+              label="Messages today"
+              used={usage.messagesToday}
+              limit={usage.dailyLimit}
+            />
+            <Meter
+              label="Tokens this month"
+              used={usage.tokensThisMonth}
+              limit={usage.monthlyTokenLimit}
+              format={(n) => compactNum.format(n)}
+            />
+            <div className="text-[11px] text-white/40 leading-relaxed">
+              Daily messages reset at midnight UTC; the monthly token budget
+              resets on the 1st. Each question includes your trade context, so
+              tokens add up faster than message count.
+            </div>
+          </div>
         </div>
       )}
 
