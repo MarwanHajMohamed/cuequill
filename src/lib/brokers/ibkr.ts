@@ -233,24 +233,37 @@ export async function fetchIbkrEquitySummary(
     fields.find((f) =>
       candidates.some((c) => f.toLowerCase() === c.toLowerCase()),
     );
-  // "ReportDate" holds the day; "Total" is the account NAV in base
-  // currency. Fall back to close-enough alternatives some templates emit.
-  const dateField = findField("ReportDate", "Date", "reportDate");
-  const totalField = findField("Total", "EndingValue", "NAV", "total");
+  // Two supported layouts:
+  //  • Equity Summary in Base — one row per day with ReportDate + Total
+  //    (a real daily NAV series).
+  //  • Change in NAV — a period summary with FromDate/ToDate and
+  //    StartingValue/EndingValue (endpoints, not a daily curve). We record
+  //    both the start and end points from each such row.
+  const endDateField = findField("ReportDate", "ToDate", "Date", "reportDate");
+  const endValField = findField("Total", "EndingValue", "NAV", "total");
+  const startDateField = findField("FromDate", "fromDate");
+  const startValField = findField("StartingValue", "startingValue");
 
-  if (!dateField || !totalField) {
+  if (!endDateField || !endValField) {
     throw new Error(
-      "IBKR balance query is missing a ReportDate / Total column — add the 'Equity Summary in Base' section (or Change in NAV) to the Flex query.",
+      "IBKR balance query is missing a date / value column — use the 'Equity Summary in Base' section (ReportDate + Total) for a daily curve, or Change in NAV (To Date + Ending Value).",
     );
   }
 
   const byDate = new Map<string, number>();
+  const add = (rawDate: string | undefined, rawVal: string | undefined) => {
+    const date = normalizeReportDate(rawDate ?? "");
+    const val = parseFloat(rawVal ?? "");
+    if (date && Number.isFinite(val)) byDate.set(date, val); // last write wins
+  };
+
   for (const row of data) {
-    const date = normalizeReportDate(row[dateField] ?? "");
-    const total = parseFloat(row[totalField] ?? "");
-    if (!date || !Number.isFinite(total)) continue;
-    // Last row for a given day wins (Flex lists chronologically).
-    byDate.set(date, total);
+    // Change in NAV: capture the opening value at the period start too, so
+    // one summary row still yields a line rather than a single point.
+    if (startDateField && startValField) {
+      add(row[startDateField], row[startValField]);
+    }
+    add(row[endDateField], row[endValField]);
   }
 
   return [...byDate.entries()]
