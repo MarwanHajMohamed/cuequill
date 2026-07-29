@@ -516,94 +516,110 @@ function Page() {
     )
       return null;
 
+    const anyEcon =
+      isFed || isCpi || isPce || isPpi || Boolean(marketDay && marketDay.early);
+    // The high-impact-release pills, rendered once and placed either
+    // top-right (default) or in the left overlay stack (extended mode),
+    // so an earnings chip and a Fed pill never fight for the same row on
+    // a narrow mobile tile.
+    const econBadges = (
+      <>
+        {isFed && (
+          <span
+            title="FOMC meeting — high volatility, avoid trading"
+            className={NO_TRADE_PILL}
+          >
+            <span className="w-1 h-1 rounded-full bg-red-200" aria-hidden />
+            Fed
+          </span>
+        )}
+        {isCpi && (
+          <span
+            title="CPI inflation report — 8:30am ET — avoid trading"
+            className={NO_TRADE_PILL}
+          >
+            <i className="fa-solid fa-percent text-[7px]" aria-hidden />
+            CPI
+          </span>
+        )}
+        {isPpi && (
+          <span
+            title="PPI producer inflation report — 8:30am ET — avoid trading"
+            className={NO_TRADE_PILL}
+          >
+            <i className="fa-solid fa-industry text-[7px]" aria-hidden />
+            PPI
+          </span>
+        )}
+        {isPce && (
+          <span
+            title="PCE — Fed's preferred inflation gauge — 8:30am ET — avoid trading"
+            className={NO_TRADE_PILL}
+          >
+            <i className="fa-solid fa-landmark text-[7px]" aria-hidden />
+            PCE
+          </span>
+        )}
+        {marketDay && marketDay.early && (
+          <span
+            title={`Early close 1:00pm ET — ${marketDay.name}`}
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-500/35 text-sky-100 border border-sky-400/60 shadow-[0_0_8px_rgba(56,189,248,0.35)] text-[9px] md:text-[10px] font-bold tracking-wide leading-none"
+          >
+            <i className="fa-solid fa-clock text-[8px]" aria-hidden />
+            1pm
+          </span>
+        )}
+      </>
+    );
+
     return (
       <>
-        {/* Extended mode — earnings + expiry chips, stacked top-left so
-            they don't collide with the Fed/holiday badges top-right. */}
-        {(dayEarnings.length > 0 || dayExpiries.length > 0) && (
-          <div className="absolute top-7 left-1.5 flex flex-col items-start gap-0.5 max-w-[80%]">
-            {dayEarnings.length > 0 && (
-              <span
-                title={`Earnings: ${dayEarnings
-                  .map((e) => e.symbol + (e.isEstimate ? " (est.)" : ""))
-                  .join(", ")}`}
-                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/40 text-[8.5px] md:text-[9.5px] font-bold tracking-wide leading-none max-w-full"
-              >
-                <i className="fa-solid fa-bullhorn text-[7px]" aria-hidden />
-                <span className="truncate">
-                  {dayEarnings
-                    .slice(0, 2)
-                    .map((e) => e.symbol)
-                    .join(" ")}
-                  {dayEarnings.length > 2 && ` +${dayEarnings.length - 2}`}
+        {/* Extended mode — a single left-aligned overlay stack holding
+            earnings, expiry, then the econ pills, so on a narrow mobile
+            tile nothing competes for the top row with the Fed/CPI badges. */}
+        {detailed &&
+          (dayEarnings.length > 0 || dayExpiries.length > 0 || anyEcon) && (
+            <div className="absolute top-7 left-1.5 flex flex-col items-start gap-0.5 max-w-[85%]">
+              {dayEarnings.length > 0 && (
+                <span
+                  title={`Earnings: ${dayEarnings
+                    .map((e) => e.symbol + (e.isEstimate ? " (est.)" : ""))
+                    .join(", ")}`}
+                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/40 text-[8.5px] md:text-[9.5px] font-bold tracking-wide leading-none max-w-full"
+                >
+                  <i className="fa-solid fa-bullhorn text-[7px]" aria-hidden />
+                  <span className="truncate">
+                    {dayEarnings
+                      .slice(0, 2)
+                      .map((e) => e.symbol)
+                      .join(" ")}
+                    {dayEarnings.length > 2 && ` +${dayEarnings.length - 2}`}
+                  </span>
                 </span>
-              </span>
-            )}
-            {dayExpiries.length > 0 && (
-              <span
-                title={`Open positions expiring: ${dayExpiries.join(", ")}`}
-                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/40 text-[8.5px] md:text-[9.5px] font-bold tracking-wide leading-none max-w-full"
-              >
-                <i className="fa-solid fa-hourglass-end text-[7px]" aria-hidden />
-                <span className="truncate">
-                  {dayExpiries.slice(0, 2).join(" ")}
-                  {dayExpiries.length > 2 && ` +${dayExpiries.length - 2}`}
+              )}
+              {dayExpiries.length > 0 && (
+                <span
+                  title={`Open positions expiring: ${dayExpiries.join(", ")}`}
+                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/40 text-[8.5px] md:text-[9.5px] font-bold tracking-wide leading-none max-w-full"
+                >
+                  <i
+                    className="fa-solid fa-hourglass-end text-[7px]"
+                    aria-hidden
+                  />
+                  <span className="truncate">
+                    {dayExpiries.slice(0, 2).join(" ")}
+                    {dayExpiries.length > 2 && ` +${dayExpiries.length - 2}`}
+                  </span>
                 </span>
-              </span>
-            )}
-          </div>
-        )}
-        {/* Top-right event badges — stacked so a day with several
-            (e.g. Fed + CPI) doesn't pile them on top of each other. */}
-        {(isFed || isCpi || isPce || isPpi || (marketDay && marketDay.early)) && (
+              )}
+              {econBadges}
+            </div>
+          )}
+        {/* Default (non-extended) — econ badges stay top-right, stacked so a
+            day with several (e.g. Fed + CPI) doesn't pile them up. */}
+        {!detailed && anyEcon && (
           <div className="absolute top-7 right-1 md:top-1 flex flex-col items-end gap-0.5">
-            {/* Red "no-trade" pills — one shared red style across every
-                high-impact release so the day reads as a single warning. */}
-            {isFed && (
-              <span
-                title="FOMC meeting — high volatility, avoid trading"
-                className={NO_TRADE_PILL}
-              >
-                <span className="w-1 h-1 rounded-full bg-red-200" aria-hidden />
-                Fed
-              </span>
-            )}
-            {isCpi && (
-              <span
-                title="CPI inflation report — 8:30am ET — avoid trading"
-                className={NO_TRADE_PILL}
-              >
-                <i className="fa-solid fa-percent text-[7px]" aria-hidden />
-                CPI
-              </span>
-            )}
-            {isPpi && (
-              <span
-                title="PPI producer inflation report — 8:30am ET — avoid trading"
-                className={NO_TRADE_PILL}
-              >
-                <i className="fa-solid fa-industry text-[7px]" aria-hidden />
-                PPI
-              </span>
-            )}
-            {isPce && (
-              <span
-                title="PCE — Fed's preferred inflation gauge — 8:30am ET — avoid trading"
-                className={NO_TRADE_PILL}
-              >
-                <i className="fa-solid fa-landmark text-[7px]" aria-hidden />
-                PCE
-              </span>
-            )}
-            {marketDay && marketDay.early && (
-              <span
-                title={`Early close 1:00pm ET — ${marketDay.name}`}
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-500/35 text-sky-100 border border-sky-400/60 shadow-[0_0_8px_rgba(56,189,248,0.35)] text-[9px] md:text-[10px] font-bold tracking-wide leading-none"
-              >
-                <i className="fa-solid fa-clock text-[8px]" aria-hidden />
-                1pm
-              </span>
-            )}
+            {econBadges}
           </div>
         )}
         {/* Full-day closure: mute the whole tile and mark it with a lock
