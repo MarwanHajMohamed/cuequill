@@ -898,7 +898,7 @@ function Page() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setDetailed((v) => !v)}
-                  className={`w-8 h-8 inline-flex items-center justify-center rounded-full border transition cursor-pointer ${
+                  className={`w-8 h-8 hidden md:inline-flex items-center justify-center rounded-full border transition cursor-pointer ${
                     detailed
                       ? "bg-teal-500/15 text-teal-300 border-teal-500/30 hover:bg-teal-500/25"
                       : "border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/75 hover:text-white"
@@ -959,6 +959,24 @@ function Page() {
                   </button>
                 </div>
               </div>
+            </div>
+
+            {/* Extend toggle — pulled onto its own row on mobile so it
+                doesn't crowd the Today / Month-Week controls. Labeled
+                here since it's no longer beside its siblings. */}
+            <div className="md:hidden flex justify-end px-3 mb-3">
+              <button
+                onClick={() => setDetailed((v) => !v)}
+                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border transition cursor-pointer text-[12px] font-medium ${
+                  detailed
+                    ? "bg-teal-500/15 text-teal-300 border-teal-500/30"
+                    : "border-white/10 bg-white/[0.03] text-white/75"
+                }`}
+                aria-pressed={detailed}
+              >
+                <i className="fa-solid fa-layer-group text-[11px]" />
+                {detailed ? "Hide earnings" : "Show earnings"}
+              </button>
             </div>
 
             {/* Extended-mode legend — explains the overlay chips. */}
