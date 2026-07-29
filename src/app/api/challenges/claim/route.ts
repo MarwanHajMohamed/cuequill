@@ -28,7 +28,7 @@ export async function POST(req: Request) {
 
   await connectDb();
   const user = await User.findById(session.user.id).select(
-    "xp challengeClaims",
+    "xp challengeClaims bonusChatMessages",
   );
   if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -66,11 +66,16 @@ export async function POST(req: Request) {
     ...(user.challengeClaims ?? []),
     { id, claimedAt: new Date() },
   ];
+  // Grant any bonus reward (currently Quill AI messages).
+  if (def.reward?.kind === "chat") {
+    user.bonusChatMessages = (user.bonusChatMessages ?? 0) + def.reward.amount;
+  }
   await user.save();
 
   return NextResponse.json({
     success: true,
     awarded: def.xp,
+    reward: def.reward ?? null,
     ...levelInfo(user.xp),
   });
 }

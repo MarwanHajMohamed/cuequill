@@ -121,6 +121,9 @@ export interface IUser extends Document {
   // have been claimed (each awards its XP exactly once).
   xp?: number;
   challengeClaims?: { id: string; claimedAt: Date }[];
+  // Bonus Quill AI messages earned from challenge rewards — a finite pool
+  // consumed once the daily message limit is hit.
+  bonusChatMessages?: number;
 }
 
 const UserSchema = new Schema<IUser>({
@@ -197,6 +200,7 @@ const UserSchema = new Schema<IUser>({
   dashBalanceMigrated: { type: Boolean, default: false },
   dashChallengesMigrated: { type: Boolean, default: false },
   xp: { type: Number, default: 0 },
+  bonusChatMessages: { type: Number, default: 0 },
   challengeClaims: {
     type: [
       new Schema(

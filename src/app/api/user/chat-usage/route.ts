@@ -24,12 +24,15 @@ export async function GET() {
 
   await connectDb();
   const u = await User.findById(session.user.id)
-    .select("chatDailyDate chatDailyCount chatMonth chatMonthTokens")
+    .select(
+      "chatDailyDate chatDailyCount chatMonth chatMonthTokens bonusChatMessages",
+    )
     .lean<{
       chatDailyDate?: string;
       chatDailyCount?: number;
       chatMonth?: string;
       chatMonthTokens?: number;
+      bonusChatMessages?: number;
     }>();
 
   const today = dayKey();
@@ -44,6 +47,7 @@ export async function GET() {
     dailyLimit: DAILY_MESSAGE_LIMIT,
     tokensThisMonth,
     monthlyTokenLimit: MONTHLY_TOKEN_LIMIT,
+    bonusMessages: u?.bonusChatMessages ?? 0,
     month,
   });
 }

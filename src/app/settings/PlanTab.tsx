@@ -346,6 +346,14 @@ export default function PlanTab() {
               limit={usage.monthlyTokenLimit}
               format={(n) => compactNum.format(n)}
             />
+            {usage.bonusMessages > 0 && (
+              <div className="inline-flex items-center gap-1.5 text-[12px] text-violet-300 bg-violet-500/10 border border-violet-500/25 rounded-full px-3 py-1 w-fit">
+                <i className="fa-solid fa-gift text-[10px]" />
+                {usage.bonusMessages} bonus message
+                {usage.bonusMessages === 1 ? "" : "s"} from challenges — used
+                once you hit the daily cap.
+              </div>
+            )}
             <div className="text-[11px] text-white/40 leading-relaxed">
               Daily messages reset at midnight UTC; the monthly token budget
               resets on the 1st. Each question includes your trade context, so

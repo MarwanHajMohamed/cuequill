@@ -28,10 +28,13 @@ export async function GET() {
     })
       .select("status symbol notes tags strategy dateBought dateClosed")
       .lean<EvalTrade[]>(),
-    User.findById(session.user.id).select("xp challengeClaims").lean<{
-      xp?: number;
-      challengeClaims?: { id: string; claimedAt: Date }[];
-    }>(),
+    User.findById(session.user.id)
+      .select("xp challengeClaims bonusChatMessages")
+      .lean<{
+        xp?: number;
+        challengeClaims?: { id: string; claimedAt: Date }[];
+        bonusChatMessages?: number;
+      }>(),
   ]);
 
   const claimed = new Set((user?.challengeClaims ?? []).map((c) => c.id));
@@ -49,6 +52,7 @@ export async function GET() {
       category: c.category,
       target: c.target,
       xp: c.xp,
+      reward: c.reward ?? null,
       minLevel,
       locked,
       progress,
@@ -60,6 +64,7 @@ export async function GET() {
   return NextResponse.json({
     challenges,
     ...levelInfo(user?.xp ?? 0),
+    bonusMessages: user?.bonusChatMessages ?? 0,
     claimable: challenges.filter((c) => c.complete && !c.claimed).length,
     badges: challenges.filter((c) => c.claimed).map((c) => c.id),
   });

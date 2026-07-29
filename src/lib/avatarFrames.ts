@@ -29,6 +29,12 @@ export const AVATAR_FRAMES: {
     minLevel: 4,
   },
   {
+    id: "royal",
+    label: "Royal",
+    ring: "shadow-[0_0_0_2px_rgba(168,85,247,0.75)]",
+    minLevel: 5,
+  },
+  {
     id: "prismatic",
     label: "Prismatic",
     ring: "shadow-[0_0_0_2px_rgba(45,212,191,0.7),0_0_14px_3px_rgba(129,140,248,0.5)]",

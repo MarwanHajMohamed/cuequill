@@ -75,7 +75,11 @@ function Page() {
       if (!res.ok) throw new Error(d.error ?? "Couldn't claim");
       setBurst(xp);
       window.setTimeout(() => setBurst(null), 1400);
-      toast(`+${xp} XP claimed!`);
+      const extra =
+        d.reward?.kind === "chat"
+          ? ` and +${d.reward.amount} Quill messages`
+          : "";
+      toast(`+${xp} XP claimed${extra}!`);
       qc.invalidateQueries({ queryKey: ["challenges"] });
       qc.invalidateQueries({ queryKey: ["profile"] });
     } catch (e) {
@@ -161,6 +165,13 @@ function Page() {
                 </div>
                 <div className="flex items-center gap-6 pr-1">
                   <HeroStat value={data.badges.length} label="Badges" icon="fa-trophy" />
+                  {data.bonusMessages > 0 && (
+                    <HeroStat
+                      value={data.bonusMessages}
+                      label="Bonus msgs"
+                      icon="fa-comment-dots"
+                    />
+                  )}
                   <HeroStat
                     value={data.claimable}
                     label="To claim"
@@ -171,27 +182,40 @@ function Page() {
               </div>
             </motion.div>
 
-            {/* Reward hint — what the next level unlocks. */}
+            {/* Reward hint — the nearest upcoming cosmetic unlock. */}
             {(() => {
-              const nextUnlock = AVATAR_COLORS.find(
-                (c) => c.minLevel === data.level + 1,
-              );
+              const upcoming = [
+                ...AVATAR_COLORS.map((c) => ({
+                  label: c.label,
+                  minLevel: c.minLevel,
+                  kind: "colour",
+                  swatch: `bg-gradient-to-br ${c.gradient}`,
+                })),
+                ...AVATAR_FRAMES.map((f) => ({
+                  label: f.label,
+                  minLevel: f.minLevel,
+                  kind: "frame",
+                  swatch: `bg-gradient-to-br from-slate-500 to-slate-700 ${f.ring}`,
+                })),
+              ]
+                .filter((x) => x.minLevel > data.level)
+                .sort((a, b) => a.minLevel - b.minLevel)[0];
               return (
                 <div className="mt-4 text-[12px] text-white/55 leading-relaxed">
-                  {nextUnlock ? (
+                  {upcoming ? (
                     <>
                       Reach{" "}
                       <span className="text-white/85 font-semibold">
-                        level {data.level + 1}
+                        level {upcoming.minLevel}
                       </span>{" "}
                       to unlock the{" "}
                       <span
-                        className={`inline-block align-middle w-3.5 h-3.5 rounded-full bg-gradient-to-br ${nextUnlock.gradient} border border-white/25 mx-0.5`}
+                        className={`inline-block align-middle w-3.5 h-3.5 rounded-full ${upcoming.swatch} border border-white/25 mx-0.5`}
                       />{" "}
                       <span className="text-white/85 font-semibold">
-                        {nextUnlock.label}
+                        {upcoming.label}
                       </span>{" "}
-                      avatar colour —{" "}
+                      {upcoming.kind} —{" "}
                       <Link
                         href="/settings"
                         className="text-teal-300 hover:text-teal-200 underline-offset-4 hover:underline"
@@ -202,7 +226,7 @@ function Page() {
                     </>
                   ) : (
                     <>
-                      You&apos;ve unlocked every avatar colour — pick yours in{" "}
+                      You&apos;ve unlocked every reward — set your look in{" "}
                       <Link
                         href="/settings"
                         className="text-teal-300 hover:text-teal-200 underline-offset-4 hover:underline"
@@ -474,11 +498,22 @@ function ChallengeCard({
             {c.description}
           </div>
         </div>
-        <span
-          className={`shrink-0 text-[11px] font-bold tabular-nums px-2 py-0.5 rounded-full border ${style.chip}`}
-        >
-          +{c.xp}
-        </span>
+        <div className="shrink-0 flex flex-col items-end gap-1">
+          <span
+            className={`text-[11px] font-bold tabular-nums px-2 py-0.5 rounded-full border ${style.chip}`}
+          >
+            +{c.xp}
+          </span>
+          {c.reward?.kind === "chat" && (
+            <span
+              title={`${c.reward.amount} bonus Quill AI messages`}
+              className="inline-flex items-center gap-1 text-[9.5px] font-semibold px-1.5 py-0.5 rounded-full border bg-violet-500/15 text-violet-300 border-violet-500/30"
+            >
+              <i className="fa-solid fa-comment-dots text-[8px]" />+
+              {c.reward.amount}
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="relative">

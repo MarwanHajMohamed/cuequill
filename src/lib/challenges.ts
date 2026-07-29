@@ -21,6 +21,11 @@ export type EvalTrade = {
   dateClosed?: string | Date | null;
 };
 
+// A reward granted on top of XP when a challenge is claimed. Currently
+// just bonus Quill AI messages — a small, finite pool (kept small on
+// purpose since each message has a real cost).
+export type ChallengeReward = { kind: "chat"; amount: number; label: string };
+
 export type ChallengeDef = {
   id: string;
   title: string;
@@ -32,6 +37,8 @@ export type ChallengeDef = {
   // Level required before the challenge can be worked on / claimed. Locked
   // challenges are shown but greyed until the account reaches this level.
   minLevel?: number;
+  // Optional bonus reward beyond XP.
+  reward?: ChallengeReward;
   // Current progress toward `target` (may exceed it). Complete when >=.
   progress: (trades: EvalTrade[]) => number;
 };
@@ -83,6 +90,7 @@ export const CHALLENGES: ChallengeDef[] = [
     category: "journaling",
     target: 100,
     xp: 300,
+    reward: { kind: "chat", amount: 5, label: "Quill messages" },
     progress: (t) => t.length,
   },
   {
@@ -177,6 +185,7 @@ export const CHALLENGES: ChallengeDef[] = [
     category: "journaling",
     target: 250,
     xp: 400,
+    reward: { kind: "chat", amount: 10, label: "Quill messages" },
     progress: (t) => t.length,
   },
   {
@@ -187,6 +196,7 @@ export const CHALLENGES: ChallengeDef[] = [
     category: "journaling",
     target: 50,
     xp: 250,
+    reward: { kind: "chat", amount: 5, label: "Quill messages" },
     progress: (t) => t.filter((x) => (x.notes ?? "").trim().length > 0).length,
   },
   // ── Level-gated challenges ──────────────────────────────────────────
@@ -210,6 +220,7 @@ export const CHALLENGES: ChallengeDef[] = [
     category: "discipline",
     target: 10,
     xp: 300,
+    reward: { kind: "chat", amount: 5, label: "Quill messages" },
     minLevel: 2,
     progress: (t) => {
       const seq = closedByExit(t);
@@ -232,6 +243,7 @@ export const CHALLENGES: ChallengeDef[] = [
     category: "discipline",
     target: 1,
     xp: 250,
+    reward: { kind: "chat", amount: 5, label: "Quill messages" },
     minLevel: 2,
     progress: (t) => {
       const closed = t.filter(isClosed);
@@ -248,6 +260,7 @@ export const CHALLENGES: ChallengeDef[] = [
     category: "exploration",
     target: 6,
     xp: 350,
+    reward: { kind: "chat", amount: 10, label: "Quill messages" },
     minLevel: 3,
     progress: (t) =>
       new Set(
@@ -261,7 +274,13 @@ export const CHALLENGE_MAP: Record<string, ChallengeDef> = Object.fromEntries(
 );
 
 // ── Levels ───────────────────────────────────────────────────────────
-export const XP_PER_LEVEL = 300;
+// Progressive curve — each level costs more than the last, so climbing to
+// the higher tiers is a real grind. Returns the XP needed to go from
+// `level` to `level + 1`.
+export function xpForLevelUp(level: number): number {
+  return 200 + (level - 1) * 150; // 200, 350, 500, 650, 800, …
+}
+
 const TITLES = [
   "Novice",
   "Apprentice",
@@ -269,21 +288,27 @@ const TITLES = [
   "Practitioner",
   "Disciplined",
   "Strategist",
+  "Veteran",
   "Master",
+  "Grandmaster",
 ];
 
 export type LevelInfo = {
   level: number; // 1-based
   title: string;
   into: number; // XP earned within the current level
-  per: number; // XP needed to fill a level
+  per: number; // XP needed to fill the current level
   totalXp: number;
 };
 
 export function levelInfo(xp: number): LevelInfo {
   const totalXp = Math.max(0, Math.floor(xp || 0));
-  const level = Math.floor(totalXp / XP_PER_LEVEL) + 1;
-  const into = totalXp % XP_PER_LEVEL;
+  let level = 1;
+  let into = totalXp;
+  while (into >= xpForLevelUp(level)) {
+    into -= xpForLevelUp(level);
+    level += 1;
+  }
   const title = TITLES[Math.min(level - 1, TITLES.length - 1)];
-  return { level, title, into, per: XP_PER_LEVEL, totalXp };
+  return { level, title, into, per: xpForLevelUp(level), totalXp };
 }

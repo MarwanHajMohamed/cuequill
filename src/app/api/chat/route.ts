@@ -79,13 +79,16 @@ export async function POST(req: Request) {
   // immediately for stale JWTs.
   await connectDb();
   const proCheck = await User.findById(session.user.id)
-    .select("isPro chatDailyDate chatDailyCount chatMonth chatMonthTokens")
+    .select(
+      "isPro chatDailyDate chatDailyCount chatMonth chatMonthTokens bonusChatMessages",
+    )
     .lean<{
       isPro?: boolean;
       chatDailyDate?: string;
       chatDailyCount?: number;
       chatMonth?: string;
       chatMonthTokens?: number;
+      bonusChatMessages?: number;
     }>();
   if (!proCheck?.isPro) {
     return new Response("Pro membership required", { status: 403 });
@@ -99,7 +102,10 @@ export async function POST(req: Request) {
   const usedToday = proCheck.chatDailyDate === today ? proCheck.chatDailyCount ?? 0 : 0;
   const usedMonthTokens =
     proCheck.chatMonth === month ? proCheck.chatMonthTokens ?? 0 : 0;
-  if (usedToday >= DAILY_MESSAGE_LIMIT) {
+  const bonusMessages = proCheck.bonusChatMessages ?? 0;
+  // Over the daily cap? Fall back to the bonus pool earned from challenges.
+  const overDailyLimit = usedToday >= DAILY_MESSAGE_LIMIT;
+  if (overDailyLimit && bonusMessages <= 0) {
     return new Response(
       `You've reached today's Quill AI limit of ${DAILY_MESSAGE_LIMIT} messages. It resets at midnight UTC — check back then.`,
       { status: 429 },
@@ -311,6 +317,8 @@ export async function POST(req: Request) {
               chatMonth: month,
               chatMonthTokens: usedMonthTokens + totalTokens,
             },
+            // This turn ran on the bonus pool — spend one.
+            ...(overDailyLimit ? { $inc: { bonusChatMessages: -1 } } : {}),
           });
         } catch {
           /* usage accounting is best-effort */

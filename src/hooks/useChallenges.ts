@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import type { ChallengeCategory } from "@/lib/challenges";
+import type { ChallengeCategory, ChallengeReward } from "@/lib/challenges";
 
 export type ChallengeProgress = {
   id: string;
@@ -9,6 +9,7 @@ export type ChallengeProgress = {
   category: ChallengeCategory;
   target: number;
   xp: number;
+  reward: ChallengeReward | null;
   minLevel: number;
   locked: boolean;
   progress: number;
@@ -23,6 +24,7 @@ export type ChallengesData = {
   into: number;
   per: number;
   totalXp: number;
+  bonusMessages: number;
   claimable: number;
   badges: string[];
 };

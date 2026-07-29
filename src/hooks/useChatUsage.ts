@@ -5,6 +5,7 @@ export type ChatUsage = {
   dailyLimit: number;
   tokensThisMonth: number;
   monthlyTokenLimit: number;
+  bonusMessages: number;
   month: string; // yyyy-MM
 };
 
