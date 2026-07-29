@@ -7,6 +7,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { withAuth } from "@/lib/withAuth";
 import { useChallenges, type ChallengeProgress } from "@/hooks/useChallenges";
 import { useToast } from "@/hooks/useToast";
+import { AVATAR_COLORS } from "@/lib/avatarColors";
 
 // Per-category flavour so each group has its own colour identity.
 const CAT: Record<
@@ -167,18 +168,51 @@ function Page() {
               </div>
             </motion.div>
 
-            {/* Reward hint */}
-            <div className="mt-4 flex items-center gap-2 text-[12px] text-white/50">
-              <i className="fa-solid fa-wand-magic-sparkles text-teal-300/80 text-[11px]" />
-              Level up to unlock new avatar colours — pick yours in{" "}
-              <Link
-                href="/settings"
-                className="text-teal-300 hover:text-teal-200 underline-offset-4 hover:underline"
-              >
-                settings
-              </Link>
-              .
-            </div>
+            {/* Reward hint — what the next level unlocks. */}
+            {(() => {
+              const nextUnlock = AVATAR_COLORS.find(
+                (c) => c.minLevel === data.level + 1,
+              );
+              return (
+                <div className="mt-4 flex items-center gap-2 flex-wrap text-[12px] text-white/55">
+                  <i className="fa-solid fa-wand-magic-sparkles text-teal-300/80 text-[11px]" />
+                  {nextUnlock ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      Reach{" "}
+                      <span className="text-white/85 font-semibold">
+                        level {data.level + 1}
+                      </span>{" "}
+                      to unlock the
+                      <span
+                        className={`inline-block w-4 h-4 rounded-full bg-gradient-to-br ${nextUnlock.gradient} border border-white/25`}
+                      />
+                      <span className="text-white/85 font-semibold">
+                        {nextUnlock.label}
+                      </span>{" "}
+                      avatar colour —{" "}
+                      <Link
+                        href="/settings"
+                        className="text-teal-300 hover:text-teal-200 underline-offset-4 hover:underline"
+                      >
+                        set it in settings
+                      </Link>
+                      .
+                    </span>
+                  ) : (
+                    <span>
+                      You&apos;ve unlocked every avatar colour — pick yours in{" "}
+                      <Link
+                        href="/settings"
+                        className="text-teal-300 hover:text-teal-200 underline-offset-4 hover:underline"
+                      >
+                        settings
+                      </Link>
+                      .
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Challenges by category */}
             {CATEGORY_ORDER.map((cat) => {
@@ -335,17 +369,6 @@ function ChallengeCard({
             : "border-white/10 bg-white/[0.02]"
       }`}
     >
-      {/* Shimmer sweep on claimable cards */}
-      {claimable && (
-        <motion.div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 -skew-x-12 bg-gradient-to-r from-transparent via-white/[0.10] to-transparent"
-          initial={{ x: "-120%" }}
-          animate={{ x: "120%" }}
-          transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut", repeatDelay: 1.2 }}
-        />
-      )}
-
       <div className="relative flex items-start gap-3">
         <div
           className={`shrink-0 w-11 h-11 rounded-xl border flex items-center justify-center ${
@@ -401,14 +424,31 @@ function ChallengeCard({
               whileTap={{ scale: 0.94 }}
               animate={{ scale: [1, 1.05, 1] }}
               transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-teal-400 text-[#04211d] hover:bg-teal-300 transition text-[12px] font-bold cursor-pointer disabled:opacity-60"
+              className="relative overflow-hidden inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-teal-400 text-[#04211d] hover:bg-teal-300 [.light_&]:bg-white [.light_&]:text-teal-600 [.light_&]:hover:bg-white [.light_&]:border [.light_&]:border-teal-500/30 transition text-[12px] font-bold cursor-pointer disabled:opacity-60"
             >
-              {claiming ? (
-                <i className="fa-solid fa-circle-notch animate-spin text-[10px]" />
-              ) : (
-                <i className="fa-solid fa-gift text-[10px]" />
+              {/* Shimmer confined to the button. */}
+              {!claiming && (
+                <motion.span
+                  aria-hidden
+                  className="pointer-events-none absolute top-0 bottom-0 w-1/3 -skew-x-12 bg-white/50 [.light_&]:bg-teal-300/40"
+                  initial={{ left: "-40%" }}
+                  animate={{ left: "150%" }}
+                  transition={{
+                    duration: 1.6,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                    repeatDelay: 0.8,
+                  }}
+                />
               )}
-              Claim
+              <span className="relative z-[1] inline-flex items-center gap-1.5">
+                {claiming ? (
+                  <i className="fa-solid fa-circle-notch animate-spin text-[10px]" />
+                ) : (
+                  <i className="fa-solid fa-gift text-[10px]" />
+                )}
+                Claim
+              </span>
             </motion.button>
           ) : (
             <span className="text-[11px] text-white/30">In progress</span>
