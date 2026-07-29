@@ -17,6 +17,7 @@ import {
   motion,
   AnimatePresence,
   useMotionValue,
+  useDragControls,
   animate as motionAnimate,
   PanInfo,
 } from "framer-motion";
@@ -141,6 +142,9 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   // Mobile "More" bottom sheet replaces the old slide-in side drawer.
   const [openMore, setOpenMore] = useState(false);
+  // Drag-to-dismiss for the More sheet — only the handle/header starts a
+  // drag (via dragControls) so the scrollable body still scrolls freely.
+  const moreDragControls = useDragControls();
   const [simulated, setSimulated] = useState<boolean>(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("simulated") === "true";
@@ -1020,25 +1024,44 @@ export default function Navbar() {
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", stiffness: 380, damping: 36 }}
+            drag="y"
+            dragListener={false}
+            dragControls={moreDragControls}
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={{ top: 0, bottom: 0.5 }}
+            onDragEnd={(_, info: PanInfo) => {
+              // Dismiss on a decisive downward swipe.
+              if (info.offset.y > 100 || info.velocity.y > 500) {
+                setOpenMore(false);
+              }
+            }}
             className="md:hidden fixed bottom-0 inset-x-0 z-50 max-h-[70vh] flex flex-col overflow-hidden bg-[var(--surface-2)] border-t border-white/10 rounded-t-3xl shadow-[0_-12px_40px_var(--shadow)]"
             style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
           >
-            {/* Grab handle + header — fixed; the rest scrolls. */}
-            <div className="shrink-0 flex justify-center pt-2">
-              <span className="w-10 h-1 rounded-full bg-white/20" />
-            </div>
+            {/* Grab handle + header double as the drag grip; the body below
+                scrolls independently. */}
+            <div
+              onPointerDown={(e) => moreDragControls.start(e)}
+              style={{ touchAction: "none" }}
+              className="shrink-0 cursor-grab active:cursor-grabbing"
+            >
+              <div className="flex justify-center pt-2">
+                <span className="w-10 h-1 rounded-full bg-white/20" />
+              </div>
 
-            <div className="shrink-0 px-4 pt-3 pb-3 flex items-center justify-between">
-              <span className="text-[11px] tracking-[0.1em] text-white/40 font-medium">
-                more
-              </span>
-              <button
-                aria-label="close"
-                onClick={() => setOpenMore(false)}
-                className="w-8 h-8 rounded-full hover:bg-white/5 flex items-center justify-center text-white/60 hover:text-white transition"
-              >
-                <i className="fa-solid fa-xmark text-[13px]" />
-              </button>
+              <div className="px-4 pt-3 pb-3 flex items-center justify-between">
+                <span className="text-[11px] tracking-[0.1em] text-white/40 font-medium">
+                  more
+                </span>
+                <button
+                  aria-label="close"
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={() => setOpenMore(false)}
+                  className="w-8 h-8 rounded-full hover:bg-white/5 flex items-center justify-center text-white/60 hover:text-white transition"
+                >
+                  <i className="fa-solid fa-xmark text-[13px]" />
+                </button>
+              </div>
             </div>
 
             <div className="overflow-y-auto flex-1 min-h-0">
