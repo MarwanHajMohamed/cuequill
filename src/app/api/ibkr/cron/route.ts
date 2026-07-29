@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import connectDb from "@/lib/db";
 import { User } from "@/lib/models/User";
 import { syncForUser } from "@/lib/ibkrSync";
-import { syncBalanceForUser } from "@/lib/balanceSync";
 import { isMarketOpenAt } from "@/lib/marketHolidays";
 
 // IBKR's Flex Web Service generates a statement on-demand, then we poll
@@ -47,7 +46,7 @@ async function runSync() {
     ibkrToken: { $exists: true, $ne: "" },
     ibkrQueryId: { $exists: true, $ne: "" },
     isPro: true,
-  }).select("_id ibkrBalanceQueryId");
+  }).select("_id");
 
   const results: Array<{
     userId: string;
@@ -74,19 +73,6 @@ async function runSync() {
         inserted: result.inserted,
         skipped: result.skipped,
       });
-      // Balance sync is opt-in (needs a separate NAV Flex query) and must
-      // never fail the trade sync, so it runs in its own try/catch.
-      if (user.ibkrBalanceQueryId) {
-        try {
-          await syncBalanceForUser(user._id.toString());
-        } catch (balanceErr) {
-          console.warn(
-            "[cron/ibkr] balance sync failed for",
-            user._id.toString(),
-            balanceErr instanceof Error ? balanceErr.message : balanceErr,
-          );
-        }
-      }
     } catch (err) {
       const code = (err as { code?: string }).code;
       results.push({

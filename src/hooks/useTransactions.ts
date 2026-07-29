@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 
 export type Transaction = {
+  _id: string;
   date: string; // ISO
   amount: number;
-  type: "TRADE" | "DEPOSIT" | "WITHDRAW";
+  type: "DEPOSIT" | "WITHDRAW";
 };
 
 const fetchTransactions = async (): Promise<Transaction[]> => {
@@ -13,9 +14,9 @@ const fetchTransactions = async (): Promise<Transaction[]> => {
   return Array.isArray(data) ? data : [];
 };
 
-// Deposits / withdrawals ledger (session-scoped), used to neutralise cash
-// flows when charting balance so the line reflects trading performance
-// rather than money moving in and out. Read-only here.
+// Deposits / withdrawals ledger (session-scoped). Combined with realized
+// trade P/L, this drives the running account balance. Shared query key so
+// the dashboard card and the /balance page stay in sync.
 export function useTransactions(enabled = true) {
   return useQuery<Transaction[]>({
     queryKey: ["transactions"],

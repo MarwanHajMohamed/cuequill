@@ -2,11 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import connectDb from "@/lib/db";
+import mongoose from "mongoose";
 import { Transaction } from "@/lib/models/Transaction";
-import { BalanceEvent } from "@/app/types/Transactions";
 
 // Authenticated-user scoped — both handlers ignore any client-supplied
 // userId and use session.user.id instead.
+
+type TxLean = {
+  _id: mongoose.Types.ObjectId;
+  date: Date;
+  amount: number;
+  type: "DEPOSIT" | "WITHDRAW";
+};
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -15,24 +22,16 @@ export async function GET() {
   }
   await connectDb();
 
-  const transactions = await Transaction.find({ userID: session.user.id });
+  const transactions = await Transaction.find({ userID: session.user.id })
+    .sort({ date: 1 })
+    .lean<TxLean[]>();
 
-  const events: BalanceEvent[] = [];
-
-  for (const t of transactions) {
-    events.push({
-      date: t.date,
-      amount: t.amount,
-      type: t.type,
-    });
-  }
-
-  events.sort((a, b) => a.date.getTime() - b.date.getTime());
-
-  const timeline = events.map((e) => ({
-    date: e.date,
-    amount: e.amount,
-    type: e.type,
+  // `_id` is included so the balance page can list and delete entries.
+  const timeline = transactions.map((t) => ({
+    _id: t._id.toString(),
+    date: t.date,
+    amount: t.amount,
+    type: t.type,
   }));
 
   return NextResponse.json(timeline);
@@ -62,34 +61,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Calculate current balance — use the authenticated user.
-    const transactions = await Transaction.find({ userID: session.user.id });
-
-    let currentBalance = 0;
-    for (const t of transactions) {
-      currentBalance += t.type === "DEPOSIT" ? t.amount : -t.amount;
-    }
-
-    if (type === "WITHDRAW" && amount > currentBalance) {
-      return NextResponse.json(
-        { error: "Insufficient balance" },
-        { status: 400 }
-      );
-    }
-
+    // No cash-only "insufficient balance" gate: the running balance now
+    // includes realized trade P/L, so trading gains can fund a withdrawal
+    // and the timeline is recomputed chronologically on the client anyway.
     const transaction = await Transaction.create({
       userID: session.user.id,
       type,
-      amount,
+      amount: Math.abs(amount),
       date: new Date(date),
     });
 
-    const newBalance =
-      type === "DEPOSIT" ? currentBalance + amount : currentBalance - amount;
-    return NextResponse.json(
-      { transaction, balance: newBalance },
-      { status: 201 }
-    );
+    return NextResponse.json({ transaction }, { status: 201 });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });

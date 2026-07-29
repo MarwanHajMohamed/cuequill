@@ -30,10 +30,6 @@ export default function IBKRTab() {
   const { isPro } = useIsPro();
   const [token, setToken] = useState("");
   const [queryId, setQueryId] = useState("");
-  const [balanceQueryId, setBalanceQueryId] = useState("");
-  const [balanceLastSync, setBalanceLastSync] = useState<string | null>(null);
-  const [balanceSyncing, setBalanceSyncing] = useState(false);
-  const [balanceStatus, setBalanceStatus] = useState("");
   const [hasToken, setHasToken] = useState(false);
   const [lastSync, setLastSync] = useState<string | null>(null);
   const [lastInserted, setLastInserted] = useState<number | null>(null);
@@ -59,8 +55,6 @@ export default function IBKRTab() {
       .then((r) => r.json())
       .then((data) => {
         setQueryId(data.ibkrQueryId ?? "");
-        setBalanceQueryId(data.ibkrBalanceQueryId ?? "");
-        setBalanceLastSync(data.ibkrBalanceLastSync ?? null);
         setHasToken(data.hasToken ?? false);
         setLastSync(data.ibkrLastSync ?? null);
         setLastInserted(data.ibkrLastSyncInserted ?? null);
@@ -89,10 +83,7 @@ export default function IBKRTab() {
 
   const handleSave = async () => {
     setSaveStatus("Saving…");
-    const body: Record<string, string> = {
-      ibkrQueryId: queryId,
-      ibkrBalanceQueryId: balanceQueryId,
-    };
+    const body: Record<string, string> = { ibkrQueryId: queryId };
     if (token) body.ibkrToken = token;
 
     const res = await fetch("/api/user/ibkr-settings", {
@@ -136,22 +127,6 @@ export default function IBKRTab() {
       if (importedOpen) loadImported();
     } else {
       setSyncStatus(`Error: ${data.error}`);
-    }
-  };
-
-  const handleBalanceSync = async () => {
-    setBalanceSyncing(true);
-    setBalanceStatus("Syncing balance from IBKR…");
-    const res = await fetch("/api/balance/sync", { method: "POST" });
-    const data = await res.json();
-    setBalanceSyncing(false);
-    if (res.ok) {
-      setBalanceStatus(
-        `Done — ${data.fetched} day${data.fetched === 1 ? "" : "s"} of balance pulled.`,
-      );
-      setBalanceLastSync(new Date().toISOString());
-    } else {
-      setBalanceStatus(`Error: ${data.error}`);
     }
   };
 
@@ -319,7 +294,7 @@ export default function IBKRTab() {
 
         <label className="flex flex-col gap-1.5">
           <span className="text-[11px] tracking-[0.08em] text-white/45 font-medium">
-            Trades query ID
+            Query ID
           </span>
           <input
             className={inputClass}
@@ -328,34 +303,6 @@ export default function IBKRTab() {
             value={queryId}
             onChange={(e) => setQueryId(e.target.value)}
           />
-        </label>
-
-        <label className="flex flex-col gap-1.5">
-          <span className="text-[11px] tracking-[0.08em] text-white/45 font-medium flex items-center gap-2">
-            Balance query ID
-            <span className="text-white/30 tracking-normal normal-case text-[10px]">
-              optional
-            </span>
-          </span>
-          <input
-            className={inputClass}
-            type="text"
-            placeholder="e.g. 654321"
-            value={balanceQueryId}
-            onChange={(e) => setBalanceQueryId(e.target.value)}
-          />
-          <span className="text-[11px] text-white/40 leading-relaxed">
-            A second Activity Flex Query with the{" "}
-            <span className="text-white/70">Equity Summary in Base</span> section
-            (period e.g. Last 365 Calendar Days, CSV). Powers the{" "}
-            <Link
-              href="/balance"
-              className="text-teal-300 hover:text-teal-200 underline-offset-4 hover:underline"
-            >
-              Balance
-            </Link>{" "}
-            page.
-          </span>
         </label>
 
         <div className="flex items-center gap-3 flex-wrap">
@@ -523,54 +470,6 @@ export default function IBKRTab() {
           </div>
           );
         })()}
-      </section>
-
-      <div className="h-px bg-white/10" />
-
-      {/* Balance sync */}
-      <section className="flex flex-col gap-3">
-        <div className="text-[11px] tracking-[0.1em] text-white/45 font-medium">
-          Balance
-        </div>
-        <div className="text-[12.5px] text-white/60 leading-relaxed max-w-md">
-          Pull your account&apos;s daily value from the balance query above.
-          Runs nightly with the trade sync on Pro; you can also sync it manually
-          here. View the timeline on the{" "}
-          <Link
-            href="/balance"
-            className="text-teal-300 hover:text-teal-200 underline-offset-4 hover:underline"
-          >
-            Balance
-          </Link>{" "}
-          page.
-        </div>
-        {balanceLastSync && (
-          <div className="text-[12px] text-white/55">
-            Last balance sync{" "}
-            <span className="text-white/75">
-              {new Date(balanceLastSync).toLocaleString()}
-            </span>
-          </div>
-        )}
-        <div className="flex items-center gap-3 flex-wrap">
-          <button
-            onClick={handleBalanceSync}
-            disabled={balanceSyncing || !hasToken || !balanceQueryId}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border transition text-[13px] font-medium ${
-              balanceSyncing || !hasToken || !balanceQueryId
-                ? "bg-white/[0.02] text-white/30 border-white/10 cursor-not-allowed"
-                : "bg-indigo-500/15 text-indigo-300 border-indigo-500/25 hover:bg-indigo-500/25 cursor-pointer"
-            }`}
-          >
-            <i
-              className={`fa-solid fa-rotate text-[11px] ${balanceSyncing ? "animate-spin" : ""}`}
-            />
-            {balanceSyncing ? "Syncing…" : "Sync balance now"}
-          </button>
-          {balanceStatus && (
-            <span className="text-[12px] text-white/60">{balanceStatus}</span>
-          )}
-        </div>
       </section>
     </div>
   );

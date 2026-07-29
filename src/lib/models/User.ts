@@ -14,11 +14,6 @@ export interface IUser extends Document {
   timezone: string;
   ibkrToken: string;
   ibkrQueryId: string;
-  // Optional second Flex query, configured to return the account's daily
-  // NAV ("Equity Summary in Base"). Kept separate from the trades query
-  // so balance tracking is opt-in and doesn't disturb trade sync.
-  ibkrBalanceQueryId?: string;
-  ibkrBalanceLastSync?: Date;
   ibkrLastSync: Date;
   ibkrLastSyncInserted: number;
   ibkrLastSyncSkipped: number;
@@ -132,8 +127,6 @@ const UserSchema = new Schema<IUser>({
   timezone: { type: String, default: null },
   ibkrToken: { type: String },
   ibkrQueryId: { type: String },
-  ibkrBalanceQueryId: { type: String },
-  ibkrBalanceLastSync: { type: Date },
   ibkrLastSync: { type: Date },
   ibkrLastSyncInserted: { type: Number },
   ibkrLastSyncSkipped: { type: Number },

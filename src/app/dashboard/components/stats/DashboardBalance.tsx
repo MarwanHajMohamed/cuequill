@@ -2,8 +2,8 @@
 
 import React, { useMemo } from "react";
 import Link from "next/link";
-import { useBalanceSnapshots } from "@/hooks/useBalanceSnapshots";
-import { fmtCurrency } from "@/lib/helpers/fmt";
+import { useBalanceTimeline } from "@/hooks/useBalanceTimeline";
+import { fmtMoneyFull, fmtMoneySignedCompact } from "@/lib/helpers/fmt";
 import { CARD_CLASS_BASE } from "../DashboardCard";
 import {
   ResponsiveContainer,
@@ -12,35 +12,25 @@ import {
   Tooltip as ReTooltip,
 } from "recharts";
 
-// Broker-balance summary: the latest account value, its change over the
-// tracked window, and a sparkline — linking through to the full /balance
-// page. Data comes from IBKR NAV pulls and/or manual snapshots.
+// Account-balance summary: the running total (deposits/withdrawals +
+// realized trade P/L), its change over the tracked window, and a
+// sparkline — linking through to the full /balance page.
 export default function DashboardBalance() {
-  const { data: snapshots, isLoading } = useBalanceSnapshots();
+  const { points, loading, hasData } = useBalanceTimeline();
 
   const view = useMemo(() => {
-    if (!snapshots || snapshots.length === 0) return null;
-    const series = snapshots.map((s) => ({
-      date: s.date,
-      balance: s.balance,
-    }));
-    const first = snapshots[0];
-    const last = snapshots[snapshots.length - 1];
+    if (points.length === 0) return null;
+    const first = points[0];
+    const last = points[points.length - 1];
     const change = last.balance - first.balance;
-    const pct = first.balance !== 0 ? (change / Math.abs(first.balance)) * 100 : null;
-    return {
-      series,
-      currency: last.currency,
-      latest: last.balance,
-      change,
-      pct,
-      count: snapshots.length,
-    };
-  }, [snapshots]);
+    const pct =
+      first.balance !== 0 ? (change / Math.abs(first.balance)) * 100 : null;
+    return { latest: last.balance, change, pct, count: points.length };
+  }, [points]);
 
-  if (isLoading) return null;
+  if (loading) return null;
 
-  if (!view) {
+  if (!hasData || !view) {
     return (
       <section className={`${CARD_CLASS_BASE} flex flex-col gap-2 h-full`}>
         <div className="flex items-center justify-between">
@@ -53,8 +43,7 @@ export default function DashboardBalance() {
           </Link>
         </div>
         <div className="flex-1 flex items-center justify-center text-[12px] text-white/40 text-center py-6">
-          Track your account value — connect IBKR or add a snapshot on the
-          balance page.
+          Log a deposit and your balance tracks every closed trade from there.
         </div>
       </section>
     );
@@ -69,26 +58,20 @@ export default function DashboardBalance() {
         className={`${CARD_CLASS_BASE} flex flex-col gap-2 h-full hover:border-white/20 transition`}
       >
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <div className="text-sm md:text-base font-semibold">
-            Balance{" "}
-            <span className="text-white/40 font-normal text-[11px] md:text-xs">
-              ({view.count} {view.count === 1 ? "point" : "points"})
-            </span>
-          </div>
+          <div className="text-sm md:text-base font-semibold">Balance</div>
           <i className="fa-solid fa-chevron-right text-[10px] text-white/30" />
         </div>
 
         <div className="flex items-end justify-between gap-2">
           <div className="text-xl md:text-2xl font-normal tracking-tight tabular-nums">
-            {fmtCurrency(view.latest, view.currency)}
+            {fmtMoneyFull(view.latest)}
           </div>
           <div
             className={`text-[12px] md:text-[13px] font-medium tabular-nums ${
               up ? "text-green-400" : "text-red-400"
             }`}
           >
-            {up ? "+" : "−"}
-            {fmtCurrency(Math.abs(view.change), view.currency, true)}
+            {fmtMoneySignedCompact(view.change)}
             {view.pct != null && (
               <span className="text-white/40 ml-1">
                 ({up ? "+" : "−"}
@@ -101,7 +84,7 @@ export default function DashboardBalance() {
         <div className="w-full flex-1 min-h-[72px] md:min-h-[96px]">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart
-              data={view.series}
+              data={points}
               margin={{ top: 4, right: 4, left: 4, bottom: 4 }}
             >
               <defs>
@@ -126,10 +109,7 @@ export default function DashboardBalance() {
                   color: "var(--foreground)",
                 }}
                 labelFormatter={(_, payload) => payload?.[0]?.payload?.date ?? ""}
-                formatter={(v: number) => [
-                  fmtCurrency(v, view.currency),
-                  "Balance",
-                ]}
+                formatter={(v: number) => [fmtMoneyFull(v), "Balance"]}
               />
             </AreaChart>
           </ResponsiveContainer>

@@ -88,10 +88,7 @@ const IBKR_HEADERS = {
   "User-Agent": "Java/1.8.0_192",
 };
 
-export async function fetchIbkrCsv(
-  token: string,
-  queryId: string,
-): Promise<string> {
+async function fetchIbkrCsv(token: string, queryId: string): Promise<string> {
   const sendUrl = `https://gdcdyn.interactivebrokers.com/Universal/servlet/FlexStatementService.SendRequest?t=${token}&q=${queryId}&v=3`;
   const sendRes = await fetch(sendUrl, { headers: IBKR_HEADERS });
   const sendXml = await sendRes.text();
@@ -193,83 +190,6 @@ async function fetchFills(userId: string): Promise<NormalizedFill[]> {
   }));
 }
 
-// A single day's account value pulled from an IBKR "Equity Summary in
-// Base" Flex query.
-export type IbkrEquityPoint = { date: string; total: number };
-
-// Normalise IBKR's ReportDate (usually "yyyyMMdd", sometimes already
-// hyphenated) into a "yyyy-MM-dd" key.
-function normalizeReportDate(raw: string): string | null {
-  const digits = raw.replace(/\D/g, "");
-  if (digits.length !== 8) return null;
-  return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6, 8)}`;
-}
-
-// Pull the account's daily NAV from a dedicated Flex query configured with
-// the "Equity Summary in Base" section. Returns one point per report day,
-// oldest first. Column names vary slightly by Flex version, so we match
-// the date and total columns case-insensitively.
-export async function fetchIbkrEquitySummary(
-  userId: string,
-): Promise<IbkrEquityPoint[]> {
-  await connectDb();
-  const user = await User.findById(userId).select(
-    "ibkrToken ibkrBalanceQueryId",
-  );
-
-  if (!user?.ibkrToken || !user?.ibkrBalanceQueryId) {
-    throw new Error("IBKR balance query not configured");
-  }
-
-  const csv = await fetchIbkrCsv(user.ibkrToken, user.ibkrBalanceQueryId);
-
-  const { data, meta } = Papa.parse<Record<string, string>>(csv, {
-    header: true,
-    skipEmptyLines: true,
-  });
-
-  const fields = meta.fields ?? [];
-  const findField = (...candidates: string[]) =>
-    fields.find((f) =>
-      candidates.some((c) => f.toLowerCase() === c.toLowerCase()),
-    );
-  // Two supported layouts:
-  //  • Equity Summary in Base — one row per day with ReportDate + Total
-  //    (a real daily NAV series).
-  //  • Change in NAV — a period summary with FromDate/ToDate and
-  //    StartingValue/EndingValue (endpoints, not a daily curve). We record
-  //    both the start and end points from each such row.
-  const endDateField = findField("ReportDate", "ToDate", "Date", "reportDate");
-  const endValField = findField("Total", "EndingValue", "NAV", "total");
-  const startDateField = findField("FromDate", "fromDate");
-  const startValField = findField("StartingValue", "startingValue");
-
-  if (!endDateField || !endValField) {
-    throw new Error(
-      "IBKR balance query is missing a date / value column — use the 'Equity Summary in Base' section (ReportDate + Total) for a daily curve, or Change in NAV (To Date + Ending Value).",
-    );
-  }
-
-  const byDate = new Map<string, number>();
-  const add = (rawDate: string | undefined, rawVal: string | undefined) => {
-    const date = normalizeReportDate(rawDate ?? "");
-    const val = parseFloat(rawVal ?? "");
-    if (date && Number.isFinite(val)) byDate.set(date, val); // last write wins
-  };
-
-  for (const row of data) {
-    // Change in NAV: capture the opening value at the period start too, so
-    // one summary row still yields a line rather than a single point.
-    if (startDateField && startValField) {
-      add(row[startDateField], row[startValField]);
-    }
-    add(row[endDateField], row[endValField]);
-  }
-
-  return [...byDate.entries()]
-    .map(([date, total]) => ({ date, total }))
-    .sort((a, b) => (a.date < b.date ? -1 : 1));
-}
 
 export const ibkrAdapter: BrokerAdapter = {
   id: "ibkr",
