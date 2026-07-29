@@ -7,6 +7,8 @@ import { usePceDates } from "@/hooks/usePceDates";
 import { usePpiDates } from "@/hooks/usePpiDates";
 import { useMarketHolidays } from "@/hooks/useMarketHolidays";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { useWatchlist } from "@/hooks/useWatchlist";
+import { useEarnings } from "@/hooks/useEarnings";
 import { useTrades } from "@/hooks/useTrades";
 import {
   addDays,
@@ -141,6 +143,43 @@ function Page() {
   const pceDates = usePceDates();
   const ppiDates = usePpiDates();
   const holidays = useMarketHolidays();
+
+  // Extended mode — overlays watchlist earnings dates and open-trade
+  // expiries on the month grid. Persisted so the preference sticks.
+  const [detailed, setDetailed] = useLocalStorage<boolean>(
+    "calendar:detailed",
+    false,
+  );
+  const { data: watchlist = [] } = useWatchlist();
+  // Only fetch earnings while extended mode is on — the hook no-ops on
+  // an empty symbol list.
+  const { data: earnings = [] } = useEarnings(detailed ? watchlist : []);
+
+  // "yyyy-MM-dd" → symbols reporting that day (watchlist only).
+  const earningsByDay = useMemo(() => {
+    const map = new Map<string, { symbol: string; isEstimate: boolean }[]>();
+    for (const e of earnings) {
+      if (!e.date) continue;
+      const list = map.get(e.date) ?? [];
+      list.push({ symbol: e.symbol, isEstimate: e.isEstimate });
+      map.set(e.date, list);
+    }
+    return map;
+  }, [earnings]);
+
+  // "yyyy-MM-dd" → open positions expiring that day. Expiry is the other
+  // date an options trader cares about seeing coming.
+  const expiriesByDay = useMemo(() => {
+    const map = new Map<string, string[]>();
+    for (const t of trades ?? []) {
+      if (t.status !== "OPEN" || !t.expiryDate) continue;
+      const day = t.expiryDate.split("T")[0];
+      const list = map.get(day) ?? [];
+      list.push(t.symbol);
+      map.set(day, list);
+    }
+    return map;
+  }, [trades]);
 
   // Measure the actual y-offset of the calendar's days grid (nav + weekday
   // header height) so the sidebar starts at the same vertical position as
@@ -461,6 +500,9 @@ function Page() {
       isPpi,
       marketDay,
     } = getDaySummary(date);
+    const dayStr = format(date, "yyyy-MM-dd");
+    const dayEarnings = detailed ? (earningsByDay.get(dayStr) ?? []) : [];
+    const dayExpiries = detailed ? (expiriesByDay.get(dayStr) ?? []) : [];
     if (
       tradeCount === 0 &&
       !isToday &&
@@ -468,12 +510,49 @@ function Page() {
       !isCpi &&
       !isPce &&
       !isPpi &&
-      !marketDay
+      !marketDay &&
+      dayEarnings.length === 0 &&
+      dayExpiries.length === 0
     )
       return null;
 
     return (
       <>
+        {/* Extended mode — earnings + expiry chips, stacked top-left so
+            they don't collide with the Fed/holiday badges top-right. */}
+        {(dayEarnings.length > 0 || dayExpiries.length > 0) && (
+          <div className="absolute top-7 left-1.5 flex flex-col items-start gap-0.5 max-w-[80%]">
+            {dayEarnings.length > 0 && (
+              <span
+                title={`Earnings: ${dayEarnings
+                  .map((e) => e.symbol + (e.isEstimate ? " (est.)" : ""))
+                  .join(", ")}`}
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/40 text-[8.5px] md:text-[9.5px] font-bold tracking-wide leading-none max-w-full"
+              >
+                <i className="fa-solid fa-bullhorn text-[7px]" aria-hidden />
+                <span className="truncate">
+                  {dayEarnings
+                    .slice(0, 2)
+                    .map((e) => e.symbol)
+                    .join(" ")}
+                  {dayEarnings.length > 2 && ` +${dayEarnings.length - 2}`}
+                </span>
+              </span>
+            )}
+            {dayExpiries.length > 0 && (
+              <span
+                title={`Open positions expiring: ${dayExpiries.join(", ")}`}
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/40 text-[8.5px] md:text-[9.5px] font-bold tracking-wide leading-none max-w-full"
+              >
+                <i className="fa-solid fa-hourglass-end text-[7px]" aria-hidden />
+                <span className="truncate">
+                  {dayExpiries.slice(0, 2).join(" ")}
+                  {dayExpiries.length > 2 && ` +${dayExpiries.length - 2}`}
+                </span>
+              </span>
+            )}
+          </div>
+        )}
         {/* Top-right event badges — stacked so a day with several
             (e.g. Fed + CPI) doesn't pile them on top of each other. */}
         {(isFed || isCpi || isPce || isPpi || (marketDay && marketDay.early)) && (
@@ -734,6 +813,12 @@ function Page() {
     );
   };
 
+  // On phones the month grid normally fits the viewport exactly (no
+  // scroll). In extended mode the tiles carry extra chips, so we switch
+  // to taller, scrollable tiles instead of cramming everything into a
+  // fixed height. Desktop is unaffected (md:h-auto everywhere).
+  const scrollMode = detailed && view === "month";
+
   return (
     <>
       {/* Aurora - matches the dashboard / trades / settings hue. */}
@@ -751,14 +836,26 @@ function Page() {
           bar (88px + safe-area). md:h-auto on desktop where there's
           no bottom nav. */}
       <div
-        className="flex md:mt-8 md:mb-10 justify-center md:justify-start mt-15 md:h-auto md:w-full w-full overflow-x-hidden h-[calc(100dvh-60px-88px-env(safe-area-inset-top)-env(safe-area-inset-bottom))]"
+        className={`flex md:mt-8 md:mb-10 justify-center md:justify-start mt-15 md:h-auto md:w-full w-full overflow-x-hidden ${
+          scrollMode
+            ? "pb-6"
+            : "h-[calc(100dvh-60px-88px-env(safe-area-inset-top)-env(safe-area-inset-bottom))]"
+        }`}
       >
-        <div className="flex md:h-auto md:w-full w-full h-full">
+        <div
+          className={`flex md:h-auto md:w-full w-full ${
+            scrollMode ? "" : "h-full"
+          }`}
+        >
           {/* Width matches the desktop navbar exactly:
               max-w-[1500px] + mx-10 (80px total horizontal margin) so
               the calendar pill sits directly beneath the nav pill at
               the same width. mt-22 places it ~12px under the nav. */}
-          <div className="md:max-w-[1500px] w-full md:h-auto flex flex-col mx-auto md:mx-0 px-4 md:px-6 h-full">
+          <div
+            className={`md:max-w-[1500px] w-full md:h-auto flex flex-col mx-auto md:mx-0 px-4 md:px-6 ${
+              scrollMode ? "" : "h-full"
+            }`}
+          >
             {/* Unified control row - month P/L on the left, Today +
                 Month/Week toggle on the right. */}
             <div className="flex items-center justify-between gap-2 px-3 md:px-0 mb-3 md:mb-4">
@@ -799,6 +896,19 @@ function Page() {
                 );
               })()}
               <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setDetailed((v) => !v)}
+                  className={`w-8 h-8 inline-flex items-center justify-center rounded-full border transition cursor-pointer ${
+                    detailed
+                      ? "bg-teal-500/15 text-teal-300 border-teal-500/30 hover:bg-teal-500/25"
+                      : "border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/75 hover:text-white"
+                  }`}
+                  title="Overlay watchlist earnings and open-position expiries"
+                  aria-label={detailed ? "Hide earnings overlay" : "Show earnings overlay"}
+                  aria-pressed={detailed}
+                >
+                  <i className="fa-solid fa-layer-group text-[11px]" />
+                </button>
                 {view === "month" && (
                   <button
                     onClick={() => setShowMonthShare(true)}
@@ -851,11 +961,37 @@ function Page() {
               </div>
             </div>
 
+            {/* Extended-mode legend — explains the overlay chips. */}
+            {detailed && (
+              <div className="flex items-center flex-wrap gap-x-4 gap-y-1 px-3 md:px-0 mb-2 text-[10.5px] text-white/50">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-teal-400/80" />
+                  Watchlist earnings
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-orange-400/80" />
+                  Open positions expiring
+                </span>
+                {watchlist.length === 0 && (
+                  <span className="text-white/35 italic">
+                    Your watchlist is empty — add tickers on the Earnings page
+                    to see report dates here.
+                  </span>
+                )}
+              </div>
+            )}
+
             {view === "month" ? (
-              <div className="flex gap-3 items-stretch md:flex-initial md:h-auto flex-1 min-h-0">
+              <div
+                className={`flex gap-3 items-stretch md:flex-initial md:h-auto ${
+                  scrollMode ? "" : "flex-1 min-h-0"
+                }`}
+              >
                 <div
                   ref={calendarColRef}
-                  className="flex-1 min-w-0 relative md:h-auto h-full"
+                  className={`flex-1 min-w-0 relative md:h-auto ${
+                    scrollMode ? "" : "h-full"
+                  }`}
                 >
                   <AnimatedCalendar
                     ref={calRef}
@@ -863,7 +999,9 @@ function Page() {
                     onChange={(date) => handleDateClick(date)}
                     tileContent={renderTileContent}
                     tileClassName={renderTileClassName}
-                    className="custom-calendar_full-view"
+                    className={`custom-calendar_full-view${
+                      detailed ? " calendar-detailed" : ""
+                    }`}
                     showTodayButton={false}
                     onMonthChange={setDisplayedMonth}
                     onViewChange={setCalView}
@@ -907,6 +1045,7 @@ function Page() {
                   ref={calRef}
                   value={value}
                   trades={trades}
+                  earningsByDay={detailed ? earningsByDay : undefined}
                   onDateClick={(date) => handleDateClick(date)}
                   onEventClick={(event) => {
                     setSelectedDate(new Date(event.dateBought));
