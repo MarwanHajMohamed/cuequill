@@ -6,6 +6,7 @@ export type Profile = {
   riskPerTrade: number | null;
   avatarColor: string;
   avatarFrame: string;
+  equippedTitle: string;
   level: number;
   title: string;
   totalXp: number;

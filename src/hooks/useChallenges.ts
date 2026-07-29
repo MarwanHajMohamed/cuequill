@@ -17,6 +17,15 @@ export type ChallengeProgress = {
   claimed: boolean;
 };
 
+export type Trophy = {
+  id: string;
+  label: string;
+  description: string;
+  icon: string;
+  title: string | null;
+  earned: boolean;
+};
+
 export type ChallengesData = {
   challenges: ChallengeProgress[];
   level: number;
@@ -27,6 +36,9 @@ export type ChallengesData = {
   bonusMessages: number;
   claimable: number;
   badges: string[];
+  trophies: Trophy[];
+  titles: string[];
+  equippedTitle: string;
 };
 
 const fetchChallenges = async (): Promise<ChallengesData> => {

@@ -756,10 +756,16 @@ export default function Navbar() {
                       <div className="text-[12.5px] font-medium truncate leading-tight">
                         {userFullName || "Account"}
                       </div>
-                      {session?.user?.email && (
-                        <div className="text-[10.5px] text-white/45 truncate leading-tight">
-                          {session.user.email}
+                      {profile?.equippedTitle ? (
+                        <div className="text-[10.5px] text-teal-300/80 truncate leading-tight">
+                          {profile.equippedTitle}
                         </div>
+                      ) : (
+                        session?.user?.email && (
+                          <div className="text-[10.5px] text-white/45 truncate leading-tight">
+                            {session.user.email}
+                          </div>
+                        )
                       )}
                     </div>
                     <i className="fa-solid fa-ellipsis-vertical text-[11px] text-white/40" />
@@ -793,6 +799,12 @@ export default function Navbar() {
                               <ProTag className="shrink-0" />
                             )}
                           </div>
+                          {profile?.equippedTitle && (
+                            <div className="text-[10.5px] text-teal-300/80 truncate leading-tight mt-0.5 inline-flex items-center gap-1">
+                              <i className="fa-solid fa-tag text-[8px]" />
+                              {profile.equippedTitle}
+                            </div>
+                          )}
                           {session.user.email && (
                             <div className="text-[11px] text-white/50 truncate leading-tight mt-0.5">
                               {session.user.email}

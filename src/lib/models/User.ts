@@ -124,6 +124,10 @@ export interface IUser extends Document {
   // Bonus Quill AI messages earned from challenge rewards — a finite pool
   // consumed once the daily message limit is hit.
   bonusChatMessages?: number;
+  // The title the user has chosen to display as a nameplate next to their
+  // name. Must be one of their earned titles (current level title or a
+  // title granted by an earned trophy); purely cosmetic.
+  equippedTitle?: string;
 }
 
 const UserSchema = new Schema<IUser>({
@@ -201,6 +205,7 @@ const UserSchema = new Schema<IUser>({
   dashChallengesMigrated: { type: Boolean, default: false },
   xp: { type: Number, default: 0 },
   bonusChatMessages: { type: Number, default: 0 },
+  equippedTitle: { type: String, default: "" },
   challengeClaims: {
     type: [
       new Schema(

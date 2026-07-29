@@ -62,6 +62,29 @@ function Page() {
   const { data, isLoading } = useChallenges();
   const [claiming, setClaiming] = React.useState<string | null>(null);
   const [burst, setBurst] = React.useState<number | null>(null);
+  const [equipping, setEquipping] = React.useState(false);
+
+  const equipTitle = async (title: string) => {
+    // Toggle: tapping the equipped title clears the nameplate.
+    const next = data?.equippedTitle === title ? "" : title;
+    setEquipping(true);
+    try {
+      const res = await fetch("/api/user/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ equippedTitle: next }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error ?? "Couldn't equip title");
+      toast(next ? `“${next}” equipped` : "Nameplate cleared");
+      qc.invalidateQueries({ queryKey: ["challenges"] });
+      qc.invalidateQueries({ queryKey: ["profile"] });
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Couldn't equip title");
+    } finally {
+      setEquipping(false);
+    }
+  };
 
   const claim = async (id: string, xp: number) => {
     setClaiming(id);
@@ -274,6 +297,105 @@ function Page() {
                 </section>
               );
             })}
+
+            {/* Trophy case — auto-earned milestone trophies. */}
+            <section className="mt-10">
+              <h2 className="text-[13px] font-semibold text-white/80 mb-3 flex items-center gap-2">
+                <i className="fa-solid fa-award text-amber-300/80 text-[12px]" />
+                Trophy case
+                <span className="text-[11px] text-white/35 tabular-nums font-normal">
+                  {data.trophies.filter((t) => t.earned).length}/
+                  {data.trophies.length}
+                </span>
+              </h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                {data.trophies.map((t, i) => (
+                  <motion.div
+                    key={t.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-30px" }}
+                    transition={{ duration: 0.3, delay: i * 0.03 }}
+                    className={`relative flex flex-col items-center text-center gap-2 rounded-2xl border p-4 overflow-hidden ${
+                      t.earned
+                        ? "border-amber-400/30 bg-gradient-to-b from-amber-500/[0.10] to-transparent"
+                        : "border-white/10 bg-white/[0.015] opacity-60"
+                    }`}
+                  >
+                    <div
+                      className={`w-12 h-12 rounded-2xl border flex items-center justify-center ${
+                        t.earned
+                          ? "text-amber-300 bg-amber-500/15 border-amber-400/30"
+                          : "text-white/35 bg-white/[0.03] border-white/10"
+                      }`}
+                    >
+                      <i
+                        className={`${t.earned ? t.icon : "fa-solid fa-lock"} text-[18px]`}
+                      />
+                    </div>
+                    <div>
+                      <div className="text-[13px] font-semibold leading-tight">
+                        {t.label}
+                      </div>
+                      <div className="text-[11px] text-white/45 leading-snug mt-0.5">
+                        {t.description}
+                      </div>
+                    </div>
+                    {t.title && (
+                      <span
+                        className={`text-[9.5px] uppercase tracking-wide px-2 py-0.5 rounded-full border ${
+                          t.earned
+                            ? "text-amber-200/90 border-amber-400/30 bg-amber-500/10"
+                            : "text-white/35 border-white/10 bg-white/[0.03]"
+                        }`}
+                      >
+                        Title · {t.title}
+                      </span>
+                    )}
+                    {t.earned && (
+                      <i className="fa-solid fa-check absolute top-2.5 right-2.5 text-[10px] text-amber-300/80" />
+                    )}
+                  </motion.div>
+                ))}
+              </div>
+            </section>
+
+            {/* Nameplate — equip an earned title next to your name. */}
+            <section className="mt-10">
+              <h2 className="text-[13px] font-semibold text-white/80 mb-1.5 flex items-center gap-2">
+                <i className="fa-solid fa-id-badge text-teal-300/80 text-[12px]" />
+                Nameplate
+              </h2>
+              <p className="text-[12px] text-white/50 mb-3 leading-relaxed max-w-lg">
+                Pick a title to show beside your name. Earn more by leveling up
+                and unlocking trophies. Tap the active one to clear it.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {data.titles.map((t) => {
+                  const active = data.equippedTitle === t;
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => equipTitle(t)}
+                      disabled={equipping}
+                      className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border text-[12.5px] font-medium transition disabled:opacity-60 cursor-pointer ${
+                        active
+                          ? "border-teal-400/50 bg-teal-500/15 text-teal-200 shadow-[0_0_20px_-6px_rgba(45,212,191,0.5)]"
+                          : "border-white/12 bg-white/[0.03] text-white/70 hover:border-white/25 hover:text-white/90"
+                      }`}
+                    >
+                      <i
+                        className={`fa-solid ${active ? "fa-circle-check" : "fa-tag"} text-[10px] ${
+                          active ? "text-teal-300" : "text-white/40"
+                        }`}
+                      />
+                      {t}
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
 
             {/* Rewards ladder — what each level unlocks. */}
             <section className="mt-10">

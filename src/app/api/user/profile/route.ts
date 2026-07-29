@@ -5,7 +5,9 @@ import connectDb from "@/lib/db";
 import { User } from "@/lib/models/User";
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
-import { levelInfo } from "@/lib/challenges";
+import Trade from "@/lib/models/Trade";
+import { CHALLENGES, levelInfo, type EvalTrade } from "@/lib/challenges";
+import { availableTitles, type TrophyStats } from "@/lib/trophies";
 
 // GET /api/user/profile — display preferences + read-only account info.
 export async function GET() {
@@ -16,7 +18,7 @@ export async function GET() {
 
   await connectDb();
   const user = await User.findById(session.user.id).select(
-    "currency startingBalance riskPerTrade avatarColor avatarFrame xp isPro proManualOverride stripeCurrentPeriodEnd stripeCancelAtPeriodEnd",
+    "currency startingBalance riskPerTrade avatarColor avatarFrame equippedTitle xp isPro proManualOverride stripeCurrentPeriodEnd stripeCancelAtPeriodEnd",
   );
   if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -28,6 +30,7 @@ export async function GET() {
     riskPerTrade: user.riskPerTrade ?? null,
     avatarColor: user.avatarColor ?? "teal",
     avatarFrame: user.avatarFrame ?? "none",
+    equippedTitle: user.equippedTitle ?? "",
     ...levelInfo(user.xp ?? 0),
     isPro: !!user.isPro,
     proManualOverride: !!user.proManualOverride,
@@ -62,6 +65,7 @@ export async function PATCH(req: Request) {
     riskPerTrade?: number | null;
     avatarColor?: string;
     avatarFrame?: string;
+    equippedTitle?: string;
   };
   try {
     body = await req.json();
@@ -180,6 +184,51 @@ export async function PATCH(req: Request) {
   if (body.avatarFrame !== undefined) {
     user.avatarFrame = String(body.avatarFrame).slice(0, 20);
   }
+  if (body.equippedTitle !== undefined) {
+    const wanted = String(body.equippedTitle).trim();
+    if (wanted === "") {
+      // Clearing the nameplate is always allowed.
+      user.equippedTitle = "";
+    } else {
+      // Only allow a title the user has actually earned. Compute the same
+      // way the challenges route does, from real (non-simulated) trades.
+      const trades = await Trade.find({
+        userID: new mongoose.Types.ObjectId(session.user.id),
+        simulated: false,
+      })
+        .select("status symbol dateBought dateClosed")
+        .lean<EvalTrade[]>();
+      const closed = trades.filter(
+        (t) => t.status === "WIN" || t.status === "LOSS",
+      );
+      const monthSet = new Set<string>();
+      const symbolSet = new Set<string>();
+      for (const t of trades) {
+        const d = t.dateClosed ?? t.dateBought;
+        if (d) monthSet.add(new Date(d).toISOString().slice(0, 7));
+        if (t.symbol) symbolSet.add(t.symbol.toUpperCase());
+      }
+      const info = levelInfo(user.xp ?? 0);
+      const stats: TrophyStats = {
+        totalTrades: trades.length,
+        closedTrades: closed.length,
+        wins: trades.filter((t) => t.status === "WIN").length,
+        months: monthSet.size,
+        symbols: symbolSet.size,
+        level: info.level,
+        levelTitle: info.title,
+        claimedCount: (user.challengeClaims ?? []).length,
+        totalChallenges: CHALLENGES.length,
+      };
+      if (!availableTitles(stats).includes(wanted)) {
+        return NextResponse.json(
+          { error: "You haven't earned that title yet" },
+          { status: 400 },
+        );
+      }
+      user.equippedTitle = wanted;
+    }
+  }
 
   await user.save();
 
@@ -193,5 +242,6 @@ export async function PATCH(req: Request) {
     riskPerTrade: user.riskPerTrade ?? null,
     avatarColor: user.avatarColor,
     avatarFrame: user.avatarFrame,
+    equippedTitle: user.equippedTitle ?? "",
   });
 }
