@@ -134,3 +134,81 @@ export async function importFills(
     matched: trades.length,
   };
 }
+
+// Backfill commissions/taxes onto existing trades that have no fees, by
+// re-reading the user's IBKR fills and re-matching them into trade drafts
+// (which carry the exact per-trade fees). Existing trades are matched to a
+// draft first by ibkrTradeId, then by the same natural key the dedupe uses
+// (symbol|qty|strike|option|buy-day|sell-day). Only trades whose fees are
+// missing or zero are touched; profit/loss and everything else is left
+// alone. Requires the Flex query to include the commission/tax columns and
+// to cover the period of the trades being fixed.
+export async function backfillFeesForUser(
+  userId: string,
+  brokerId: BrokerId = DEFAULT_BROKER,
+): Promise<{ updated: number; scanned: number; drafts: number }> {
+  const adapter = getBrokerAdapter(brokerId);
+  if (!adapter.fetchFills) {
+    throw new Error(`${adapter.label} doesn't support fill fetching.`);
+  }
+
+  await connectDb();
+  const fills = await adapter.fetchFills(userId);
+  const drafts = matchFills(fills);
+
+  const dayPart = (d: Date | string | null | undefined) =>
+    d ? new Date(d).toISOString().split("T")[0] : "";
+  const naturalKey = (t: {
+    symbol: string;
+    qty: number;
+    strike: number;
+    option: string;
+    dateBought: Date | string;
+    dateClosed?: Date | string | null;
+  }) =>
+    `${t.symbol}|${t.qty}|${t.strike}|${t.option}|${dayPart(t.dateBought)}|${dayPart(t.dateClosed)}`;
+
+  // Index the freshly-matched drafts' fees by id and by natural key. The
+  // key map is a multiset (array) so several identical trades on one day
+  // each consume their own draft.
+  const byId = new Map<string, number>();
+  const byKey = new Map<string, number[]>();
+  for (const d of drafts) {
+    if (d.ibkrTradeId) byId.set(d.ibkrTradeId, d.fees);
+    const k = naturalKey(d);
+    const arr = byKey.get(k) ?? [];
+    arr.push(d.fees);
+    byKey.set(k, arr);
+  }
+
+  const feeless = await Trade.find({
+    userID: userId,
+    $or: [{ fees: { $exists: false } }, { fees: 0 }, { fees: null }],
+  }).select("symbol qty strike option dateBought dateClosed ibkrTradeId fees");
+
+  const ops: Array<{
+    updateOne: {
+      filter: { _id: unknown };
+      update: { $set: { fees: number } };
+    };
+  }> = [];
+
+  for (const t of feeless) {
+    let fee: number | undefined;
+    if (t.ibkrTradeId && byId.has(t.ibkrTradeId)) {
+      fee = byId.get(t.ibkrTradeId);
+    } else {
+      const arr = byKey.get(naturalKey(t));
+      if (arr && arr.length) fee = arr.shift(); // consume one match
+    }
+    if (fee != null && fee > 0) {
+      ops.push({
+        updateOne: { filter: { _id: t._id }, update: { $set: { fees: fee } } },
+      });
+    }
+  }
+
+  if (ops.length > 0) await Trade.bulkWrite(ops);
+
+  return { updated: ops.length, scanned: feeless.length, drafts: drafts.length };
+}
