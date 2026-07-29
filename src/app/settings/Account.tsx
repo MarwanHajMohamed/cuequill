@@ -4,7 +4,23 @@ import { useSession, signOut } from "next-auth/react";
 import React, { useEffect, useMemo, useState } from "react";
 import { GroupBase, InputProps, components } from "react-select";
 import TimezoneSelect, { type ITimezone } from "react-timezone-select";
+import { useQueryClient } from "@tanstack/react-query";
 import ProTag from "@/components/ProTag";
+import { useProfile } from "@/hooks/useProfile";
+import { useTheme } from "@/hooks/useTheme";
+import { AVATAR_COLORS } from "@/lib/avatarColors";
+import { setDisplayCurrency, fmtMoneyFull } from "@/lib/helpers/fmt";
+
+const CURRENCIES = [
+  ["USD", "US Dollar ($)"],
+  ["GBP", "British Pound (£)"],
+  ["EUR", "Euro (€)"],
+  ["CAD", "Canadian Dollar ($)"],
+  ["AUD", "Australian Dollar ($)"],
+  ["JPY", "Japanese Yen (¥)"],
+  ["CHF", "Swiss Franc"],
+  ["INR", "Indian Rupee (₹)"],
+] as const;
 
 const Field = ({
   label,
@@ -35,11 +51,20 @@ type SaveState =
 
 const Account = () => {
   const { data: session, update } = useSession();
+  const { data: profile } = useProfile();
+  const queryClient = useQueryClient();
+  const { theme, setTheme } = useTheme();
 
   // Identity
   const [firstname, setFirstname] = useState<string>("");
   const [surname, setSurname] = useState<string>("");
   const [email, setEmail] = useState<string>("");
+
+  // Preferences (hydrated from the profile endpoint)
+  const [currency, setCurrency] = useState("USD");
+  const [startingBalance, setStartingBalance] = useState("");
+  const [riskPerTrade, setRiskPerTrade] = useState("");
+  const [avatarColor, setAvatarColor] = useState("teal");
 
   // Password (only sent if newPassword is non-empty)
   const [currentPassword, setCurrentPassword] = useState("");
@@ -116,6 +141,19 @@ const Account = () => {
     setSelectedTimezone({ value: tz, label: tz });
   }, [session]);
 
+  // Hydrate preferences from the profile endpoint.
+  useEffect(() => {
+    if (!profile) return;
+    setCurrency(profile.currency ?? "USD");
+    setStartingBalance(
+      profile.startingBalance != null ? String(profile.startingBalance) : "",
+    );
+    setRiskPerTrade(
+      profile.riskPerTrade != null ? String(profile.riskPerTrade) : "",
+    );
+    setAvatarColor(profile.avatarColor ?? "teal");
+  }, [profile]);
+
   // Has anything actually changed? Disable Save until something does.
   const identityDirty = useMemo(() => {
     if (!session?.user) return false;
@@ -127,7 +165,22 @@ const Account = () => {
   }, [firstname, surname, email, session]);
 
   const passwordDirty = newPassword.length > 0;
-  const dirty = identityDirty || passwordDirty;
+
+  const prefDirty = useMemo(() => {
+    if (!profile) return false;
+    const startNum = startingBalance === "" ? 0 : Number(startingBalance);
+    const riskStr = riskPerTrade === "" ? "" : String(Number(riskPerTrade));
+    const profileRisk =
+      profile.riskPerTrade != null ? String(profile.riskPerTrade) : "";
+    return (
+      currency !== (profile.currency ?? "USD") ||
+      startNum !== (profile.startingBalance ?? 0) ||
+      riskStr !== profileRisk ||
+      avatarColor !== (profile.avatarColor ?? "teal")
+    );
+  }, [profile, currency, startingBalance, riskPerTrade, avatarColor]);
+
+  const dirty = identityDirty || passwordDirty || prefDirty;
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -160,13 +213,19 @@ const Account = () => {
 
     setSave({ kind: "saving" });
 
-    const body: Record<string, string> = {};
+    const body: Record<string, unknown> = {};
     if (firstname !== session?.user?.firstname) body.firstname = firstname;
     if (surname !== session?.user?.surname) body.surname = surname;
     if (email !== session?.user?.email) body.email = email;
     if (passwordDirty) {
       body.currentPassword = currentPassword;
       body.newPassword = newPassword;
+    }
+    if (prefDirty) {
+      body.currency = currency;
+      body.startingBalance = startingBalance === "" ? 0 : Number(startingBalance);
+      body.riskPerTrade = riskPerTrade === "" ? null : Number(riskPerTrade);
+      body.avatarColor = avatarColor;
     }
 
     try {
@@ -193,6 +252,12 @@ const Account = () => {
           email: data.email,
         });
       }
+      // Apply preference side-effects: swap the money symbol app-wide and
+      // refresh anything that reads the profile (nav avatar, balance).
+      if (prefDirty) {
+        setDisplayCurrency(currency);
+        queryClient.invalidateQueries({ queryKey: ["profile"] });
+      }
       // Clear password fields after a successful change.
       setCurrentPassword("");
       setNewPassword("");
@@ -215,6 +280,16 @@ const Account = () => {
     setCurrentPassword("");
     setNewPassword("");
     setConfirmPassword("");
+    if (profile) {
+      setCurrency(profile.currency ?? "USD");
+      setStartingBalance(
+        profile.startingBalance != null ? String(profile.startingBalance) : "",
+      );
+      setRiskPerTrade(
+        profile.riskPerTrade != null ? String(profile.riskPerTrade) : "",
+      );
+      setAvatarColor(profile.avatarColor ?? "teal");
+    }
     setSave({ kind: "idle" });
   };
 
@@ -235,6 +310,23 @@ const Account = () => {
     props: InputProps<ITimezone, boolean, GroupBase<ITimezone>>,
   ) => <components.Input {...props} readOnly />;
 
+  // Turn risk% + starting balance into a concrete per-trade figure.
+  const riskHint = (() => {
+    const bal = Number(startingBalance);
+    const risk = Number(riskPerTrade);
+    if (
+      startingBalance !== "" &&
+      riskPerTrade !== "" &&
+      Number.isFinite(bal) &&
+      Number.isFinite(risk) &&
+      bal > 0 &&
+      risk > 0
+    ) {
+      return `≈ ${fmtMoneyFull((bal * risk) / 100)} risked per trade`;
+    }
+    return "Percent of account risked per trade.";
+  })();
+
   return (
     <form onSubmit={handleSave} className="p-5 md:p-7 flex flex-col gap-7">
       {/* Identity */}
@@ -242,6 +334,23 @@ const Account = () => {
         {session?.user?.isPro && (
           <div>
             <ProTag />
+          </div>
+        )}
+        {profile && (
+          <div className="text-[12px] text-white/45">
+            <span className="text-white/70">
+              {profile.isPro ? "Pro" : "Free"}
+            </span>{" "}
+            plan · Member since{" "}
+            {new Date(profile.memberSince).toLocaleDateString(undefined, {
+              month: "long",
+              year: "numeric",
+            })}
+            {profile.isPro &&
+              profile.stripeCurrentPeriodEnd &&
+              ` · ${profile.stripeCancelAtPeriodEnd ? "cancels" : "renews"} ${new Date(
+                profile.stripeCurrentPeriodEnd,
+              ).toLocaleDateString()}`}
           </div>
         )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl">
@@ -382,6 +491,112 @@ const Account = () => {
             }}
           />
         </Field>
+      </section>
+
+      <div className="h-px bg-white/10" />
+
+      {/* Preferences */}
+      <section className="flex flex-col gap-5">
+        <div className="text-[11px] tracking-[0.1em] text-white/45 font-medium">
+          Preferences
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl">
+          <Field
+            label="Display currency"
+            hint="Symbol only — amounts aren't converted."
+          >
+            <select
+              className={`${inputClass} cursor-pointer`}
+              value={currency}
+              onChange={(e) => setCurrency(e.target.value)}
+            >
+              {CURRENCIES.map(([code, label]) => (
+                <option
+                  key={code}
+                  value={code}
+                  className="bg-[var(--surface-2)] text-white"
+                >
+                  {label}
+                </option>
+              ))}
+            </select>
+          </Field>
+
+          <Field
+            label="Starting balance"
+            hint="Opening balance the Balance page builds on."
+          >
+            <input
+              className={inputClass}
+              type="number"
+              inputMode="decimal"
+              placeholder="0.00"
+              value={startingBalance}
+              onChange={(e) => setStartingBalance(e.target.value)}
+            />
+          </Field>
+
+          <Field label="Risk per trade (%)" hint={riskHint}>
+            <input
+              className={inputClass}
+              type="number"
+              inputMode="decimal"
+              placeholder="e.g. 1"
+              value={riskPerTrade}
+              onChange={(e) => setRiskPerTrade(e.target.value)}
+            />
+          </Field>
+        </div>
+
+        {/* Theme — applies instantly, device-local (no save needed). */}
+        <div className="flex flex-col gap-1.5">
+          <span className="text-[11px] tracking-[0.08em] text-white/45 font-medium">
+            Theme
+          </span>
+          <div className="inline-flex rounded-xl border border-white/10 bg-white/[0.03] p-1 w-fit">
+            {(["dark", "light"] as const).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setTheme(t)}
+                className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-lg text-[13px] font-medium capitalize transition cursor-pointer ${
+                  theme === t
+                    ? "bg-white/10 text-white border border-white/15"
+                    : "text-white/55 hover:text-white"
+                }`}
+              >
+                <i
+                  className={`fa-solid ${t === "dark" ? "fa-moon" : "fa-sun"} text-[11px]`}
+                />
+                {t}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Avatar colour */}
+        <div className="flex flex-col gap-2">
+          <span className="text-[11px] tracking-[0.08em] text-white/45 font-medium">
+            Avatar colour
+          </span>
+          <div className="flex items-center gap-2.5 flex-wrap">
+            {AVATAR_COLORS.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => setAvatarColor(c.id)}
+                title={c.label}
+                aria-label={c.label}
+                className={`w-9 h-9 rounded-full bg-gradient-to-br ${c.gradient} border transition cursor-pointer ${
+                  avatarColor === c.id
+                    ? "border-white ring-2 ring-white/40"
+                    : "border-white/15 hover:border-white/40"
+                }`}
+              />
+            ))}
+          </div>
+        </div>
       </section>
 
       {/* Footer */}

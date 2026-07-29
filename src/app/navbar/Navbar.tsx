@@ -10,6 +10,8 @@ import React, {
   useTransition,
 } from "react";
 import { signOut, useSession } from "next-auth/react";
+import { useProfile } from "@/hooks/useProfile";
+import { avatarGradient } from "@/lib/avatarColors";
 import {
   motion,
   AnimatePresence,
@@ -93,6 +95,8 @@ export default function Navbar() {
     userFullName[0]?.toUpperCase() ??
     session?.user?.email?.[0]?.toUpperCase() ??
     "U";
+  const { data: profile } = useProfile();
+  const avatarGrad = avatarGradient(profile?.avatarColor);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   // Persistent pill: one element whose position/width is animated via
@@ -716,7 +720,7 @@ export default function Navbar() {
                 aria-label="account menu"
                 title={collapsed ? userFullName || "Account" : undefined}
               >
-                <div className="w-8 h-8 shrink-0 rounded-full bg-gradient-to-br from-teal-500/80 to-emerald-600/80 border border-white/15 flex items-center justify-center text-[12.5px] font-semibold text-white">
+                <div className={`w-8 h-8 shrink-0 rounded-full bg-gradient-to-br ${avatarGrad} border border-white/15 flex items-center justify-center text-[12.5px] font-semibold text-white`}>
                   {userInitial}
                 </div>
                 {!collapsed && (
@@ -748,7 +752,7 @@ export default function Navbar() {
                     {/* Identity header */}
                     {session?.user && (
                       <div className="px-4 py-3.5 border-b border-white/10 flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500/80 to-emerald-600/80 border border-white/15 flex items-center justify-center text-[14px] font-semibold shrink-0">
+                        <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${avatarGrad} border border-white/15 flex items-center justify-center text-[14px] font-semibold shrink-0`}>
                           {userInitial}
                         </div>
                         <div className="min-w-0 flex-1">

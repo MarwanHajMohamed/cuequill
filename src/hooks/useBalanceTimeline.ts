@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { useTrades } from "./useTrades";
 import { useTransactions } from "./useTransactions";
+import { useProfile } from "./useProfile";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
 
 export type BalancePoint = {
@@ -28,6 +29,8 @@ export function useBalanceTimeline() {
     false,
   );
   const { data: transactions = [], isLoading: loadingTx } = useTransactions();
+  const { data: profile } = useProfile();
+  const startingBalance = profile?.startingBalance ?? 0;
 
   const points = useMemo<BalancePoint[]>(() => {
     const flowByDay = new Map<string, number>();
@@ -49,14 +52,29 @@ export function useBalanceTimeline() {
       ...new Set([...flowByDay.keys(), ...tradeByDay.keys()]),
     ].sort();
 
+    // If there are no events but the user set an opening balance, still
+    // show a single point so the balance card/page isn't empty.
+    if (days.length === 0 && startingBalance !== 0) {
+      const today = new Date().toISOString().split("T")[0];
+      return [
+        { date: today, balance: startingBalance, tradingCum: 0, flowCum: 0 },
+      ];
+    }
+
     let flow = 0;
     let trad = 0;
     return days.map((date) => {
       flow += flowByDay.get(date) ?? 0;
       trad += tradeByDay.get(date) ?? 0;
-      return { date, balance: flow + trad, tradingCum: trad, flowCum: flow };
+      // The opening balance is a fixed baseline under the whole line.
+      return {
+        date,
+        balance: startingBalance + flow + trad,
+        tradingCum: trad,
+        flowCum: flow,
+      };
     });
-  }, [trades, transactions]);
+  }, [trades, transactions, startingBalance]);
 
   return {
     points,

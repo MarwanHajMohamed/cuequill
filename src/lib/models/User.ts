@@ -12,6 +12,14 @@ export interface IUser extends Document {
   firstname: string;
   surname: string;
   timezone: string;
+  // Display preferences. `currency` is a 3-letter ISO code used only to
+  // pick the money symbol app-wide (no FX conversion). `startingBalance`
+  // anchors the Balance page; `riskPerTrade` is a % of account risked per
+  // trade; `avatarColor` is a preset key for the nav avatar.
+  currency?: string;
+  startingBalance?: number;
+  riskPerTrade?: number;
+  avatarColor?: string;
   ibkrToken: string;
   ibkrQueryId: string;
   ibkrLastSync: Date;
@@ -128,6 +136,10 @@ const UserSchema = new Schema<IUser>({
   firstname: { type: String, required: true },
   surname: { type: String },
   timezone: { type: String, default: null },
+  currency: { type: String, default: "USD" },
+  startingBalance: { type: Number, default: 0 },
+  riskPerTrade: { type: Number },
+  avatarColor: { type: String, default: "teal" },
   ibkrToken: { type: String },
   ibkrQueryId: { type: String },
   ibkrLastSync: { type: Date },

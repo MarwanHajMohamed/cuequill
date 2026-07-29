@@ -3,7 +3,39 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import connectDb from "@/lib/db";
 import { User } from "@/lib/models/User";
+import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
+
+// GET /api/user/profile — display preferences + read-only account info.
+export async function GET() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  await connectDb();
+  const user = await User.findById(session.user.id).select(
+    "currency startingBalance riskPerTrade avatarColor isPro proManualOverride stripeCurrentPeriodEnd stripeCancelAtPeriodEnd",
+  );
+  if (!user) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
+
+  return NextResponse.json({
+    currency: user.currency ?? "USD",
+    startingBalance: user.startingBalance ?? 0,
+    riskPerTrade: user.riskPerTrade ?? null,
+    avatarColor: user.avatarColor ?? "teal",
+    isPro: !!user.isPro,
+    proManualOverride: !!user.proManualOverride,
+    stripeCurrentPeriodEnd: user.stripeCurrentPeriodEnd ?? null,
+    stripeCancelAtPeriodEnd: !!user.stripeCancelAtPeriodEnd,
+    // Derive "member since" from the ObjectId — no schema change needed.
+    memberSince: new mongoose.Types.ObjectId(session.user.id)
+      .getTimestamp()
+      .toISOString(),
+  });
+}
 
 // PATCH /api/user/profile
 // Updates the signed-in user's identity (firstname / surname / email)
@@ -22,6 +54,10 @@ export async function PATCH(req: Request) {
     email?: string;
     currentPassword?: string;
     newPassword?: string;
+    currency?: string;
+    startingBalance?: number;
+    riskPerTrade?: number | null;
+    avatarColor?: string;
   };
   try {
     body = await req.json();
@@ -99,6 +135,45 @@ export async function PATCH(req: Request) {
   if (surname !== undefined) user.surname = surname;
   if (email !== undefined) user.email = email;
 
+  // ── Apply preference changes (all optional, validated leniently) ────
+  if (body.currency !== undefined) {
+    const code = String(body.currency).toUpperCase();
+    if (!/^[A-Z]{3}$/.test(code)) {
+      return NextResponse.json(
+        { error: "Currency must be a 3-letter code" },
+        { status: 400 },
+      );
+    }
+    user.currency = code;
+  }
+  if (body.startingBalance !== undefined) {
+    const n = Number(body.startingBalance);
+    if (!Number.isFinite(n)) {
+      return NextResponse.json(
+        { error: "Starting balance must be a number" },
+        { status: 400 },
+      );
+    }
+    user.startingBalance = n;
+  }
+  if (body.riskPerTrade !== undefined) {
+    if (body.riskPerTrade === null || body.riskPerTrade === ("" as unknown)) {
+      user.riskPerTrade = undefined;
+    } else {
+      const n = Number(body.riskPerTrade);
+      if (!Number.isFinite(n) || n < 0 || n > 100) {
+        return NextResponse.json(
+          { error: "Risk per trade must be between 0 and 100" },
+          { status: 400 },
+        );
+      }
+      user.riskPerTrade = n;
+    }
+  }
+  if (body.avatarColor !== undefined) {
+    user.avatarColor = String(body.avatarColor).slice(0, 20);
+  }
+
   await user.save();
 
   return NextResponse.json({
@@ -106,5 +181,9 @@ export async function PATCH(req: Request) {
     firstname: user.firstname,
     surname: user.surname,
     email: user.email,
+    currency: user.currency,
+    startingBalance: user.startingBalance,
+    riskPerTrade: user.riskPerTrade ?? null,
+    avatarColor: user.avatarColor,
   });
 }
