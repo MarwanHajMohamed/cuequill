@@ -26,7 +26,7 @@ export async function GET() {
       userID: new mongoose.Types.ObjectId(session.user.id),
       simulated: false,
     })
-      .select("status notes tags strategy dateBought dateClosed")
+      .select("status symbol notes tags strategy dateBought dateClosed")
       .lean<EvalTrade[]>(),
     User.findById(session.user.id).select("xp challengeClaims").lean<{
       xp?: number;
@@ -35,8 +35,11 @@ export async function GET() {
   ]);
 
   const claimed = new Set((user?.challengeClaims ?? []).map((c) => c.id));
+  const level = levelInfo(user?.xp ?? 0).level;
 
   const challenges = CHALLENGES.map((c) => {
+    const minLevel = c.minLevel ?? 1;
+    const locked = minLevel > level;
     const progress = c.progress(trades ?? []);
     return {
       id: c.id,
@@ -46,8 +49,10 @@ export async function GET() {
       category: c.category,
       target: c.target,
       xp: c.xp,
+      minLevel,
+      locked,
       progress,
-      complete: progress >= c.target,
+      complete: !locked && progress >= c.target,
       claimed: claimed.has(c.id),
     };
   });

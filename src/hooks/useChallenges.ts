@@ -9,6 +9,8 @@ export type ChallengeProgress = {
   category: ChallengeCategory;
   target: number;
   xp: number;
+  minLevel: number;
+  locked: boolean;
   progress: number;
   complete: boolean;
   claimed: boolean;

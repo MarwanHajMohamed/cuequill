@@ -9,7 +9,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import ProTag from "@/components/ProTag";
 import { useProfile } from "@/hooks/useProfile";
 import { useTheme } from "@/hooks/useTheme";
-import { AVATAR_COLORS } from "@/lib/avatarColors";
+import { AVATAR_COLORS, avatarGradient } from "@/lib/avatarColors";
+import { AVATAR_FRAMES } from "@/lib/avatarFrames";
 import { setDisplayCurrency, fmtMoneyFull } from "@/lib/helpers/fmt";
 
 const CURRENCIES = [
@@ -66,6 +67,7 @@ const Account = () => {
   const [startingBalance, setStartingBalance] = useState("");
   const [riskPerTrade, setRiskPerTrade] = useState("");
   const [avatarColor, setAvatarColor] = useState("teal");
+  const [avatarFrame, setAvatarFrame] = useState("none");
 
   // Password (only sent if newPassword is non-empty)
   const [currentPassword, setCurrentPassword] = useState("");
@@ -153,6 +155,7 @@ const Account = () => {
       profile.riskPerTrade != null ? String(profile.riskPerTrade) : "",
     );
     setAvatarColor(profile.avatarColor ?? "teal");
+    setAvatarFrame(profile.avatarFrame ?? "none");
   }, [profile]);
 
   // Has anything actually changed? Disable Save until something does.
@@ -177,9 +180,10 @@ const Account = () => {
       currency !== (profile.currency ?? "USD") ||
       startNum !== (profile.startingBalance ?? 0) ||
       riskStr !== profileRisk ||
-      avatarColor !== (profile.avatarColor ?? "teal")
+      avatarColor !== (profile.avatarColor ?? "teal") ||
+      avatarFrame !== (profile.avatarFrame ?? "none")
     );
-  }, [profile, currency, startingBalance, riskPerTrade, avatarColor]);
+  }, [profile, currency, startingBalance, riskPerTrade, avatarColor, avatarFrame]);
 
   const dirty = identityDirty || passwordDirty || prefDirty;
 
@@ -227,6 +231,7 @@ const Account = () => {
       body.startingBalance = startingBalance === "" ? 0 : Number(startingBalance);
       body.riskPerTrade = riskPerTrade === "" ? null : Number(riskPerTrade);
       body.avatarColor = avatarColor;
+      body.avatarFrame = avatarFrame;
     }
 
     try {
@@ -290,6 +295,7 @@ const Account = () => {
         profile.riskPerTrade != null ? String(profile.riskPerTrade) : "",
       );
       setAvatarColor(profile.avatarColor ?? "teal");
+      setAvatarFrame(profile.avatarFrame ?? "none");
     }
     setSave({ kind: "idle" });
   };
@@ -619,6 +625,51 @@ const Account = () => {
             </Link>
             .
           </span>
+        </div>
+
+        {/* Avatar frame */}
+        <div className="flex flex-col gap-2">
+          <span className="text-[11px] tracking-[0.08em] text-white/45 font-medium">
+            Avatar frame
+          </span>
+          <div className="flex items-center gap-2.5 flex-wrap">
+            {AVATAR_FRAMES.map((f) => {
+              const locked = f.minLevel > (profile?.level ?? 1);
+              const active = avatarFrame === f.id;
+              return (
+                <button
+                  key={f.id}
+                  type="button"
+                  disabled={locked}
+                  onClick={() => !locked && setAvatarFrame(f.id)}
+                  title={locked ? `Unlocks at level ${f.minLevel}` : f.label}
+                  aria-label={
+                    locked ? `${f.label} — unlocks at level ${f.minLevel}` : f.label
+                  }
+                  className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition ${
+                    locked
+                      ? "opacity-40 cursor-not-allowed border-white/10"
+                      : active
+                        ? "border-white/40 cursor-pointer"
+                        : "border-white/10 hover:border-white/30 cursor-pointer"
+                  }`}
+                >
+                  {/* Mini avatar preview using the selected colour + this frame. */}
+                  <span
+                    className={`w-7 h-7 rounded-full bg-gradient-to-br ${avatarGradient(
+                      avatarColor,
+                    )} ${f.ring}`}
+                  />
+                  {locked && (
+                    <i className="fa-solid fa-lock absolute inset-0 m-auto w-fit h-fit text-[10px] text-white/90" />
+                  )}
+                  {active && !locked && (
+                    <i className="fa-solid fa-check absolute -top-1 -right-1 text-[9px] text-teal-300 bg-[var(--surface)] rounded-full w-4 h-4 flex items-center justify-center border border-teal-500/40" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </section>
 

@@ -5,6 +5,7 @@ export type Profile = {
   startingBalance: number;
   riskPerTrade: number | null;
   avatarColor: string;
+  avatarFrame: string;
   level: number;
   title: string;
   totalXp: number;

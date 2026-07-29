@@ -16,7 +16,7 @@ export async function GET() {
 
   await connectDb();
   const user = await User.findById(session.user.id).select(
-    "currency startingBalance riskPerTrade avatarColor xp isPro proManualOverride stripeCurrentPeriodEnd stripeCancelAtPeriodEnd",
+    "currency startingBalance riskPerTrade avatarColor avatarFrame xp isPro proManualOverride stripeCurrentPeriodEnd stripeCancelAtPeriodEnd",
   );
   if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -27,6 +27,7 @@ export async function GET() {
     startingBalance: user.startingBalance ?? 0,
     riskPerTrade: user.riskPerTrade ?? null,
     avatarColor: user.avatarColor ?? "teal",
+    avatarFrame: user.avatarFrame ?? "none",
     ...levelInfo(user.xp ?? 0),
     isPro: !!user.isPro,
     proManualOverride: !!user.proManualOverride,
@@ -60,6 +61,7 @@ export async function PATCH(req: Request) {
     startingBalance?: number;
     riskPerTrade?: number | null;
     avatarColor?: string;
+    avatarFrame?: string;
   };
   try {
     body = await req.json();
@@ -175,6 +177,9 @@ export async function PATCH(req: Request) {
   if (body.avatarColor !== undefined) {
     user.avatarColor = String(body.avatarColor).slice(0, 20);
   }
+  if (body.avatarFrame !== undefined) {
+    user.avatarFrame = String(body.avatarFrame).slice(0, 20);
+  }
 
   await user.save();
 
@@ -187,5 +192,6 @@ export async function PATCH(req: Request) {
     startingBalance: user.startingBalance,
     riskPerTrade: user.riskPerTrade ?? null,
     avatarColor: user.avatarColor,
+    avatarFrame: user.avatarFrame,
   });
 }

@@ -38,11 +38,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Already claimed" }, { status: 409 });
   }
 
+  // Level-gated challenges can't be claimed until the account reaches the
+  // required level.
+  if ((def.minLevel ?? 1) > levelInfo(user.xp ?? 0).level) {
+    return NextResponse.json(
+      { error: `Reach level ${def.minLevel} to unlock this challenge` },
+      { status: 400 },
+    );
+  }
+
   const trades = await Trade.find({
     userID: new mongoose.Types.ObjectId(session.user.id),
     simulated: false,
   })
-    .select("status notes tags strategy dateBought dateClosed")
+    .select("status symbol notes tags strategy dateBought dateClosed")
     .lean<EvalTrade[]>();
 
   if (def.progress(trades ?? []) < def.target) {

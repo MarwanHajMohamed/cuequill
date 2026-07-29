@@ -7,7 +7,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { withAuth } from "@/lib/withAuth";
 import { useChallenges, type ChallengeProgress } from "@/hooks/useChallenges";
 import { useToast } from "@/hooks/useToast";
+import { useTheme } from "@/hooks/useTheme";
 import { AVATAR_COLORS } from "@/lib/avatarColors";
+import { AVATAR_FRAMES } from "@/lib/avatarFrames";
 
 // Per-category flavour so each group has its own colour identity.
 const CAT: Record<
@@ -44,6 +46,15 @@ const CAT: Record<
   },
 };
 const CATEGORY_ORDER = ["onboarding", "journaling", "discipline", "exploration"];
+
+// Levels that unlock a cosmetic reward (colour or frame), ascending.
+const REWARD_LEVELS = Array.from(
+  new Set(
+    [...AVATAR_COLORS, ...AVATAR_FRAMES]
+      .filter((x) => x.minLevel > 1)
+      .map((x) => x.minLevel),
+  ),
+).sort((a, b) => a - b);
 
 function Page() {
   const qc = useQueryClient();
@@ -123,16 +134,8 @@ function Page() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, ease: "easeOut" }}
-              className="mt-8 relative overflow-hidden rounded-3xl border border-teal-500/20 bg-gradient-to-br from-teal-500/[0.12] via-transparent to-indigo-500/[0.08] p-5 md:p-7"
+              className="mt-8 relative overflow-hidden rounded-3xl border border-teal-500/20 bg-gradient-to-r from-teal-500/[0.10] to-indigo-500/[0.08] p-5 md:p-7"
             >
-              <div
-                aria-hidden
-                className="pointer-events-none absolute -top-20 -right-10 w-64 h-64 rounded-full bg-teal-400/15 blur-3xl"
-              />
-              <div
-                aria-hidden
-                className="pointer-events-none absolute -bottom-24 left-1/3 w-64 h-64 rounded-full bg-indigo-400/10 blur-3xl"
-              />
               <div className="relative flex items-center gap-5 md:gap-7 flex-wrap">
                 <LevelRing level={data.level} pct={pct} />
                 <div className="flex-1 min-w-[220px]">
@@ -175,7 +178,6 @@ function Page() {
               );
               return (
                 <div className="mt-4 flex items-center gap-2 flex-wrap text-[12px] text-white/55">
-                  <i className="fa-solid fa-wand-magic-sparkles text-teal-300/80 text-[11px]" />
                   {nextUnlock ? (
                     <span className="inline-flex items-center gap-1.5">
                       Reach{" "}
@@ -248,6 +250,77 @@ function Page() {
                 </section>
               );
             })}
+
+            {/* Rewards ladder — what each level unlocks. */}
+            <section className="mt-10">
+              <h2 className="text-[13px] font-semibold text-white/80 mb-3 flex items-center gap-2">
+                <i className="fa-solid fa-gift text-teal-300/80 text-[12px]" />
+                Rewards
+              </h2>
+              <div className="rounded-2xl border border-white/10 bg-white/[0.02] divide-y divide-white/[0.06] overflow-hidden">
+                {REWARD_LEVELS.map((L) => {
+                  const colours = AVATAR_COLORS.filter((c) => c.minLevel === L);
+                  const frames = AVATAR_FRAMES.filter((f) => f.minLevel === L);
+                  const unlocked = data.level >= L;
+                  return (
+                    <div
+                      key={L}
+                      className={`flex items-center gap-4 px-4 py-3 ${
+                        unlocked ? "" : "opacity-55"
+                      }`}
+                    >
+                      <div
+                        className={`shrink-0 w-9 h-9 rounded-lg border flex flex-col items-center justify-center ${
+                          unlocked
+                            ? "border-teal-500/30 bg-teal-500/10 text-teal-300"
+                            : "border-white/10 bg-white/[0.03] text-white/45"
+                        }`}
+                      >
+                        <span className="text-[7px] uppercase tracking-wide leading-none">
+                          Lvl
+                        </span>
+                        <span className="text-[13px] font-bold leading-none tabular-nums">
+                          {L}
+                        </span>
+                      </div>
+                      <div className="flex-1 flex items-center gap-x-4 gap-y-1.5 flex-wrap">
+                        {colours.map((c) => (
+                          <span
+                            key={c.id}
+                            className="inline-flex items-center gap-1.5 text-[11.5px] text-white/65"
+                          >
+                            <span
+                              className={`w-4 h-4 rounded-full bg-gradient-to-br ${c.gradient} border border-white/20`}
+                            />
+                            {c.label} colour
+                          </span>
+                        ))}
+                        {frames.map((f) => (
+                          <span
+                            key={f.id}
+                            className="inline-flex items-center gap-1.5 text-[11.5px] text-white/65"
+                          >
+                            <span
+                              className={`w-4 h-4 rounded-full bg-gradient-to-br from-slate-500 to-slate-700 ${f.ring}`}
+                            />
+                            {f.label} frame
+                          </span>
+                        ))}
+                      </div>
+                      {unlocked ? (
+                        <span className="shrink-0 text-[11px] text-teal-300 font-medium inline-flex items-center gap-1">
+                          <i className="fa-solid fa-check text-[9px]" /> Unlocked
+                        </span>
+                      ) : (
+                        <span className="shrink-0 text-[11px] text-white/35 inline-flex items-center gap-1">
+                          <i className="fa-solid fa-lock text-[9px]" /> Locked
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
           </>
         )}
       </div>
@@ -349,10 +422,13 @@ function ChallengeCard({
   claiming: boolean;
   onClaim: () => void;
 }) {
+  const { theme } = useTheme();
+  const isLight = theme === "light";
   const style = CAT[c.category] ?? CAT.journaling;
   const shown = Math.min(c.progress, c.target);
   const pct = c.target > 0 ? Math.min(100, (c.progress / c.target) * 100) : 0;
   const claimable = c.complete && !c.claimed;
+  const locked = c.locked;
 
   return (
     <motion.div
@@ -360,13 +436,14 @@ function ChallengeCard({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
       transition={{ duration: 0.35, ease: "easeOut", delay: index * 0.04 }}
-      whileHover={{ y: -3 }}
       className={`relative flex flex-col gap-3 rounded-2xl border p-4 overflow-hidden ${
         c.claimed
           ? "border-amber-400/30 bg-gradient-to-br from-amber-500/[0.08] to-transparent"
           : claimable
             ? "border-teal-400/40 bg-teal-500/[0.06] shadow-[0_0_30px_-8px_rgba(45,212,191,0.5)]"
-            : "border-white/10 bg-white/[0.02]"
+            : locked
+              ? "border-white/10 bg-white/[0.015] opacity-60"
+              : "border-white/10 bg-white/[0.02]"
       }`}
     >
       <div className="relative flex items-start gap-3">
@@ -379,7 +456,15 @@ function ChallengeCard({
                 : "border-white/10 bg-white/[0.03] text-white/45"
           }`}
         >
-          <i className={`${c.claimed ? "fa-solid fa-trophy" : c.icon} text-[15px]`} />
+          <i
+            className={`${
+              c.claimed
+                ? "fa-solid fa-trophy"
+                : locked
+                  ? "fa-solid fa-lock"
+                  : c.icon
+            } text-[15px]`}
+          />
         </div>
         <div className="min-w-0 flex-1">
           <div className="text-[14px] font-semibold leading-tight">
@@ -424,13 +509,19 @@ function ChallengeCard({
               whileTap={{ scale: 0.94 }}
               animate={{ scale: [1, 1.05, 1] }}
               transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
-              className="relative overflow-hidden inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-teal-400 text-[#04211d] hover:bg-teal-300 [.light_&]:bg-white [.light_&]:text-teal-600 [.light_&]:hover:bg-white [.light_&]:border [.light_&]:border-teal-500/30 transition text-[12px] font-bold cursor-pointer disabled:opacity-60"
+              className={`relative overflow-hidden inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full transition text-[12px] font-bold cursor-pointer disabled:opacity-60 ${
+                isLight
+                  ? "bg-white text-teal-600 border border-teal-500/40 hover:bg-white"
+                  : "bg-teal-400 text-[#04211d] hover:bg-teal-300"
+              }`}
             >
               {/* Shimmer confined to the button. */}
               {!claiming && (
                 <motion.span
                   aria-hidden
-                  className="pointer-events-none absolute top-0 bottom-0 w-1/3 -skew-x-12 bg-white/50 [.light_&]:bg-teal-300/40"
+                  className={`pointer-events-none absolute top-0 bottom-0 w-1/3 -skew-x-12 ${
+                    isLight ? "bg-teal-300/40" : "bg-white/50"
+                  }`}
                   initial={{ left: "-40%" }}
                   animate={{ left: "150%" }}
                   transition={{
@@ -450,6 +541,10 @@ function ChallengeCard({
                 Claim
               </span>
             </motion.button>
+          ) : locked ? (
+            <span className="inline-flex items-center gap-1.5 text-[11px] text-white/40">
+              <i className="fa-solid fa-lock text-[9px]" /> Level {c.minLevel}
+            </span>
           ) : (
             <span className="text-[11px] text-white/30">In progress</span>
           )}

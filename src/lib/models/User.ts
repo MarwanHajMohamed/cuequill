@@ -20,6 +20,7 @@ export interface IUser extends Document {
   startingBalance?: number;
   riskPerTrade?: number;
   avatarColor?: string;
+  avatarFrame?: string;
   ibkrToken: string;
   ibkrQueryId: string;
   ibkrLastSync: Date;
@@ -146,6 +147,7 @@ const UserSchema = new Schema<IUser>({
   startingBalance: { type: Number, default: 0 },
   riskPerTrade: { type: Number },
   avatarColor: { type: String, default: "teal" },
+  avatarFrame: { type: String, default: "none" },
   ibkrToken: { type: String },
   ibkrQueryId: { type: String },
   ibkrLastSync: { type: Date },

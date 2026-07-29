@@ -15,7 +15,7 @@ export default function DashboardChallenges() {
   const pct = data.per > 0 ? (data.into / data.per) * 100 : 0;
   // Closest unclaimed challenge that isn't done yet — the "next up".
   const nextUp = data.challenges
-    .filter((c) => !c.complete)
+    .filter((c) => !c.complete && !c.locked)
     .map((c) => ({
       c,
       ratio: c.target > 0 ? c.progress / c.target : 0,

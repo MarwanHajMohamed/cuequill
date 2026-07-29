@@ -13,6 +13,7 @@ export type ChallengeCategory =
 // The minimal trade shape the evaluators read.
 export type EvalTrade = {
   status: "OPEN" | "WIN" | "LOSS";
+  symbol?: string | null;
   notes?: string | null;
   tags?: string[] | null;
   strategy?: string | null;
@@ -28,6 +29,9 @@ export type ChallengeDef = {
   category: ChallengeCategory;
   target: number;
   xp: number;
+  // Level required before the challenge can be worked on / claimed. Locked
+  // challenges are shown but greyed until the account reaches this level.
+  minLevel?: number;
   // Current progress toward `target` (may exceed it). Complete when >=.
   progress: (trades: EvalTrade[]) => number;
 };
@@ -75,7 +79,7 @@ export const CHALLENGES: ChallengeDef[] = [
     id: "century-club",
     title: "Century club",
     description: "Log 100 trades — a real sample size to learn from.",
-    icon: "fa-solid fa-hundred-points",
+    icon: "fa-solid fa-award",
     category: "journaling",
     target: 100,
     xp: 300,
@@ -147,6 +151,104 @@ export const CHALLENGES: ChallengeDef[] = [
     category: "exploration",
     target: 3,
     xp: 200,
+    progress: (t) =>
+      new Set(
+        t.map((x) => month(x.dateClosed ?? x.dateBought)).filter(Boolean),
+      ).size,
+  },
+  {
+    id: "diversified",
+    title: "Diversified",
+    description: "Trade 5 different symbols.",
+    icon: "fa-solid fa-layer-group",
+    category: "exploration",
+    target: 5,
+    xp: 200,
+    progress: (t) =>
+      new Set(
+        t.map((x) => (x.symbol ?? "").trim().toUpperCase()).filter(Boolean),
+      ).size,
+  },
+  {
+    id: "marathon",
+    title: "Marathon",
+    description: "Log 250 trades — you're building a serious record.",
+    icon: "fa-solid fa-person-running",
+    category: "journaling",
+    target: 250,
+    xp: 400,
+    progress: (t) => t.length,
+  },
+  {
+    id: "deep-notes",
+    title: "Deep notes",
+    description: "Add notes to 50 trades.",
+    icon: "fa-solid fa-book",
+    category: "journaling",
+    target: 50,
+    xp: 250,
+    progress: (t) => t.filter((x) => (x.notes ?? "").trim().length > 0).length,
+  },
+  // ── Level-gated challenges ──────────────────────────────────────────
+  {
+    id: "tag-master",
+    title: "Tag master",
+    description: "Tag 100 trades so every stat has something to slice.",
+    icon: "fa-solid fa-tag",
+    category: "journaling",
+    target: 100,
+    xp: 300,
+    minLevel: 2,
+    progress: (t) => t.filter((x) => (x.tags?.length ?? 0) > 0).length,
+  },
+  {
+    id: "process-streak",
+    title: "By the book",
+    description:
+      "Log 10 trades in a row that each have both a note and a tag.",
+    icon: "fa-solid fa-clipboard-check",
+    category: "discipline",
+    target: 10,
+    xp: 300,
+    minLevel: 2,
+    progress: (t) => {
+      const seq = closedByExit(t);
+      let best = 0;
+      let run = 0;
+      for (const x of seq) {
+        const ok =
+          (x.notes ?? "").trim().length > 0 && (x.tags?.length ?? 0) > 0;
+        run = ok ? run + 1 : 0;
+        if (run > best) best = run;
+      }
+      return best;
+    },
+  },
+  {
+    id: "half-and-half",
+    title: "Above water",
+    description: "Reach a 50% win rate over at least 30 closed trades.",
+    icon: "fa-solid fa-scale-balanced",
+    category: "discipline",
+    target: 1,
+    xp: 250,
+    minLevel: 2,
+    progress: (t) => {
+      const closed = t.filter(isClosed);
+      if (closed.length < 30) return 0;
+      const wins = closed.filter((x) => x.status === "WIN").length;
+      return wins / closed.length >= 0.5 ? 1 : 0;
+    },
+  },
+  {
+    id: "veteran",
+    title: "Veteran",
+    description: "Log trades across 6 different months.",
+    icon: "fa-solid fa-medal",
+    category: "exploration",
+    target: 6,
+    xp: 350,
+    minLevel: 3,
     progress: (t) =>
       new Set(
         t.map((x) => month(x.dateClosed ?? x.dateBought)).filter(Boolean),
