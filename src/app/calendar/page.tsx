@@ -36,7 +36,7 @@ import MonthlyShareCard, {
   type MonthlyShareStats,
 } from "@/components/MonthlyShareCard";
 
-import { fmtMoneyCompact, fmtMoneySignedCompact } from "@/lib/helpers/fmt";
+import { fmtMoneyFull, fmtMoneySignedCompact } from "@/lib/helpers/fmt";
 type TradeEvent =
   | Trade
   | {
@@ -580,21 +580,32 @@ function Page() {
         {detailed &&
           (dayEarnings.length > 0 || dayExpiries.length > 0 || anyEcon) && (
             <div className="absolute top-7 left-1.5 flex flex-col items-start gap-0.5 max-w-[85%]">
-              {dayEarnings.length > 0 && (
+              {/* One pill per reporting company so a symbol never gets
+                  truncated — they stack in the left overlay column. Capped
+                  at 3 with a "+N" overflow so a busy day can't push the
+                  stack down into the P/L readout below. */}
+              {dayEarnings.slice(0, 3).map((e) => (
                 <span
-                  title={`Earnings: ${dayEarnings
-                    .map((e) => e.symbol + (e.isEstimate ? " (est.)" : ""))
-                    .join(", ")}`}
-                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/40 text-[8.5px] md:text-[9.5px] font-bold tracking-wide leading-none max-w-full"
+                  key={e.symbol}
+                  title={`Earnings: ${e.symbol}${e.isEstimate ? " (estimated date)" : ""}`}
+                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/40 text-[8.5px] md:text-[9.5px] font-bold tracking-wide leading-none"
                 >
                   <i className="fa-solid fa-bullhorn text-[7px]" aria-hidden />
-                  <span className="truncate">
-                    {dayEarnings
-                      .slice(0, 2)
-                      .map((e) => e.symbol)
-                      .join(" ")}
-                    {dayEarnings.length > 2 && ` +${dayEarnings.length - 2}`}
-                  </span>
+                  {e.symbol}
+                  {e.isEstimate && (
+                    <span className="opacity-60 font-medium">est</span>
+                  )}
+                </span>
+              ))}
+              {dayEarnings.length > 3 && (
+                <span
+                  title={`Also reporting: ${dayEarnings
+                    .slice(3)
+                    .map((e) => e.symbol)
+                    .join(", ")}`}
+                  className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-teal-500/15 text-teal-300/80 border border-teal-500/30 text-[8.5px] md:text-[9.5px] font-bold tracking-wide leading-none"
+                >
+                  +{dayEarnings.length - 3}
                 </span>
               )}
               {dayExpiries.length > 0 && (
@@ -829,11 +840,67 @@ function Page() {
     );
   };
 
-  // On phones the month grid normally fits the viewport exactly (no
-  // scroll). In extended mode the tiles carry extra chips, so we switch
-  // to taller, scrollable tiles instead of cramming everything into a
-  // fixed height. Desktop is unaffected (md:h-auto everywhere).
-  const scrollMode = detailed && view === "month";
+  // On phones the month grid uses natural, scrollable rows (see the
+  // mobile rules in custom-calendar.css) rather than a fixed viewport
+  // height, so the page scrolls in both default and extended mode.
+  // Desktop is unaffected (md:h-auto everywhere).
+  const scrollMode = view === "month";
+
+  // Control buttons shared between the desktop cluster (top-right of the
+  // P/L) and the mobile row (below the P/L, beside Show earnings). Kept
+  // as small render helpers so the markup isn't duplicated per breakpoint.
+  const shareButton = () =>
+    view === "month" ? (
+      <button
+        onClick={() => setShowMonthShare(true)}
+        className="w-8 h-8 inline-flex items-center justify-center rounded-full border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/75 hover:text-white transition cursor-pointer"
+        title="Share this month's P/L as an image"
+        aria-label="Share this month"
+      >
+        <i className="fa-solid fa-share-nodes text-[11px]" />
+      </button>
+    ) : null;
+
+  const todayButton = () => (
+    <button
+      onClick={goToToday}
+      className="inline-flex items-center px-3 py-1.5 rounded-full border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/75 hover:text-white transition text-[12px] font-medium cursor-pointer"
+      title="Jump to today"
+    >
+      Today
+    </button>
+  );
+
+  const viewToggle = () => (
+    <div className="relative inline-flex rounded-full border border-white/10 bg-white/[0.03] p-1">
+      <span
+        aria-hidden
+        className={`absolute top-1 bottom-1 rounded-full bg-white/10 border border-white/15 transition-[left,width] duration-300 ease-out ${
+          view === "month"
+            ? "left-1 w-[calc(50%-4px)]"
+            : "left-[calc(50%)] w-[calc(50%-4px)]"
+        }`}
+      />
+      <button
+        type="button"
+        onClick={() => setView("month")}
+        className={`relative px-3 py-1 rounded-full text-[12px] font-medium transition-colors cursor-pointer ${
+          view === "month" ? "text-white" : "text-white/55 hover:text-white"
+        }`}
+      >
+        Month
+      </button>
+      <button
+        type="button"
+        onClick={() => setView("week")}
+        className={`relative px-3 py-1 rounded-full text-[12px] font-medium transition-colors cursor-pointer ${
+          view === "week" ? "text-white" : "text-white/55 hover:text-white"
+        }`}
+      >
+        Week
+      </button>
+    </div>
+  );
 
   return (
     <>
@@ -906,15 +973,16 @@ function Page() {
                     >
                       {summary.closedCount === 0
                         ? "-"
-                        : `${positive ? "" : "-"}${fmtMoneyCompact(Math.abs(summary.netPL))}`}
+                        : `${positive ? "" : "-"}${fmtMoneyFull(Math.abs(summary.netPL))}`}
                     </div>
                   </div>
                 );
               })()}
-              <div className="flex items-center gap-2">
+              {/* Desktop: buttons stay top-right beside the P/L. */}
+              <div className="hidden md:flex items-center gap-2">
                 <button
                   onClick={() => setDetailed((v) => !v)}
-                  className={`w-8 h-8 hidden md:inline-flex items-center justify-center rounded-full border transition cursor-pointer ${
+                  className={`w-8 h-8 inline-flex items-center justify-center rounded-full border transition cursor-pointer ${
                     detailed
                       ? "bg-teal-500/15 text-teal-300 border-teal-500/30 hover:bg-teal-500/25"
                       : "border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/75 hover:text-white"
@@ -925,62 +993,16 @@ function Page() {
                 >
                   <i className="fa-solid fa-layer-group text-[11px]" />
                 </button>
-                {view === "month" && (
-                  <button
-                    onClick={() => setShowMonthShare(true)}
-                    className="w-8 h-8 inline-flex items-center justify-center rounded-full border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/75 hover:text-white transition cursor-pointer"
-                    title="Share this month's P/L as an image"
-                    aria-label="Share this month"
-                  >
-                    <i className="fa-solid fa-share-nodes text-[11px]" />
-                  </button>
-                )}
-                <button
-                  onClick={goToToday}
-                  className="inline-flex items-center px-3 py-1.5 rounded-full border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/75 hover:text-white transition text-[12px] font-medium cursor-pointer"
-                  title="Jump to today"
-                >
-                  Today
-                </button>
-                <div className="relative inline-flex rounded-full border border-white/10 bg-white/[0.03] p-1">
-                  <span
-                    aria-hidden
-                    className={`absolute top-1 bottom-1 rounded-full bg-white/10 border border-white/15 transition-[left,width] duration-300 ease-out ${
-                      view === "month"
-                        ? "left-1 w-[calc(50%-4px)]"
-                        : "left-[calc(50%)] w-[calc(50%-4px)]"
-                    }`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setView("month")}
-                    className={`relative px-3 py-1 rounded-full text-[12px] font-medium transition-colors cursor-pointer ${
-                      view === "month"
-                        ? "text-white"
-                        : "text-white/55 hover:text-white"
-                    }`}
-                  >
-                    Month
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setView("week")}
-                    className={`relative px-3 py-1 rounded-full text-[12px] font-medium transition-colors cursor-pointer ${
-                      view === "week"
-                        ? "text-white"
-                        : "text-white/55 hover:text-white"
-                    }`}
-                  >
-                    Week
-                  </button>
-                </div>
+                {shareButton()}
+                {todayButton()}
+                {viewToggle()}
               </div>
             </div>
 
-            {/* Extend toggle — pulled onto its own row on mobile so it
-                doesn't crowd the Today / Month-Week controls. Labeled
-                here since it's no longer beside its siblings. */}
-            <div className="md:hidden flex justify-end px-3 mb-3">
+            {/* Mobile: Show earnings + Share + Today + Month/Week toggle all
+                sit on one row below the P/L, so the P/L headline can span
+                the full width and show the exact figure. */}
+            <div className="md:hidden flex items-center justify-end flex-wrap gap-2 px-3 mb-3">
               <button
                 onClick={() => setDetailed((v) => !v)}
                 className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border transition cursor-pointer text-[12px] font-medium ${
@@ -993,6 +1015,9 @@ function Page() {
                 <i className="fa-solid fa-layer-group text-[11px]" />
                 {detailed ? "Hide earnings" : "Show earnings"}
               </button>
+              {shareButton()}
+              {todayButton()}
+              {viewToggle()}
             </div>
 
             {/* Extended-mode legend — explains the overlay chips. */}

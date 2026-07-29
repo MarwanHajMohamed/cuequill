@@ -278,20 +278,17 @@
   }
   .react-calendar.custom-calendar_full-view
     .react-calendar__month-view__days {
-    /* Calendar grid fills viewport between the floating top brand
-       (~60px incl. mt-15) and the floating bottom tab bar
-       (88px + iOS home-indicator inset), minus the calendar's own
-       chrome (nav row 36, nav margin 4, weekdays 28, bottom pad 8,
-       border 2) and the control row above it (~44px). The top safe-area
-       inset is also subtracted because the body adds it as padding-top
-       in standalone PWA mode (status bar draws over the webview). */
-    height: calc(
-      100dvh - 60px - 44px - 36px - 4px - 28px - 8px - 2px - 88px -
-        env(safe-area-inset-top) - env(safe-area-inset-bottom)
-    ) !important;
-    grid-auto-rows: 1fr !important;
+    /* Natural, scrollable rows on mobile. Rows are at least ~100px and
+       grow with their content, and the grid grows past the viewport so
+       the page scrolls (instead of cramming the whole month into a fixed
+       viewport-height that couldn't scroll). The bottom padding clears
+       the floating tab bar (88px + iOS home-indicator inset) so the last
+       week never hides behind it. */
+    height: auto !important;
+    grid-auto-rows: minmax(100px, auto) !important;
+    overflow: visible !important;
     gap: 3px;
-    padding: 0 6px 8px;
+    padding: 0 6px calc(88px + env(safe-area-inset-bottom));
   }
   .react-calendar.custom-calendar_full-view .react-calendar__tile {
     padding: 0 0 4px 0;

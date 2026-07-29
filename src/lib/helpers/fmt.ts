@@ -26,6 +26,22 @@ export function fmtMoneySignedCompact(value: number): string {
   return sign + "$" + compact(Math.abs(value));
 }
 
+// Full, un-abbreviated money — thousands separators and two decimals
+// (e.g. "$12,345.67"). Used where the exact figure matters more than
+// saving space, like the calendar's monthly P/L headline.
+export function fmtMoneyFull(value: number): string {
+  if (!Number.isFinite(value)) return "$0.00";
+  const sign = value < 0 ? "-" : "";
+  return (
+    sign +
+    "$" +
+    Math.abs(value).toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })
+  );
+}
+
 function compact(abs: number): string {
   if (abs < 1_000) return abs.toFixed(2);
   if (abs < 10_000) return (abs / 1_000).toFixed(2) + "k";
