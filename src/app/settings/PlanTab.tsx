@@ -190,7 +190,9 @@ export default function PlanTab() {
   })();
 
   return (
-    <div className="p-5 md:p-7 flex flex-col gap-6 max-w-2xl">
+    <div className="p-5 md:p-7 flex flex-col md:flex-row gap-6 md:gap-8">
+      {/* Left column: plan card, alerts, usage, billing, nudge */}
+      <div className="flex-1 min-w-0 flex flex-col gap-6">
       <div>
         <div className="text-[11px] tracking-[0.08em] text-white/45 font-medium mb-1">
           Current plan
@@ -412,13 +414,18 @@ export default function PlanTab() {
             </button>
           </div>
         )}
+      </div>
 
-      {/* What's included on the current plan (+ Pro upsell for free users). */}
-      <div>
+      {/* Separator — a horizontal rule on mobile, a full-height rule on
+          desktop between the two columns. */}
+      <div className="h-px w-full md:h-auto md:w-px bg-white/10 shrink-0" />
+
+      {/* Right column: what's included on the current plan. */}
+      <div className="md:w-[300px] shrink-0">
         <div className="text-[11px] tracking-[0.08em] text-white/45 font-medium mb-3">
-          {isPro ? "Your plan includes" : "What's included"}
+          {isPro ? "Plan includes" : "What's included"}
         </div>
-        <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5 flex flex-col gap-2.5">
+        <div className="flex flex-col gap-2.5">
           {(isPro ? [...INCLUDED_FREE, ...PRO_ADDS] : INCLUDED_FREE).map((f) => (
             <div key={f} className="flex items-start gap-2.5 text-[13px]">
               <i className="fa-solid fa-check text-teal-300 text-[11px] mt-[3px]" />
