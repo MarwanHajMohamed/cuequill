@@ -1020,15 +1020,15 @@ export default function Navbar() {
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", stiffness: 380, damping: 36 }}
-            className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-[var(--surface-2)] border-t border-white/10 rounded-t-3xl shadow-[0_-12px_40px_var(--shadow)]"
+            className="md:hidden fixed bottom-0 inset-x-0 z-50 max-h-[70vh] flex flex-col overflow-hidden bg-[var(--surface-2)] border-t border-white/10 rounded-t-3xl shadow-[0_-12px_40px_var(--shadow)]"
             style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
           >
-            {/* Grab handle */}
-            <div className="flex justify-center pt-2">
+            {/* Grab handle + header — fixed; the rest scrolls. */}
+            <div className="shrink-0 flex justify-center pt-2">
               <span className="w-10 h-1 rounded-full bg-white/20" />
             </div>
 
-            <div className="px-4 pt-3 pb-4 flex items-center justify-between">
+            <div className="shrink-0 px-4 pt-3 pb-3 flex items-center justify-between">
               <span className="text-[11px] tracking-[0.1em] text-white/40 font-medium">
                 more
               </span>
@@ -1041,6 +1041,7 @@ export default function Navbar() {
               </button>
             </div>
 
+            <div className="overflow-y-auto flex-1 min-h-0">
             <div className="px-3 pb-3 grid grid-cols-1 gap-1">
               {moreItems.map((item) => {
                 const active = isActive(item.slug);
@@ -1070,46 +1071,38 @@ export default function Navbar() {
               })}
             </div>
 
-            <div className="mx-4 mb-3 p-3 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-between">
-              <div className="flex flex-col">
-                <span className="text-[13px] text-white/85 font-medium">
-                  appearance
+            {/* Compact toggles — side by side to save vertical space. */}
+            <div className="mx-4 mb-3 grid grid-cols-2 gap-2">
+              <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-between gap-2">
+                <span className="text-[12.5px] text-white/85 font-medium">
+                  Appearance
                 </span>
-                <span className="text-[11px] text-white/45">
-                  light or dark theme
-                </span>
+                <ThemeToggle />
               </div>
-              <ThemeToggle />
-            </div>
-
-            <div className="mx-4 mb-3 p-3 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-between">
-              <div className="flex flex-col">
-                <span className="text-[13px] text-white/85 font-medium">
-                  simulated trading
+              <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-between gap-2">
+                <span className="text-[12.5px] text-white/85 font-medium">
+                  Simulated
                 </span>
-                <span className="text-[11px] text-white/45">
-                  use paper-trade data
-                </span>
-              </div>
-              <label className="inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={simulated}
-                  onChange={(e) => {
-                    setSimulated(e.target.checked);
-                    window.location.reload();
-                  }}
-                  className="sr-only peer"
-                />
-                <div
-                  className="relative w-10 h-5 bg-white/10 rounded-full peer
+                <label className="inline-flex items-center cursor-pointer shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={simulated}
+                    onChange={(e) => {
+                      setSimulated(e.target.checked);
+                      window.location.reload();
+                    }}
+                    className="sr-only peer"
+                  />
+                  <div
+                    className="relative w-10 h-5 bg-white/10 rounded-full peer
                       peer-checked:after:translate-x-full
                       after:content-[''] after:absolute after:top-[2px]
                       after:start-[2px] after:bg-white after:rounded-full
                       after:h-4 after:w-4 after:transition-all
                       peer-checked:bg-teal-500"
-                />
-              </label>
+                  />
+                </label>
+              </div>
             </div>
 
             <div className="px-3 pb-4">
@@ -1120,6 +1113,7 @@ export default function Navbar() {
                 <i className="fa-solid fa-right-from-bracket text-[12px]" />
                 logout
               </button>
+            </div>
             </div>
           </motion.div>
         )}
