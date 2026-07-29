@@ -876,13 +876,14 @@ function Page() {
             </div>
 
             {/* Bottom edge blend (desktop) - the composer is in-flow here,
-                sitting right below the message view, so an absolute band at
-                the bottom of the scroll area blends straight into it. On
+                sitting right below the message view. Drop the band by the
+                composer's top margin (mt-3) so its opaque base lands exactly
+                on the top edge of the text box rather than stopping short. On
                 mobile the composer is fixed with a reserved gap, so a
                 separate fixed band (below) handles the blend instead. */}
             <div
               aria-hidden
-              className="hidden md:block pointer-events-none absolute inset-x-0 bottom-0 h-16 z-10"
+              className="hidden md:block pointer-events-none absolute inset-x-0 -bottom-3 h-16 z-10"
               style={{
                 background:
                   "linear-gradient(to top, rgb(var(--bg-rgb) / 0.85) 0%, rgb(var(--bg-rgb) / 0.4) 45%, rgb(var(--bg-rgb) / 0) 100%)",
