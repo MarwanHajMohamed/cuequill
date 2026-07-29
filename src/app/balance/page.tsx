@@ -8,6 +8,7 @@ import {
   useBalanceSnapshots,
   type BalanceSnapshot,
 } from "@/hooks/useBalanceSnapshots";
+import { useTransactions } from "@/hooks/useTransactions";
 import { fmtCurrency } from "@/lib/helpers/fmt";
 import {
   ResponsiveContainer,
@@ -16,9 +17,13 @@ import {
   Tooltip as ReTooltip,
   XAxis,
   YAxis,
+  ReferenceDot,
 } from "recharts";
 
 type Range = "1M" | "3M" | "6M" | "1Y" | "ALL";
+// "balance" = raw account value; "adjusted" neutralises deposits &
+// withdrawals so the line reflects trading performance only.
+type Mode = "balance" | "adjusted";
 const RANGES: Range[] = ["1M", "3M", "6M", "1Y", "ALL"];
 const RANGE_DAYS: Record<Range, number | null> = {
   "1M": 30,
@@ -33,8 +38,10 @@ const todayStr = () => new Date().toISOString().split("T")[0];
 function Page() {
   const qc = useQueryClient();
   const { data: snapshots, isLoading } = useBalanceSnapshots();
+  const { data: transactions } = useTransactions();
 
   const [range, setRange] = useState<Range>("6M");
+  const [mode, setMode] = useState<Mode>("balance");
   const [date, setDate] = useState(todayStr);
   const [amount, setAmount] = useState("");
   const [currency, setCurrency] = useState("");
@@ -42,29 +49,101 @@ function Page() {
   const [syncing, setSyncing] = useState(false);
   const [status, setStatus] = useState("");
 
-  const filtered = useMemo(() => {
+  const isoDay = (d: string) => new Date(d).toISOString().split("T")[0];
+
+  // Deposits (+) and withdrawals (−) as a signed cash flow, sorted by day.
+  const flows = useMemo(() => {
+    return (transactions ?? [])
+      .filter((t) => t.type === "DEPOSIT" || t.type === "WITHDRAW")
+      .map((t) => ({
+        date: isoDay(t.date),
+        signed: t.type === "DEPOSIT" ? t.amount : -t.amount,
+        type: t.type as "DEPOSIT" | "WITHDRAW",
+        amount: t.amount,
+      }))
+      .sort((a, b) => (a.date < b.date ? -1 : 1));
+  }, [transactions]);
+
+  // Every snapshot annotated with the cumulative net cash flow up to and
+  // including its day. `adjusted` (filled in per-range below) subtracts the
+  // net flow that landed within the window so the curve shows trading only.
+  const series = useMemo(() => {
     if (!snapshots) return [];
+    let fi = 0;
+    let cum = 0;
+    return snapshots.map((s) => {
+      while (fi < flows.length && flows[fi].date <= s.date) {
+        cum += flows[fi].signed;
+        fi++;
+      }
+      return { date: s.date, balance: s.balance, cumFlow: cum };
+    });
+  }, [snapshots, flows]);
+
+  const filtered = useMemo(() => {
     const days = RANGE_DAYS[range];
-    if (days == null) return snapshots;
+    if (days == null) return series;
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - days);
     const cutoffStr = cutoff.toISOString().split("T")[0];
-    return snapshots.filter((s) => s.date >= cutoffStr);
-  }, [snapshots, range]);
+    return series.filter((s) => s.date >= cutoffStr);
+  }, [series, range]);
+
+  // Chart data for the active window. `adjusted` re-bases each point by the
+  // net flow since the window's first point, so deposits/withdrawals don't
+  // show up as jumps in the trading-performance view.
+  const chartData = useMemo(() => {
+    if (filtered.length === 0) return [];
+    const baseFlow = filtered[0].cumFlow;
+    return filtered.map((p) => ({
+      date: p.date,
+      balance: p.balance,
+      adjusted: p.balance - (p.cumFlow - baseFlow),
+    }));
+  }, [filtered]);
+
+  // Deposit/withdrawal markers, snapped to the first charted day on/after
+  // the flow so they sit on the line in either view.
+  const markers = useMemo(() => {
+    if (chartData.length === 0) return [];
+    const first = chartData[0].date;
+    const last = chartData[chartData.length - 1].date;
+    return flows
+      .filter((f) => f.date >= first && f.date <= last)
+      .map((f) => {
+        const pt =
+          chartData.find((p) => p.date >= f.date) ??
+          chartData[chartData.length - 1];
+        return {
+          x: pt.date,
+          y: mode === "adjusted" ? pt.adjusted : pt.balance,
+          type: f.type,
+          amount: f.amount,
+        };
+      });
+  }, [flows, chartData, mode]);
 
   const summary = useMemo(() => {
-    if (!snapshots || snapshots.length === 0) return null;
-    // Current balance is always the newest point; the change/% is measured
-    // over the selected range (falling back to all-time if the range is
-    // empty) so the headline figure never disappears.
-    const last = snapshots[snapshots.length - 1];
-    const inRange = filtered.length > 0 ? filtered : snapshots;
+    if (!snapshots || snapshots.length === 0 || series.length === 0)
+      return null;
+    const last = series[series.length - 1];
+    const inRange = filtered.length > 0 ? filtered : series;
     const first = inRange[0];
-    const change = last.balance - first.balance;
-    const pct =
-      first.balance !== 0 ? (change / Math.abs(first.balance)) * 100 : null;
-    return { last, change, pct, currency: last.currency };
-  }, [snapshots, filtered]);
+    const rawChange = last.balance - first.balance;
+    const netFlow = last.cumFlow - first.cumFlow; // flows within the window
+    const tradingChange = rawChange - netFlow;
+    const change = mode === "adjusted" ? tradingChange : rawChange;
+    const denom = Math.abs(first.balance);
+    const pct = denom !== 0 ? (change / denom) * 100 : null;
+    return {
+      latest: last.balance,
+      change,
+      pct,
+      netFlow,
+      tradingChange,
+      currency: snapshots[snapshots.length - 1].currency,
+    };
+  }, [snapshots, series, filtered, mode]);
 
   const hasData = !!snapshots && snapshots.length > 0;
   const refresh = () => qc.invalidateQueries({ queryKey: ["balanceSnapshots"] });
@@ -131,6 +210,9 @@ function Page() {
   const up = (summary?.change ?? 0) >= 0;
   const chartColor = up ? "#22c55e" : "#ef4444";
   const cur = summary?.currency;
+  const activeKey = mode === "adjusted" ? "adjusted" : "balance";
+  const seriesLabel = mode === "adjusted" ? "Trading P/L" : "Balance";
+  const hasFlows = flows.length > 0;
 
   return (
     <div className="w-full flex justify-center min-h-screen pb-24">
@@ -187,7 +269,7 @@ function Page() {
                   Current balance
                 </div>
                 <div className="text-[32px] md:text-[40px] leading-none font-medium tracking-tight tabular-nums">
-                  {fmtCurrency(summary!.last.balance, cur)}
+                  {fmtCurrency(summary!.latest, cur)}
                 </div>
                 <div
                   className={`text-[13px] font-medium tabular-nums ${
@@ -199,32 +281,80 @@ function Page() {
                   {summary!.pct != null && (
                     <span className="text-white/40 ml-1.5">
                       ({up ? "+" : "−"}
-                      {Math.abs(summary!.pct).toFixed(1)}%) over {range}
+                      {Math.abs(summary!.pct).toFixed(1)}%){" "}
+                      {mode === "adjusted" ? "from trading" : "over"} {range}
                     </span>
                   )}
                 </div>
+                {/* When cash moved in/out of the window, show it so the raw
+                    change isn't mistaken for trading performance. */}
+                {hasFlows && summary!.netFlow !== 0 && (
+                  <div className="text-[11.5px] text-white/40 tabular-nums">
+                    {mode === "adjusted" ? (
+                      <>
+                        excl. net{" "}
+                        {summary!.netFlow >= 0 ? "deposits" : "withdrawals"}{" "}
+                        {fmtCurrency(Math.abs(summary!.netFlow), cur)}
+                      </>
+                    ) : (
+                      <>
+                        incl. net{" "}
+                        {summary!.netFlow >= 0 ? "deposits" : "withdrawals"}{" "}
+                        {fmtCurrency(Math.abs(summary!.netFlow), cur)} · trading{" "}
+                        {summary!.tradingChange >= 0 ? "+" : "−"}
+                        {fmtCurrency(Math.abs(summary!.tradingChange), cur)}
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
 
-              <div className="inline-flex rounded-full border border-white/10 bg-white/[0.03] p-1">
-                {RANGES.map((r) => (
-                  <button
-                    key={r}
-                    onClick={() => setRange(r)}
-                    className={`px-3 py-1 rounded-full text-[12px] font-medium transition cursor-pointer ${
-                      range === r
-                        ? "bg-white/10 text-white border border-white/15"
-                        : "text-white/55 hover:text-white"
-                    }`}
-                  >
-                    {r}
-                  </button>
-                ))}
+              <div className="flex flex-col items-end gap-2">
+                <div className="inline-flex rounded-full border border-white/10 bg-white/[0.03] p-1">
+                  {RANGES.map((r) => (
+                    <button
+                      key={r}
+                      onClick={() => setRange(r)}
+                      className={`px-3 py-1 rounded-full text-[12px] font-medium transition cursor-pointer ${
+                        range === r
+                          ? "bg-white/10 text-white border border-white/15"
+                          : "text-white/55 hover:text-white"
+                      }`}
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
+                {/* Balance vs trading-only (deposits/withdrawals removed).
+                    Only worth showing once there are cash flows to remove. */}
+                {hasFlows && (
+                  <div className="inline-flex rounded-full border border-white/10 bg-white/[0.03] p-1">
+                    {(
+                      [
+                        ["balance", "Balance"],
+                        ["adjusted", "Trading P/L"],
+                      ] as [Mode, string][]
+                    ).map(([m, label]) => (
+                      <button
+                        key={m}
+                        onClick={() => setMode(m)}
+                        className={`px-3 py-1 rounded-full text-[12px] font-medium transition cursor-pointer ${
+                          mode === m
+                            ? "bg-white/10 text-white border border-white/15"
+                            : "text-white/55 hover:text-white"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Chart */}
             <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.02] p-4 md:p-5 h-[280px] md:h-[340px]">
-              {filtered.length < 2 ? (
+              {chartData.length < 2 ? (
                 <div className="h-full flex items-center justify-center text-[13px] text-white/40 text-center">
                   Not enough points in this range yet — add more snapshots or
                   widen the range.
@@ -232,7 +362,7 @@ function Page() {
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart
-                    data={filtered}
+                    data={chartData}
                     margin={{ top: 8, right: 8, left: 8, bottom: 0 }}
                   >
                     <defs>
@@ -264,11 +394,24 @@ function Page() {
                     />
                     <Area
                       type="monotone"
-                      dataKey="balance"
+                      dataKey={activeKey}
                       stroke={chartColor}
                       strokeWidth={2}
                       fill="url(#balFill)"
                     />
+                    {/* Deposit (teal) / withdrawal (amber) markers on the line. */}
+                    {markers.map((m, i) => (
+                      <ReferenceDot
+                        key={`${m.x}-${i}`}
+                        x={m.x}
+                        y={m.y}
+                        r={4}
+                        fill={m.type === "DEPOSIT" ? "#2dd4bf" : "#f59e0b"}
+                        stroke="var(--surface)"
+                        strokeWidth={2}
+                        ifOverflow="extendDomain"
+                      />
+                    ))}
                     <ReTooltip
                       contentStyle={{
                         background: "var(--surface)",
@@ -280,12 +423,29 @@ function Page() {
                       labelFormatter={(d) =>
                         new Date(d as string).toLocaleDateString()
                       }
-                      formatter={(v: number) => [fmtCurrency(v, cur), "Balance"]}
+                      formatter={(v: number) => [
+                        fmtCurrency(v, cur),
+                        seriesLabel,
+                      ]}
                     />
                   </AreaChart>
                 </ResponsiveContainer>
               )}
             </div>
+
+            {/* Marker legend — only when there are flows on the chart. */}
+            {hasFlows && markers.length > 0 && (
+              <div className="mt-2 flex items-center gap-4 text-[11px] text-white/45">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-teal-400" />
+                  Deposit
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-amber-500" />
+                  Withdrawal
+                </span>
+              </div>
+            )}
               </>
             )}
 
