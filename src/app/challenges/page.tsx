@@ -177,17 +177,17 @@ function Page() {
                 (c) => c.minLevel === data.level + 1,
               );
               return (
-                <div className="mt-4 flex items-center gap-2 flex-wrap text-[12px] text-white/55">
+                <div className="mt-4 text-[12px] text-white/55 leading-relaxed">
                   {nextUnlock ? (
-                    <span className="inline-flex items-center gap-1.5">
+                    <>
                       Reach{" "}
                       <span className="text-white/85 font-semibold">
                         level {data.level + 1}
                       </span>{" "}
-                      to unlock the
+                      to unlock the{" "}
                       <span
-                        className={`inline-block w-4 h-4 rounded-full bg-gradient-to-br ${nextUnlock.gradient} border border-white/25`}
-                      />
+                        className={`inline-block align-middle w-3.5 h-3.5 rounded-full bg-gradient-to-br ${nextUnlock.gradient} border border-white/25 mx-0.5`}
+                      />{" "}
                       <span className="text-white/85 font-semibold">
                         {nextUnlock.label}
                       </span>{" "}
@@ -199,9 +199,9 @@ function Page() {
                         set it in settings
                       </Link>
                       .
-                    </span>
+                    </>
                   ) : (
-                    <span>
+                    <>
                       You&apos;ve unlocked every avatar colour — pick yours in{" "}
                       <Link
                         href="/settings"
@@ -210,7 +210,7 @@ function Page() {
                         settings
                       </Link>
                       .
-                    </span>
+                    </>
                   )}
                 </div>
               );

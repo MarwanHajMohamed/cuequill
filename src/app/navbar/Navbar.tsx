@@ -561,24 +561,39 @@ export default function Navbar() {
             </span>
           </Link>
 
-          <div
-            className={`pointer-events-auto flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border ${
-              marketOpen
-                ? "bg-green-500/10 text-green-400 border-green-500/20"
-                : "bg-red-500/10 text-red-400 border-red-500/20"
-            }`}
-          >
-            <span className="relative flex w-1.5 h-1.5">
-              {marketOpen && (
-                <span className="absolute inset-0 rounded-full bg-green-400 animate-ping opacity-75" />
-              )}
-              <span
-                className={`relative inline-flex w-1.5 h-1.5 rounded-full ${
-                  marketOpen ? "bg-green-400" : "bg-red-400"
-                }`}
-              />
-            </span>
-            <span>{marketOpen ? "Open" : "Closed"}</span>
+          <div className="pointer-events-auto flex items-center gap-2">
+            <div
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border ${
+                marketOpen
+                  ? "bg-green-500/10 text-green-400 border-green-500/20"
+                  : "bg-red-500/10 text-red-400 border-red-500/20"
+              }`}
+            >
+              <span className="relative flex w-1.5 h-1.5">
+                {marketOpen && (
+                  <span className="absolute inset-0 rounded-full bg-green-400 animate-ping opacity-75" />
+                )}
+                <span
+                  className={`relative inline-flex w-1.5 h-1.5 rounded-full ${
+                    marketOpen ? "bg-green-400" : "bg-red-400"
+                  }`}
+                />
+              </span>
+              <span>{marketOpen ? "Open" : "Closed"}</span>
+            </div>
+            {/* Account avatar — taps through to settings on mobile. */}
+            <Link
+              href="/settings"
+              prefetch
+              onClick={(e) => {
+                e.preventDefault();
+                navigate("settings");
+              }}
+              aria-label="Account"
+              className={`w-8 h-8 shrink-0 rounded-full bg-gradient-to-br ${avatarGrad} ${avatarRing} border border-white/15 flex items-center justify-center text-[12px] font-semibold text-white`}
+            >
+              {userInitial}
+            </Link>
           </div>
         </div>
 
