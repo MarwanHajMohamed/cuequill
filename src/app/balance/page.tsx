@@ -166,7 +166,7 @@ function Page() {
                 <div className="mt-8 flex items-end justify-between gap-4 flex-wrap">
                   <div className="flex flex-col gap-1">
                     <div className="text-[11px] tracking-[0.1em] text-white/40 font-medium">
-                      balance
+                      Balance
                     </div>
                     <div className="text-[32px] md:text-[40px] leading-none font-medium tracking-tight tabular-nums">
                       {fmtMoneyFull(summary!.latest)}

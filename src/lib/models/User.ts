@@ -103,6 +103,9 @@ export interface IUser extends Document {
   // into this (Pro) user's saved layout, so we never fight a later manual
   // removal by re-adding it.
   dashInsightMigrated?: boolean;
+  // One-time flag: the "Balance" widget has been auto-inserted into this
+  // user's saved layout, so we never fight a later manual removal.
+  dashBalanceMigrated?: boolean;
 }
 
 const UserSchema = new Schema<IUser>({
@@ -171,6 +174,7 @@ const UserSchema = new Schema<IUser>({
   dashInsightAt: { type: Date },
   dashInsightRecent: { type: [String], default: [] },
   dashInsightMigrated: { type: Boolean, default: false },
+  dashBalanceMigrated: { type: Boolean, default: false },
 });
 
 // In dev, Next.js hot-reload keeps the previously-compiled model (with

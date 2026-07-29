@@ -58,7 +58,7 @@ export async function GET() {
 
   await connectDb();
   const user = await User.findById(session.user.id).select(
-    "dashboardLayout dashboardGlanceTiles dashboardWidgetSizes dashboardWidgetRows isPro dashInsightMigrated",
+    "dashboardLayout dashboardGlanceTiles dashboardWidgetSizes dashboardWidgetRows isPro dashInsightMigrated dashBalanceMigrated",
   );
   if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -83,6 +83,29 @@ export async function GET() {
       user.dashboardLayout = next;
     }
     user.dashInsightMigrated = true;
+    await user.save().catch(() => {
+      /* best-effort — still return the migrated layout in-memory */
+    });
+  }
+
+  // One-time migration: add the "Balance" widget to an existing saved
+  // layout (after "equity", or "glance"). Runs once for every user — it's
+  // not Pro-gated — and the flag stops us re-adding it after a removal.
+  // Users with no custom layout already get it from the client default.
+  if (!user.dashBalanceMigrated) {
+    if (
+      Array.isArray(layout) &&
+      layout.length > 0 &&
+      !layout.includes("balance")
+    ) {
+      const next = [...layout];
+      const anchor = next.indexOf("equity");
+      const at = anchor >= 0 ? anchor + 1 : next.indexOf("glance") + 1;
+      next.splice(at > 0 ? at : next.length, 0, "balance");
+      layout = next;
+      user.dashboardLayout = next;
+    }
+    user.dashBalanceMigrated = true;
     await user.save().catch(() => {
       /* best-effort — still return the migrated layout in-memory */
     });
