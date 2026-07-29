@@ -42,6 +42,28 @@ export function fmtMoneyFull(value: number): string {
   );
 }
 
+// Balance / NAV formatter that respects the account's base currency
+// (GBP, USD, …). `compact` uses "£1.2k" style for tight spaces; standard
+// uses full "£1,234.56". Falls back gracefully for unknown currency codes.
+export function fmtCurrency(
+  value: number,
+  currency?: string | null,
+  compact = false,
+): string {
+  const code = currency && /^[A-Z]{3}$/.test(currency) ? currency : "USD";
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: code,
+      notation: compact ? "compact" : "standard",
+      maximumFractionDigits: compact ? 1 : 2,
+      minimumFractionDigits: compact ? 0 : 2,
+    }).format(value);
+  } catch {
+    return (value < 0 ? "-" : "") + "$" + Math.abs(value).toFixed(2);
+  }
+}
+
 function compact(abs: number): string {
   if (abs < 1_000) return abs.toFixed(2);
   if (abs < 10_000) return (abs / 1_000).toFixed(2) + "k";

@@ -3,6 +3,7 @@
 import React from "react";
 import DashboardStats from "./components/stats/DashboardStats";
 import DashboardEquity from "./components/stats/DashboardEquity";
+import DashboardBalance from "./components/stats/DashboardBalance";
 import DashboardRiskBudget from "./components/insights/DashboardRiskBudget";
 import DashboardOpenPositions from "./components/stats/DashboardOpenPositions";
 import DashboardRecentCloses from "./components/stats/DashboardRecentCloses";
@@ -22,6 +23,7 @@ export type WidgetId =
   | "glance"
   | "quillInsight"
   | "equity"
+  | "balance"
   | "riskBudget"
   | "openPositions"
   | "recentCloses"
@@ -54,6 +56,11 @@ export const WIDGETS: WidgetDef[] = [
     id: "equity",
     title: "Recent equity",
     render: (userId) => <DashboardEquity userId={userId} />,
+  },
+  {
+    id: "balance",
+    title: "Balance",
+    render: () => <DashboardBalance />,
   },
   {
     id: "riskBudget",
@@ -109,6 +116,7 @@ export const DEFAULT_LAYOUT: WidgetId[] = [
   "glance",
   "quillInsight",
   "equity",
+  "balance",
   "openPositions",
   "recentCloses",
   "upcoming",
