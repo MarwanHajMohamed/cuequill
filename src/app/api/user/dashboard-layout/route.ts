@@ -58,7 +58,7 @@ export async function GET() {
 
   await connectDb();
   const user = await User.findById(session.user.id).select(
-    "dashboardLayout dashboardGlanceTiles dashboardWidgetSizes dashboardWidgetRows isPro dashInsightMigrated dashBalanceMigrated",
+    "dashboardLayout dashboardGlanceTiles dashboardWidgetSizes dashboardWidgetRows isPro dashInsightMigrated dashBalanceMigrated dashChallengesMigrated",
   );
   if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -106,6 +106,26 @@ export async function GET() {
       user.dashboardLayout = next;
     }
     user.dashBalanceMigrated = true;
+    await user.save().catch(() => {
+      /* best-effort — still return the migrated layout in-memory */
+    });
+  }
+
+  // One-time migration: add the "Challenges" widget to an existing layout
+  // (after "balance", or at the end). Runs once for every user.
+  if (!user.dashChallengesMigrated) {
+    if (
+      Array.isArray(layout) &&
+      layout.length > 0 &&
+      !layout.includes("challenges")
+    ) {
+      const next = [...layout];
+      const anchor = next.indexOf("balance");
+      next.splice(anchor >= 0 ? anchor + 1 : next.length, 0, "challenges");
+      layout = next;
+      user.dashboardLayout = next;
+    }
+    user.dashChallengesMigrated = true;
     await user.save().catch(() => {
       /* best-effort — still return the migrated layout in-memory */
     });

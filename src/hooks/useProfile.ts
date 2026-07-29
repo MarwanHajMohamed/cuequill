@@ -5,6 +5,11 @@ export type Profile = {
   startingBalance: number;
   riskPerTrade: number | null;
   avatarColor: string;
+  level: number;
+  title: string;
+  totalXp: number;
+  into: number;
+  per: number;
   isPro: boolean;
   proManualOverride: boolean;
   stripeCurrentPeriodEnd: string | null;

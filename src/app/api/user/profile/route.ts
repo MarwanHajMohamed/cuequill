@@ -5,6 +5,7 @@ import connectDb from "@/lib/db";
 import { User } from "@/lib/models/User";
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
+import { levelInfo } from "@/lib/challenges";
 
 // GET /api/user/profile — display preferences + read-only account info.
 export async function GET() {
@@ -15,7 +16,7 @@ export async function GET() {
 
   await connectDb();
   const user = await User.findById(session.user.id).select(
-    "currency startingBalance riskPerTrade avatarColor isPro proManualOverride stripeCurrentPeriodEnd stripeCancelAtPeriodEnd",
+    "currency startingBalance riskPerTrade avatarColor xp isPro proManualOverride stripeCurrentPeriodEnd stripeCancelAtPeriodEnd",
   );
   if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -26,6 +27,7 @@ export async function GET() {
     startingBalance: user.startingBalance ?? 0,
     riskPerTrade: user.riskPerTrade ?? null,
     avatarColor: user.avatarColor ?? "teal",
+    ...levelInfo(user.xp ?? 0),
     isPro: !!user.isPro,
     proManualOverride: !!user.proManualOverride,
     stripeCurrentPeriodEnd: user.stripeCurrentPeriodEnd ?? null,

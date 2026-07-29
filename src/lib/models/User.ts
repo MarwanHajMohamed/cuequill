@@ -114,6 +114,12 @@ export interface IUser extends Document {
   // One-time flag: the "Balance" widget has been auto-inserted into this
   // user's saved layout, so we never fight a later manual removal.
   dashBalanceMigrated?: boolean;
+  dashChallengesMigrated?: boolean;
+  // Challenges & rewards. `xp` accumulates from claimed challenges and
+  // drives the level/title; `challengeClaims` records which challenges
+  // have been claimed (each awards its XP exactly once).
+  xp?: number;
+  challengeClaims?: { id: string; claimedAt: Date }[];
 }
 
 const UserSchema = new Schema<IUser>({
@@ -187,6 +193,17 @@ const UserSchema = new Schema<IUser>({
   dashInsightRecent: { type: [String], default: [] },
   dashInsightMigrated: { type: Boolean, default: false },
   dashBalanceMigrated: { type: Boolean, default: false },
+  dashChallengesMigrated: { type: Boolean, default: false },
+  xp: { type: Number, default: 0 },
+  challengeClaims: {
+    type: [
+      new Schema(
+        { id: { type: String }, claimedAt: { type: Date, default: Date.now } },
+        { _id: false },
+      ),
+    ],
+    default: [],
+  },
 });
 
 // In dev, Next.js hot-reload keeps the previously-compiled model (with

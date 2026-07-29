@@ -1,6 +1,7 @@
 "use client";
 
 import { useSession, signOut } from "next-auth/react";
+import Link from "next/link";
 import React, { useEffect, useMemo, useState } from "react";
 import { GroupBase, InputProps, components } from "react-select";
 import TimezoneSelect, { type ITimezone } from "react-timezone-select";
@@ -581,21 +582,43 @@ const Account = () => {
             Avatar colour
           </span>
           <div className="flex items-center gap-2.5 flex-wrap">
-            {AVATAR_COLORS.map((c) => (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => setAvatarColor(c.id)}
-                title={c.label}
-                aria-label={c.label}
-                className={`w-9 h-9 rounded-full bg-gradient-to-br ${c.gradient} border transition cursor-pointer ${
-                  avatarColor === c.id
-                    ? "border-white ring-2 ring-white/40"
-                    : "border-white/15 hover:border-white/40"
-                }`}
-              />
-            ))}
+            {AVATAR_COLORS.map((c) => {
+              const locked = c.minLevel > (profile?.level ?? 1);
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  disabled={locked}
+                  onClick={() => !locked && setAvatarColor(c.id)}
+                  title={locked ? `Unlocks at level ${c.minLevel}` : c.label}
+                  aria-label={
+                    locked ? `${c.label} — unlocks at level ${c.minLevel}` : c.label
+                  }
+                  className={`relative w-9 h-9 rounded-full bg-gradient-to-br ${c.gradient} border transition ${
+                    locked
+                      ? "opacity-40 cursor-not-allowed border-white/15"
+                      : avatarColor === c.id
+                        ? "border-white ring-2 ring-white/40 cursor-pointer"
+                        : "border-white/15 hover:border-white/40 cursor-pointer"
+                  }`}
+                >
+                  {locked && (
+                    <i className="fa-solid fa-lock absolute inset-0 m-auto w-fit h-fit text-[10px] text-white/90" />
+                  )}
+                </button>
+              );
+            })}
           </div>
+          <span className="text-[11px] text-white/40">
+            More colours unlock as you level up in{" "}
+            <Link
+              href="/challenges"
+              className="text-teal-300 hover:text-teal-200 underline-offset-4 hover:underline"
+            >
+              challenges
+            </Link>
+            .
+          </span>
         </div>
       </section>
 
