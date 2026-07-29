@@ -23,6 +23,24 @@ type PlanInfo = {
   cancelAtPeriodEnd: boolean;
 };
 
+// What each tier ships with — shown as a "your plan includes" list, with
+// the Pro-only rows presented as an upsell to free users.
+const INCLUDED_FREE = [
+  "Unlimited manual trade logging",
+  "Calendar with net P&L",
+  "Up to 3 custom strategies",
+  "Win rate, expectancy & core stats",
+  "90 days of history",
+];
+const PRO_ADDS = [
+  "Quill AI over your own trades",
+  "Automatic IBKR nightly sync",
+  "Unlimited strategies & history",
+  "Per-strategy & per-symbol stats",
+  "Rules board & affirmations",
+  "Downloadable CSV reports",
+];
+
 function fmtDate(iso: string | null): string {
   if (!iso) return "";
   try {
@@ -252,6 +270,106 @@ export default function PlanTab() {
           {error}
         </div>
       )}
+
+      {/* Billing details — only meaningful with a real Stripe subscription. */}
+      {plan?.hasSubscription && (
+        <div>
+          <div className="text-[11px] tracking-[0.08em] text-white/45 font-medium mb-3">
+            Billing
+          </div>
+          <dl className="rounded-2xl border border-white/10 bg-white/[0.02] divide-y divide-white/[0.06] overflow-hidden">
+            {[
+              [
+                "Billing cycle",
+                plan.cycle
+                  ? plan.cycle === "annual"
+                    ? "Annual"
+                    : "Monthly"
+                  : "—",
+              ],
+              [
+                "Status",
+                plan.status
+                  ? plan.status.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase())
+                  : "—",
+              ],
+              [scheduledCancel ? "Ends on" : "Next renewal", periodEnd || "—"],
+            ].map(([label, value]) => (
+              <div
+                key={label}
+                className="flex items-center justify-between gap-4 px-4 py-3"
+              >
+                <dt className="text-[12.5px] text-white/50">{label}</dt>
+                <dd className="text-[13px] text-white/85 tabular-nums">
+                  {value}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      )}
+
+      {/* Annual-savings nudge for monthly subscribers. */}
+      {isPro &&
+        plan?.hasSubscription &&
+        plan.cycle === "monthly" &&
+        !scheduledCancel && (
+          <div className="border border-teal-500/25 bg-teal-500/[0.06] rounded-xl px-3.5 py-3 flex items-center justify-between gap-3 flex-wrap">
+            <div className="text-[12.5px] text-teal-100 flex items-start gap-2">
+              <i className="fa-solid fa-piggy-bank text-[12px] mt-0.5" />
+              <span>
+                You&apos;re on monthly billing — switch to annual and save 20%.
+              </span>
+            </div>
+            <button
+              onClick={openPortal}
+              disabled={portalLoading}
+              className="shrink-0 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-teal-500/15 text-teal-200 border border-teal-500/30 hover:bg-teal-500/25 transition text-[12.5px] font-medium cursor-pointer disabled:opacity-50"
+            >
+              {portalLoading ? "Opening…" : "Switch to annual"}
+            </button>
+          </div>
+        )}
+
+      {/* What's included on the current plan (+ Pro upsell for free users). */}
+      <div>
+        <div className="text-[11px] tracking-[0.08em] text-white/45 font-medium mb-3">
+          {isPro ? "Your plan includes" : "What's included"}
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5 flex flex-col gap-2.5">
+          {(isPro ? [...INCLUDED_FREE, ...PRO_ADDS] : INCLUDED_FREE).map((f) => (
+            <div key={f} className="flex items-start gap-2.5 text-[13px]">
+              <i className="fa-solid fa-check text-teal-300 text-[11px] mt-[3px]" />
+              <span className="text-white/85">{f}</span>
+            </div>
+          ))}
+
+          {!isPro && (
+            <>
+              <div className="h-px bg-white/10 my-1.5" />
+              <div className="text-[11px] tracking-[0.08em] text-white/40 font-medium">
+                Pro adds
+              </div>
+              {PRO_ADDS.map((f) => (
+                <div
+                  key={f}
+                  className="flex items-start gap-2.5 text-[13px] text-white/45"
+                >
+                  <i className="fa-solid fa-lock text-white/30 text-[10px] mt-[3px]" />
+                  <span>{f}</span>
+                </div>
+              ))}
+              <Link
+                href="/pricing"
+                className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[13px] font-medium cursor-pointer w-fit"
+              >
+                <i className="fa-solid fa-arrow-up text-[11px]" />
+                Upgrade to Pro
+              </Link>
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
