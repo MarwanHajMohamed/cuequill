@@ -351,6 +351,85 @@
   background: #f4f6f8;
 }
 
+/* Challenge grid: borderless cells separated by inset hairlines instead of
+   per-card boxes. Vertical rules sit on each cell's LEFT edge and are hidden
+   on the first column; horizontal rules sit on the TOP edge and are hidden on
+   the first row. Anchoring to the leading edge (rather than trailing) means a
+   rule always has a neighbour on the other side, so partial last rows never
+   leave a dangling line. Rules are inset from the cell edges so they read
+   shorter than the cell. Colour follows the foreground so it works in both
+   themes. */
+.chal-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+@media (min-width: 640px) {
+  .chal-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (min-width: 1024px) {
+  .chal-grid {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}
+.chal-grid > * {
+  position: relative;
+}
+.chal-grid > *::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 24px;
+  bottom: 24px;
+  width: 1px;
+  background: rgb(var(--fg-rgb) / 0.14);
+  pointer-events: none;
+}
+.chal-grid > *::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 24px;
+  right: 24px;
+  height: 1px;
+  background: rgb(var(--fg-rgb) / 0.14);
+  pointer-events: none;
+}
+/* Hide the vertical rule on the first column (varies with breakpoint). */
+@media (max-width: 639.98px) {
+  .chal-grid > *::after {
+    display: none;
+  }
+}
+@media (min-width: 640px) and (max-width: 1023.98px) {
+  .chal-grid > *:nth-child(2n + 1)::after {
+    display: none;
+  }
+}
+@media (min-width: 1024px) {
+  .chal-grid > *:nth-child(3n + 1)::after {
+    display: none;
+  }
+}
+/* Hide the horizontal rule on the first row (always full, so this is exact). */
+@media (max-width: 639.98px) {
+  .chal-grid > *:first-child::before {
+    display: none;
+  }
+}
+@media (min-width: 640px) and (max-width: 1023.98px) {
+  .chal-grid > *:nth-child(-n + 2)::before {
+    display: none;
+  }
+}
+@media (min-width: 1024px) {
+  .chal-grid > *:nth-child(-n + 3)::before {
+    display: none;
+  }
+}
+
 /* Headings (and the `.font-display` marketing aliases) inherit the body
    typeface - DM Mono - so the whole app shares one font with no serif.
    `font-variation-settings: normal` clears the opsz axis the old serif

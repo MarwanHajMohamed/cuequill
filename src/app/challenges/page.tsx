@@ -252,7 +252,7 @@ function Page() {
                       {done}/{items.length}
                     </span>
                   </div>
-                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="chal-grid">
                     {items.map((c, i) => (
                       <ChallengeCard
                         key={c.id}
@@ -512,15 +512,7 @@ function ChallengeCard({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
       transition={{ duration: 0.35, ease: "easeOut", delay: index * 0.04 }}
-      className={`relative flex flex-col gap-4 rounded-2xl border p-5 overflow-hidden ${
-        c.claimed
-          ? "border-amber-400/30 bg-gradient-to-br from-amber-500/[0.08] to-transparent"
-          : claimable
-            ? "border-teal-400/40 bg-teal-500/[0.06] shadow-[0_0_30px_-8px_rgba(45,212,191,0.5)]"
-            : locked
-              ? "border-white/10 bg-white/[0.015] opacity-60"
-              : "border-white/10 bg-white/[0.02]"
-      }`}
+      className={`relative flex flex-col gap-4 p-5 ${locked ? "opacity-60" : ""}`}
     >
       <div className="relative flex flex-col gap-2">
         <div className="flex items-center gap-2.5">
