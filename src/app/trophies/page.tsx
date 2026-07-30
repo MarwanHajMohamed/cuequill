@@ -102,8 +102,8 @@ function Page() {
               </div>
             </motion.div>
 
-            {/* Trophy grid */}
-            <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Trophy grid — each in its own display cabinet. */}
+            <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
               {data.trophies.map((t, i) => (
                 <TrophyCard key={t.id} t={t} index={i} />
               ))}
@@ -159,12 +159,22 @@ function TrophyCard({ t, index }: { t: Trophy; index: number }) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-30px" }}
       transition={{ duration: 0.32, delay: index * 0.03, ease: "easeOut" }}
-      className={`group relative flex items-center gap-4 rounded-2xl border p-4 overflow-hidden ${
+      className={`group relative flex flex-col items-center text-center rounded-2xl border px-4 pt-6 pb-5 overflow-hidden ${
         t.earned
-          ? "border-amber-400/30 bg-gradient-to-br from-amber-500/[0.12] via-amber-500/[0.04] to-transparent shadow-[0_10px_40px_-16px_rgba(245,158,11,0.55)]"
+          ? "border-amber-400/30 bg-gradient-to-b from-amber-500/[0.12] via-amber-500/[0.03] to-transparent shadow-[0_12px_44px_-18px_rgba(245,158,11,0.6)]"
           : "border-white/10 bg-white/[0.015]"
       }`}
     >
+      {/* Glass top highlight — reads as the cabinet's display glass. */}
+      <span
+        aria-hidden
+        className={`pointer-events-none absolute inset-x-0 top-0 h-16 ${
+          t.earned
+            ? "bg-gradient-to-b from-white/[0.06] to-transparent"
+            : "bg-gradient-to-b from-white/[0.02] to-transparent"
+        }`}
+      />
+
       {/* Sheen sweep on earned trophies. */}
       {t.earned && (
         <motion.span
@@ -182,64 +192,77 @@ function TrophyCard({ t, index }: { t: Trophy; index: number }) {
         />
       )}
 
-      {/* Medallion */}
-      <div
-        className={`relative shrink-0 w-16 h-16 rounded-full flex items-center justify-center ${
-          t.earned ? "" : "opacity-70"
-        }`}
-        style={
-          t.earned
-            ? {
-                background:
-                  "conic-gradient(from 140deg, #fcd34d, #f59e0b, #b45309, #fcd34d)",
-                boxShadow: "0 0 22px -6px rgba(245,158,11,0.7)",
-              }
-            : { background: "rgba(255,255,255,0.05)" }
-        }
-      >
+      {/* Earned check, tucked in the corner. */}
+      {t.earned && (
+        <i className="fa-solid fa-circle-check absolute top-2.5 right-2.5 text-[11px] text-amber-300/90" />
+      )}
+
+      {/* Medallion on its shelf */}
+      <div className="relative flex flex-col items-center">
         <div
-          className={`w-[54px] h-[54px] rounded-full flex items-center justify-center border ${
-            t.earned
-              ? "bg-[#1a1206] border-amber-300/30 text-amber-200"
-              : "bg-white/[0.02] border-white/10 text-white/35"
+          className={`relative w-[68px] h-[68px] rounded-full flex items-center justify-center ${
+            t.earned ? "" : "opacity-70"
           }`}
+          style={
+            t.earned
+              ? {
+                  background:
+                    "conic-gradient(from 140deg, #fcd34d, #f59e0b, #b45309, #fcd34d)",
+                  boxShadow: "0 0 26px -6px rgba(245,158,11,0.75)",
+                }
+              : { background: "rgba(255,255,255,0.05)" }
+          }
         >
-          <i
-            className={`${t.earned ? t.icon : "fa-solid fa-lock"} text-[20px]`}
-          />
+          <div
+            className={`w-[56px] h-[56px] rounded-full flex items-center justify-center border ${
+              t.earned
+                ? "bg-[#1a1206] border-amber-300/30 text-amber-200"
+                : "bg-white/[0.02] border-white/10 text-white/35"
+            }`}
+          >
+            <i
+              className={`${t.earned ? t.icon : "fa-solid fa-lock"} text-[22px]`}
+            />
+          </div>
         </div>
+        {/* Shelf line + soft reflection under the medallion. */}
+        <span
+          aria-hidden
+          className={`mt-2.5 block h-px w-16 ${
+            t.earned
+              ? "bg-gradient-to-r from-transparent via-amber-400/40 to-transparent"
+              : "bg-gradient-to-r from-transparent via-white/12 to-transparent"
+          }`}
+        />
       </div>
 
-      {/* Text */}
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <span
-            className={`text-[14.5px] font-semibold leading-tight truncate ${
-              t.earned ? "" : "text-white/60"
-            }`}
-          >
-            {t.label}
-          </span>
-          {t.earned && (
-            <i className="fa-solid fa-circle-check text-[11px] text-amber-300 shrink-0" />
-          )}
-        </div>
-        <div className="text-[11.5px] text-white/45 leading-snug mt-0.5">
-          {t.description}
-        </div>
-        {t.title && (
-          <span
-            className={`mt-2 inline-flex items-center gap-1 text-[9.5px] uppercase tracking-wide px-2 py-0.5 rounded-full border ${
-              t.earned
-                ? "text-amber-200/90 border-amber-400/30 bg-amber-500/10"
-                : "text-white/35 border-white/10 bg-white/[0.03]"
-            }`}
-          >
-            <i className="fa-solid fa-tag text-[8px]" />
-            {t.title}
-          </span>
-        )}
+      {/* Title */}
+      <div
+        className={`mt-3 text-[14px] font-semibold leading-tight ${
+          t.earned ? "" : "text-white/60"
+        }`}
+      >
+        {t.label}
       </div>
+
+      {/* Description */}
+      <div className="mt-1 text-[11.5px] text-white/45 leading-snug">
+        {t.description}
+      </div>
+
+      {/* Tag */}
+      {t.title && (
+        <span
+          className={`mt-3 inline-flex items-center gap-1 text-[9.5px] uppercase tracking-wide px-2 py-0.5 rounded-full border ${
+            t.earned
+              ? "text-amber-200/90 border-amber-400/30 bg-amber-500/10"
+              : "text-white/35 border-white/10 bg-white/[0.03]"
+          }`}
+        >
+          <i className="fa-solid fa-tag text-[8px]" />
+          {t.title}
+        </span>
+      )}
     </motion.div>
   );
 }
