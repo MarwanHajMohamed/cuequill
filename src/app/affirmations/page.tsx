@@ -6,10 +6,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 import React, { useEffect, useMemo, useState } from "react";
 import { useAffirmations } from "@/hooks/useAffirmations";
-import { effectiveCurrent } from "@/lib/affirmationStreak";
+import { useToast } from "@/hooks/useToast";
+import {
+  effectiveCurrent,
+  nextStreakMilestone,
+} from "@/lib/affirmationStreak";
 
 function AffirmationsPage() {
   const today = format(new Date(), "yyyy-MM-dd");
+  const toast = useToast();
   const {
     affirmations,
     read: serverRead,
@@ -17,7 +22,7 @@ function AffirmationsPage() {
     saveList,
     saveRead,
     saving,
-  } = useAffirmations();
+  } = useAffirmations((xp) => toast(`+${xp} XP · streak milestone!`));
 
   const [hydrated, setHydrated] = useState(false);
   const [draft, setDraft] = useState("");
@@ -77,6 +82,12 @@ function AffirmationsPage() {
     if (allRead && streak.lastDate !== today) return live + 1;
     return live;
   }, [streak, today, allRead]);
+
+  // Next streak XP milestone (based on best-ever, since milestones pay once).
+  const nextMilestone = useMemo(
+    () => nextStreakMilestone(Math.max(currentStreak, streak.longest)),
+    [currentStreak, streak.longest],
+  );
 
   return (
     <div className="w-full flex flex-col md:items-start min-h-screen">
@@ -187,6 +198,29 @@ function AffirmationsPage() {
               </div>
             </div>
           </motion.div>
+        )}
+
+        {/* Next streak XP milestone */}
+        {affirmations.length > 0 && nextMilestone && (
+          <div className="mt-2 text-[11.5px] text-white/45 flex items-center gap-1.5">
+            <i className="fa-solid fa-bolt text-[10px] text-amber-300/70" />
+            <span>
+              <span className="text-white/70 font-medium">
+                +{nextMilestone.xp} XP
+              </span>{" "}
+              at a {nextMilestone.days}-day streak
+              {(() => {
+                const best = Math.max(currentStreak, streak.longest);
+                const togo = nextMilestone.days - best;
+                return togo > 0 ? (
+                  <span className="text-white/35">
+                    {" "}
+                    · {togo} day{togo === 1 ? "" : "s"} to go
+                  </span>
+                ) : null;
+              })()}
+            </span>
+          </div>
         )}
       </div>
 

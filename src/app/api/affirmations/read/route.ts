@@ -5,6 +5,7 @@ import connectDb from "@/lib/db";
 import { User } from "@/lib/models/User";
 import {
   advanceStreak,
+  streakXpBetween,
   EMPTY_STREAK,
   type AffirmationStreak,
 } from "@/lib/affirmationStreak";
@@ -50,10 +51,11 @@ export async function PUT(req: Request) {
   // Load the current affirmations + streak to decide whether today counts as
   // complete (all current affirmations read) and, if so, advance the streak.
   const user = await User.findById(session.user.id)
-    .select("affirmations affirmationStreak")
+    .select("affirmations affirmationStreak affirmationStreakXp")
     .lean<{
       affirmations?: string[];
       affirmationStreak?: AffirmationStreak;
+      affirmationStreakXp?: number;
     }>();
 
   const affirmations = user?.affirmations ?? [];
@@ -66,10 +68,21 @@ export async function PUT(req: Request) {
   let streak = user?.affirmationStreak ?? EMPTY_STREAK;
   if (allRead) streak = advanceStreak(streak, date);
 
-  await User.findByIdAndUpdate(session.user.id, {
-    affirmationsRead,
-    affirmationStreak: streak,
-  });
+  // Award progressive streak XP for any milestone the best-ever streak has
+  // newly crossed. Keyed off `longest` (monotonic) and a high-water mark so
+  // each milestone pays exactly once and can't be farmed by rebuilding.
+  const prevXpMark = user?.affirmationStreakXp ?? 0;
+  const xpGained = streakXpBetween(prevXpMark, streak.longest);
 
-  return NextResponse.json({ read: affirmationsRead, streak });
+  const update: Record<string, unknown> = {
+    $set: { affirmationsRead, affirmationStreak: streak },
+  };
+  if (xpGained > 0) {
+    update.$inc = { xp: xpGained };
+    (update.$set as Record<string, unknown>).affirmationStreakXp =
+      streak.longest;
+  }
+  await User.findByIdAndUpdate(session.user.id, update);
+
+  return NextResponse.json({ read: affirmationsRead, streak, xpGained });
 }

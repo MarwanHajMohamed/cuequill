@@ -16,6 +16,35 @@ export const EMPTY_STREAK: AffirmationStreak = {
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
+// Progressive XP milestones for streak length — the longer the streak, the
+// bigger the payout. Awarded once each, keyed off the best-ever streak (see
+// streakXpBetween), so they can't be farmed by breaking and rebuilding.
+export const STREAK_XP: { days: number; xp: number }[] = [
+  { days: 3, xp: 50 },
+  { days: 7, xp: 100 },
+  { days: 14, xp: 200 },
+  { days: 30, xp: 350 },
+  { days: 60, xp: 500 },
+  { days: 100, xp: 800 },
+  { days: 180, xp: 1200 },
+  { days: 365, xp: 2000 },
+];
+
+// Sum the XP for milestones newly crossed when the best streak grows from
+// `from` days to `to` days (exclusive of `from`, inclusive of `to`).
+export function streakXpBetween(from: number, to: number): number {
+  let sum = 0;
+  for (const m of STREAK_XP) if (m.days > from && m.days <= to) sum += m.xp;
+  return sum;
+}
+
+// The next milestone strictly beyond `current` days, or null past the top.
+export function nextStreakMilestone(
+  current: number,
+): { days: number; xp: number } | null {
+  return STREAK_XP.find((m) => m.days > current) ?? null;
+}
+
 // The calendar day before `date` (yyyy-MM-dd → yyyy-MM-dd).
 export function prevDay(date: string): string {
   const d = new Date(`${date}T00:00:00Z`);

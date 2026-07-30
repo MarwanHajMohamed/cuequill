@@ -35,9 +35,11 @@ async function saveList(items: string[]): Promise<string[]> {
   return data.affirmations ?? [];
 }
 
-async function saveRead(
-  read: AffirmationsRead,
-): Promise<{ read: AffirmationsRead; streak: AffirmationStreak }> {
+async function saveRead(read: AffirmationsRead): Promise<{
+  read: AffirmationsRead;
+  streak: AffirmationStreak;
+  xpGained: number;
+}> {
   const res = await fetch("/api/affirmations/read", {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -45,10 +47,14 @@ async function saveRead(
   });
   if (!res.ok) throw new Error("Failed to save read state");
   const data = await res.json();
-  return { read: data.read ?? read, streak: data.streak ?? EMPTY_STREAK };
+  return {
+    read: data.read ?? read,
+    streak: data.streak ?? EMPTY_STREAK,
+    xpGained: typeof data.xpGained === "number" ? data.xpGained : 0,
+  };
 }
 
-export function useAffirmations() {
+export function useAffirmations(onStreakXp?: (xp: number) => void) {
   const qc = useQueryClient();
   const query = useQuery<AffirmationsData>({
     queryKey: KEY,
@@ -84,10 +90,18 @@ export function useAffirmations() {
     onError: (_e, _next, ctx) => {
       if (ctx?.prev) qc.setQueryData(KEY, ctx.prev);
     },
-    onSuccess: ({ read, streak }) =>
+    onSuccess: ({ read, streak, xpGained }) => {
       qc.setQueryData<AffirmationsData>(KEY, (old) =>
         old ? { ...old, read, streak } : old,
-      ),
+      );
+      // Streak XP changes the account level/title — refresh anything that
+      // reads it (navbar level, challenges, nameplate) and notify the page.
+      if (xpGained > 0) {
+        qc.invalidateQueries({ queryKey: ["profile"] });
+        qc.invalidateQueries({ queryKey: ["challenges"] });
+        onStreakXp?.(xpGained);
+      }
+    },
   });
 
   return {

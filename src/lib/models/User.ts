@@ -57,6 +57,9 @@ export interface IUser extends Document {
   // yesterday, otherwise it's considered broken (see the read route). Once a
   // day is completed, un-reading later that day does not revoke it.
   affirmationStreak: { current: number; longest: number; lastDate: string };
+  // High-water mark: the best streak length (days) for which streak XP
+  // milestones have already been awarded, so each milestone pays out once.
+  affirmationStreakXp?: number;
   // Pro membership flag — the effective, computed access gate. Gates
   // Quill AI, IBKR auto-sync, the rules board / affirmations,
   // per-strategy + per-symbol stats, and unlimited trade history. Free
@@ -205,6 +208,7 @@ const UserSchema = new Schema<IUser>({
     ),
     default: () => ({ current: 0, longest: 0, lastDate: "" }),
   },
+  affirmationStreakXp: { type: Number, default: 0 },
   isPro: { type: Boolean, default: false },
   proManualOverride: { type: Boolean, default: false },
   // Indexed: the Stripe webhook finds the user by customer id on every
