@@ -271,19 +271,29 @@ export function xpForLevelUp(level: number): number {
 }
 
 export const TITLES = [
-  "Novice", // 1
-  "Apprentice", // 2
-  "Journeyman", // 3
-  "Practitioner", // 4
-  "Disciplined", // 5
-  "Strategist", // 6
-  "Veteran", // 7
-  "Master", // 8
-  "Grandmaster", // 9
-  "Elite", // 10
-  "Legend", // 11
-  "Mythic", // 12
+  "Novice",
+  "Apprentice",
+  "Journeyman",
+  "Practitioner",
+  "Disciplined",
+  "Strategist",
+  "Veteran",
+  "Master",
+  "Grandmaster",
+  "Elite",
+  "Legend",
+  "Mythic",
 ];
+
+// Each title now spans this many levels (Novice = 1–3, Apprentice = 4–6, …).
+export const LEVELS_PER_TITLE = 3;
+
+// The title for a given level, banded LEVELS_PER_TITLE levels per title and
+// clamped to the final title beyond the last band.
+export function titleForLevel(level: number): string {
+  const idx = Math.floor((Math.max(1, level) - 1) / LEVELS_PER_TITLE);
+  return TITLES[Math.min(idx, TITLES.length - 1)];
+}
 
 export type LevelInfo = {
   level: number; // 1-based
@@ -301,6 +311,11 @@ export function levelInfo(xp: number): LevelInfo {
     into -= xpForLevelUp(level);
     level += 1;
   }
-  const title = TITLES[Math.min(level - 1, TITLES.length - 1)];
-  return { level, title, into, per: xpForLevelUp(level), totalXp };
+  return {
+    level,
+    title: titleForLevel(level),
+    into,
+    per: xpForLevelUp(level),
+    totalXp,
+  };
 }

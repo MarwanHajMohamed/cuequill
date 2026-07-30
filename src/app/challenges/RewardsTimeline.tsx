@@ -140,7 +140,9 @@ export default function RewardsTimeline({
                     </div>
                   ) : (
                     <div className="text-[11.5px] text-white/40">
-                      Where every journey begins.
+                      {L === 1
+                        ? "Where every journey begins."
+                        : "Keep climbing toward the next reward."}
                     </div>
                   )}
 

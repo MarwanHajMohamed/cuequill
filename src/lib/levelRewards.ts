@@ -3,14 +3,23 @@
 // Pure + client-safe (drives the rewards timeline UI); the actual chat
 // granting happens server-side in the challenge-claim route using LEVEL_CHAT.
 
-import { TITLES } from "@/lib/challenges";
+import {
+  TITLES,
+  LEVELS_PER_TITLE,
+  titleForLevel,
+} from "@/lib/challenges";
 import { AVATAR_COLORS } from "@/lib/avatarColors";
 import { AVATAR_FRAMES } from "@/lib/avatarFrames";
 import { ACCENTS } from "@/lib/accents";
 import { CARD_SKINS } from "@/lib/cardSkins";
 
-// How many levels the rewards ladder shows.
-export const MAX_LEVEL = 12;
+// The title mapping lives in challenges.ts (banded per LEVELS_PER_TITLE);
+// re-export it so the timeline can keep importing it from here.
+export { titleForLevel };
+
+// How many levels the rewards ladder shows — enough for every title to span
+// its full band of levels.
+export const MAX_LEVEL = TITLES.length * LEVELS_PER_TITLE;
 
 // Bonus Quill AI messages granted the first time a level is reached. Not
 // every level — 5 free messages every 5 levels (kept modest since every
@@ -28,11 +37,6 @@ export type LevelReward =
   | { kind: "frame"; label: string; ring: string }
   | { kind: "accent"; label: string; swatch: string }
   | { kind: "skin"; label: string; swatchFrom: string; swatchTo: string };
-
-// The title shown at a given level (clamped to the last defined title).
-export function titleForLevel(level: number): string {
-  return TITLES[Math.min(Math.max(level, 1) - 1, TITLES.length - 1)];
-}
 
 // Total bonus chats granted for crossing levels in (from, to].
 export function chatBetween(from: number, to: number): number {
