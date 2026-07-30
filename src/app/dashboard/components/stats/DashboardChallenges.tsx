@@ -11,18 +11,18 @@ import { CARD_CLASS_BASE } from "../DashboardCard";
 // /challenges.
 export default function DashboardChallenges({
   rowSpan = 1,
-  colSpan = 1,
 }: {
   rowSpan?: number;
-  colSpan?: number;
 }) {
   const { data, isLoading } = useChallenges();
 
   if (isLoading || !data) return null;
 
   const pct = data.per > 0 ? (data.into / data.per) * 100 : 0;
-  // Show one challenge per unit of the widget's larger dimension (1–3).
-  const count = Math.max(1, rowSpan, colSpan);
+  // Show one challenge per row of height — the list grows downward as the
+  // widget gets taller. Width doesn't add rows, so a wide-but-short widget
+  // stays a single line instead of overflowing.
+  const count = Math.max(1, rowSpan);
   // Closest unclaimed challenges that aren't done yet — the "next up" list.
   const nearest = data.challenges
     .filter((c) => !c.complete && !c.locked)
@@ -52,11 +52,11 @@ export default function DashboardChallenges({
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 shrink-0 rounded-xl bg-gradient-to-br from-teal-500/80 to-emerald-600/80 border border-white/15 flex flex-col items-center justify-center text-white">
-            <span className="text-[8px] uppercase tracking-wide text-white/70 leading-none">
+          <div className="w-11 h-11 shrink-0 rounded-xl bg-gradient-to-br from-teal-500/80 to-emerald-600/80 border border-[#ffffff26] flex flex-col items-center justify-center text-[#ffffff]">
+            <span className="text-[8px] uppercase tracking-wide text-[#ffffffb3] leading-none">
               Lvl
             </span>
-            <span className="text-[15px] font-bold leading-tight tabular-nums">
+            <span className="text-[15px] font-bold leading-tight tabular-nums text-[#ffffff]">
               {data.level}
             </span>
           </div>
@@ -75,7 +75,7 @@ export default function DashboardChallenges({
         </div>
 
         {nearest.length > 0 && (
-          <div className="mt-auto pt-2 border-t border-white/[0.06] flex flex-col gap-2">
+          <div className="pt-2 border-t border-white/[0.06] flex flex-col gap-2">
             {count > 1 && (
               <div className="text-[10px] uppercase tracking-wide text-white/35">
                 Closest to completing
