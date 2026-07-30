@@ -1,4 +1,5 @@
 import React, { forwardRef } from "react";
+import { type CardSkin, skinById } from "@/lib/cardSkins";
 
 // A self-contained, always-dark share card for a month's performance —
 // same visual language as TradeShareCard (brand top-left, hero Net P/L on
@@ -8,14 +9,6 @@ import React, { forwardRef } from "react";
 
 export const CARD_W = 600;
 export const CARD_H = 300;
-
-const INK = "#f4f4f5";
-const MUTED = "#8a94a3";
-const HAIR = "rgba(255,255,255,0.08)";
-const TEAL = "#5eead4";
-const TEAL_SOLID = "#2dd4bf";
-const RED = "#f87171";
-const LOGO_INNER = "#0c141b";
 
 const fmtMoneySigned = (n: number) => {
   const sign = n >= 0 ? "+" : "-";
@@ -40,8 +33,19 @@ export type MonthlyShareStats = {
   winRate: number | null; // 0-100, null when nothing closed
 };
 
-const MonthlyShareCard = forwardRef<HTMLDivElement, { stats: MonthlyShareStats }>(
-  function MonthlyShareCard({ stats }, ref) {
+const MonthlyShareCard = forwardRef<
+  HTMLDivElement,
+  { stats: MonthlyShareStats; skin?: CardSkin }
+>(function MonthlyShareCard({ stats, skin: skinProp }, ref) {
+    const skin = skinProp ?? skinById(null);
+    const INK = skin.ink;
+    const MUTED = skin.muted;
+    const HAIR = skin.hair;
+    const TEAL = skin.accent;
+    const TEAL_SOLID = skin.accentSolid;
+    const RED = skin.red;
+    const LOGO_INNER = skin.logoInner;
+
     const hasClosed = stats.closed > 0;
     const positive = stats.netPL >= 0;
     const accent = !hasClosed ? TEAL : positive ? TEAL : RED;
@@ -56,9 +60,7 @@ const MonthlyShareCard = forwardRef<HTMLDivElement, { stats: MonthlyShareStats }
           boxSizing: "border-box",
           fontFamily:
             "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-          background:
-            "radial-gradient(90% 130% at 88% 0%, rgba(45,212,191,0.18) 0%, rgba(10,15,20,0) 55%), " +
-            "linear-gradient(155deg, #0f1a20 0%, #0b1116 55%, #090c10 100%)",
+          background: skin.bg,
           borderRadius: 22,
           border: `1px solid ${HAIR}`,
           overflow: "hidden",
@@ -168,9 +170,9 @@ const MonthlyShareCard = forwardRef<HTMLDivElement, { stats: MonthlyShareStats }
 
         {/* Stat tiles */}
         <div style={{ display: "flex", gap: 12 }}>
-          <Stat label="Trades" value={`${stats.trades}`} />
-          <Stat label="Closed" value={`${stats.closed}`} />
-          <Stat label="Record" value={record} />
+          <Stat label="Trades" value={`${stats.trades}`} skin={skin} />
+          <Stat label="Closed" value={`${stats.closed}`} skin={skin} />
+          <Stat label="Record" value={record} skin={skin} />
         </div>
       </div>
     );
@@ -179,25 +181,35 @@ const MonthlyShareCard = forwardRef<HTMLDivElement, { stats: MonthlyShareStats }
 
 export default MonthlyShareCard;
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({
+  label,
+  value,
+  skin,
+}: {
+  label: string;
+  value: string;
+  skin: CardSkin;
+}) {
   return (
     <div
       style={{
         flex: 1,
         minWidth: 0,
-        background: "rgba(255,255,255,0.035)",
-        border: `1px solid ${HAIR}`,
+        background: skin.tile,
+        border: `1px solid ${skin.hair}`,
         borderRadius: 14,
         padding: "12px 10px 13px",
         textAlign: "center",
       }}
     >
-      <div style={{ fontSize: 12, color: MUTED, marginBottom: 5 }}>{label}</div>
+      <div style={{ fontSize: 12, color: skin.muted, marginBottom: 5 }}>
+        {label}
+      </div>
       <div
         style={{
           fontSize: 18,
           fontWeight: 600,
-          color: INK,
+          color: skin.ink,
           whiteSpace: "nowrap",
           overflow: "hidden",
           textOverflow: "ellipsis",

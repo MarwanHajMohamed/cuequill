@@ -7,6 +7,7 @@ export type Profile = {
   avatarColor: string;
   avatarFrame: string;
   accentColor: string;
+  cardSkin: string;
   equippedTitle: string;
   level: number;
   title: string;

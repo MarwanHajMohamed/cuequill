@@ -1,6 +1,7 @@
 import React, { forwardRef } from "react";
 import { Trade } from "@/app/types/Trades";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
+import { type CardSkin, skinById } from "@/lib/cardSkins";
 
 // A self-contained, always-dark share card for a single trade. Brand +
 // date on top, symbol and hold window on the left, Net P/L and return %
@@ -64,17 +65,19 @@ export function tradeReturnPct(t: Trade): number | null {
   return ((t.closingContractPrice - t.contractPrice) / t.contractPrice) * 100;
 }
 
-const INK = "#f4f4f5";
-const MUTED = "#8a94a3";
-const HAIR = "rgba(255,255,255,0.08)";
-const TEAL = "#5eead4";
-const TEAL_SOLID = "#2dd4bf";
-const RED = "#f87171";
-// Dark base used to punch the quill's inner line/dot through the mark.
-const LOGO_INNER = "#0c141b";
+const TradeShareCard = forwardRef<
+  HTMLDivElement,
+  { trade: Trade; skin?: CardSkin }
+>(function TradeShareCard({ trade, skin: skinProp }, ref) {
+    const skin = skinProp ?? skinById(null);
+    const INK = skin.ink;
+    const MUTED = skin.muted;
+    const HAIR = skin.hair;
+    const TEAL = skin.accent;
+    const TEAL_SOLID = skin.accentSolid;
+    const RED = skin.red;
+    const LOGO_INNER = skin.logoInner;
 
-const TradeShareCard = forwardRef<HTMLDivElement, { trade: Trade }>(
-  function TradeShareCard({ trade }, ref) {
     const outcome: ShareOutcome =
       trade.status === "WIN" || trade.status === "LOSS"
         ? trade.status
@@ -121,10 +124,9 @@ const TradeShareCard = forwardRef<HTMLDivElement, { trade: Trade }>(
           boxSizing: "border-box",
           fontFamily:
             "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-          // Dark navy-teal base with a soft teal glow in the top-right.
-          background:
-            "radial-gradient(90% 130% at 88% 0%, rgba(45,212,191,0.18) 0%, rgba(10,15,20,0) 55%), " +
-            "linear-gradient(155deg, #0f1a20 0%, #0b1116 55%, #090c10 100%)",
+          // Skin-defined base + glow. Captured to PNG so it's always a
+          // literal colour (identical in any app theme).
+          background: skin.bg,
           borderRadius: 22,
           border: `1px solid ${HAIR}`,
           overflow: "hidden",
@@ -239,12 +241,17 @@ const TradeShareCard = forwardRef<HTMLDivElement, { trade: Trade }>(
 
         {/* Stat tiles */}
         <div style={{ display: "flex", gap: 12 }}>
-          <Stat label="Entry" value={fmtPrice(trade.contractPrice)} />
+          <Stat label="Entry" value={fmtPrice(trade.contractPrice)} skin={skin} />
           <Stat
             label="Exit"
             value={isClosed ? fmtPrice(trade.closingContractPrice) : "—"}
+            skin={skin}
           />
-          <Stat label="Qty" value={trade.qty != null ? `${trade.qty}` : "—"} />
+          <Stat
+            label="Qty"
+            value={trade.qty != null ? `${trade.qty}` : "—"}
+            skin={skin}
+          />
         </div>
       </div>
     );
@@ -253,25 +260,35 @@ const TradeShareCard = forwardRef<HTMLDivElement, { trade: Trade }>(
 
 export default TradeShareCard;
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({
+  label,
+  value,
+  skin,
+}: {
+  label: string;
+  value: string;
+  skin: CardSkin;
+}) {
   return (
     <div
       style={{
         flex: 1,
         minWidth: 0,
-        background: "rgba(255,255,255,0.035)",
-        border: `1px solid ${HAIR}`,
+        background: skin.tile,
+        border: `1px solid ${skin.hair}`,
         borderRadius: 14,
         padding: "12px 10px 13px",
         textAlign: "center",
       }}
     >
-      <div style={{ fontSize: 12, color: MUTED, marginBottom: 5 }}>{label}</div>
+      <div style={{ fontSize: 12, color: skin.muted, marginBottom: 5 }}>
+        {label}
+      </div>
       <div
         style={{
           fontSize: 18,
           fontWeight: 600,
-          color: INK,
+          color: skin.ink,
           whiteSpace: "nowrap",
           overflow: "hidden",
           textOverflow: "ellipsis",

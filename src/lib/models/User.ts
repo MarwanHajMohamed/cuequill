@@ -24,6 +24,9 @@ export interface IUser extends Document {
   // App-wide accent pack id (recolours teal→accent across the UI). A
   // level-gated reward; defaults to "teal".
   accentColor?: string;
+  // Default share-card skin id (trade / month / achievement cards). A
+  // level-gated reward; defaults to "midnight".
+  cardSkin?: string;
   ibkrToken: string;
   ibkrQueryId: string;
   ibkrLastSync: Date;
@@ -159,6 +162,7 @@ const UserSchema = new Schema<IUser>({
   avatarColor: { type: String, default: "teal" },
   avatarFrame: { type: String, default: "none" },
   accentColor: { type: String, default: "teal" },
+  cardSkin: { type: String, default: "midnight" },
   ibkrToken: { type: String },
   ibkrQueryId: { type: String },
   ibkrLastSync: { type: Date },

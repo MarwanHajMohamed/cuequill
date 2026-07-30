@@ -10,6 +10,13 @@ import { useToast } from "@/hooks/useToast";
 import { useTheme } from "@/hooks/useTheme";
 import { AVATAR_COLORS } from "@/lib/avatarColors";
 import { AVATAR_FRAMES } from "@/lib/avatarFrames";
+import ShareImageModal from "@/components/ShareImageModal";
+import AchievementShareCard, {
+  CARD_W as ACH_CARD_W,
+  CARD_H as ACH_CARD_H,
+  type AchievementShareData,
+} from "@/components/AchievementShareCard";
+import { useCardSkinPrefs } from "@/hooks/useCardSkinPrefs";
 
 // Per-category flavour so each group has its own colour identity.
 const CAT: Record<
@@ -63,6 +70,10 @@ function Page() {
   const [claiming, setClaiming] = React.useState<string | null>(null);
   const [burst, setBurst] = React.useState<number | null>(null);
   const [equipping, setEquipping] = React.useState(false);
+  const [shareAch, setShareAch] = React.useState<AchievementShareData | null>(
+    null,
+  );
+  const cardSkinPrefs = useCardSkinPrefs();
 
   const equipTitle = async (title: string) => {
     // Toggle: tapping the equipped title clears the nameplate.
@@ -173,6 +184,21 @@ function Page() {
                     <span className="text-[12px] text-white/45 tabular-nums">
                       · {data.totalXp.toLocaleString()} XP
                     </span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShareAch({
+                          kind: "level",
+                          level: data.level,
+                          title: data.title,
+                          totalXp: data.totalXp,
+                        })
+                      }
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-teal-500/30 bg-teal-500/10 text-teal-300 hover:bg-teal-500/20 transition text-[11px] font-semibold cursor-pointer"
+                    >
+                      <i className="fa-solid fa-share-nodes text-[10px]" />
+                      Share
+                    </button>
                   </div>
                   <div className="mt-2.5 h-3 rounded-full bg-white/[0.08] overflow-hidden max-w-md">
                     <motion.div
@@ -291,6 +317,16 @@ function Page() {
                         index={i}
                         claiming={claiming === c.id}
                         onClaim={() => claim(c.id, c.xp)}
+                        onShare={() =>
+                          setShareAch({
+                            kind: "challenge",
+                            title: c.title,
+                            description: c.description,
+                            xp: c.xp,
+                            level: data.level,
+                            levelTitle: data.title,
+                          })
+                        }
                       />
                     ))}
                   </div>
@@ -470,6 +506,39 @@ function Page() {
           </>
         )}
       </div>
+
+      {shareAch && (
+        <ShareImageModal
+          cardW={ACH_CARD_W}
+          cardH={ACH_CARD_H}
+          fileName={
+            shareAch.kind === "level"
+              ? `cuequill-level-${shareAch.level}.png`
+              : `cuequill-${shareAch.title
+                  .toLowerCase()
+                  .replace(/[^a-z0-9]+/g, "-")
+                  .replace(/^-|-$/g, "")}.png`
+          }
+          shareTitle={
+            shareAch.kind === "level"
+              ? `Level ${shareAch.level} — Cuequill`
+              : `${shareAch.title} — Cuequill`
+          }
+          shareText={
+            shareAch.kind === "level"
+              ? `I just reached level ${shareAch.level} (${shareAch.title}) on Cuequill`
+              : `I just completed "${shareAch.title}" on Cuequill`
+          }
+          renderCard={(ref, skin) => (
+            <AchievementShareCard ref={ref} data={shareAch} skin={skin} />
+          )}
+          skinnable
+          userLevel={cardSkinPrefs.level}
+          initialSkin={cardSkinPrefs.cardSkin}
+          onSkinChange={cardSkinPrefs.persist}
+          onClose={() => setShareAch(null)}
+        />
+      )}
     </div>
   );
 }
@@ -562,11 +631,13 @@ function ChallengeCard({
   index,
   claiming,
   onClaim,
+  onShare,
 }: {
   c: ChallengeProgress;
   index: number;
   claiming: boolean;
   onClaim: () => void;
+  onShare: () => void;
 }) {
   const { theme } = useTheme();
   const isLight = theme === "light";
@@ -655,8 +726,19 @@ function ChallengeCard({
             {shown} / {c.target}
           </span>
           {c.claimed ? (
-            <span className="inline-flex items-center gap-1.5 text-[11.5px] text-amber-300 font-semibold">
-              <i className="fa-solid fa-circle-check text-[10px]" /> Claimed
+            <span className="inline-flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 text-[11.5px] text-amber-300 font-semibold">
+                <i className="fa-solid fa-circle-check text-[10px]" /> Claimed
+              </span>
+              <button
+                type="button"
+                onClick={onShare}
+                title="Share this achievement"
+                aria-label="Share this achievement"
+                className="inline-flex items-center justify-center w-6 h-6 rounded-full border border-white/12 bg-white/[0.04] text-white/60 hover:text-white hover:border-white/30 transition cursor-pointer"
+              >
+                <i className="fa-solid fa-share-nodes text-[10px]" />
+              </button>
             </span>
           ) : claimable ? (
             <motion.button

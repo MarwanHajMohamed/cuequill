@@ -35,6 +35,7 @@ import MonthlyShareCard, {
   CARD_H as MONTH_CARD_H,
   type MonthlyShareStats,
 } from "@/components/MonthlyShareCard";
+import { useCardSkinPrefs } from "@/hooks/useCardSkinPrefs";
 
 import { fmtMoneyFull, fmtMoneySignedCompact } from "@/lib/helpers/fmt";
 type TradeEvent =
@@ -103,6 +104,7 @@ function Page() {
   const { data: session } = useSession();
   const userId = session?.user?.id;
   const queryClient = useQueryClient();
+  const cardSkinPrefs = useCardSkinPrefs();
 
   const value = new Date();
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -1166,9 +1168,13 @@ function Page() {
           fileName={`cuequill-${monthShareStats().monthName.toLowerCase()}-${monthShareStats().year}.png`}
           shareTitle={`${monthShareStats().monthName} ${monthShareStats().year} — Cuequill`}
           shareText={`My ${monthShareStats().monthName} trading recap — Cuequill`}
-          renderCard={(ref) => (
-            <MonthlyShareCard ref={ref} stats={monthShareStats()} />
+          renderCard={(ref, skin) => (
+            <MonthlyShareCard ref={ref} stats={monthShareStats()} skin={skin} />
           )}
+          skinnable
+          userLevel={cardSkinPrefs.level}
+          initialSkin={cardSkinPrefs.cardSkin}
+          onSkinChange={cardSkinPrefs.persist}
           onClose={() => setShowMonthShare(false)}
         />
       )}

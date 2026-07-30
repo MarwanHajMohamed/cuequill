@@ -2,11 +2,17 @@
 
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toBlob } from "html-to-image";
+import { CARD_SKINS, skinById, type CardSkin } from "@/lib/cardSkins";
 
 // Generic "preview a fixed-size card and save/share it as a PNG" modal.
 // The card is rendered at its natural size, scaled down to fit the preview,
-// and captured unscaled at 3× for a crisp image. Used for both trade and
-// monthly share cards.
+// and captured unscaled at 3× for a crisp image. Used for the trade,
+// monthly and achievement share cards.
+//
+// When `skinnable` is set, a skin picker is shown: the selected CardSkin is
+// passed into renderCard so the preview + capture repaint live. Skins above
+// the viewer's level are locked; `onSkinChange` lets the caller remember the
+// choice as the user's default.
 export default function ShareImageModal({
   cardW,
   cardH,
@@ -15,14 +21,22 @@ export default function ShareImageModal({
   shareText,
   renderCard,
   onClose,
+  skinnable = false,
+  userLevel = 1,
+  initialSkin = "midnight",
+  onSkinChange,
 }: {
   cardW: number;
   cardH: number;
   fileName: string;
   shareTitle: string;
   shareText: string;
-  renderCard: (ref: React.Ref<HTMLDivElement>) => React.ReactNode;
+  renderCard: (ref: React.Ref<HTMLDivElement>, skin: CardSkin) => React.ReactNode;
   onClose: () => void;
+  skinnable?: boolean;
+  userLevel?: number;
+  initialSkin?: string;
+  onSkinChange?: (id: string) => void;
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const measureRef = useRef<HTMLDivElement>(null);
@@ -30,6 +44,8 @@ export default function ShareImageModal({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [canShareFiles, setCanShareFiles] = useState(false);
+  const [skinId, setSkinId] = useState(initialSkin);
+  const skin = skinById(skinId);
 
   useLayoutEffect(() => {
     const fit = () => {
@@ -67,7 +83,9 @@ export default function ShareImageModal({
     return toBlob(cardRef.current, {
       pixelRatio: 3,
       cacheBust: true,
-      backgroundColor: "#0b0b0f",
+      // Transparent outside the card's rounded corners so light skins
+      // (e.g. Paper) don't get dark corner wedges.
+      backgroundColor: undefined,
       width: cardW,
       height: cardH,
       skipFonts: true,
@@ -135,10 +153,53 @@ export default function ShareImageModal({
                 transformOrigin: "top left",
               }}
             >
-              {renderCard(cardRef)}
+              {renderCard(cardRef, skin)}
             </div>
           </div>
         </div>
+
+        {skinnable && (
+          <div className="w-full max-w-md flex items-center gap-2 flex-wrap justify-center">
+            {CARD_SKINS.map((s) => {
+              const locked = s.minLevel > userLevel;
+              const active = skinId === s.id;
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  disabled={locked}
+                  onClick={() => {
+                    if (locked) return;
+                    setSkinId(s.id);
+                    onSkinChange?.(s.id);
+                  }}
+                  title={
+                    locked ? `${s.label} — unlocks at level ${s.minLevel}` : s.label
+                  }
+                  aria-label={
+                    locked
+                      ? `${s.label} — unlocks at level ${s.minLevel}`
+                      : s.label
+                  }
+                  className={`relative w-8 h-8 rounded-full border transition ${
+                    locked
+                      ? "opacity-40 cursor-not-allowed border-white/15"
+                      : active
+                        ? "border-white ring-2 ring-white/40 cursor-pointer"
+                        : "border-white/15 hover:border-white/40 cursor-pointer"
+                  }`}
+                  style={{
+                    backgroundImage: `linear-gradient(to bottom right, ${s.swatchFrom}, ${s.swatchTo})`,
+                  }}
+                >
+                  {locked && (
+                    <i className="fa-solid fa-lock absolute inset-0 m-auto w-fit h-fit text-[9px] text-white/90" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {error && (
           <div className="w-full max-w-md rounded-xl border border-red-500/25 bg-red-500/[0.06] px-3 py-2 text-[12.5px] text-red-300 text-center">

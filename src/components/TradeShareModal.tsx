@@ -1,16 +1,13 @@
 "use client";
 
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { toBlob } from "html-to-image";
+import React from "react";
 import { Trade } from "@/app/types/Trades";
 import TradeShareCard, { CARD_W, CARD_H } from "@/components/TradeShareCard";
+import ShareImageModal from "@/components/ShareImageModal";
+import { useCardSkinPrefs } from "@/hooks/useCardSkinPrefs";
 
-// Modal that previews the shareable trade card and lets the user save it
-// as a PNG or share it via the native share sheet (which, on mobile,
-// offers "Save to Photos"). The card is a fixed-size 600×300 node; we
-// scale it down to fit the viewport for the preview but capture the
-// unscaled node at 3× for a crisp ~1800px-wide image.
-
+// Previews the shareable trade card and lets the user save/share it as a
+// PNG, with a skin picker. Thin wrapper over the generic ShareImageModal.
 export default function TradeShareModal({
   trade,
   onClose,
@@ -18,173 +15,24 @@ export default function TradeShareModal({
   trade: Trade;
   onClose: () => void;
 }) {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const measureRef = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(1);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [canShareFiles, setCanShareFiles] = useState(false);
-
-  // Fit the fixed-width card into the available modal width.
-  useLayoutEffect(() => {
-    const fit = () => {
-      const avail = measureRef.current?.clientWidth ?? CARD_W;
-      setScale(Math.min(1, avail / CARD_W));
-    };
-    fit();
-    window.addEventListener("resize", fit);
-    return () => window.removeEventListener("resize", fit);
-  }, []);
-
-  useEffect(() => {
-    try {
-      const testFile = new File([""], "t.png", { type: "image/png" });
-      setCanShareFiles(
-        typeof navigator !== "undefined" &&
-          !!navigator.canShare &&
-          navigator.canShare({ files: [testFile] }),
-      );
-    } catch {
-      setCanShareFiles(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
+  const { level, cardSkin, persist } = useCardSkinPrefs();
   const fileName = `${(trade.symbol || "trade").toLowerCase()}-cuequill.png`;
 
-  const capture = async (): Promise<Blob | null> => {
-    if (!cardRef.current) return null;
-    // Capture the unscaled node (600×300) at 3× → ~1800px wide.
-    return toBlob(cardRef.current, {
-      pixelRatio: 3,
-      cacheBust: true,
-      backgroundColor: "#0b0b0f",
-      width: CARD_W,
-      height: CARD_H,
-      skipFonts: true,
-    });
-  };
-
-  const handleSave = async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      const blob = await capture();
-      if (!blob) throw new Error("capture failed");
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    } catch {
-      setError("Couldn't generate the image. Try again.");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const handleShare = async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      const blob = await capture();
-      if (!blob) throw new Error("capture failed");
-      const file = new File([blob], fileName, { type: "image/png" });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: `${trade.symbol} trade`,
-          text: `My ${trade.symbol} ${trade.option} trade — Cuequill`,
-        });
-      } else {
-        await handleSave();
-      }
-    } catch (e) {
-      if ((e as Error)?.name !== "AbortError") {
-        setError("Couldn't share the image. Try saving instead.");
-      }
-    } finally {
-      setBusy(false);
-    }
-  };
-
   return (
-    <div
-      className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto"
-      onClick={onClose}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-xl flex flex-col items-center gap-4 my-auto"
-      >
-        {/* Measures the available width; the card is scaled to fit it. */}
-        <div ref={measureRef} className="w-full">
-          <div
-            style={{
-              width: CARD_W * scale,
-              height: CARD_H * scale,
-              margin: "0 auto",
-            }}
-          >
-            <div
-              style={{
-                width: CARD_W,
-                height: CARD_H,
-                transform: `scale(${scale})`,
-                transformOrigin: "top left",
-              }}
-            >
-              <TradeShareCard ref={cardRef} trade={trade} />
-            </div>
-          </div>
-        </div>
-
-        {error && (
-          <div className="w-full max-w-md rounded-xl border border-red-500/25 bg-red-500/[0.06] px-3 py-2 text-[12.5px] text-red-300 text-center">
-            {error}
-          </div>
-        )}
-
-        <div className="w-full max-w-md flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full border border-white/15 bg-white/[0.04] text-white/80 hover:bg-white/[0.08] hover:text-white transition text-[13px] font-medium cursor-pointer"
-          >
-            Close
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={busy}
-            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full border border-white/15 bg-white/[0.04] text-white/85 hover:bg-white/[0.08] hover:text-white transition text-[13px] font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <i className="fa-solid fa-download text-[12px]" />
-            {busy ? "Working…" : "Save image"}
-          </button>
-          {canShareFiles && (
-            <button
-              type="button"
-              onClick={handleShare}
-              disabled={busy}
-              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 hover:bg-teal-500/30 transition text-[13px] font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <i className="fa-solid fa-share-nodes text-[12px]" />
-              Share
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
+    <ShareImageModal
+      cardW={CARD_W}
+      cardH={CARD_H}
+      fileName={fileName}
+      shareTitle={`${trade.symbol} trade`}
+      shareText={`My ${trade.symbol} ${trade.option} trade — Cuequill`}
+      renderCard={(ref, skin) => (
+        <TradeShareCard ref={ref} trade={trade} skin={skin} />
+      )}
+      skinnable
+      userLevel={level}
+      initialSkin={cardSkin}
+      onSkinChange={persist}
+      onClose={onClose}
+    />
   );
 }
