@@ -1,0 +1,247 @@
+"use client";
+
+import React from "react";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { useQueryClient } from "@tanstack/react-query";
+import { withAuth } from "@/lib/withAuth";
+import { useChallenges, type Trophy } from "@/hooks/useChallenges";
+import { useToast } from "@/hooks/useToast";
+
+function Page() {
+  const qc = useQueryClient();
+  const toast = useToast();
+  const { data, isLoading } = useChallenges();
+  const [equipping, setEquipping] = React.useState(false);
+
+  const equipTitle = async (title: string) => {
+    const next = data?.equippedTitle === title ? "" : title;
+    setEquipping(true);
+    try {
+      const res = await fetch("/api/user/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ equippedTitle: next }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error ?? "Couldn't equip title");
+      toast(next ? `“${next}” equipped` : "Nameplate cleared");
+      qc.invalidateQueries({ queryKey: ["challenges"] });
+      qc.invalidateQueries({ queryKey: ["profile"] });
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Couldn't equip title");
+    } finally {
+      setEquipping(false);
+    }
+  };
+
+  const earned = data?.trophies.filter((t) => t.earned).length ?? 0;
+  const total = data?.trophies.length ?? 0;
+  const pct = total > 0 ? (earned / total) * 100 : 0;
+
+  return (
+    <div className="w-full flex justify-center min-h-screen pb-24">
+      <div className="w-full max-w-[1500px] px-5 md:px-8 pt-24 md:pt-12 flex flex-col">
+        <div
+          aria-hidden
+          className="pointer-events-none fixed inset-0 -z-10"
+          style={{
+            background:
+              "radial-gradient(55% 50% at 50% 0%, rgba(245,158,11,0.16) 0%, rgba(245,158,11,0) 72%), radial-gradient(45% 45% at 82% 4%, rgba(234,179,8,0.12) 0%, rgba(234,179,8,0) 72%)",
+          }}
+        />
+
+        <header className="pb-6 border-b border-white/10 flex items-end justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-[24px] font-semibold tracking-tight">Trophies</h1>
+            <p className="text-[13.5px] text-white/50 mt-1.5 leading-relaxed max-w-lg">
+              Milestone awards you earn automatically as your journal grows.
+              Some also unlock a title you can wear as a nameplate.
+            </p>
+          </div>
+          <Link
+            href="/challenges"
+            className="shrink-0 inline-flex items-center gap-2 px-3.5 py-2 rounded-full border border-white/12 bg-white/[0.03] text-[12.5px] font-medium text-white/75 hover:text-white hover:border-white/25 transition"
+          >
+            <i className="fa-solid fa-medal text-[11px] text-amber-300/80" />
+            Challenges
+          </Link>
+        </header>
+
+        {isLoading || !data ? (
+          <div className="mt-10 text-[13px] text-white/40">Loading…</div>
+        ) : (
+          <>
+            {/* Summary */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+              className="mt-8 relative overflow-hidden rounded-3xl border border-amber-400/20 bg-gradient-to-r from-amber-500/[0.10] to-orange-500/[0.06] p-5 md:p-6 flex items-center gap-5 flex-wrap"
+            >
+              <div className="relative shrink-0 w-16 h-16 rounded-2xl bg-amber-500/15 border border-amber-400/30 flex items-center justify-center text-amber-300">
+                <i className="fa-solid fa-trophy text-[26px]" />
+              </div>
+              <div className="flex-1 min-w-[220px]">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-[26px] font-bold tabular-nums leading-none bg-gradient-to-r from-amber-200 to-orange-300 bg-clip-text text-transparent">
+                    {earned}
+                  </span>
+                  <span className="text-[13px] text-white/55">
+                    of {total} trophies earned
+                  </span>
+                </div>
+                <div className="mt-3 h-2.5 rounded-full bg-white/[0.08] overflow-hidden max-w-md">
+                  <motion.div
+                    className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-400"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${pct}%` }}
+                    transition={{ duration: 0.9, ease: "easeOut" }}
+                  />
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Trophy grid */}
+            <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {data.trophies.map((t, i) => (
+                <TrophyCard key={t.id} t={t} index={i} />
+              ))}
+            </div>
+
+            {/* Nameplate — equip an earned title next to your name. */}
+            <section className="mt-12">
+              <h2 className="text-[13px] font-semibold text-white/80 mb-1.5 flex items-center gap-2">
+                <i className="fa-solid fa-id-badge text-amber-300/80 text-[12px]" />
+                Nameplate
+              </h2>
+              <p className="text-[12px] text-white/50 mb-3 leading-relaxed max-w-lg">
+                Pick a title to show beside your name. Earn more by leveling up
+                and unlocking trophies. Tap the active one to clear it.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {data.titles.map((t) => {
+                  const active = data.equippedTitle === t;
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => equipTitle(t)}
+                      disabled={equipping}
+                      className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border text-[12.5px] font-medium transition disabled:opacity-60 cursor-pointer ${
+                        active
+                          ? "border-amber-400/50 bg-amber-500/15 text-amber-200 shadow-[0_0_20px_-6px_rgba(245,158,11,0.5)]"
+                          : "border-white/12 bg-white/[0.03] text-white/70 hover:border-white/25 hover:text-white/90"
+                      }`}
+                    >
+                      <i
+                        className={`fa-solid ${active ? "fa-circle-check" : "fa-tag"} text-[10px] ${
+                          active ? "text-amber-300" : "text-white/40"
+                        }`}
+                      />
+                      {t}
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TrophyCard({ t, index }: { t: Trophy; index: number }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-30px" }}
+      transition={{ duration: 0.32, delay: index * 0.03, ease: "easeOut" }}
+      className={`group relative flex items-center gap-4 rounded-2xl border p-4 overflow-hidden ${
+        t.earned
+          ? "border-amber-400/30 bg-gradient-to-br from-amber-500/[0.12] via-amber-500/[0.04] to-transparent shadow-[0_10px_40px_-16px_rgba(245,158,11,0.55)]"
+          : "border-white/10 bg-white/[0.015]"
+      }`}
+    >
+      {/* Sheen sweep on earned trophies. */}
+      {t.earned && (
+        <motion.span
+          aria-hidden
+          className="pointer-events-none absolute top-0 -left-1/3 h-full w-1/3 -skew-x-12 bg-gradient-to-r from-transparent via-white/10 to-transparent"
+          initial={{ left: "-40%" }}
+          animate={{ left: "140%" }}
+          transition={{
+            duration: 2.4,
+            repeat: Infinity,
+            ease: "easeInOut",
+            repeatDelay: 3.2,
+            delay: index * 0.15,
+          }}
+        />
+      )}
+
+      {/* Medallion */}
+      <div
+        className={`relative shrink-0 w-16 h-16 rounded-full flex items-center justify-center ${
+          t.earned ? "" : "opacity-70"
+        }`}
+        style={
+          t.earned
+            ? {
+                background:
+                  "conic-gradient(from 140deg, #fcd34d, #f59e0b, #b45309, #fcd34d)",
+                boxShadow: "0 0 22px -6px rgba(245,158,11,0.7)",
+              }
+            : { background: "rgba(255,255,255,0.05)" }
+        }
+      >
+        <div
+          className={`w-[54px] h-[54px] rounded-full flex items-center justify-center border ${
+            t.earned
+              ? "bg-[#1a1206] border-amber-300/30 text-amber-200"
+              : "bg-white/[0.02] border-white/10 text-white/35"
+          }`}
+        >
+          <i
+            className={`${t.earned ? t.icon : "fa-solid fa-lock"} text-[20px]`}
+          />
+        </div>
+      </div>
+
+      {/* Text */}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span
+            className={`text-[14.5px] font-semibold leading-tight truncate ${
+              t.earned ? "" : "text-white/60"
+            }`}
+          >
+            {t.label}
+          </span>
+          {t.earned && (
+            <i className="fa-solid fa-circle-check text-[11px] text-amber-300 shrink-0" />
+          )}
+        </div>
+        <div className="text-[11.5px] text-white/45 leading-snug mt-0.5">
+          {t.description}
+        </div>
+        {t.title && (
+          <span
+            className={`mt-2 inline-flex items-center gap-1 text-[9.5px] uppercase tracking-wide px-2 py-0.5 rounded-full border ${
+              t.earned
+                ? "text-amber-200/90 border-amber-400/30 bg-amber-500/10"
+                : "text-white/35 border-white/10 bg-white/[0.03]"
+            }`}
+          >
+            <i className="fa-solid fa-tag text-[8px]" />
+            {t.title}
+          </span>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
+export default withAuth(Page);

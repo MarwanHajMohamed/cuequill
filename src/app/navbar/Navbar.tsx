@@ -241,6 +241,11 @@ export default function Navbar() {
       slug: "challenges",
     },
     {
+      icon: "fa-solid fa-award",
+      label: "Trophies",
+      slug: "trophies",
+    },
+    {
       icon: "fa-solid fa-bezier-curve",
       label: "Strategies",
       slug: "strategies",
@@ -305,6 +310,7 @@ export default function Navbar() {
     [
       { icon: "fa-solid fa-bullseye", label: "Goals", slug: "goals" },
       { icon: "fa-solid fa-trophy", label: "Challenges", slug: "challenges" },
+      { icon: "fa-solid fa-award", label: "Trophies", slug: "trophies" },
       { icon: "fa-solid fa-list-check", label: "Rules", slug: "rules" },
       {
         icon: "fa-regular fa-circle-check",
