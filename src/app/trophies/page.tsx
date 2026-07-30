@@ -77,7 +77,7 @@ function Page() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, ease: "easeOut" }}
-              className="mt-8 flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3"
+              className="mt-8 flex items-center gap-3"
             >
               <div className="shrink-0 w-9 h-9 rounded-lg bg-amber-500/15 border border-amber-400/25 flex items-center justify-center text-amber-300">
                 <i className="fa-solid fa-trophy text-[15px]" />
