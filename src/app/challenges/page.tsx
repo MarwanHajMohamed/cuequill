@@ -8,8 +8,11 @@ import { withAuth } from "@/lib/withAuth";
 import { useChallenges, type ChallengeProgress } from "@/hooks/useChallenges";
 import { useToast } from "@/hooks/useToast";
 import { useTheme } from "@/hooks/useTheme";
-import { AVATAR_COLORS } from "@/lib/avatarColors";
-import { AVATAR_FRAMES } from "@/lib/avatarFrames";
+import {
+  effectiveCurrent,
+  nextStreakMilestone,
+  type AffirmationStreak,
+} from "@/lib/affirmationStreak";
 import RewardsTimeline from "./RewardsTimeline";
 import ShareImageModal from "@/components/ShareImageModal";
 import AchievementShareCard, {
@@ -55,9 +58,12 @@ const CAT: Record<
 };
 const CATEGORY_ORDER = ["onboarding", "journaling", "discipline", "exploration"];
 
+const todayStr = () => new Date().toISOString().slice(0, 10);
+
 function Page() {
   const qc = useQueryClient();
   const toast = useToast();
+  const today = todayStr();
   const { data, isLoading } = useChallenges();
   const [claiming, setClaiming] = React.useState<string | null>(null);
   const [burst, setBurst] = React.useState<number | null>(null);
@@ -112,8 +118,7 @@ function Page() {
             Challenges
           </h1>
           <p className="text-[13.5px] text-white/50 mt-1.5 leading-relaxed max-w-lg">
-            Build good habits, rack up XP, and unlock rewards. Progress tracks
-            your real (non-simulated) trades.
+            Build good habits, rack up XP, and unlock rewards.
           </p>
         </header>
 
@@ -137,127 +142,75 @@ function Page() {
           <div className="mt-10 text-[13px] text-white/40">Loading…</div>
         ) : (
           <>
-            {/* Level hero with circular XP ring */}
+            {/* Level summary — kept quiet. */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, ease: "easeOut" }}
-              className="mt-8 relative overflow-hidden rounded-3xl border border-teal-500/20 bg-gradient-to-r from-teal-500/[0.10] to-indigo-500/[0.08] p-5 md:p-7"
+              className="mt-8 flex items-center gap-4 flex-wrap"
             >
-              <div className="relative flex items-center gap-5 md:gap-7 flex-wrap">
-                <LevelRing level={data.level} pct={pct} />
-                <div className="flex-1 min-w-[220px]">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-[20px] md:text-[22px] font-bold tracking-tight bg-gradient-to-r from-teal-200 to-emerald-300 bg-clip-text text-transparent">
-                      {data.title}
-                    </span>
-                    <span className="text-[12px] text-white/45 tabular-nums">
-                      · {data.totalXp.toLocaleString()} XP
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setShareAch({
-                          kind: "level",
-                          level: data.level,
-                          title: data.title,
-                          totalXp: data.totalXp,
-                        })
-                      }
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-teal-500/30 bg-teal-500/10 text-teal-300 hover:bg-teal-500/20 transition text-[11px] font-semibold cursor-pointer"
-                    >
-                      <i className="fa-solid fa-share-nodes text-[10px]" />
-                      Share
-                    </button>
-                  </div>
-                  <div className="mt-2.5 h-3 rounded-full bg-white/[0.08] overflow-hidden max-w-md">
-                    <motion.div
-                      className="h-full rounded-full bg-gradient-to-r from-teal-400 via-emerald-400 to-teal-300"
-                      initial={{ width: 0 }}
-                      animate={{ width: `${pct}%` }}
-                      transition={{ duration: 0.9, ease: "easeOut" }}
-                    />
-                  </div>
-                  <div className="mt-1.5 text-[11.5px] text-white/50 tabular-nums">
-                    {data.into} / {data.per} XP to level {data.level + 1}
-                  </div>
+              <LevelRing level={data.level} pct={pct} />
+              <div className="flex-1 min-w-[220px]">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[16px] md:text-[18px] font-semibold tracking-tight">
+                    {data.title}
+                  </span>
+                  <span className="text-[12px] text-white/45 tabular-nums">
+                    · Level {data.level} · {data.totalXp.toLocaleString()} XP
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setShareAch({
+                        kind: "level",
+                        level: data.level,
+                        title: data.title,
+                        totalXp: data.totalXp,
+                      })
+                    }
+                    className="inline-flex items-center gap-1.5 text-[11px] font-medium text-white/45 hover:text-white/80 transition cursor-pointer"
+                  >
+                    <i className="fa-solid fa-share-nodes text-[10px]" />
+                    Share
+                  </button>
                 </div>
-                <div className="flex items-center gap-6 pr-1">
-                  <HeroStat value={data.badges.length} label="Badges" icon="fa-trophy" />
-                  {data.bonusMessages > 0 && (
-                    <HeroStat
-                      value={data.bonusMessages}
-                      label="Bonus msgs"
-                      icon="fa-comment-dots"
-                    />
-                  )}
-                  <HeroStat
-                    value={data.claimable}
-                    label="To claim"
-                    icon="fa-gift"
-                    pulse={data.claimable > 0}
+                <div className="mt-2 h-1.5 rounded-full bg-white/[0.07] overflow-hidden max-w-md">
+                  <motion.div
+                    className="h-full rounded-full bg-gradient-to-r from-teal-400 to-emerald-400"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${pct}%` }}
+                    transition={{ duration: 0.9, ease: "easeOut" }}
                   />
                 </div>
+                <div className="mt-1.5 text-[11.5px] text-white/45 tabular-nums">
+                  {data.into} / {data.per} XP to level {data.level + 1}
+                </div>
+              </div>
+              <div className="flex items-center gap-6 pr-1">
+                <HeroStat
+                  value={data.badges.length}
+                  label="Badges"
+                  icon="fa-trophy"
+                />
+                {data.bonusMessages > 0 && (
+                  <HeroStat
+                    value={data.bonusMessages}
+                    label="Bonus msgs"
+                    icon="fa-comment-dots"
+                  />
+                )}
+                <HeroStat
+                  value={data.claimable}
+                  label="To claim"
+                  icon="fa-gift"
+                  pulse={data.claimable > 0}
+                />
               </div>
             </motion.div>
 
-            {/* Reward hint — the nearest upcoming cosmetic unlock. */}
-            {(() => {
-              const upcoming = [
-                ...AVATAR_COLORS.map((c) => ({
-                  label: c.label,
-                  minLevel: c.minLevel,
-                  kind: "colour",
-                  swatch: `bg-gradient-to-br ${c.gradient}`,
-                })),
-                ...AVATAR_FRAMES.map((f) => ({
-                  label: f.label,
-                  minLevel: f.minLevel,
-                  kind: "frame",
-                  swatch: `bg-gradient-to-br from-slate-500 to-slate-700 ${f.ring}`,
-                })),
-              ]
-                .filter((x) => x.minLevel > data.level)
-                .sort((a, b) => a.minLevel - b.minLevel)[0];
-              return (
-                <div className="mt-4 text-[12px] text-white/55 leading-relaxed">
-                  {upcoming ? (
-                    <>
-                      Reach{" "}
-                      <span className="text-white/85 font-semibold">
-                        level {upcoming.minLevel}
-                      </span>{" "}
-                      to unlock the{" "}
-                      <span
-                        className={`inline-block align-middle w-3.5 h-3.5 rounded-full ${upcoming.swatch} border border-white/25 mx-0.5`}
-                      />{" "}
-                      <span className="text-white/85 font-semibold">
-                        {upcoming.label}
-                      </span>{" "}
-                      {upcoming.kind} —{" "}
-                      <Link
-                        href="/settings"
-                        className="text-teal-300 hover:text-teal-200 underline-offset-4 hover:underline"
-                      >
-                        set it in settings
-                      </Link>
-                      .
-                    </>
-                  ) : (
-                    <>
-                      You&apos;ve unlocked every reward — set your look in{" "}
-                      <Link
-                        href="/settings"
-                        className="text-teal-300 hover:text-teal-200 underline-offset-4 hover:underline"
-                      >
-                        settings
-                      </Link>
-                      .
-                    </>
-                  )}
-                </div>
-              );
-            })()}
+            {/* Affirmation streak — an auto-awarded XP challenge that advances
+                to the next milestone once reached. */}
+            <StreakChallengeSection streak={data.streak} today={today} />
 
             {/* Challenges by category */}
             {CATEGORY_ORDER.map((cat) => {
@@ -393,11 +346,11 @@ function Page() {
 }
 
 function LevelRing({ level, pct }: { level: number; pct: number }) {
-  const r = 33;
+  const r = 34;
   const circ = 2 * Math.PI * r;
   const offset = circ * (1 - Math.min(100, Math.max(0, pct)) / 100);
   return (
-    <div className="relative w-[92px] h-[92px] shrink-0">
+    <div className="relative w-[64px] h-[64px] shrink-0">
       <svg viewBox="0 0 80 80" className="w-full h-full -rotate-90">
         <circle
           cx="40"
@@ -405,7 +358,7 @@ function LevelRing({ level, pct }: { level: number; pct: number }) {
           r={r}
           fill="none"
           stroke="rgba(255,255,255,0.08)"
-          strokeWidth="7"
+          strokeWidth="6"
         />
         <motion.circle
           cx="40"
@@ -413,7 +366,7 @@ function LevelRing({ level, pct }: { level: number; pct: number }) {
           r={r}
           fill="none"
           stroke="url(#xpgrad)"
-          strokeWidth="7"
+          strokeWidth="6"
           strokeLinecap="round"
           strokeDasharray={circ}
           initial={{ strokeDashoffset: circ }}
@@ -428,14 +381,97 @@ function LevelRing({ level, pct }: { level: number; pct: number }) {
         </defs>
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-[9px] uppercase tracking-[0.1em] text-white/55 leading-none">
+        <span className="text-[7px] uppercase tracking-[0.1em] text-white/50 leading-none">
           Lvl
         </span>
-        <span className="text-[28px] font-black leading-none tabular-nums">
+        <span className="text-[20px] font-bold leading-none tabular-nums">
           {level}
         </span>
       </div>
     </div>
+  );
+}
+
+function StreakChallengeSection({
+  streak,
+  today,
+}: {
+  streak: AffirmationStreak;
+  today: string;
+}) {
+  const current = effectiveCurrent(streak, today);
+  const next = nextStreakMilestone(streak.longest);
+  const maxed = !next;
+  const target = next?.days ?? streak.longest;
+  const shown = Math.min(current, target);
+  const pct = target > 0 ? Math.min(100, (current / target) * 100) : 100;
+
+  return (
+    <section className="mt-8">
+      <div className="flex items-center gap-2.5 mb-3">
+        <span
+          className="w-2.5 h-2.5 rounded-full"
+          style={{ background: "#f59e0b" }}
+        />
+        <h2 className="text-[13px] font-semibold text-white/80">
+          Daily practice
+        </h2>
+      </div>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-40px" }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
+          className="relative flex flex-col gap-3 rounded-2xl border border-amber-400/25 bg-amber-500/[0.05] p-4"
+        >
+          <div className="relative flex items-start gap-3">
+            <div className="shrink-0 w-11 h-11 rounded-xl border border-amber-400/30 bg-amber-500/15 text-amber-300 flex items-center justify-center">
+              <i className="fa-solid fa-fire text-[15px]" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-[14px] font-semibold leading-tight">
+                {maxed ? "Streak legend" : `${target}-day affirmation streak`}
+              </div>
+              <div className="text-[12px] text-white/50 leading-snug mt-0.5">
+                {maxed
+                  ? "You've earned every streak reward. Legendary."
+                  : "Read all your affirmations every day. Auto-awarded as you go."}
+              </div>
+            </div>
+            {!maxed && (
+              <span className="shrink-0 text-[11px] font-bold tabular-nums px-2 py-0.5 rounded-full border bg-amber-500/15 text-amber-300 border-amber-500/30">
+                +{next!.xp}
+              </span>
+            )}
+          </div>
+
+          <div className="relative">
+            <div className="h-2.5 rounded-full bg-white/[0.06] overflow-hidden">
+              <motion.div
+                className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-400"
+                initial={{ width: 0 }}
+                whileInView={{ width: `${pct}%` }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.7, ease: "easeOut", delay: 0.1 }}
+              />
+            </div>
+            <div className="mt-2 flex items-center justify-between">
+              <span className="text-[11px] text-white/45 tabular-nums">
+                {maxed ? `${streak.longest} day best` : `${shown} / ${target} days`}
+              </span>
+              <Link
+                href="/affirmations"
+                className="inline-flex items-center gap-1.5 text-[11px] font-medium text-amber-300 hover:text-amber-200 transition"
+              >
+                Open affirmations
+                <i className="fa-solid fa-chevron-right text-[8px]" />
+              </Link>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    </section>
   );
 }
 

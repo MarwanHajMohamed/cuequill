@@ -30,12 +30,19 @@ export async function GET() {
       .select("status symbol notes tags strategy dateBought dateClosed")
       .lean<EvalTrade[]>(),
     User.findById(session.user.id)
-      .select("xp challengeClaims bonusChatMessages equippedTitle")
+      .select(
+        "xp challengeClaims bonusChatMessages equippedTitle affirmationStreak",
+      )
       .lean<{
         xp?: number;
         challengeClaims?: { id: string; claimedAt: Date }[];
         bonusChatMessages?: number;
         equippedTitle?: string;
+        affirmationStreak?: {
+          current: number;
+          longest: number;
+          lastDate: string;
+        };
       }>(),
   ]);
 
@@ -109,5 +116,6 @@ export async function GET() {
     trophies,
     titles,
     equippedTitle,
+    streak: user?.affirmationStreak ?? { current: 0, longest: 0, lastDate: "" },
   });
 }

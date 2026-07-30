@@ -39,6 +39,7 @@ export type ChallengesData = {
   trophies: Trophy[];
   titles: string[];
   equippedTitle: string;
+  streak: { current: number; longest: number; lastDate: string };
 };
 
 const fetchChallenges = async (): Promise<ChallengesData> => {
