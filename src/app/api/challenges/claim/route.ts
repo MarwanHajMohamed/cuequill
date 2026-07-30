@@ -6,6 +6,7 @@ import mongoose from "mongoose";
 import Trade from "@/lib/models/Trade";
 import { User } from "@/lib/models/User";
 import { CHALLENGE_MAP, levelInfo, type EvalTrade } from "@/lib/challenges";
+import { chatBetween } from "@/lib/levelRewards";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -28,7 +29,7 @@ export async function POST(req: Request) {
 
   await connectDb();
   const user = await User.findById(session.user.id).select(
-    "xp challengeClaims bonusChatMessages",
+    "xp challengeClaims bonusChatMessages chatRewardLevel",
   );
   if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -61,21 +62,36 @@ export async function POST(req: Request) {
     );
   }
 
+  const preLevel = levelInfo(user.xp ?? 0).level;
   user.xp = (user.xp ?? 0) + def.xp;
   user.challengeClaims = [
     ...(user.challengeClaims ?? []),
     { id, claimedAt: new Date() },
   ];
-  // Grant any bonus reward (currently Quill AI messages).
-  if (def.reward?.kind === "chat") {
-    user.bonusChatMessages = (user.bonusChatMessages ?? 0) + def.reward.amount;
+
+  // Grant level-up chat rewards. The watermark tracks the highest level
+  // already paid out; a value of 0 means "not initialised" (existing
+  // account) — seed it to the pre-claim level so we never retro-pay for
+  // levels reached before this system existed, only ones crossed from here.
+  const newLevel = levelInfo(user.xp).level;
+  let watermark = user.chatRewardLevel ?? 0;
+  if (watermark === 0) watermark = preLevel;
+  let chatGranted = 0;
+  if (newLevel > watermark) {
+    chatGranted = chatBetween(watermark, newLevel);
+    if (chatGranted > 0) {
+      user.bonusChatMessages = (user.bonusChatMessages ?? 0) + chatGranted;
+    }
   }
+  user.chatRewardLevel = Math.max(watermark, newLevel);
+
   await user.save();
 
   return NextResponse.json({
     success: true,
     awarded: def.xp,
-    reward: def.reward ?? null,
+    // Bonus chats granted from any level-up this claim triggered.
+    chatGranted,
     ...levelInfo(user.xp),
   });
 }

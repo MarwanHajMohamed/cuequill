@@ -40,6 +40,24 @@ export const AVATAR_FRAMES: {
     ring: "shadow-[0_0_0_2px_rgba(45,212,191,0.7),0_0_14px_3px_rgba(129,140,248,0.5)]",
     minLevel: 6,
   },
+  {
+    id: "inferno",
+    label: "Inferno",
+    ring: "shadow-[0_0_0_2px_rgba(249,115,22,0.8),0_0_14px_3px_rgba(239,68,68,0.5)]",
+    minLevel: 8,
+  },
+  {
+    id: "celestial",
+    label: "Celestial",
+    ring: "shadow-[0_0_0_2px_rgba(250,204,21,0.8),0_0_16px_4px_rgba(255,255,255,0.35)]",
+    minLevel: 10,
+  },
+  {
+    id: "eclipse",
+    label: "Eclipse",
+    ring: "shadow-[0_0_0_2px_rgba(129,140,248,0.9),0_0_18px_5px_rgba(2,6,23,0.6)]",
+    minLevel: 12,
+  },
 ];
 
 export function avatarFrameRing(id?: string | null): string {

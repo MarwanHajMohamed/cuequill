@@ -26,6 +26,8 @@ export const AVATAR_COLORS: {
   { id: "aurora", label: "Aurora", gradient: "from-[#34d399]/80 via-[#2dd4bf]/80 to-indigo-500/80", minLevel: 4 },
   { id: "ocean", label: "Ocean", gradient: "from-cyan-400/85 to-blue-600/85", minLevel: 5 },
   { id: "nebula", label: "Nebula", gradient: "from-fuchsia-500/85 via-purple-500/85 to-indigo-600/85", minLevel: 7 },
+  { id: "ember", label: "Ember", gradient: "from-orange-500/85 to-red-600/85", minLevel: 9 },
+  { id: "orchid", label: "Orchid", gradient: "from-fuchsia-400/85 to-purple-600/85", minLevel: 11 },
 ];
 
 const DEFAULT = AVATAR_COLORS[0].gradient;

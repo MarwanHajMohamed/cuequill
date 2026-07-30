@@ -10,8 +10,7 @@ import { useToast } from "@/hooks/useToast";
 import { useTheme } from "@/hooks/useTheme";
 import { AVATAR_COLORS } from "@/lib/avatarColors";
 import { AVATAR_FRAMES } from "@/lib/avatarFrames";
-import { ACCENTS } from "@/lib/accents";
-import { CARD_SKINS } from "@/lib/cardSkins";
+import RewardsTimeline from "./RewardsTimeline";
 import ShareImageModal from "@/components/ShareImageModal";
 import AchievementShareCard, {
   CARD_W as ACH_CARD_W,
@@ -56,16 +55,6 @@ const CAT: Record<
 };
 const CATEGORY_ORDER = ["onboarding", "journaling", "discipline", "exploration"];
 
-// Levels that unlock a cosmetic reward (avatar colour/frame, accent pack,
-// or share-card skin), ascending.
-const REWARD_LEVELS = Array.from(
-  new Set(
-    [...AVATAR_COLORS, ...AVATAR_FRAMES, ...ACCENTS, ...CARD_SKINS]
-      .filter((x) => x.minLevel > 1)
-      .map((x) => x.minLevel),
-  ),
-).sort((a, b) => a - b);
-
 function Page() {
   const qc = useQueryClient();
   const toast = useToast();
@@ -89,9 +78,10 @@ function Page() {
       if (!res.ok) throw new Error(d.error ?? "Couldn't claim");
       setBurst(xp);
       window.setTimeout(() => setBurst(null), 1400);
+      // A claim can trigger a level-up, which now pays out the bonus chats.
       const extra =
-        d.reward?.kind === "chat"
-          ? ` and +${d.reward.amount} Quill messages`
+        typeof d.chatGranted === "number" && d.chatGranted > 0
+          ? ` · Level up! +${d.chatGranted} Quill messages`
           : "";
       toast(`+${xp} XP claimed${extra}!`);
       qc.invalidateQueries({ queryKey: ["challenges"] });
@@ -356,103 +346,12 @@ function Page() {
               </motion.div>
             </Link>
 
-            {/* Rewards ladder — what each level unlocks. */}
-            <section className="mt-10">
-              <h2 className="text-[13px] font-semibold text-white/80 mb-3 flex items-center gap-2">
-                <i className="fa-solid fa-gift text-teal-300/80 text-[12px]" />
-                Rewards
-              </h2>
-              <div className="rounded-2xl border border-white/10 bg-white/[0.02] divide-y divide-white/[0.06] overflow-hidden">
-                {REWARD_LEVELS.map((L) => {
-                  const colours = AVATAR_COLORS.filter((c) => c.minLevel === L);
-                  const frames = AVATAR_FRAMES.filter((f) => f.minLevel === L);
-                  const accents = ACCENTS.filter((a) => a.minLevel === L);
-                  const skins = CARD_SKINS.filter((s) => s.minLevel === L);
-                  const unlocked = data.level >= L;
-                  return (
-                    <div
-                      key={L}
-                      className={`flex items-center gap-4 px-4 py-3 ${
-                        unlocked ? "" : "opacity-55"
-                      }`}
-                    >
-                      <div
-                        className={`shrink-0 w-9 h-9 rounded-lg border flex flex-col items-center justify-center ${
-                          unlocked
-                            ? "border-teal-500/30 bg-teal-500/10 text-teal-300"
-                            : "border-white/10 bg-white/[0.03] text-white/45"
-                        }`}
-                      >
-                        <span className="text-[7px] uppercase tracking-wide leading-none">
-                          Lvl
-                        </span>
-                        <span className="text-[13px] font-bold leading-none tabular-nums">
-                          {L}
-                        </span>
-                      </div>
-                      <div className="flex-1 flex items-center gap-x-4 gap-y-1.5 flex-wrap">
-                        {colours.map((c) => (
-                          <span
-                            key={c.id}
-                            className="inline-flex items-center gap-1.5 text-[11.5px] text-white/65"
-                          >
-                            <span
-                              className={`w-4 h-4 rounded-full bg-gradient-to-br ${c.gradient} border border-white/20`}
-                            />
-                            {c.label} colour
-                          </span>
-                        ))}
-                        {frames.map((f) => (
-                          <span
-                            key={f.id}
-                            className="inline-flex items-center gap-1.5 text-[11.5px] text-white/65"
-                          >
-                            <span
-                              className={`w-4 h-4 rounded-full bg-gradient-to-br from-slate-500 to-slate-700 ${f.ring}`}
-                            />
-                            {f.label} frame
-                          </span>
-                        ))}
-                        {accents.map((a) => (
-                          <span
-                            key={a.id}
-                            className="inline-flex items-center gap-1.5 text-[11.5px] text-white/65"
-                          >
-                            <span
-                              className={`w-4 h-4 rounded-full bg-gradient-to-br ${a.swatch} border border-white/20`}
-                            />
-                            {a.label} accent
-                          </span>
-                        ))}
-                        {skins.map((s) => (
-                          <span
-                            key={s.id}
-                            className="inline-flex items-center gap-1.5 text-[11.5px] text-white/65"
-                          >
-                            <span
-                              className="w-4 h-4 rounded-full border border-white/20"
-                              style={{
-                                backgroundImage: `linear-gradient(to bottom right, ${s.swatchFrom}, ${s.swatchTo})`,
-                              }}
-                            />
-                            {s.label} card skin
-                          </span>
-                        ))}
-                      </div>
-                      {unlocked ? (
-                        <span className="shrink-0 text-[11px] text-teal-300 font-medium inline-flex items-center gap-1">
-                          <i className="fa-solid fa-check text-[9px]" /> Unlocked
-                        </span>
-                      ) : (
-                        <span className="shrink-0 text-[11px] text-white/35 inline-flex items-center gap-1">
-                          <i className="fa-solid fa-lock text-[9px]" /> Locked
-                        </span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
+            {/* Rewards timeline — the level ladder with a modal per level. */}
+            <RewardsTimeline
+              level={data.level}
+              into={data.into}
+              per={data.per}
+            />
           </>
         )}
       </div>
@@ -647,15 +546,6 @@ function ChallengeCard({
           >
             +{c.xp}
           </span>
-          {c.reward?.kind === "chat" && (
-            <span
-              title={`${c.reward.amount} bonus Quill AI messages`}
-              className="inline-flex items-center gap-1 text-[9.5px] font-semibold px-1.5 py-0.5 rounded-full border bg-violet-500/15 text-violet-300 border-violet-500/30"
-            >
-              <i className="fa-solid fa-comment-dots text-[8px]" />+
-              {c.reward.amount}
-            </span>
-          )}
         </div>
       </div>
 

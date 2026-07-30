@@ -90,7 +90,6 @@ export const CHALLENGES: ChallengeDef[] = [
     category: "journaling",
     target: 100,
     xp: 300,
-    reward: { kind: "chat", amount: 5, label: "Quill messages" },
     progress: (t) => t.length,
   },
   {
@@ -185,7 +184,6 @@ export const CHALLENGES: ChallengeDef[] = [
     category: "journaling",
     target: 250,
     xp: 400,
-    reward: { kind: "chat", amount: 10, label: "Quill messages" },
     progress: (t) => t.length,
   },
   {
@@ -196,7 +194,6 @@ export const CHALLENGES: ChallengeDef[] = [
     category: "journaling",
     target: 50,
     xp: 250,
-    reward: { kind: "chat", amount: 5, label: "Quill messages" },
     progress: (t) => t.filter((x) => (x.notes ?? "").trim().length > 0).length,
   },
   // ── Level-gated challenges ──────────────────────────────────────────
@@ -220,7 +217,6 @@ export const CHALLENGES: ChallengeDef[] = [
     category: "discipline",
     target: 10,
     xp: 300,
-    reward: { kind: "chat", amount: 5, label: "Quill messages" },
     minLevel: 2,
     progress: (t) => {
       const seq = closedByExit(t);
@@ -243,7 +239,6 @@ export const CHALLENGES: ChallengeDef[] = [
     category: "discipline",
     target: 1,
     xp: 250,
-    reward: { kind: "chat", amount: 5, label: "Quill messages" },
     minLevel: 2,
     progress: (t) => {
       const closed = t.filter(isClosed);
@@ -260,7 +255,6 @@ export const CHALLENGES: ChallengeDef[] = [
     category: "exploration",
     target: 6,
     xp: 350,
-    reward: { kind: "chat", amount: 10, label: "Quill messages" },
     minLevel: 3,
     progress: (t) =>
       new Set(
@@ -281,16 +275,19 @@ export function xpForLevelUp(level: number): number {
   return 200 + (level - 1) * 150; // 200, 350, 500, 650, 800, …
 }
 
-const TITLES = [
-  "Novice",
-  "Apprentice",
-  "Journeyman",
-  "Practitioner",
-  "Disciplined",
-  "Strategist",
-  "Veteran",
-  "Master",
-  "Grandmaster",
+export const TITLES = [
+  "Novice", // 1
+  "Apprentice", // 2
+  "Journeyman", // 3
+  "Practitioner", // 4
+  "Disciplined", // 5
+  "Strategist", // 6
+  "Veteran", // 7
+  "Master", // 8
+  "Grandmaster", // 9
+  "Elite", // 10
+  "Legend", // 11
+  "Mythic", // 12
 ];
 
 export type LevelInfo = {

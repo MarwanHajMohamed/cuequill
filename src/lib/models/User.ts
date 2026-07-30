@@ -134,9 +134,12 @@ export interface IUser extends Document {
   // have been claimed (each awards its XP exactly once).
   xp?: number;
   challengeClaims?: { id: string; claimedAt: Date }[];
-  // Bonus Quill AI messages earned from challenge rewards — a finite pool
+  // Bonus Quill AI messages earned from level-up rewards — a finite pool
   // consumed once the daily message limit is hit.
   bonusChatMessages?: number;
+  // High-water mark: the highest level for which level-up chat rewards have
+  // already been granted, so reaching a level pays out exactly once.
+  chatRewardLevel?: number;
   // The title the user has chosen to display as a nameplate next to their
   // name. Must be one of their earned titles (current level title or a
   // title granted by an earned trophy); purely cosmetic.
@@ -231,6 +234,7 @@ const UserSchema = new Schema<IUser>({
   dashChallengesMigrated: { type: Boolean, default: false },
   xp: { type: Number, default: 0 },
   bonusChatMessages: { type: Number, default: 0 },
+  chatRewardLevel: { type: Number, default: 0 },
   equippedTitle: { type: String, default: "" },
   challengeClaims: {
     type: [
