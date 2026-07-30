@@ -116,8 +116,7 @@ function Page() {
                 Nameplate
               </h2>
               <p className="text-[12px] text-white/50 mb-3 leading-relaxed max-w-lg">
-                Pick a title to show beside your name. Earn more by leveling up
-                and unlocking trophies. Tap the active one to clear it.
+                Pick a title to show beside your name.
               </p>
               <div className="flex flex-wrap gap-2">
                 {data.titles.map((t) => {
