@@ -9,25 +9,17 @@ import { AVATAR_FRAMES } from "@/lib/avatarFrames";
 import { ACCENTS } from "@/lib/accents";
 import { CARD_SKINS } from "@/lib/cardSkins";
 
-// Bonus Quill AI messages granted the first time each level is reached.
-// Kept modest on purpose — every message has a real cost — and spread so
-// the climb always hands you something.
-export const LEVEL_CHAT: Record<number, number> = {
-  2: 3,
-  3: 5,
-  4: 5,
-  5: 8,
-  6: 8,
-  7: 10,
-  8: 10,
-  9: 12,
-  10: 15,
-  11: 12,
-  12: 20,
-};
-
 // How many levels the rewards ladder shows.
 export const MAX_LEVEL = 12;
+
+// Bonus Quill AI messages granted the first time a level is reached. Not
+// every level — 5 free messages every 5 levels (kept modest since every
+// message has a real cost).
+export const LEVEL_CHAT: Record<number, number> = Object.fromEntries(
+  Array.from({ length: MAX_LEVEL }, (_, i) => i + 1)
+    .filter((l) => l % 5 === 0)
+    .map((l) => [l, 5]),
+);
 
 export type LevelReward =
   | { kind: "title"; label: string; icon: string }
