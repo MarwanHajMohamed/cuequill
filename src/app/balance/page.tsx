@@ -40,6 +40,8 @@ function Page() {
 
   const [range, setRange] = useState<Range>("6M");
   const [mode, setMode] = useState<Mode>("balance");
+  // Index of the point the cursor is over on the chart (null = not hovering).
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const [txType, setTxType] = useState<"DEPOSIT" | "WITHDRAW">("DEPOSIT");
   const [date, setDate] = useState(todayStr);
   const [amount, setAmount] = useState("");
@@ -106,6 +108,26 @@ function Page() {
   const seriesLabel = mode === "adjusted" ? "Trading P/L" : "Balance";
   const hasFlows = flows.length > 0;
 
+  // The point under the cursor, if any — drives the headline balance and the
+  // "not reached yet" dimming of everything after it.
+  const hoverPoint =
+    hoverIndex != null ? (filtered[hoverIndex] ?? null) : null;
+
+  // Split the active series into "past" (up to the cursor, full strength) and
+  // "future" (after the cursor, dimmed — "not reached yet"). They share the
+  // hovered point so the line stays continuous. With no hover, everything is
+  // "past" and the chart looks normal.
+  const chartData = useMemo(
+    () =>
+      filtered.map((p, i) => {
+        const val = p[activeKey];
+        const past = hoverIndex == null || i <= hoverIndex ? val : null;
+        const future = hoverIndex != null && i >= hoverIndex ? val : null;
+        return { ...p, past, future };
+      }),
+    [filtered, activeKey, hoverIndex],
+  );
+
   const refresh = () => qc.invalidateQueries({ queryKey: ["transactions"] });
 
   const handleAdd = async () => {
@@ -169,39 +191,61 @@ function Page() {
                       Balance
                     </div>
                     <div className="text-[32px] md:text-[40px] leading-none font-medium tracking-tight tabular-nums">
-                      {fmtMoneyFull(summary!.latest)}
-                    </div>
-                    <div
-                      className={`text-[13px] font-medium tabular-nums ${
-                        up ? "text-green-400" : "text-red-400"
-                      }`}
-                    >
-                      {up ? "▲" : "▼"} {fmtMoneySignedCompact(summary!.change)}
-                      {summary!.pct != null && (
-                        <span className="text-white/40 ml-1.5">
-                          ({up ? "+" : "−"}
-                          {Math.abs(summary!.pct).toFixed(1)}%){" "}
-                          {mode === "adjusted" ? "from trading" : "over"} {range}
-                        </span>
+                      {fmtMoneyFull(
+                        hoverPoint ? hoverPoint.balance : summary!.latest,
                       )}
                     </div>
-                    {hasFlows && summary!.netFlow !== 0 && (
-                      <div className="text-[11.5px] text-white/40 tabular-nums">
-                        {mode === "adjusted" ? (
-                          <>
-                            excl. net{" "}
-                            {summary!.netFlow >= 0 ? "deposits" : "withdrawals"}{" "}
-                            {fmtMoneyFull(Math.abs(summary!.netFlow))}
-                          </>
-                        ) : (
-                          <>
-                            trading {fmtMoneySignedCompact(summary!.tradingChange)}{" "}
-                            · net{" "}
-                            {summary!.netFlow >= 0 ? "deposits" : "withdrawals"}{" "}
-                            {fmtMoneyFull(Math.abs(summary!.netFlow))}
-                          </>
-                        )}
+                    {hoverPoint ? (
+                      // Hovering: show the date of the point under the cursor.
+                      <div className="text-[13px] text-white/50 tabular-nums">
+                        {new Date(hoverPoint.date).toLocaleDateString(undefined, {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })}
                       </div>
+                    ) : (
+                      <>
+                        <div
+                          className={`text-[13px] font-medium tabular-nums ${
+                            up ? "text-green-400" : "text-red-400"
+                          }`}
+                        >
+                          {up ? "▲" : "▼"}{" "}
+                          {fmtMoneySignedCompact(summary!.change)}
+                          {summary!.pct != null && (
+                            <span className="text-white/40 ml-1.5">
+                              ({up ? "+" : "−"}
+                              {Math.abs(summary!.pct).toFixed(1)}%){" "}
+                              {mode === "adjusted" ? "from trading" : "over"}{" "}
+                              {range}
+                            </span>
+                          )}
+                        </div>
+                        {hasFlows && summary!.netFlow !== 0 && (
+                          <div className="text-[11.5px] text-white/40 tabular-nums">
+                            {mode === "adjusted" ? (
+                              <>
+                                excl. net{" "}
+                                {summary!.netFlow >= 0
+                                  ? "deposits"
+                                  : "withdrawals"}{" "}
+                                {fmtMoneyFull(Math.abs(summary!.netFlow))}
+                              </>
+                            ) : (
+                              <>
+                                trading{" "}
+                                {fmtMoneySignedCompact(summary!.tradingChange)}{" "}
+                                · net{" "}
+                                {summary!.netFlow >= 0
+                                  ? "deposits"
+                                  : "withdrawals"}{" "}
+                                {fmtMoneyFull(Math.abs(summary!.netFlow))}
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
 
@@ -256,8 +300,21 @@ function Page() {
                   ) : (
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart
-                        data={filtered}
+                        data={chartData}
                         margin={{ top: 8, right: 8, left: 8, bottom: 0 }}
+                        onMouseMove={(s) => {
+                          const st = s as {
+                            activeTooltipIndex?: number | null;
+                            isTooltipActive?: boolean;
+                          };
+                          setHoverIndex(
+                            st.isTooltipActive &&
+                              typeof st.activeTooltipIndex === "number"
+                              ? st.activeTooltipIndex
+                              : null,
+                          );
+                        }}
+                        onMouseLeave={() => setHoverIndex(null)}
                       >
                         <defs>
                           <linearGradient
@@ -271,6 +328,25 @@ function Page() {
                               offset="0%"
                               stopColor={chartColor}
                               stopOpacity={0.3}
+                            />
+                            <stop
+                              offset="100%"
+                              stopColor={chartColor}
+                              stopOpacity={0}
+                            />
+                          </linearGradient>
+                          {/* Faint fill for the not-yet-reached portion. */}
+                          <linearGradient
+                            id="balFillDim"
+                            x1="0"
+                            y1="0"
+                            x2="0"
+                            y2="1"
+                          >
+                            <stop
+                              offset="0%"
+                              stopColor={chartColor}
+                              stopOpacity={0.06}
                             />
                             <stop
                               offset="100%"
@@ -300,40 +376,76 @@ function Page() {
                           domain={["auto", "auto"]}
                           tickFormatter={(v: number) => fmtMoneySignedCompact(v)}
                         />
+                        {/* Reached so far — full strength. */}
                         <Area
                           type="monotone"
-                          dataKey={activeKey}
+                          dataKey="past"
                           stroke={chartColor}
                           strokeWidth={2}
                           fill="url(#balFill)"
+                          connectNulls={false}
+                          isAnimationActive={false}
                         />
-                        {markers.map((m, i) => (
-                          <ReferenceDot
-                            key={`${m.x}-${i}`}
-                            x={m.x}
-                            y={m.y}
-                            r={4}
-                            fill={m.type === "DEPOSIT" ? "#2dd4bf" : "#f59e0b"}
-                            stroke="var(--surface)"
-                            strokeWidth={2}
-                            ifOverflow="extendDomain"
-                          />
-                        ))}
+                        {/* Not reached yet — dimmed. */}
+                        <Area
+                          type="monotone"
+                          dataKey="future"
+                          stroke={chartColor}
+                          strokeOpacity={0.22}
+                          strokeWidth={2}
+                          fill="url(#balFillDim)"
+                          connectNulls={false}
+                          isAnimationActive={false}
+                        />
+                        {markers.map((m, i) => {
+                          // Markers after the cursor dim too.
+                          const dimmed = hoverPoint != null && m.x > hoverPoint.date;
+                          return (
+                            <ReferenceDot
+                              key={`${m.x}-${i}`}
+                              x={m.x}
+                              y={m.y}
+                              r={4}
+                              fill={m.type === "DEPOSIT" ? "#2dd4bf" : "#f59e0b"}
+                              fillOpacity={dimmed ? 0.25 : 1}
+                              stroke="var(--surface)"
+                              strokeWidth={2}
+                              strokeOpacity={dimmed ? 0.25 : 1}
+                              ifOverflow="extendDomain"
+                            />
+                          );
+                        })}
                         <ReTooltip
-                          contentStyle={{
-                            background: "var(--surface)",
-                            border: "1px solid var(--hairline)",
-                            borderRadius: 8,
-                            fontSize: 12,
-                            color: "var(--foreground)",
+                          cursor={{ stroke: "var(--hairline)" }}
+                          content={({ active, payload, label }) => {
+                            if (!active || !payload || payload.length === 0)
+                              return null;
+                            const row = payload[0]?.payload as
+                              | (typeof chartData)[number]
+                              | undefined;
+                            if (!row) return null;
+                            return (
+                              <div
+                                style={{
+                                  background: "var(--surface)",
+                                  border: "1px solid var(--hairline)",
+                                  borderRadius: 8,
+                                  fontSize: 12,
+                                  color: "var(--foreground)",
+                                  padding: "6px 10px",
+                                }}
+                              >
+                                <div style={{ opacity: 0.6 }}>
+                                  {new Date(
+                                    label as string,
+                                  ).toLocaleDateString()}
+                                </div>
+                                <div style={{ fontWeight: 600 }}>
+                                  {seriesLabel}: {fmtMoneyFull(row[activeKey])}
+                                </div>
+                              </div>
+                            );
                           }}
-                          labelFormatter={(d) =>
-                            new Date(d as string).toLocaleDateString()
-                          }
-                          formatter={(v: number) => [
-                            fmtMoneyFull(v),
-                            seriesLabel,
-                          ]}
                         />
                       </AreaChart>
                     </ResponsiveContainer>
