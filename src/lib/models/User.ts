@@ -50,6 +50,13 @@ export interface IUser extends Document {
   // resets daily. Stored server-side so the state syncs across devices.
   // `date` is a yyyy-MM-dd string; `texts` are the read affirmations.
   affirmationsRead: { date: string; texts: string[] };
+  // Affirmations streak. A day counts as complete when the user has read
+  // ALL of their current affirmations that day. `current` is the length of
+  // the latest run and `lastDate` (yyyy-MM-dd, client-local) is the most
+  // recent completed day; a run stays "alive" while lastDate is today or
+  // yesterday, otherwise it's considered broken (see the read route). Once a
+  // day is completed, un-reading later that day does not revoke it.
+  affirmationStreak: { current: number; longest: number; lastDate: string };
   // Pro membership flag — the effective, computed access gate. Gates
   // Quill AI, IBKR auto-sync, the rules board / affirmations,
   // per-strategy + per-symbol stats, and unlimited trade history. Free
@@ -183,6 +190,17 @@ const UserSchema = new Schema<IUser>({
       { _id: false },
     ),
     default: () => ({ date: "", texts: [] }),
+  },
+  affirmationStreak: {
+    type: new Schema(
+      {
+        current: { type: Number, default: 0 },
+        longest: { type: Number, default: 0 },
+        lastDate: { type: String, default: "" },
+      },
+      { _id: false },
+    ),
+    default: () => ({ current: 0, longest: 0, lastDate: "" }),
   },
   isPro: { type: Boolean, default: false },
   proManualOverride: { type: Boolean, default: false },

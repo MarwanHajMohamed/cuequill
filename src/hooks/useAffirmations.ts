@@ -1,9 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  EMPTY_STREAK,
+  type AffirmationStreak,
+} from "@/lib/affirmationStreak";
 
 export type AffirmationsRead = { date: string; texts: string[] };
 type AffirmationsData = {
   affirmations: string[];
   read: AffirmationsRead;
+  streak: AffirmationStreak;
 };
 
 const KEY = ["affirmations"];
@@ -15,6 +20,7 @@ async function fetchAffirmations(): Promise<AffirmationsData> {
   return {
     affirmations: data.affirmations ?? [],
     read: data.read ?? { date: "", texts: [] },
+    streak: data.streak ?? EMPTY_STREAK,
   };
 }
 
@@ -29,7 +35,9 @@ async function saveList(items: string[]): Promise<string[]> {
   return data.affirmations ?? [];
 }
 
-async function saveRead(read: AffirmationsRead): Promise<AffirmationsRead> {
+async function saveRead(
+  read: AffirmationsRead,
+): Promise<{ read: AffirmationsRead; streak: AffirmationStreak }> {
   const res = await fetch("/api/affirmations/read", {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -37,7 +45,7 @@ async function saveRead(read: AffirmationsRead): Promise<AffirmationsRead> {
   });
   if (!res.ok) throw new Error("Failed to save read state");
   const data = await res.json();
-  return data.read ?? read;
+  return { read: data.read ?? read, streak: data.streak ?? EMPTY_STREAK };
 }
 
 export function useAffirmations() {
@@ -76,15 +84,16 @@ export function useAffirmations() {
     onError: (_e, _next, ctx) => {
       if (ctx?.prev) qc.setQueryData(KEY, ctx.prev);
     },
-    onSuccess: (saved) =>
+    onSuccess: ({ read, streak }) =>
       qc.setQueryData<AffirmationsData>(KEY, (old) =>
-        old ? { ...old, read: saved } : old,
+        old ? { ...old, read, streak } : old,
       ),
   });
 
   return {
     affirmations: query.data?.affirmations ?? [],
     read: query.data?.read ?? { date: "", texts: [] },
+    streak: query.data?.streak ?? EMPTY_STREAK,
     isLoading: query.isLoading,
     saveList: listMutation.mutate,
     saveRead: readMutation.mutate,

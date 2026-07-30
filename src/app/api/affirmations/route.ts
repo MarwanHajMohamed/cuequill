@@ -36,15 +36,25 @@ export async function GET() {
   }
   await connectDb();
   const user = await User.findById(session.user.id)
-    .select("affirmations affirmationsRead")
+    .select("affirmations affirmationsRead affirmationStreak")
     .lean<{
       affirmations?: string[];
       affirmationsRead?: { date: string; texts: string[] };
+      affirmationStreak?: {
+        current: number;
+        longest: number;
+        lastDate: string;
+      };
     }>();
   // Empty by default — new accounts start with no affirmations.
   return NextResponse.json({
     affirmations: user?.affirmations ?? [],
     read: user?.affirmationsRead ?? { date: "", texts: [] },
+    streak: user?.affirmationStreak ?? {
+      current: 0,
+      longest: 0,
+      lastDate: "",
+    },
   });
 }
 

@@ -3,6 +3,11 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import connectDb from "@/lib/db";
 import { User } from "@/lib/models/User";
+import {
+  advanceStreak,
+  EMPTY_STREAK,
+  type AffirmationStreak,
+} from "@/lib/affirmationStreak";
 
 export const runtime = "nodejs";
 
@@ -41,6 +46,30 @@ export async function PUT(req: Request) {
 
   const affirmationsRead = { date, texts };
   await connectDb();
-  await User.findByIdAndUpdate(session.user.id, { affirmationsRead });
-  return NextResponse.json({ read: affirmationsRead });
+
+  // Load the current affirmations + streak to decide whether today counts as
+  // complete (all current affirmations read) and, if so, advance the streak.
+  const user = await User.findById(session.user.id)
+    .select("affirmations affirmationStreak")
+    .lean<{
+      affirmations?: string[];
+      affirmationStreak?: AffirmationStreak;
+    }>();
+
+  const affirmations = user?.affirmations ?? [];
+  const readSet = new Set(texts);
+  const allRead =
+    !!date &&
+    affirmations.length > 0 &&
+    affirmations.every((a) => readSet.has(a));
+
+  let streak = user?.affirmationStreak ?? EMPTY_STREAK;
+  if (allRead) streak = advanceStreak(streak, date);
+
+  await User.findByIdAndUpdate(session.user.id, {
+    affirmationsRead,
+    affirmationStreak: streak,
+  });
+
+  return NextResponse.json({ read: affirmationsRead, streak });
 }

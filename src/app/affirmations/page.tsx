@@ -6,12 +6,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 import React, { useEffect, useMemo, useState } from "react";
 import { useAffirmations } from "@/hooks/useAffirmations";
+import { effectiveCurrent } from "@/lib/affirmationStreak";
 
 function AffirmationsPage() {
   const today = format(new Date(), "yyyy-MM-dd");
   const {
     affirmations,
     read: serverRead,
+    streak,
     saveList,
     saveRead,
     saving,
@@ -67,6 +69,15 @@ function AffirmationsPage() {
     affirmations.length > 0 ? (readCount / affirmations.length) * 100 : 0;
   const allRead = affirmations.length > 0 && readCount === affirmations.length;
 
+  // Live current streak: the stored run only counts if completed today or
+  // yesterday. Reflect an in-progress completion immediately (allRead) even
+  // before the server round-trip lands.
+  const currentStreak = useMemo(() => {
+    const live = effectiveCurrent(streak, today);
+    if (allRead && streak.lastDate !== today) return live + 1;
+    return live;
+  }, [streak, today, allRead]);
+
   return (
     <div className="w-full flex flex-col md:items-start min-h-screen">
       {/* Aurora */}
@@ -80,8 +91,53 @@ function AffirmationsPage() {
       />
 
       <div className="relative w-full max-w-[1500px] mt-30 md:mt-10 px-5 md:px-10">
+        {/* Streak */}
+        {affirmations.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            className="mt-8 flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md px-4 md:px-5 py-3.5"
+          >
+            <div
+              className={`shrink-0 w-11 h-11 rounded-xl flex items-center justify-center border ${
+                currentStreak > 0
+                  ? "bg-amber-500/15 border-amber-500/30 text-amber-300"
+                  : "bg-white/[0.03] border-white/10 text-white/35"
+              }`}
+            >
+              <i className="fa-solid fa-fire text-[17px]" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-2xl font-semibold tabular-nums leading-none">
+                  {currentStreak}
+                </span>
+                <span className="text-sm text-white/55">
+                  day{currentStreak === 1 ? "" : "s"} in a row
+                </span>
+              </div>
+              <div className="mt-1 text-[12px] text-white/45">
+                {allRead
+                  ? "All read today — streak locked in ✓"
+                  : currentStreak > 0
+                    ? "Read them all today to keep it going"
+                    : "Read all your affirmations today to start a streak"}
+              </div>
+            </div>
+            <div className="shrink-0 text-right">
+              <div className="text-[11px] uppercase tracking-[0.08em] text-white/40">
+                Best
+              </div>
+              <div className="text-[17px] font-semibold tabular-nums leading-tight">
+                {Math.max(streak.longest, currentStreak)}
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {/* Add affirmation */}
-        <div className="mt-8 flex items-center gap-2">
+        <div className="mt-4 flex items-center gap-2">
           <input
             type="text"
             value={draft}
