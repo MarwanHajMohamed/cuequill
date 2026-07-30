@@ -201,12 +201,6 @@ function Page() {
                     icon="fa-comment-dots"
                   />
                 )}
-                <HeroStat
-                  value={data.claimable}
-                  label="To claim"
-                  icon="fa-gift"
-                  pulse={data.claimable > 0}
-                />
               </div>
             </motion.div>
 
