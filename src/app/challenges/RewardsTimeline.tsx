@@ -28,11 +28,12 @@ export default function RewardsTimeline({
 
   const levels = Array.from({ length: MAX_LEVEL }, (_, i) => i + 1);
 
-  // Fill fraction of the spine: to the current level's node centre, plus the
-  // fractional progress into the next level.
+  // The spine runs from the first node centre to the last, and fills to the
+  // current level's node (plus the fractional progress into the next level).
   const frac = per > 0 ? Math.min(1, Math.max(0, into / per)) : 0;
-  const units = Math.min(level - 1 + frac, MAX_LEVEL - 1);
-  const fillPct = Math.min(100, ((units + 0.5) / MAX_LEVEL) * 100);
+  const fillUnits = Math.min(level - 1 + frac, MAX_LEVEL - 1);
+  const spineTop = ROW_H / 2;
+  const spineHeight = (MAX_LEVEL - 1) * ROW_H;
 
   return (
     <section className="mt-10">
@@ -48,12 +49,15 @@ export default function RewardsTimeline({
         className="relative"
         style={{ height: levels.length * ROW_H }}
       >
-        {/* Spine track */}
-        <div className="absolute top-0 bottom-0 left-6 md:left-1/2 -translate-x-1/2 w-[3px] rounded-full bg-white/10" />
+        {/* Spine track — from the first node centre to the last. */}
+        <div
+          className="absolute left-6 md:left-1/2 -translate-x-1/2 w-[3px] rounded-full bg-white/10"
+          style={{ top: spineTop, height: spineHeight }}
+        />
         {/* Spine fill */}
         <div
-          className="absolute top-0 left-6 md:left-1/2 -translate-x-1/2 w-[3px] rounded-full bg-gradient-to-b from-teal-400 to-emerald-400"
-          style={{ height: `${fillPct}%` }}
+          className="absolute left-6 md:left-1/2 -translate-x-1/2 w-[3px] rounded-full bg-gradient-to-b from-teal-400 to-emerald-400"
+          style={{ top: spineTop, height: fillUnits * ROW_H }}
         />
 
         {levels.map((L, i) => {
