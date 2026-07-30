@@ -74,23 +74,28 @@ export default function RewardsTimeline({
               className="absolute inset-x-0"
               style={{ top: i * ROW_H, height: ROW_H }}
             >
-              {/* Node marker */}
+              {/* Node marker. An opaque disc sits under the tinted circle so
+                  the spine line is hidden behind it (the tints are
+                  translucent and would otherwise show the line over the
+                  number). */}
               <div className="absolute left-6 md:left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-10">
-                <div
-                  className={`w-10 h-10 rounded-full border-2 flex flex-col items-center justify-center transition ${
-                    isCurrent
-                      ? "border-teal-300 bg-teal-500/20 text-teal-100 shadow-[0_0_18px_-2px_rgba(45,212,191,0.7)]"
-                      : unlocked
-                        ? "border-teal-500/50 bg-teal-500/12 text-teal-200"
-                        : "border-white/15 bg-[var(--surface)] text-white/45"
-                  }`}
-                >
-                  <span className="text-[6.5px] uppercase tracking-wide leading-none opacity-70">
-                    Lvl
-                  </span>
-                  <span className="text-[13px] font-bold leading-none tabular-nums">
-                    {L}
-                  </span>
+                <div className="rounded-full bg-[var(--background)]">
+                  <div
+                    className={`w-10 h-10 rounded-full border-2 flex flex-col items-center justify-center transition ${
+                      isCurrent
+                        ? "border-teal-300 bg-teal-500/20 text-teal-100 shadow-[0_0_18px_-2px_rgba(45,212,191,0.7)]"
+                        : unlocked
+                          ? "border-teal-500/50 bg-teal-500/12 text-teal-200"
+                          : "border-white/15 bg-[var(--surface)] text-white/45"
+                    }`}
+                  >
+                    <span className="text-[6.5px] uppercase tracking-wide leading-none opacity-70">
+                      Lvl
+                    </span>
+                    <span className="text-[13px] font-bold leading-none tabular-nums">
+                      {L}
+                    </span>
+                  </div>
                 </div>
               </div>
 
