@@ -397,9 +397,7 @@ function StreakChallengeSection({
           className="relative flex flex-col gap-3 rounded-2xl border border-amber-400/25 bg-amber-500/[0.05] p-4"
         >
           <div className="relative flex items-start gap-3">
-            <div className="shrink-0 w-11 h-11 rounded-xl border border-amber-400/30 bg-amber-500/15 text-amber-300 flex items-center justify-center">
-              <i className="fa-solid fa-fire text-[15px]" />
-            </div>
+            <i className="fa-solid fa-fire shrink-0 text-[18px] text-amber-300 leading-none mt-0.5" />
             <div className="min-w-0 flex-1">
               <div className="text-[14px] font-semibold leading-tight">
                 {maxed ? "Streak legend" : `${target}-day affirmation streak`}
@@ -407,18 +405,18 @@ function StreakChallengeSection({
               <div className="text-[12px] text-white/50 leading-snug mt-0.5">
                 {maxed
                   ? "You've earned every streak reward. Legendary."
-                  : "Read all your affirmations every day. Auto-awarded as you go."}
+                  : "Read all your affirmations every day."}
               </div>
             </div>
             {!maxed && (
-              <span className="shrink-0 text-[11px] font-bold tabular-nums px-2 py-0.5 rounded-full border bg-amber-500/15 text-amber-300 border-amber-500/30">
-                +{next!.xp}
+              <span className="shrink-0 text-[11px] font-semibold tabular-nums text-amber-300/90">
+                +{next!.xp} XP
               </span>
             )}
           </div>
 
           <div className="relative">
-            <div className="h-2.5 rounded-full bg-white/[0.06] overflow-hidden">
+            <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
               <motion.div
                 className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-400"
                 initial={{ width: 0 }}
@@ -518,25 +516,22 @@ function ChallengeCard({
       }`}
     >
       <div className="relative flex items-start gap-3">
-        <div
-          className={`shrink-0 w-11 h-11 rounded-xl border flex items-center justify-center ${
+        <i
+          className={`shrink-0 text-[18px] leading-none mt-0.5 ${
             c.claimed
-              ? "text-amber-300 bg-amber-500/15 border-amber-400/30"
-              : c.complete
-                ? style.icon
-                : "border-white/10 bg-white/[0.03] text-white/45"
+              ? "fa-solid fa-trophy"
+              : locked
+                ? "fa-solid fa-lock"
+                : c.icon
           }`}
-        >
-          <i
-            className={`${
-              c.claimed
-                ? "fa-solid fa-trophy"
-                : locked
-                  ? "fa-solid fa-lock"
-                  : c.icon
-            } text-[15px]`}
-          />
-        </div>
+          style={{
+            color: c.claimed
+              ? "#fbbf24"
+              : c.complete
+                ? style.ring
+                : "rgb(var(--fg-rgb) / 0.4)",
+          }}
+        />
         <div className="min-w-0 flex-1">
           <div className="text-[14px] font-semibold leading-tight">
             {c.title}
@@ -551,7 +546,7 @@ function ChallengeCard({
       </div>
 
       <div className="relative">
-        <div className="h-2.5 rounded-full bg-white/[0.06] overflow-hidden">
+        <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
           <motion.div
             className={`h-full rounded-full bg-gradient-to-r ${
               c.complete ? style.bar : "from-white/25 to-white/20"

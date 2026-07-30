@@ -115,20 +115,15 @@ export const CHALLENGES: ChallengeDef[] = [
   {
     id: "bounce-back",
     title: "Bounce back",
-    description:
-      "Log a winning trade right after two losses in a row — no revenge trade.",
+    description: "Log a winning trade right after a loss - no revenge trade.",
     icon: "fa-solid fa-arrow-trend-up",
     category: "discipline",
     target: 1,
     xp: 150,
     progress: (t) => {
       const seq = closedByExit(t);
-      for (let i = 2; i < seq.length; i++) {
-        if (
-          seq[i].status === "WIN" &&
-          seq[i - 1].status === "LOSS" &&
-          seq[i - 2].status === "LOSS"
-        ) {
+      for (let i = 1; i < seq.length; i++) {
+        if (seq[i].status === "WIN" && seq[i - 1].status === "LOSS") {
           return 1;
         }
       }
@@ -200,7 +195,7 @@ export const CHALLENGES: ChallengeDef[] = [
   {
     id: "tag-master",
     title: "Tag master",
-    description: "Tag 100 trades so every stat has something to slice.",
+    description: "Tag 100 trades.",
     icon: "fa-solid fa-tag",
     category: "journaling",
     target: 100,
