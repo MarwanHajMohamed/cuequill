@@ -323,6 +323,34 @@
   background-color: rgba(0, 0, 0, 0.4);
 }
 
+/* Challenge "Claim" button. Themed via the html.light class (not JS) so it
+   updates live on theme toggle and never gets stuck in the wrong palette.
+   Dark: a filled accent chip (follows the accent pack via --color-teal-400);
+   light: a white chip with dark-teal ink. */
+.claim-btn {
+  background: var(--color-teal-400);
+  color: #04211d;
+}
+.claim-btn:hover {
+  background: var(--color-teal-300);
+}
+:root.light .claim-btn {
+  background: #ffffff;
+  color: var(--color-teal-600);
+  border: 1px solid color-mix(in oklab, var(--color-teal-500) 40%, transparent);
+}
+:root.light .claim-btn:hover {
+  background: #f3f4f6;
+}
+/* Sheen sweep across the button. White in dark; a faint light sheen (a hair
+   below pure white) in light so it reads on the white chip. */
+.claim-shimmer {
+  background: rgba(255, 255, 255, 0.5);
+}
+:root.light .claim-shimmer {
+  background: #f4f6f8;
+}
+
 /* Headings (and the `.font-display` marketing aliases) inherit the body
    typeface - DM Mono - so the whole app shares one font with no serif.
    `font-variation-settings: normal` clears the opsz axis the old serif

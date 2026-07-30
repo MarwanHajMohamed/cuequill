@@ -41,8 +41,7 @@ export default function RewardsTimeline({
         Rewards
       </h2>
       <p className="text-[12px] text-white/50 mb-5 leading-relaxed max-w-lg">
-        Level up to unlock cosmetics, titles and bonus Quill AI messages. Each
-        stop shows one reward — tap “See all” for everything at that level.
+        Level up to unlock cosmetics, titles and bonus Quill AI messages.
       </p>
 
       <div

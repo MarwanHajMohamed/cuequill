@@ -7,7 +7,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { withAuth } from "@/lib/withAuth";
 import { useChallenges, type ChallengeProgress } from "@/hooks/useChallenges";
 import { useToast } from "@/hooks/useToast";
-import { useTheme } from "@/hooks/useTheme";
 import {
   effectiveCurrent,
   nextStreakMilestone,
@@ -63,8 +62,6 @@ const todayStr = () => new Date().toISOString().slice(0, 10);
 function Page() {
   const qc = useQueryClient();
   const toast = useToast();
-  const { theme } = useTheme();
-  const isLight = theme === "light";
   const today = todayStr();
   const { data, isLoading } = useChallenges();
   const [claiming, setClaiming] = React.useState<string | null>(null);
@@ -115,13 +112,33 @@ function Page() {
           }}
         />
 
-        <header className="pb-6 border-b border-white/10">
-          <h1 className="text-[24px] font-semibold tracking-tight">
-            Challenges
-          </h1>
-          <p className="text-[13.5px] text-white/50 mt-1.5 leading-relaxed max-w-lg">
-            Build good habits, rack up XP, and unlock rewards.
-          </p>
+        <header className="pb-6 border-b border-white/10 flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-[24px] font-semibold tracking-tight">
+              Challenges
+            </h1>
+            <p className="text-[13.5px] text-white/50 mt-1.5 leading-relaxed max-w-lg">
+              Build good habits, rack up XP, and unlock rewards.
+            </p>
+          </div>
+          {data && (
+            <Link
+              href="/trophies"
+              className="group shrink-0 inline-flex items-center gap-2.5 rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2 hover:border-white/20 transition"
+            >
+              <span className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-400/25 text-amber-300 flex items-center justify-center">
+                <i className="fa-solid fa-trophy text-[12px]" />
+              </span>
+              <span className="hidden sm:block leading-tight">
+                <span className="block text-[12px] font-medium">Trophy case</span>
+                <span className="block text-[10.5px] text-white/40 tabular-nums">
+                  {data.trophies.filter((t) => t.earned).length}/
+                  {data.trophies.length} earned
+                </span>
+              </span>
+              <i className="fa-solid fa-chevron-right text-[10px] text-white/25 group-hover:text-white/55 transition" />
+            </Link>
+          )}
         </header>
 
         {/* Floating +XP burst on claim */}
@@ -252,52 +269,6 @@ function Page() {
                 </section>
               );
             })}
-
-            {/* Trophies teaser — full case lives on its own page. */}
-            <Link href="/trophies" className="block mt-8 group">
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-30px" }}
-                transition={{ duration: 0.35, ease: "easeOut" }}
-                className="relative overflow-hidden rounded-2xl border border-amber-400/25 bg-gradient-to-r from-amber-500/[0.10] to-orange-500/[0.05] p-4 md:p-5 flex items-center gap-4"
-              >
-                <div className="shrink-0 w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-400/30 text-amber-300 flex items-center justify-center">
-                  <i className="fa-solid fa-trophy text-[20px]" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-[14px] font-semibold flex items-center gap-2">
-                    Trophy case
-                    <span className="text-[11px] text-amber-200/80 tabular-nums font-normal">
-                      {data.trophies.filter((t) => t.earned).length}/
-                      {data.trophies.length} earned
-                    </span>
-                  </div>
-                  <div className="text-[12px] text-white/50 mt-0.5">
-                    Milestone awards and the titles they unlock.
-                  </div>
-                </div>
-                {/* Earned medallion peek */}
-                <div className="hidden sm:flex items-center -space-x-2 shrink-0">
-                  {data.trophies
-                    .filter((t) => t.earned)
-                    .slice(0, 4)
-                    .map((t) => (
-                      <span
-                        key={t.id}
-                        className={`w-8 h-8 rounded-full border flex items-center justify-center text-[12px] shadow ${
-                          isLight
-                            ? "bg-amber-100 border-amber-400/50 text-amber-700"
-                            : "bg-[#1a1206] border-amber-300/40 text-amber-200"
-                        }`}
-                      >
-                        <i className={t.icon} />
-                      </span>
-                    ))}
-                </div>
-                <i className="fa-solid fa-chevron-right text-[12px] text-white/30 group-hover:text-white/60 group-hover:translate-x-0.5 transition shrink-0" />
-              </motion.div>
-            </Link>
 
             {/* Rewards timeline — the level ladder with a modal per level. */}
             <RewardsTimeline
@@ -524,8 +495,6 @@ function ChallengeCard({
   onClaim: () => void;
   onShare: () => void;
 }) {
-  const { theme } = useTheme();
-  const isLight = theme === "light";
   const style = CAT[c.category] ?? CAT.journaling;
   const shown = Math.min(c.progress, c.target);
   const pct = c.target > 0 ? Math.min(100, (c.progress / c.target) * 100) : 0;
@@ -615,19 +584,13 @@ function ChallengeCard({
               whileTap={{ scale: 0.94 }}
               animate={{ scale: [1, 1.05, 1] }}
               transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
-              className={`relative overflow-hidden inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full transition text-[12px] font-bold cursor-pointer disabled:opacity-60 ${
-                isLight
-                  ? "bg-[#ffffff] text-teal-600 border border-teal-500/40 hover:bg-[#f3f4f6]"
-                  : "bg-teal-400 text-[#04211d] hover:bg-teal-300"
-              }`}
+              className="claim-btn relative overflow-hidden inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full transition text-[12px] font-bold cursor-pointer disabled:opacity-60"
             >
               {/* Shimmer confined to the button. */}
               {!claiming && (
                 <motion.span
                   aria-hidden
-                  className={`pointer-events-none absolute top-0 bottom-0 w-1/3 -skew-x-12 ${
-                    isLight ? "bg-[#e5e7eb]" : "bg-white/50"
-                  }`}
+                  className="claim-shimmer pointer-events-none absolute top-0 bottom-0 w-1/3 -skew-x-12"
                   initial={{ left: "-40%" }}
                   animate={{ left: "150%" }}
                   transition={{
