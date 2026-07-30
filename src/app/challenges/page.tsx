@@ -547,9 +547,11 @@ function ChallengeCard({
             +{c.xp} XP
           </span>
         </div>
-        <div className="text-[12px] text-white/45 leading-relaxed">
-          {c.description}
-        </div>
+        {c.description && (
+          <div className="text-[12px] text-white/45 leading-relaxed">
+            {c.description}
+          </div>
+        )}
       </div>
 
       <div className="relative">
