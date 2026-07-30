@@ -7,6 +7,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { withAuth } from "@/lib/withAuth";
 import { useChallenges, type Trophy } from "@/hooks/useChallenges";
 import { useToast } from "@/hooks/useToast";
+import { useTheme } from "@/hooks/useTheme";
 
 function Page() {
   const qc = useQueryClient();
@@ -152,6 +153,8 @@ function Page() {
 }
 
 function TrophyCard({ t, index }: { t: Trophy; index: number }) {
+  const { theme } = useTheme();
+  const isLight = theme === "light";
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -179,7 +182,9 @@ function TrophyCard({ t, index }: { t: Trophy; index: number }) {
           <div
             className={`w-[56px] h-[56px] rounded-full flex items-center justify-center border ${
               t.earned
-                ? "bg-[#1a1206] border-amber-300/30 text-amber-200"
+                ? isLight
+                  ? "bg-amber-100 border-amber-400/40 text-amber-700"
+                  : "bg-[#1a1206] border-amber-300/30 text-amber-200"
                 : "bg-white/[0.02] border-white/10 text-white/35"
             }`}
           >

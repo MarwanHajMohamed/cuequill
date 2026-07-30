@@ -83,7 +83,7 @@ export default function RewardsTimeline({
                   <div
                     className={`w-10 h-10 rounded-full border-2 flex flex-col items-center justify-center transition ${
                       isCurrent
-                        ? "border-teal-300 bg-teal-500/20 text-teal-100 shadow-[0_0_18px_-2px_rgba(45,212,191,0.7)]"
+                        ? "border-teal-400 bg-teal-500/25 text-teal-200 shadow-[0_0_18px_-2px_rgba(45,212,191,0.7)]"
                         : unlocked
                           ? "border-teal-500/50 bg-teal-500/12 text-teal-200"
                           : "border-white/15 bg-[var(--surface)] text-white/45"

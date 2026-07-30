@@ -63,6 +63,8 @@ const todayStr = () => new Date().toISOString().slice(0, 10);
 function Page() {
   const qc = useQueryClient();
   const toast = useToast();
+  const { theme } = useTheme();
+  const isLight = theme === "light";
   const today = todayStr();
   const { data, isLoading } = useChallenges();
   const [claiming, setClaiming] = React.useState<string | null>(null);
@@ -289,7 +291,11 @@ function Page() {
                     .map((t) => (
                       <span
                         key={t.id}
-                        className="w-8 h-8 rounded-full bg-[#1a1206] border border-amber-300/40 text-amber-200 flex items-center justify-center text-[12px] shadow"
+                        className={`w-8 h-8 rounded-full border flex items-center justify-center text-[12px] shadow ${
+                          isLight
+                            ? "bg-amber-100 border-amber-400/50 text-amber-700"
+                            : "bg-[#1a1206] border-amber-300/40 text-amber-200"
+                        }`}
                       >
                         <i className={t.icon} />
                       </span>
