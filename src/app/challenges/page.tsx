@@ -582,13 +582,9 @@ function ChallengeCard({
             {c.description}
           </div>
         </div>
-        <div className="shrink-0 flex flex-col items-end gap-1">
-          <span
-            className={`text-[11px] font-bold tabular-nums px-2 py-0.5 rounded-full border ${style.chip}`}
-          >
-            +{c.xp}
-          </span>
-        </div>
+        <span className="shrink-0 text-[11px] font-semibold tabular-nums text-white/45">
+          +{c.xp} XP
+        </span>
       </div>
 
       <div className="relative">
@@ -608,20 +604,15 @@ function ChallengeCard({
             {shown} / {c.target}
           </span>
           {c.claimed ? (
-            <span className="inline-flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 text-[11.5px] text-amber-300 font-semibold">
-                <i className="fa-solid fa-circle-check text-[10px]" /> Claimed
-              </span>
-              <button
-                type="button"
-                onClick={onShare}
-                title="Share this achievement"
-                aria-label="Share this achievement"
-                className="inline-flex items-center justify-center w-6 h-6 rounded-full border border-white/12 bg-white/[0.04] text-white/60 hover:text-white hover:border-white/30 transition cursor-pointer"
-              >
-                <i className="fa-solid fa-share-nodes text-[10px]" />
-              </button>
-            </span>
+            <button
+              type="button"
+              onClick={onShare}
+              title="Share this achievement"
+              aria-label="Share this achievement"
+              className="inline-flex items-center justify-center w-6 h-6 rounded-full border border-white/12 bg-white/[0.04] text-white/60 hover:text-white hover:border-white/30 transition cursor-pointer"
+            >
+              <i className="fa-solid fa-share-nodes text-[10px]" />
+            </button>
           ) : claimable ? (
             <motion.button
               type="button"
@@ -666,9 +657,7 @@ function ChallengeCard({
             <span className="inline-flex items-center gap-1.5 text-[11px] text-white/40">
               <i className="fa-solid fa-lock text-[9px]" /> Level {c.minLevel}
             </span>
-          ) : (
-            <span className="text-[11px] text-white/30">In progress</span>
-          )}
+          ) : null}
         </div>
       </div>
     </motion.div>
