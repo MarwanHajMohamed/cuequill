@@ -167,58 +167,64 @@ function Page() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, ease: "easeOut" }}
-              className="mt-8 flex items-center gap-4 flex-wrap"
+              className="mt-8 flex flex-col gap-2.5"
             >
-              <LevelRing level={data.level} pct={pct} />
-              <div className="flex-1 min-w-[220px]">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[16px] md:text-[18px] font-semibold tracking-tight">
-                    {titleLabel(data.level)}
-                  </span>
-                  <span className="text-[12px] text-white/45 tabular-nums">
-                    · {data.totalXp.toLocaleString()} XP
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setShareAch({
-                        kind: "level",
-                        level: data.level,
-                        title: data.title,
-                        totalXp: data.totalXp,
-                      })
-                    }
-                    className="inline-flex items-center gap-1.5 text-[11px] font-medium text-white/45 hover:text-white/80 transition cursor-pointer"
-                  >
-                    <i className="fa-solid fa-share-nodes text-[10px]" />
-                    Share
-                  </button>
+              <div className="flex items-center gap-4 flex-wrap">
+                <LevelRing level={data.level} pct={pct} />
+                <div className="flex-1 min-w-[220px]">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[16px] md:text-[18px] font-semibold tracking-tight">
+                      {titleLabel(data.level)}
+                    </span>
+                    <span className="text-[12px] text-white/45 tabular-nums">
+                      · {data.totalXp.toLocaleString()} XP
+                    </span>
+                  </div>
+                  <div className="mt-2 h-1.5 rounded-full bg-white/[0.07] overflow-hidden max-w-md">
+                    <motion.div
+                      className="h-full rounded-full bg-gradient-to-r from-teal-400 to-emerald-400"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${pct}%` }}
+                      transition={{ duration: 0.9, ease: "easeOut" }}
+                    />
+                  </div>
+                  <div className="mt-1.5 text-[11.5px] text-white/45 tabular-nums">
+                    {data.into} / {data.per} XP
+                  </div>
                 </div>
-                <div className="mt-2 h-1.5 rounded-full bg-white/[0.07] overflow-hidden max-w-md">
-                  <motion.div
-                    className="h-full rounded-full bg-gradient-to-r from-teal-400 to-emerald-400"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${pct}%` }}
-                    transition={{ duration: 0.9, ease: "easeOut" }}
+                <div className="flex items-center gap-6 pr-1">
+                  <HeroStat
+                    value={data.badges.length}
+                    label="Badges"
+                    icon="fa-trophy"
                   />
-                </div>
-                <div className="mt-1.5 text-[11.5px] text-white/45 tabular-nums">
-                  {data.into} / {data.per} XP
+                  {data.bonusMessages > 0 && (
+                    <HeroStat
+                      value={data.bonusMessages}
+                      label="Bonus msgs"
+                      icon="fa-comment-dots"
+                    />
+                  )}
                 </div>
               </div>
-              <div className="flex items-center gap-6 pr-1">
-                <HeroStat
-                  value={data.badges.length}
-                  label="Badges"
-                  icon="fa-trophy"
-                />
-                {data.bonusMessages > 0 && (
-                  <HeroStat
-                    value={data.bonusMessages}
-                    label="Bonus msgs"
-                    icon="fa-comment-dots"
-                  />
-                )}
+
+              {/* Share the level — below the ring, aligned right. */}
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShareAch({
+                      kind: "level",
+                      level: data.level,
+                      title: data.title,
+                      totalXp: data.totalXp,
+                    })
+                  }
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/12 bg-white/[0.03] text-[11.5px] font-medium text-white/60 hover:text-white hover:border-white/25 transition cursor-pointer"
+                >
+                  <i className="fa-solid fa-share-nodes text-[10px]" />
+                  Share level
+                </button>
               </div>
             </motion.div>
 

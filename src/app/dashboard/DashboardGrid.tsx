@@ -362,7 +362,7 @@ function SortableWidget({
         style={style}
         className={`h-full min-h-0 [&:empty]:hidden ${spanClass}`}
       >
-        {def.render(userId, shownRow)}
+        {def.render(userId, shownRow, shownCol)}
       </div>
     );
   }
@@ -434,7 +434,7 @@ function SortableWidget({
         </div>
       </div>
       <div className="flex-1 min-h-0 overflow-hidden pointer-events-none">
-        {def.render(userId, shownRow)}
+        {def.render(userId, shownRow, shownCol)}
       </div>
 
       {/* Right-edge (width) drag-to-resize handle — desktop only. */}

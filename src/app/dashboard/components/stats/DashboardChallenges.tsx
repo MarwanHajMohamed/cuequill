@@ -5,22 +5,34 @@ import Link from "next/link";
 import { useChallenges } from "@/hooks/useChallenges";
 import { CARD_CLASS_BASE } from "../DashboardCard";
 
-// Compact challenges/rewards summary: level + XP progress, claimable
-// count, and the nearest challenge in progress. Links to /challenges.
-export default function DashboardChallenges() {
+// Compact challenges/rewards summary: level + XP progress, claimable count,
+// and the challenges nearest to completion. The number shown scales with the
+// widget's size — the bigger you make it, the more you see. Links to
+// /challenges.
+export default function DashboardChallenges({
+  rowSpan = 1,
+  colSpan = 1,
+}: {
+  rowSpan?: number;
+  colSpan?: number;
+}) {
   const { data, isLoading } = useChallenges();
 
   if (isLoading || !data) return null;
 
   const pct = data.per > 0 ? (data.into / data.per) * 100 : 0;
-  // Closest unclaimed challenge that isn't done yet — the "next up".
-  const nextUp = data.challenges
+  // Show one challenge per unit of the widget's larger dimension (1–3).
+  const count = Math.max(1, rowSpan, colSpan);
+  // Closest unclaimed challenges that aren't done yet — the "next up" list.
+  const nearest = data.challenges
     .filter((c) => !c.complete && !c.locked)
     .map((c) => ({
       c,
       ratio: c.target > 0 ? c.progress / c.target : 0,
     }))
-    .sort((a, b) => b.ratio - a.ratio)[0]?.c;
+    .sort((a, b) => b.ratio - a.ratio)
+    .slice(0, count)
+    .map((x) => x.c);
 
   return (
     <Link href="/challenges" className="block h-full">
@@ -62,16 +74,50 @@ export default function DashboardChallenges() {
           </div>
         </div>
 
-        {nextUp && (
-          <div className="mt-auto pt-1 border-t border-white/[0.06] flex items-center gap-2 text-[11.5px] text-white/55">
-            <i className={`${nextUp.icon} text-teal-300/70 text-[11px]`} />
-            <span className="truncate">
-              Next: {nextUp.title}
-              <span className="text-white/35 tabular-nums">
-                {" "}
-                ({Math.min(nextUp.progress, nextUp.target)}/{nextUp.target})
-              </span>
-            </span>
+        {nearest.length > 0 && (
+          <div className="mt-auto pt-2 border-t border-white/[0.06] flex flex-col gap-2">
+            {count > 1 && (
+              <div className="text-[10px] uppercase tracking-wide text-white/35">
+                Closest to completing
+              </div>
+            )}
+            {nearest.map((c) => {
+              const p =
+                c.target > 0 ? Math.min(100, (c.progress / c.target) * 100) : 0;
+              return count === 1 ? (
+                <div
+                  key={c.id}
+                  className="flex items-center gap-2 text-[11.5px] text-white/55"
+                >
+                  <i className={`${c.icon} text-teal-300/70 text-[11px]`} />
+                  <span className="truncate">
+                    Next: {c.title}
+                    <span className="text-white/35 tabular-nums">
+                      {" "}
+                      ({Math.min(c.progress, c.target)}/{c.target})
+                    </span>
+                  </span>
+                </div>
+              ) : (
+                <div key={c.id} className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2 text-[11.5px] text-white/60">
+                    <i
+                      className={`${c.icon} text-teal-300/70 text-[10px] w-3.5 text-center shrink-0`}
+                    />
+                    <span className="truncate flex-1">{c.title}</span>
+                    <span className="text-white/35 tabular-nums shrink-0">
+                      {Math.min(c.progress, c.target)}/{c.target}
+                    </span>
+                  </div>
+                  <div className="h-1 rounded-full bg-white/[0.06] overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-teal-400 to-emerald-400"
+                      style={{ width: `${p}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </section>

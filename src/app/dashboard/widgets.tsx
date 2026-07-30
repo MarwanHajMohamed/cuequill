@@ -38,9 +38,14 @@ export type WidgetId =
 export type WidgetDef = {
   id: WidgetId;
   title: string;
-  // rowSpan is the widget's current height in grid rows (1–3); widgets that
-  // scroll conditionally (e.g. Upcoming) use it, most ignore it.
-  render: (userId: string, rowSpan: number) => React.ReactNode;
+  // rowSpan / colSpan are the widget's current grid size (rows 1–3, cols
+  // 1–2). Widgets that adapt to their size (Upcoming, Challenges) use them;
+  // most ignore them.
+  render: (
+    userId: string,
+    rowSpan: number,
+    colSpan: number,
+  ) => React.ReactNode;
 };
 
 export const WIDGETS: WidgetDef[] = [
@@ -67,7 +72,9 @@ export const WIDGETS: WidgetDef[] = [
   {
     id: "challenges",
     title: "Challenges",
-    render: () => <DashboardChallenges />,
+    render: (_userId, rowSpan, colSpan) => (
+      <DashboardChallenges rowSpan={rowSpan} colSpan={colSpan} />
+    ),
   },
   {
     id: "riskBudget",
