@@ -203,7 +203,7 @@ function Page() {
                   />
                 </div>
                 <div className="mt-1.5 text-[11.5px] text-white/45 tabular-nums">
-                  {data.into} / {data.per} XP to level {data.level + 1}
+                  {data.into} / {data.per} XP
                 </div>
               </div>
               <div className="flex items-center gap-6 pr-1">

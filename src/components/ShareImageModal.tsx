@@ -183,17 +183,17 @@ export default function ShareImageModal({
                   }
                   className={`relative w-8 h-8 rounded-full border transition ${
                     locked
-                      ? "opacity-40 cursor-not-allowed border-white/15"
+                      ? "opacity-40 cursor-not-allowed border-[#ffffff26]"
                       : active
-                        ? "border-white ring-2 ring-white/40 cursor-pointer"
-                        : "border-white/15 hover:border-white/40 cursor-pointer"
+                        ? "border-[#ffffff] ring-2 ring-[#ffffff66] cursor-pointer"
+                        : "border-[#ffffff26] hover:border-[#ffffff66] cursor-pointer"
                   }`}
                   style={{
                     backgroundImage: `linear-gradient(to bottom right, ${s.swatchFrom}, ${s.swatchTo})`,
                   }}
                 >
                   {locked && (
-                    <i className="fa-solid fa-lock absolute inset-0 m-auto w-fit h-fit text-[9px] text-white/90" />
+                    <i className="fa-solid fa-lock absolute inset-0 m-auto w-fit h-fit text-[9px] text-[#ffffffe6]" />
                   )}
                 </button>
               );
@@ -202,16 +202,19 @@ export default function ShareImageModal({
         )}
 
         {error && (
-          <div className="w-full max-w-md rounded-xl border border-red-500/25 bg-red-500/[0.06] px-3 py-2 text-[12.5px] text-red-300 text-center">
+          <div className="w-full max-w-md rounded-xl border border-[#ef444440] bg-[#ef44440f] px-3 py-2 text-[12.5px] text-[#fca5a5] text-center">
             {error}
           </div>
         )}
 
+        {/* The modal always sits on a dark scrim, so these use literal
+            light/teal colours instead of white/teal tokens (which the light
+            theme would remap to dark, making them vanish here). */}
         <div className="w-full max-w-md flex items-center gap-2">
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full border border-white/15 bg-white/[0.04] text-white/80 hover:bg-white/[0.08] hover:text-white transition text-[13px] font-medium cursor-pointer"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full border border-[#ffffff26] bg-[#ffffff0d] text-[#ffffffcc] hover:bg-[#ffffff17] hover:text-[#ffffff] transition text-[13px] font-medium cursor-pointer"
           >
             Close
           </button>
@@ -219,7 +222,7 @@ export default function ShareImageModal({
             type="button"
             onClick={handleSave}
             disabled={busy}
-            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full border border-white/15 bg-white/[0.04] text-white/85 hover:bg-white/[0.08] hover:text-white transition text-[13px] font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full border border-[#ffffff26] bg-[#ffffff0d] text-[#ffffffd9] hover:bg-[#ffffff17] hover:text-[#ffffff] transition text-[13px] font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <i className="fa-solid fa-download text-[12px]" />
             {busy ? "Working…" : "Save image"}
@@ -229,7 +232,7 @@ export default function ShareImageModal({
               type="button"
               onClick={handleShare}
               disabled={busy}
-              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 hover:bg-teal-500/30 transition text-[13px] font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-[#14b8a633] text-[#5eead4] border border-[#14b8a64d] hover:bg-[#14b8a64d] transition text-[13px] font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <i className="fa-solid fa-share-nodes text-[12px]" />
               Share
