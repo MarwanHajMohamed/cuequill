@@ -77,21 +77,21 @@ function Page() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, ease: "easeOut" }}
-              className="mt-8 relative overflow-hidden rounded-3xl border border-amber-400/20 bg-gradient-to-r from-amber-500/[0.10] to-orange-500/[0.06] p-5 md:p-6 flex items-center gap-5 flex-wrap"
+              className="mt-8 flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3"
             >
-              <div className="relative shrink-0 w-16 h-16 rounded-2xl bg-amber-500/15 border border-amber-400/30 flex items-center justify-center text-amber-300">
-                <i className="fa-solid fa-trophy text-[26px]" />
+              <div className="shrink-0 w-9 h-9 rounded-lg bg-amber-500/15 border border-amber-400/25 flex items-center justify-center text-amber-300">
+                <i className="fa-solid fa-trophy text-[15px]" />
               </div>
-              <div className="flex-1 min-w-[220px]">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-[26px] font-bold tabular-nums leading-none bg-gradient-to-r from-amber-200 to-orange-300 bg-clip-text text-transparent">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-baseline gap-1.5 mb-2">
+                  <span className="text-[15px] font-semibold tabular-nums leading-none">
                     {earned}
                   </span>
-                  <span className="text-[13px] text-white/55">
+                  <span className="text-[12px] text-white/50">
                     of {total} trophies earned
                   </span>
                 </div>
-                <div className="mt-3 h-2.5 rounded-full bg-white/[0.08] overflow-hidden max-w-md">
+                <div className="h-1 rounded-full bg-white/5 overflow-hidden max-w-md">
                   <motion.div
                     className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-400"
                     initial={{ width: 0 }}
