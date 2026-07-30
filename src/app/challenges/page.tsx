@@ -175,7 +175,7 @@ function Page() {
                     {data.title}
                   </span>
                   <span className="text-[12px] text-white/45 tabular-nums">
-                    · Level {data.level} · {data.totalXp.toLocaleString()} XP
+                    · {data.totalXp.toLocaleString()} XP
                   </span>
                   <button
                     type="button"
