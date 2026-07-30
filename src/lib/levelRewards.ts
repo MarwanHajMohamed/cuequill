@@ -54,22 +54,34 @@ export function chatBetween(from: number, to: number): number {
 export function rewardsForLevel(level: number): LevelReward[] {
   const out: LevelReward[] = [];
 
-  for (const c of AVATAR_COLORS.filter((x) => x.minLevel === level)) {
-    out.push({ kind: "color", label: `${c.label} avatar`, gradient: c.gradient });
-  }
-  for (const f of AVATAR_FRAMES.filter((x) => x.minLevel === level)) {
-    out.push({ kind: "frame", label: `${f.label} frame`, ring: f.ring });
-  }
-  for (const a of ACCENTS.filter((x) => x.minLevel === level)) {
-    out.push({ kind: "accent", label: `${a.label} accent`, swatch: a.swatch });
-  }
-  for (const s of CARD_SKINS.filter((x) => x.minLevel === level)) {
-    out.push({
-      kind: "skin",
-      label: `${s.label} card skin`,
-      swatchFrom: s.swatchFrom,
-      swatchTo: s.swatchTo,
-    });
+  // Cosmetics with minLevel 1 are the default set everyone starts with, not
+  // unlocks — so level 1 has no cosmetic rewards to list.
+  if (level > 1) {
+    for (const c of AVATAR_COLORS.filter((x) => x.minLevel === level)) {
+      out.push({
+        kind: "color",
+        label: `${c.label} avatar`,
+        gradient: c.gradient,
+      });
+    }
+    for (const f of AVATAR_FRAMES.filter((x) => x.minLevel === level)) {
+      out.push({ kind: "frame", label: `${f.label} frame`, ring: f.ring });
+    }
+    for (const a of ACCENTS.filter((x) => x.minLevel === level)) {
+      out.push({
+        kind: "accent",
+        label: `${a.label} accent`,
+        swatch: a.swatch,
+      });
+    }
+    for (const s of CARD_SKINS.filter((x) => x.minLevel === level)) {
+      out.push({
+        kind: "skin",
+        label: `${s.label} card skin`,
+        swatchFrom: s.swatchFrom,
+        swatchTo: s.swatchTo,
+      });
+    }
   }
 
   const chat = LEVEL_CHAT[level];
