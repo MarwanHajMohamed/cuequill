@@ -10,6 +10,8 @@ import { useToast } from "@/hooks/useToast";
 import { useTheme } from "@/hooks/useTheme";
 import { AVATAR_COLORS } from "@/lib/avatarColors";
 import { AVATAR_FRAMES } from "@/lib/avatarFrames";
+import { ACCENTS } from "@/lib/accents";
+import { CARD_SKINS } from "@/lib/cardSkins";
 import ShareImageModal from "@/components/ShareImageModal";
 import AchievementShareCard, {
   CARD_W as ACH_CARD_W,
@@ -54,10 +56,11 @@ const CAT: Record<
 };
 const CATEGORY_ORDER = ["onboarding", "journaling", "discipline", "exploration"];
 
-// Levels that unlock a cosmetic reward (colour or frame), ascending.
+// Levels that unlock a cosmetic reward (avatar colour/frame, accent pack,
+// or share-card skin), ascending.
 const REWARD_LEVELS = Array.from(
   new Set(
-    [...AVATAR_COLORS, ...AVATAR_FRAMES]
+    [...AVATAR_COLORS, ...AVATAR_FRAMES, ...ACCENTS, ...CARD_SKINS]
       .filter((x) => x.minLevel > 1)
       .map((x) => x.minLevel),
   ),
@@ -443,6 +446,8 @@ function Page() {
                 {REWARD_LEVELS.map((L) => {
                   const colours = AVATAR_COLORS.filter((c) => c.minLevel === L);
                   const frames = AVATAR_FRAMES.filter((f) => f.minLevel === L);
+                  const accents = ACCENTS.filter((a) => a.minLevel === L);
+                  const skins = CARD_SKINS.filter((s) => s.minLevel === L);
                   const unlocked = data.level >= L;
                   return (
                     <div
@@ -486,6 +491,31 @@ function Page() {
                               className={`w-4 h-4 rounded-full bg-gradient-to-br from-slate-500 to-slate-700 ${f.ring}`}
                             />
                             {f.label} frame
+                          </span>
+                        ))}
+                        {accents.map((a) => (
+                          <span
+                            key={a.id}
+                            className="inline-flex items-center gap-1.5 text-[11.5px] text-white/65"
+                          >
+                            <span
+                              className={`w-4 h-4 rounded-full bg-gradient-to-br ${a.swatch} border border-white/20`}
+                            />
+                            {a.label} accent
+                          </span>
+                        ))}
+                        {skins.map((s) => (
+                          <span
+                            key={s.id}
+                            className="inline-flex items-center gap-1.5 text-[11.5px] text-white/65"
+                          >
+                            <span
+                              className="w-4 h-4 rounded-full border border-white/20"
+                              style={{
+                                backgroundImage: `linear-gradient(to bottom right, ${s.swatchFrom}, ${s.swatchTo})`,
+                              }}
+                            />
+                            {s.label} card skin
                           </span>
                         ))}
                       </div>
