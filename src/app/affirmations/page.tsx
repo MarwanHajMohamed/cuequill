@@ -91,53 +91,8 @@ function AffirmationsPage() {
       />
 
       <div className="relative w-full max-w-[1500px] mt-30 md:mt-10 px-5 md:px-10">
-        {/* Streak */}
-        {affirmations.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
-            className="mt-8 flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md px-4 md:px-5 py-3.5"
-          >
-            <div
-              className={`shrink-0 w-11 h-11 rounded-xl flex items-center justify-center border ${
-                currentStreak > 0
-                  ? "bg-amber-500/15 border-amber-500/30 text-amber-300"
-                  : "bg-white/[0.03] border-white/10 text-white/35"
-              }`}
-            >
-              <i className="fa-solid fa-fire text-[17px]" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-2xl font-semibold tabular-nums leading-none">
-                  {currentStreak}
-                </span>
-                <span className="text-sm text-white/55">
-                  day{currentStreak === 1 ? "" : "s"} in a row
-                </span>
-              </div>
-              <div className="mt-1 text-[12px] text-white/45">
-                {allRead
-                  ? "All read today — streak locked in ✓"
-                  : currentStreak > 0
-                    ? "Read them all today to keep it going"
-                    : "Read all your affirmations today to start a streak"}
-              </div>
-            </div>
-            <div className="shrink-0 text-right">
-              <div className="text-[11px] uppercase tracking-[0.08em] text-white/40">
-                Best
-              </div>
-              <div className="text-[17px] font-semibold tabular-nums leading-tight">
-                {Math.max(streak.longest, currentStreak)}
-              </div>
-            </div>
-          </motion.div>
-        )}
-
         {/* Add affirmation */}
-        <div className="mt-4 flex items-center gap-2">
+        <div className="mt-8 flex items-center gap-2">
           <input
             type="text"
             value={draft}
@@ -163,52 +118,73 @@ function AffirmationsPage() {
           </button>
         </div>
 
-        {/* Progress */}
+        {/* Streak (small flame) + progress, side by side */}
         {affirmations.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.08, ease: "easeOut" }}
-            className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5"
+            className="mt-4 flex items-stretch gap-3"
           >
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-semibold tabular-nums">
-                  {readCount}
-                </span>
-                <span className="text-sm text-white/50">
-                  of {affirmations.length} read today
-                </span>
-              </div>
-              <div className="flex items-center gap-2 text-[12px]">
-                {allRead ? (
-                  <button
-                    onClick={clearAll}
-                    className="px-3 py-1.5 rounded-full border border-white/10 text-white/60 hover:bg-white/5 hover:text-white transition"
-                  >
-                    Reset
-                  </button>
-                ) : (
-                  <button
-                    onClick={markAll}
-                    className="px-3 py-1.5 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition"
-                  >
-                    Mark all read
-                  </button>
-                )}
-              </div>
+            {/* Small streak flame */}
+            <div
+              title={`Best streak: ${Math.max(streak.longest, currentStreak)} days`}
+              className={`shrink-0 flex items-center gap-2 rounded-xl border px-3 ${
+                currentStreak > 0
+                  ? "bg-amber-500/10 border-amber-500/25 text-amber-300"
+                  : "bg-white/[0.03] border-white/10 text-white/40"
+              }`}
+            >
+              <i className="fa-solid fa-fire text-[13px]" />
+              <span className="text-[15px] font-semibold tabular-nums leading-none">
+                {currentStreak}
+              </span>
+              <span className="text-[11px] text-white/45 leading-none">
+                day{currentStreak === 1 ? "" : "s"}
+              </span>
             </div>
-            <div className="h-1.5 w-full rounded-full bg-white/5 overflow-hidden">
-              <motion.div
-                initial={false}
-                animate={{ width: `${progress}%` }}
-                transition={{ type: "spring", stiffness: 200, damping: 26 }}
-                className={`h-full rounded-full ${
-                  allRead
-                    ? "bg-gradient-to-r from-green-400 to-emerald-400"
-                    : "bg-gradient-to-r from-teal-400 to-emerald-400"
-                }`}
-              />
+
+            {/* Progress */}
+            <div className="flex-1 min-w-0 rounded-xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md px-4 py-3">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-[15px] font-semibold tabular-nums">
+                    {readCount}
+                  </span>
+                  <span className="text-[12px] text-white/50">
+                    of {affirmations.length} read today
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-[11px]">
+                  {allRead ? (
+                    <button
+                      onClick={clearAll}
+                      className="px-2.5 py-1 rounded-full border border-white/10 text-white/60 hover:bg-white/5 hover:text-white transition"
+                    >
+                      Reset
+                    </button>
+                  ) : (
+                    <button
+                      onClick={markAll}
+                      className="px-2.5 py-1 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition"
+                    >
+                      Mark all read
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div className="h-1 w-full rounded-full bg-white/5 overflow-hidden">
+                <motion.div
+                  initial={false}
+                  animate={{ width: `${progress}%` }}
+                  transition={{ type: "spring", stiffness: 200, damping: 26 }}
+                  className={`h-full rounded-full ${
+                    allRead
+                      ? "bg-gradient-to-r from-green-400 to-emerald-400"
+                      : "bg-gradient-to-r from-teal-400 to-emerald-400"
+                  }`}
+                />
+              </div>
             </div>
           </motion.div>
         )}
