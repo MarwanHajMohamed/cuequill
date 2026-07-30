@@ -512,7 +512,7 @@ function ChallengeCard({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
       transition={{ duration: 0.35, ease: "easeOut", delay: index * 0.04 }}
-      className={`relative flex flex-col gap-3 rounded-2xl border p-4 overflow-hidden ${
+      className={`relative flex flex-col gap-4 rounded-2xl border p-5 overflow-hidden ${
         c.claimed
           ? "border-amber-400/30 bg-gradient-to-br from-amber-500/[0.08] to-transparent"
           : claimable
@@ -522,34 +522,34 @@ function ChallengeCard({
               : "border-white/10 bg-white/[0.02]"
       }`}
     >
-      <div className="relative flex items-start gap-3">
-        <i
-          className={`shrink-0 text-[18px] leading-none mt-0.5 ${
-            c.claimed
-              ? "fa-solid fa-trophy"
-              : locked
-                ? "fa-solid fa-lock"
-                : c.icon
-          }`}
-          style={{
-            color: c.claimed
-              ? "#fbbf24"
-              : c.complete
-                ? style.ring
-                : "rgb(var(--fg-rgb) / 0.4)",
-          }}
-        />
-        <div className="min-w-0 flex-1">
-          <div className="text-[14px] font-semibold leading-tight">
+      <div className="relative flex flex-col gap-2">
+        <div className="flex items-center gap-2.5">
+          <i
+            className={`shrink-0 text-[16px] leading-none ${
+              c.claimed
+                ? "fa-solid fa-trophy"
+                : locked
+                  ? "fa-solid fa-lock"
+                  : c.icon
+            }`}
+            style={{
+              color: c.claimed
+                ? "#fbbf24"
+                : c.complete
+                  ? style.ring
+                  : "rgb(var(--fg-rgb) / 0.4)",
+            }}
+          />
+          <div className="text-[14px] font-semibold leading-tight flex-1 min-w-0">
             {c.title}
           </div>
-          <div className="text-[12px] text-white/50 leading-snug mt-0.5">
-            {c.description}
-          </div>
+          <span className="shrink-0 text-[11px] font-semibold tabular-nums text-white/45">
+            +{c.xp} XP
+          </span>
         </div>
-        <span className="shrink-0 text-[11px] font-semibold tabular-nums text-white/45">
-          +{c.xp} XP
-        </span>
+        <div className="text-[12px] text-white/45 leading-relaxed">
+          {c.description}
+        </div>
       </div>
 
       <div className="relative">
