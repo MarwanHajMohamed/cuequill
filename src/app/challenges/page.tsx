@@ -395,35 +395,35 @@ function StreakChallengeSection({
           Daily practice
         </h2>
       </div>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="chal-grid">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-40px" }}
           transition={{ duration: 0.35, ease: "easeOut" }}
-          className="relative flex flex-col gap-3 rounded-2xl border border-amber-400/25 bg-amber-500/[0.05] p-4"
+          className="relative flex flex-col gap-4 p-5"
         >
-          <div className="relative flex items-start gap-3">
-            <i className="fa-solid fa-fire shrink-0 text-[18px] text-amber-300 leading-none mt-0.5" />
-            <div className="min-w-0 flex-1">
-              <div className="text-[14px] font-semibold leading-tight">
+          <div className="relative flex flex-col gap-2">
+            <div className="flex items-center gap-2.5">
+              <i className="fa-solid fa-fire shrink-0 text-[16px] text-amber-300 leading-none" />
+              <div className="text-[14px] font-semibold leading-tight flex-1 min-w-0">
                 {maxed ? "Streak legend" : `${target}-day affirmation streak`}
               </div>
-              <div className="text-[12px] text-white/50 leading-snug mt-0.5">
-                {maxed
-                  ? "You've earned every streak reward. Legendary."
-                  : "Read all your affirmations every day."}
-              </div>
+              {!maxed && (
+                <span className="shrink-0 text-[11px] font-semibold tabular-nums text-amber-300/90">
+                  +{next!.xp} XP
+                </span>
+              )}
             </div>
-            {!maxed && (
-              <span className="shrink-0 text-[11px] font-semibold tabular-nums text-amber-300/90">
-                +{next!.xp} XP
-              </span>
-            )}
+            <div className="text-[12px] text-white/45 leading-relaxed">
+              {maxed
+                ? "You've earned every streak reward. Legendary."
+                : "Read all your affirmations every day."}
+            </div>
           </div>
 
           <div className="relative">
-            <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+            <div className="h-1 rounded-full bg-white/[0.06] overflow-hidden">
               <motion.div
                 className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-400"
                 initial={{ width: 0 }}
@@ -434,7 +434,7 @@ function StreakChallengeSection({
             </div>
             <div className="mt-2 flex items-center justify-between">
               <span className="text-[11px] text-white/45 tabular-nums">
-                {maxed ? `${streak.longest} day best` : `${shown} / ${target} days`}
+                {maxed ? `${streak.longest} day best` : `${shown}/${target} days`}
               </span>
               <Link
                 href="/affirmations"
