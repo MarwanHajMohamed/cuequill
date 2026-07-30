@@ -632,7 +632,7 @@ function ChallengeCard({
               transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
               className={`relative overflow-hidden inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full transition text-[12px] font-bold cursor-pointer disabled:opacity-60 ${
                 isLight
-                  ? "bg-white text-teal-600 border border-teal-500/40 hover:bg-white"
+                  ? "bg-[#ffffff] text-teal-600 border border-teal-500/40 hover:bg-[#f0fdfa]"
                   : "bg-teal-400 text-[#04211d] hover:bg-teal-300"
               }`}
             >
@@ -641,7 +641,7 @@ function ChallengeCard({
                 <motion.span
                   aria-hidden
                   className={`pointer-events-none absolute top-0 bottom-0 w-1/3 -skew-x-12 ${
-                    isLight ? "bg-teal-300/40" : "bg-white/50"
+                    isLight ? "bg-[#2dd4bf]/40" : "bg-white/50"
                   }`}
                   initial={{ left: "-40%" }}
                   animate={{ left: "150%" }}
