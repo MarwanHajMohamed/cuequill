@@ -12,7 +12,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { AVATAR_COLORS, avatarGradient } from "@/lib/avatarColors";
 import { AVATAR_FRAMES } from "@/lib/avatarFrames";
 import { ACCENTS } from "@/lib/accents";
-import { useAccent } from "@/hooks/useAccent";
+import { useAccent, clearAccent } from "@/hooks/useAccent";
 import { setDisplayCurrency, fmtMoneyFull } from "@/lib/helpers/fmt";
 
 const CURRENCIES = [
@@ -128,7 +128,9 @@ const Account = () => {
         const data = await res.json().catch(() => ({}));
         throw new Error(data?.error ?? "Deletion failed. Please try again.");
       }
-      // Account is gone — sign out and return to the marketing site.
+      // Account is gone — clear the accent so the marketing site is neutral,
+      // then sign out and return to it.
+      clearAccent();
       await signOut({ callbackUrl: "/" });
     } catch (e) {
       setDangerError(e instanceof Error ? e.message : "Deletion failed.");

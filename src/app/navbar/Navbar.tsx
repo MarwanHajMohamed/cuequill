@@ -11,6 +11,7 @@ import React, {
 } from "react";
 import { signOut, useSession } from "next-auth/react";
 import { useProfile } from "@/hooks/useProfile";
+import { clearAccent } from "@/hooks/useAccent";
 import { avatarGradient } from "@/lib/avatarColors";
 import { avatarFrameRing } from "@/lib/avatarFrames";
 import {
@@ -884,7 +885,10 @@ export default function Navbar() {
                     <div className="p-2 border-t border-white/[0.06]">
                       <button
                         className="group w-full flex items-center gap-3 px-2.5 py-2 text-left text-[13px] rounded-lg cursor-pointer text-white/75 hover:bg-red-500/[0.08] hover:text-red-200 transition"
-                        onClick={() => signOut({ callbackUrl: "/" })}
+                        onClick={() => {
+                          clearAccent();
+                          signOut({ callbackUrl: "/" });
+                        }}
                       >
                         <i className="fa-solid fa-right-from-bracket w-4 text-center text-white/55 group-hover:text-red-300 transition" />
                         <span>Sign out</span>
@@ -1148,7 +1152,10 @@ export default function Navbar() {
 
             <div className="px-3 pb-4">
               <button
-                onClick={() => signOut({ callbackUrl: "/" })}
+                onClick={() => {
+                  clearAccent();
+                  signOut({ callbackUrl: "/" });
+                }}
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-red-500/10 text-red-300 border border-red-500/25 hover:bg-red-500/20 transition text-[13px] font-medium"
               >
                 <i className="fa-solid fa-right-from-bracket text-[12px]" />

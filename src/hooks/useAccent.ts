@@ -50,3 +50,15 @@ export function applyAccent(id?: string | null) {
     /* ignore */
   }
 }
+
+// Remove the accent entirely (attribute + stored preference) so the app
+// falls back to the neutral default. Called on sign-out so the accent (and
+// its background tint) doesn't bleed onto the landing / logged-out pages.
+export function clearAccent() {
+  document.documentElement.removeAttribute("data-accent");
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    /* ignore */
+  }
+}
