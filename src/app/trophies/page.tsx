@@ -159,44 +159,8 @@ function TrophyCard({ t, index }: { t: Trophy; index: number }) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-30px" }}
       transition={{ duration: 0.32, delay: index * 0.03, ease: "easeOut" }}
-      className={`group relative flex flex-col items-center text-center rounded-2xl border px-4 pt-6 pb-5 overflow-hidden ${
-        t.earned
-          ? "border-amber-400/30 bg-gradient-to-b from-amber-500/[0.12] via-amber-500/[0.03] to-transparent shadow-[0_12px_44px_-18px_rgba(245,158,11,0.6)]"
-          : "border-white/10 bg-white/[0.015]"
-      }`}
+      className="flex flex-col items-center text-center px-4 pt-6 pb-5"
     >
-      {/* Glass top highlight — reads as the cabinet's display glass. */}
-      <span
-        aria-hidden
-        className={`pointer-events-none absolute inset-x-0 top-0 h-16 ${
-          t.earned
-            ? "bg-gradient-to-b from-white/[0.06] to-transparent"
-            : "bg-gradient-to-b from-white/[0.02] to-transparent"
-        }`}
-      />
-
-      {/* Sheen sweep on earned trophies. */}
-      {t.earned && (
-        <motion.span
-          aria-hidden
-          className="pointer-events-none absolute top-0 -left-1/3 h-full w-1/3 -skew-x-12 bg-gradient-to-r from-transparent via-white/10 to-transparent"
-          initial={{ left: "-40%" }}
-          animate={{ left: "140%" }}
-          transition={{
-            duration: 2.4,
-            repeat: Infinity,
-            ease: "easeInOut",
-            repeatDelay: 3.2,
-            delay: index * 0.15,
-          }}
-        />
-      )}
-
-      {/* Earned check, tucked in the corner. */}
-      {t.earned && (
-        <i className="fa-solid fa-circle-check absolute top-2.5 right-2.5 text-[11px] text-amber-300/90" />
-      )}
-
       {/* Medallion on its shelf */}
       <div className="relative flex flex-col items-center">
         <div
@@ -238,11 +202,14 @@ function TrophyCard({ t, index }: { t: Trophy; index: number }) {
 
       {/* Title */}
       <div
-        className={`mt-3 text-[14px] font-semibold leading-tight ${
+        className={`mt-3 flex items-center gap-1.5 text-[14px] font-semibold leading-tight ${
           t.earned ? "" : "text-white/60"
         }`}
       >
         {t.label}
+        {t.earned && (
+          <i className="fa-solid fa-circle-check text-[11px] text-amber-300/90" />
+        )}
       </div>
 
       {/* Description */}
