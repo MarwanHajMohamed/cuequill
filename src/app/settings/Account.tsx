@@ -1,17 +1,13 @@
 "use client";
 
 import { useSession, signOut } from "next-auth/react";
-import Link from "next/link";
 import React, { useEffect, useMemo, useState } from "react";
 import { GroupBase, InputProps, components } from "react-select";
 import TimezoneSelect, { type ITimezone } from "react-timezone-select";
 import { useQueryClient } from "@tanstack/react-query";
 import ProTag from "@/components/ProTag";
 import { useProfile } from "@/hooks/useProfile";
-import { AVATAR_COLORS, avatarGradient } from "@/lib/avatarColors";
-import { AVATAR_FRAMES } from "@/lib/avatarFrames";
-import { ACCENTS } from "@/lib/accents";
-import { useAccent, clearAccent } from "@/hooks/useAccent";
+import { clearAccent } from "@/hooks/useAccent";
 import { setDisplayCurrency, fmtMoneyFull } from "@/lib/helpers/fmt";
 
 const CURRENCIES = [
@@ -56,7 +52,6 @@ const Account = () => {
   const { data: session, update } = useSession();
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
-  const { previewAccent } = useAccent();
 
   // Identity
   const [firstname, setFirstname] = useState<string>("");
@@ -67,9 +62,6 @@ const Account = () => {
   const [currency, setCurrency] = useState("USD");
   const [startingBalance, setStartingBalance] = useState("");
   const [riskPerTrade, setRiskPerTrade] = useState("");
-  const [avatarColor, setAvatarColor] = useState("teal");
-  const [avatarFrame, setAvatarFrame] = useState("none");
-  const [accentColor, setAccentColor] = useState("teal");
 
   // Password (only sent if newPassword is non-empty)
   const [currentPassword, setCurrentPassword] = useState("");
@@ -158,9 +150,6 @@ const Account = () => {
     setRiskPerTrade(
       profile.riskPerTrade != null ? String(profile.riskPerTrade) : "",
     );
-    setAvatarColor(profile.avatarColor ?? "teal");
-    setAvatarFrame(profile.avatarFrame ?? "none");
-    setAccentColor(profile.accentColor ?? "teal");
   }, [profile]);
 
   // Has anything actually changed? Disable Save until something does.
@@ -184,19 +173,13 @@ const Account = () => {
     return (
       currency !== (profile.currency ?? "USD") ||
       startNum !== (profile.startingBalance ?? 0) ||
-      riskStr !== profileRisk ||
-      avatarColor !== (profile.avatarColor ?? "teal") ||
-      avatarFrame !== (profile.avatarFrame ?? "none") ||
-      accentColor !== (profile.accentColor ?? "teal")
+      riskStr !== profileRisk
     );
   }, [
     profile,
     currency,
     startingBalance,
     riskPerTrade,
-    avatarColor,
-    avatarFrame,
-    accentColor,
   ]);
 
   const dirty = identityDirty || passwordDirty || prefDirty;
@@ -244,9 +227,6 @@ const Account = () => {
       body.currency = currency;
       body.startingBalance = startingBalance === "" ? 0 : Number(startingBalance);
       body.riskPerTrade = riskPerTrade === "" ? null : Number(riskPerTrade);
-      body.avatarColor = avatarColor;
-      body.avatarFrame = avatarFrame;
-      body.accentColor = accentColor;
     }
 
     try {
@@ -309,11 +289,6 @@ const Account = () => {
       setRiskPerTrade(
         profile.riskPerTrade != null ? String(profile.riskPerTrade) : "",
       );
-      setAvatarColor(profile.avatarColor ?? "teal");
-      setAvatarFrame(profile.avatarFrame ?? "none");
-      setAccentColor(profile.accentColor ?? "teal");
-      // Revert the live preview to the saved accent.
-      previewAccent(profile.accentColor ?? "teal");
     }
     setSave({ kind: "idle" });
   };
@@ -574,147 +549,6 @@ const Account = () => {
           </Field>
         </div>
 
-        {/* Avatar colour */}
-        <div className="flex flex-col gap-2">
-          <span className="text-[11px] tracking-[0.08em] text-white/45 font-medium">
-            Avatar colour
-          </span>
-          <div className="flex items-center gap-2.5 flex-wrap">
-            {AVATAR_COLORS.map((c) => {
-              const locked = c.minLevel > (profile?.level ?? 1);
-              return (
-                <button
-                  key={c.id}
-                  type="button"
-                  disabled={locked}
-                  onClick={() => !locked && setAvatarColor(c.id)}
-                  title={locked ? `Unlocks at level ${c.minLevel}` : c.label}
-                  aria-label={
-                    locked ? `${c.label} — unlocks at level ${c.minLevel}` : c.label
-                  }
-                  className={`relative w-9 h-9 rounded-full bg-gradient-to-br ${c.gradient} border transition ${
-                    locked
-                      ? "opacity-40 cursor-not-allowed border-white/15"
-                      : avatarColor === c.id
-                        ? "border-white ring-2 ring-white/40 cursor-pointer"
-                        : "border-white/15 hover:border-white/40 cursor-pointer"
-                  }`}
-                >
-                  {locked && (
-                    <i className="fa-solid fa-lock absolute inset-0 m-auto w-fit h-fit text-[10px] text-white/90" />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-          <span className="text-[11px] text-white/40">
-            More colours unlock as you level up in{" "}
-            <Link
-              href="/challenges"
-              className="text-teal-300 hover:text-teal-200 underline-offset-4 hover:underline"
-            >
-              challenges
-            </Link>
-            .
-          </span>
-        </div>
-
-        {/* Avatar frame */}
-        <div className="flex flex-col gap-2">
-          <span className="text-[11px] tracking-[0.08em] text-white/45 font-medium">
-            Avatar frame
-          </span>
-          <div className="flex items-center gap-2.5 flex-wrap">
-            {AVATAR_FRAMES.map((f) => {
-              const locked = f.minLevel > (profile?.level ?? 1);
-              const active = avatarFrame === f.id;
-              return (
-                <button
-                  key={f.id}
-                  type="button"
-                  disabled={locked}
-                  onClick={() => !locked && setAvatarFrame(f.id)}
-                  title={locked ? `Unlocks at level ${f.minLevel}` : f.label}
-                  aria-label={
-                    locked ? `${f.label} — unlocks at level ${f.minLevel}` : f.label
-                  }
-                  className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition ${
-                    locked
-                      ? "opacity-40 cursor-not-allowed border-white/10"
-                      : active
-                        ? "border-white/40 cursor-pointer"
-                        : "border-white/10 hover:border-white/30 cursor-pointer"
-                  }`}
-                >
-                  {/* Mini avatar preview using the selected colour + this frame. */}
-                  <span
-                    className={`w-7 h-7 rounded-full bg-gradient-to-br ${avatarGradient(
-                      avatarColor,
-                    )} ${f.ring}`}
-                  />
-                  {locked && (
-                    <i className="fa-solid fa-lock absolute inset-0 m-auto w-fit h-fit text-[10px] text-white/90" />
-                  )}
-                  {active && !locked && (
-                    <i className="fa-solid fa-check absolute -top-1 -right-1 text-[9px] text-teal-300 bg-[var(--surface)] rounded-full w-4 h-4 flex items-center justify-center border border-teal-500/40" />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Accent pack — recolours the whole app. Applies live on click so
-            you can preview it; Save persists it across devices. */}
-        <div className="flex flex-col gap-2">
-          <span className="text-[11px] tracking-[0.08em] text-white/45 font-medium">
-            Accent colour
-          </span>
-          <div className="flex items-center gap-2.5 flex-wrap">
-            {ACCENTS.map((a) => {
-              const locked = a.minLevel > (profile?.level ?? 1);
-              const active = accentColor === a.id;
-              return (
-                <button
-                  key={a.id}
-                  type="button"
-                  disabled={locked}
-                  onClick={() => {
-                    if (locked) return;
-                    setAccentColor(a.id);
-                    previewAccent(a.id); // live preview (persists on Save)
-                  }}
-                  title={locked ? `Unlocks at level ${a.minLevel}` : a.label}
-                  aria-label={
-                    locked ? `${a.label} — unlocks at level ${a.minLevel}` : a.label
-                  }
-                  className={`relative w-9 h-9 rounded-full bg-gradient-to-br ${a.swatch} border transition ${
-                    locked
-                      ? "opacity-40 cursor-not-allowed border-white/15"
-                      : active
-                        ? "border-white ring-2 ring-white/40 cursor-pointer"
-                        : "border-white/15 hover:border-white/40 cursor-pointer"
-                  }`}
-                >
-                  {locked && (
-                    <i className="fa-solid fa-lock absolute inset-0 m-auto w-fit h-fit text-[10px] text-white/90" />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-          <span className="text-[11px] text-white/40">
-            Repaints buttons, links and highlights across the app. More packs
-            unlock as you level up in{" "}
-            <Link
-              href="/challenges"
-              className="text-teal-300 hover:text-teal-200 underline-offset-4 hover:underline"
-            >
-              challenges
-            </Link>
-            .
-          </span>
-        </div>
       </section>
 
       {/* Footer */}
