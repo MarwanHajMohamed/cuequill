@@ -288,11 +288,22 @@ export const TITLES = [
 // Each title now spans this many levels (Novice = 1–3, Apprentice = 4–6, …).
 export const LEVELS_PER_TITLE = 3;
 
-// The title for a given level, banded LEVELS_PER_TITLE levels per title and
-// clamped to the final title beyond the last band.
+// The (base) title for a given level, banded LEVELS_PER_TITLE levels per
+// title and clamped to the final title beyond the last band. Used for the
+// equippable nameplate, so it stays numeral-free (e.g. "Apprentice").
 export function titleForLevel(level: number): string {
   const idx = Math.floor((Math.max(1, level) - 1) / LEVELS_PER_TITLE);
   return TITLES[Math.min(idx, TITLES.length - 1)];
+}
+
+const ROMAN = ["I", "II", "III", "IV", "V"];
+
+// The display label for a level within its title band, e.g. levels 4/5/6 →
+// "Apprentice I" / "Apprentice II" / "Apprentice III".
+export function titleLabel(level: number): string {
+  const sub = (Math.max(1, level) - 1) % LEVELS_PER_TITLE;
+  const numeral = ROMAN[sub] ?? "";
+  return `${titleForLevel(level)} ${numeral}`.trim();
 }
 
 export type LevelInfo = {

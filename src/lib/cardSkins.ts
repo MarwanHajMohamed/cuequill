@@ -66,7 +66,7 @@ export const CARD_SKINS: CardSkin[] = [
   {
     id: "ocean",
     label: "Ocean",
-    minLevel: 2,
+    minLevel: 6,
     bg:
       "radial-gradient(90% 130% at 88% 0%, rgba(56,189,248,0.22) 0%, rgba(8,14,22,0) 55%), " +
       "linear-gradient(155deg, #0d1a2b 0%, #0a1220 55%, #070c15 100%)",
@@ -84,7 +84,7 @@ export const CARD_SKINS: CardSkin[] = [
   {
     id: "sunset",
     label: "Sunset",
-    minLevel: 3,
+    minLevel: 12,
     bg:
       "radial-gradient(90% 130% at 88% 0%, rgba(251,146,60,0.22) 0%, rgba(22,14,8,0) 55%), " +
       "linear-gradient(155deg, #241611 0%, #1a1009 55%, #120b06 100%)",
@@ -102,7 +102,7 @@ export const CARD_SKINS: CardSkin[] = [
   {
     id: "violet",
     label: "Violet",
-    minLevel: 4,
+    minLevel: 17,
     bg:
       "radial-gradient(90% 130% at 88% 0%, rgba(167,139,250,0.24) 0%, rgba(15,10,24,0) 55%), " +
       "linear-gradient(155deg, #1c1430 0%, #140e24 55%, #0d0918 100%)",
@@ -120,7 +120,7 @@ export const CARD_SKINS: CardSkin[] = [
   {
     id: "paper",
     label: "Paper",
-    minLevel: 5,
+    minLevel: 22,
     bg:
       "radial-gradient(90% 130% at 88% 0%, rgba(13,148,136,0.10) 0%, rgba(246,247,249,0) 55%), " +
       "linear-gradient(155deg, #ffffff 0%, #f6f7f9 55%, #eef0f3 100%)",
@@ -138,7 +138,7 @@ export const CARD_SKINS: CardSkin[] = [
   {
     id: "mono",
     label: "Mono",
-    minLevel: 6,
+    minLevel: 28,
     bg: "linear-gradient(155deg, #202024 0%, #161619 55%, #101012 100%)",
     ink: "#f4f4f5",
     muted: "#a1a1aa",
@@ -154,7 +154,7 @@ export const CARD_SKINS: CardSkin[] = [
   {
     id: "gold",
     label: "Gold",
-    minLevel: 8,
+    minLevel: 32,
     bg:
       "radial-gradient(90% 130% at 88% 0%, rgba(234,179,8,0.20) 0%, rgba(10,8,4,0) 55%), " +
       "linear-gradient(155deg, #14110a 0%, #0d0b06 55%, #080703 100%)",

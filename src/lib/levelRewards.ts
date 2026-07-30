@@ -7,6 +7,7 @@ import {
   TITLES,
   LEVELS_PER_TITLE,
   titleForLevel,
+  titleLabel,
 } from "@/lib/challenges";
 import { AVATAR_COLORS } from "@/lib/avatarColors";
 import { AVATAR_FRAMES } from "@/lib/avatarFrames";
@@ -14,8 +15,9 @@ import { ACCENTS } from "@/lib/accents";
 import { CARD_SKINS } from "@/lib/cardSkins";
 
 // The title mapping lives in challenges.ts (banded per LEVELS_PER_TITLE);
-// re-export it so the timeline can keep importing it from here.
-export { titleForLevel };
+// re-export so the timeline can keep importing from here. titleLabel adds the
+// I/II/III numeral within a band.
+export { titleForLevel, titleLabel };
 
 // How many levels the rewards ladder shows — enough for every title to span
 // its full band of levels.
@@ -88,13 +90,6 @@ export function rewardsForLevel(level: number): LevelReward[] {
       amount: chat,
       icon: "fa-solid fa-comment-dots",
     });
-  }
-
-  // A new title, when this level introduces one distinct from the level
-  // below it (level 1's title is the starting title, not an unlock).
-  const title = titleForLevel(level);
-  if (level > 1 && title !== titleForLevel(level - 1)) {
-    out.push({ kind: "title", label: `“${title}” title`, icon: "fa-solid fa-id-badge" });
   }
 
   return out;

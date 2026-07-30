@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   MAX_LEVEL,
   rewardsForLevel,
-  titleForLevel,
+  titleLabel,
   type LevelReward,
 } from "@/lib/levelRewards";
 
@@ -118,7 +118,7 @@ export default function RewardsTimeline({
                       Level {L}
                     </span>
                     <span className="text-[11px] text-white/45">
-                      {titleForLevel(L)}
+                      {titleLabel(L)}
                     </span>
                     {unlocked ? (
                       <i className="fa-solid fa-circle-check text-[11px] text-teal-300 ml-auto" />
@@ -232,7 +232,7 @@ function RewardsModal({
               Level {level} rewards
             </div>
             <div className="text-[11.5px] text-white/45">
-              {titleForLevel(level)}
+              {titleLabel(level)}
               {unlocked ? " · unlocked" : " · locked"}
             </div>
           </div>

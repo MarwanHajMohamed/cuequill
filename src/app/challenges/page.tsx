@@ -12,6 +12,7 @@ import {
   nextStreakMilestone,
   type AffirmationStreak,
 } from "@/lib/affirmationStreak";
+import { titleLabel } from "@/lib/challenges";
 import RewardsTimeline from "./RewardsTimeline";
 import ShareImageModal from "@/components/ShareImageModal";
 import AchievementShareCard, {
@@ -172,7 +173,7 @@ function Page() {
               <div className="flex-1 min-w-[220px]">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-[16px] md:text-[18px] font-semibold tracking-tight">
-                    {data.title}
+                    {titleLabel(data.level)}
                   </span>
                   <span className="text-[12px] text-white/45 tabular-nums">
                     · {data.totalXp.toLocaleString()} XP

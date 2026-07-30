@@ -21,12 +21,12 @@ export const ACCENTS: {
   { id: "teal", label: "Teal", minLevel: 1, swatch: "from-[#2dd4bf] to-[#34d399]" },
   { id: "violet", label: "Violet", minLevel: 1, swatch: "from-violet-400 to-fuchsia-400" },
   { id: "ocean", label: "Ocean", minLevel: 1, swatch: "from-blue-400 to-cyan-400" },
-  // Rewards
-  { id: "rose", label: "Rose", minLevel: 2, swatch: "from-rose-400 to-pink-400" },
-  { id: "sunset", label: "Sunset", minLevel: 3, swatch: "from-amber-400 to-orange-400" },
-  { id: "forest", label: "Forest", minLevel: 4, swatch: "from-[#34d399] to-[#4ade80]" },
-  { id: "ice", label: "Ice", minLevel: 6, swatch: "from-cyan-300 to-sky-400" },
-  { id: "midnight", label: "Midnight", minLevel: 8, swatch: "from-indigo-400 to-violet-400" },
+  // Rewards — spread across the ladder.
+  { id: "rose", label: "Rose", minLevel: 5, swatch: "from-rose-400 to-pink-400" },
+  { id: "sunset", label: "Sunset", minLevel: 10, swatch: "from-amber-400 to-orange-400" },
+  { id: "forest", label: "Forest", minLevel: 16, swatch: "from-[#34d399] to-[#4ade80]" },
+  { id: "ice", label: "Ice", minLevel: 21, swatch: "from-cyan-300 to-sky-400" },
+  { id: "midnight", label: "Midnight", minLevel: 26, swatch: "from-indigo-400 to-violet-400" },
 ];
 
 const DEFAULT_ACCENT = "teal";
