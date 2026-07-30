@@ -8,7 +8,6 @@ import TimezoneSelect, { type ITimezone } from "react-timezone-select";
 import { useQueryClient } from "@tanstack/react-query";
 import ProTag from "@/components/ProTag";
 import { useProfile } from "@/hooks/useProfile";
-import { useTheme } from "@/hooks/useTheme";
 import { AVATAR_COLORS, avatarGradient } from "@/lib/avatarColors";
 import { AVATAR_FRAMES } from "@/lib/avatarFrames";
 import { ACCENTS } from "@/lib/accents";
@@ -57,7 +56,6 @@ const Account = () => {
   const { data: session, update } = useSession();
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
-  const { theme, setTheme } = useTheme();
   const { previewAccent } = useAccent();
 
   // Identity
@@ -574,32 +572,6 @@ const Account = () => {
               onChange={(e) => setRiskPerTrade(e.target.value)}
             />
           </Field>
-        </div>
-
-        {/* Theme — applies instantly, device-local (no save needed). */}
-        <div className="flex flex-col gap-1.5">
-          <span className="text-[11px] tracking-[0.08em] text-white/45 font-medium">
-            Theme
-          </span>
-          <div className="inline-flex rounded-xl border border-white/10 bg-white/[0.03] p-1 w-fit">
-            {(["dark", "light"] as const).map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => setTheme(t)}
-                className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-lg text-[13px] font-medium capitalize transition cursor-pointer ${
-                  theme === t
-                    ? "bg-white/10 text-white border border-white/15"
-                    : "text-white/55 hover:text-white"
-                }`}
-              >
-                <i
-                  className={`fa-solid ${t === "dark" ? "fa-moon" : "fa-sun"} text-[11px]`}
-                />
-                {t}
-              </button>
-            ))}
-          </div>
         </div>
 
         {/* Avatar colour */}

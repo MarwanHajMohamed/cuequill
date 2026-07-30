@@ -8,6 +8,7 @@ import Account from "./Account";
 import IBKRTab from "./IBKRTab";
 import NotificationsTab from "./NotificationsTab";
 import PlanTab from "./PlanTab";
+import AppearanceTab from "./AppearanceTab";
 
 function Page() {
   const [selectedSetting, setSelectedSetting] = useState<string>("Account");
@@ -58,6 +59,11 @@ function Page() {
 
   const settingsTabs = [
     { title: "Account", icon: "fa-solid fa-user", content: <Account /> },
+    {
+      title: "Appearance",
+      icon: "fa-solid fa-palette",
+      content: <AppearanceTab />,
+    },
     { title: "Plan", icon: "fa-solid fa-crown", content: <PlanTab /> },
     {
       title: "Trades",
