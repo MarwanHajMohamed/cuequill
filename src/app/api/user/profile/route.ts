@@ -6,7 +6,12 @@ import { User } from "@/lib/models/User";
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import Trade from "@/lib/models/Trade";
-import { CHALLENGES, levelInfo, type EvalTrade } from "@/lib/challenges";
+import {
+  CHALLENGES,
+  levelInfo,
+  activityXp,
+  type EvalTrade,
+} from "@/lib/challenges";
 import { availableTitles, type TrophyStats } from "@/lib/trophies";
 import { normalizeAccent } from "@/lib/accents";
 import { normalizeCardSkin } from "@/lib/cardSkins";
@@ -19,9 +24,18 @@ export async function GET() {
   }
 
   await connectDb();
-  const user = await User.findById(session.user.id).select(
-    "currency startingBalance riskPerTrade avatarColor avatarFrame accentColor cardSkin equippedTitle xp isPro proManualOverride stripeCurrentPeriodEnd stripeCancelAtPeriodEnd",
-  );
+  const [user, trades] = await Promise.all([
+    User.findById(session.user.id).select(
+      "currency startingBalance riskPerTrade avatarColor avatarFrame accentColor cardSkin equippedTitle xp isPro proManualOverride stripeCurrentPeriodEnd stripeCancelAtPeriodEnd",
+    ),
+    // Just the dates + count needed to derive activity XP (real trades only).
+    Trade.find({
+      userID: new mongoose.Types.ObjectId(session.user.id),
+      simulated: false,
+    })
+      .select("dateBought dateClosed")
+      .lean<EvalTrade[]>(),
+  ]);
   if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
@@ -35,7 +49,7 @@ export async function GET() {
     accentColor: user.accentColor ?? "teal",
     cardSkin: user.cardSkin ?? "midnight",
     equippedTitle: user.equippedTitle ?? "",
-    ...levelInfo(user.xp ?? 0),
+    ...levelInfo((user.xp ?? 0) + activityXp(trades ?? [])),
     isPro: !!user.isPro,
     proManualOverride: !!user.proManualOverride,
     stripeCurrentPeriodEnd: user.stripeCurrentPeriodEnd ?? null,
@@ -220,7 +234,7 @@ export async function PATCH(req: Request) {
         if (d) monthSet.add(new Date(d).toISOString().slice(0, 7));
         if (t.symbol) symbolSet.add(t.symbol.toUpperCase());
       }
-      const info = levelInfo(user.xp ?? 0);
+      const info = levelInfo((user.xp ?? 0) + activityXp(trades));
       const stats: TrophyStats = {
         totalTrades: trades.length,
         closedTrades: closed.length,

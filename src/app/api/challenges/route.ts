@@ -5,7 +5,12 @@ import connectDb from "@/lib/db";
 import mongoose from "mongoose";
 import Trade from "@/lib/models/Trade";
 import { User } from "@/lib/models/User";
-import { CHALLENGES, levelInfo, type EvalTrade } from "@/lib/challenges";
+import {
+  CHALLENGES,
+  levelInfo,
+  activityXp,
+  type EvalTrade,
+} from "@/lib/challenges";
 import { TROPHIES, availableTitles, type TrophyStats } from "@/lib/trophies";
 
 export const runtime = "nodejs";
@@ -27,7 +32,9 @@ export async function GET() {
       userID: new mongoose.Types.ObjectId(session.user.id),
       simulated: false,
     })
-      .select("status symbol notes tags strategy dateBought dateClosed")
+      .select(
+        "status symbol notes tags strategy option dateBought dateClosed",
+      )
       .lean<EvalTrade[]>(),
     User.findById(session.user.id)
       .select(
@@ -47,7 +54,9 @@ export async function GET() {
   ]);
 
   const claimed = new Set((user?.challengeClaims ?? []).map((c) => c.id));
-  const info = levelInfo(user?.xp ?? 0);
+  // Total XP = stored event XP (claims + streak) + derived activity XP.
+  const totalXp = (user?.xp ?? 0) + activityXp(trades ?? []);
+  const info = levelInfo(totalXp);
   const level = info.level;
 
   const challenges = CHALLENGES.map((c) => {

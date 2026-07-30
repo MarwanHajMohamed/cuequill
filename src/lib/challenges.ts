@@ -17,6 +17,7 @@ export type EvalTrade = {
   notes?: string | null;
   tags?: string[] | null;
   strategy?: string | null;
+  option?: "CALL" | "PUT" | null;
   dateBought?: string | Date | null;
   dateClosed?: string | Date | null;
 };
@@ -48,6 +49,15 @@ const day = (d?: string | Date | null) =>
   d ? new Date(d).toISOString().slice(0, 10) : "";
 const month = (d?: string | Date | null) =>
   d ? new Date(d).toISOString().slice(0, 7) : "";
+// Distinct-week key: the Monday (UTC) of the week the date falls in.
+const weekKey = (d?: string | Date | null) => {
+  if (!d) return "";
+  const dt = new Date(d);
+  const dow = (dt.getUTCDay() + 6) % 7; // 0 = Monday
+  const monday = new Date(dt);
+  monday.setUTCDate(dt.getUTCDate() - dow);
+  return monday.toISOString().slice(0, 10);
+};
 
 // Closed trades ordered by exit day — used by streak/sequence checks.
 function closedByExit(trades: EvalTrade[]): EvalTrade[] {
@@ -59,6 +69,32 @@ function closedByExit(trades: EvalTrade[]): EvalTrade[] {
       const bx = day(b.dateClosed ?? b.dateBought);
       return ax < bx ? -1 : ax > bx ? 1 : 0;
     });
+}
+
+// Longest run of consecutive closed trades (by exit order) satisfying `ok`.
+function longestRun(
+  trades: EvalTrade[],
+  ok: (t: EvalTrade) => boolean,
+): number {
+  let best = 0;
+  let run = 0;
+  for (const x of closedByExit(trades)) {
+    run = ok(x) ? run + 1 : 0;
+    if (run > best) best = run;
+  }
+  return best;
+}
+
+// Ongoing "activity XP" earned just by using the journal: 10 XP per logged
+// (real) trade + 10 XP per distinct day journaled. Derived from the trade
+// list so it's always current, retroactive and impossible to double-count.
+export function activityXp(trades: EvalTrade[]): number {
+  const days = new Set<string>();
+  for (const t of trades) {
+    const dk = day(t.dateClosed ?? t.dateBought);
+    if (dk) days.add(dk);
+  }
+  return trades.length * 10 + days.size * 10;
 }
 
 export const CHALLENGES: ChallengeDef[] = [
@@ -256,6 +292,159 @@ export const CHALLENGES: ChallengeDef[] = [
         t.map((x) => month(x.dateClosed ?? x.dateBought)).filter(Boolean),
       ).size,
   },
+  // ── Expanded set ────────────────────────────────────────────────────
+  {
+    id: "storyteller",
+    title: "Storyteller",
+    description: "Write a detailed note (120+ characters) on 15 trades.",
+    icon: "fa-solid fa-feather-pointed",
+    category: "journaling",
+    target: 15,
+    xp: 200,
+    progress: (t) =>
+      t.filter((x) => (x.notes ?? "").trim().length >= 120).length,
+  },
+  {
+    id: "tag-system",
+    title: "Tag system",
+    description: "Use 10 different tags across your journal.",
+    icon: "fa-solid fa-hashtag",
+    category: "journaling",
+    target: 10,
+    xp: 200,
+    progress: (t) =>
+      new Set(
+        t.flatMap((x) =>
+          (x.tags ?? [])
+            .map((g) => g.trim().toLowerCase())
+            .filter((g) => g.length > 0),
+        ),
+      ).size,
+  },
+  {
+    id: "back-to-back",
+    title: "Back-to-back reviews",
+    description: "Log 20 closed trades in a row that each have a note.",
+    icon: "fa-solid fa-pen-clip",
+    category: "journaling",
+    target: 20,
+    xp: 250,
+    progress: (t) => longestRun(t, (x) => (x.notes ?? "").trim().length > 0),
+  },
+  {
+    id: "honest-book",
+    title: "Honest book",
+    description: "Log 25 losing trades — journal the bad ones too.",
+    icon: "fa-solid fa-scale-unbalanced",
+    category: "discipline",
+    target: 25,
+    xp: 200,
+    progress: (t) => t.filter((x) => x.status === "LOSS").length,
+  },
+  {
+    id: "by-the-book-2",
+    title: "By the book II",
+    description: "Log 25 trades in a row that each have both a note and a tag.",
+    icon: "fa-solid fa-clipboard-list",
+    category: "discipline",
+    target: 25,
+    xp: 350,
+    minLevel: 4,
+    progress: (t) =>
+      longestRun(
+        t,
+        (x) => (x.notes ?? "").trim().length > 0 && (x.tags?.length ?? 0) > 0,
+      ),
+  },
+  {
+    id: "wide-net",
+    title: "Wide net",
+    description: "Trade 15 different symbols.",
+    icon: "fa-solid fa-network-wired",
+    category: "exploration",
+    target: 15,
+    xp: 250,
+    progress: (t) =>
+      new Set(
+        t.map((x) => (x.symbol ?? "").trim().toUpperCase()).filter(Boolean),
+      ).size,
+  },
+  {
+    id: "strategy-library",
+    title: "Strategy library",
+    description: "Log trades across 5 different strategies.",
+    icon: "fa-solid fa-book-bookmark",
+    category: "exploration",
+    target: 5,
+    xp: 250,
+    progress: (t) =>
+      new Set(
+        t.map((x) => (x.strategy ?? "").trim()).filter((s) => s.length > 0),
+      ).size,
+  },
+  {
+    id: "weekly-habit",
+    title: "Weekly habit",
+    description: "Log trades in 8 different calendar weeks.",
+    icon: "fa-solid fa-calendar-week",
+    category: "exploration",
+    target: 8,
+    xp: 250,
+    progress: (t) =>
+      new Set(
+        t.map((x) => weekKey(x.dateClosed ?? x.dateBought)).filter(Boolean),
+      ).size,
+  },
+  {
+    id: "year-in-review",
+    title: "Year in review",
+    description: "Log trades across 9 different months.",
+    icon: "fa-solid fa-calendar-days",
+    category: "exploration",
+    target: 9,
+    xp: 400,
+    minLevel: 3,
+    progress: (t) =>
+      new Set(
+        t.map((x) => month(x.dateClosed ?? x.dateBought)).filter(Boolean),
+      ).size,
+  },
+  {
+    id: "two-way",
+    title: "Two-way",
+    description: "Log at least one call and one put.",
+    icon: "fa-solid fa-arrows-left-right",
+    category: "exploration",
+    target: 2,
+    xp: 150,
+    progress: (t) =>
+      new Set(
+        t
+          .map((x) => x.option)
+          .filter((o): o is "CALL" | "PUT" => o === "CALL" || o === "PUT"),
+      ).size,
+  },
+  {
+    id: "iron-journal",
+    title: "Iron journal",
+    description: "Log 500 trades.",
+    icon: "fa-solid fa-dumbbell",
+    category: "journaling",
+    target: 500,
+    xp: 500,
+    progress: (t) => t.length,
+  },
+  {
+    id: "chronicle",
+    title: "Chronicle",
+    description: "Log 1,000 trades.",
+    icon: "fa-solid fa-book-journal-whills",
+    category: "journaling",
+    target: 1000,
+    xp: 800,
+    minLevel: 5,
+    progress: (t) => t.length,
+  },
 ];
 
 export const CHALLENGE_MAP: Record<string, ChallengeDef> = Object.fromEntries(
@@ -263,11 +452,12 @@ export const CHALLENGE_MAP: Record<string, ChallengeDef> = Object.fromEntries(
 );
 
 // ── Levels ───────────────────────────────────────────────────────────
-// Progressive curve — each level costs more than the last, so climbing to
-// the higher tiers is a real grind. Returns the XP needed to go from
-// `level` to `level + 1`.
+// Each level costs a little more than the last. Returns the XP needed to go
+// from `level` to `level + 1`.
 export function xpForLevelUp(level: number): number {
-  return 200 + (level - 1) * 150; // 200, 350, 500, 650, 800, …
+  // Gentle curve so the 36-level ladder is actually reachable from
+  // challenges + streak milestones + activity XP (~20k total to level 36).
+  return 150 + (level - 1) * 25; // 150, 175, 200, 225, …
 }
 
 export const TITLES = [

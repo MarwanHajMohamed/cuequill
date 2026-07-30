@@ -5,7 +5,12 @@ import connectDb from "@/lib/db";
 import mongoose from "mongoose";
 import Trade from "@/lib/models/Trade";
 import { User } from "@/lib/models/User";
-import { CHALLENGE_MAP, levelInfo, type EvalTrade } from "@/lib/challenges";
+import {
+  CHALLENGE_MAP,
+  levelInfo,
+  activityXp,
+  type EvalTrade,
+} from "@/lib/challenges";
 import { chatBetween } from "@/lib/levelRewards";
 
 export const runtime = "nodejs";
@@ -39,21 +44,24 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Already claimed" }, { status: 409 });
   }
 
+  const trades = await Trade.find({
+    userID: new mongoose.Types.ObjectId(session.user.id),
+    simulated: false,
+  })
+    .select("status symbol notes tags strategy option dateBought dateClosed")
+    .lean<EvalTrade[]>();
+
+  // Derived activity XP counts toward the level everywhere.
+  const act = activityXp(trades ?? []);
+
   // Level-gated challenges can't be claimed until the account reaches the
   // required level.
-  if ((def.minLevel ?? 1) > levelInfo(user.xp ?? 0).level) {
+  if ((def.minLevel ?? 1) > levelInfo((user.xp ?? 0) + act).level) {
     return NextResponse.json(
       { error: `Reach level ${def.minLevel} to unlock this challenge` },
       { status: 400 },
     );
   }
-
-  const trades = await Trade.find({
-    userID: new mongoose.Types.ObjectId(session.user.id),
-    simulated: false,
-  })
-    .select("status symbol notes tags strategy dateBought dateClosed")
-    .lean<EvalTrade[]>();
 
   if (def.progress(trades ?? []) < def.target) {
     return NextResponse.json(
@@ -62,7 +70,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const preLevel = levelInfo(user.xp ?? 0).level;
+  const preLevel = levelInfo((user.xp ?? 0) + act).level;
   user.xp = (user.xp ?? 0) + def.xp;
   user.challengeClaims = [
     ...(user.challengeClaims ?? []),
@@ -73,7 +81,7 @@ export async function POST(req: Request) {
   // already paid out; a value of 0 means "not initialised" (existing
   // account) — seed it to the pre-claim level so we never retro-pay for
   // levels reached before this system existed, only ones crossed from here.
-  const newLevel = levelInfo(user.xp).level;
+  const newLevel = levelInfo(user.xp + act).level;
   let watermark = user.chatRewardLevel ?? 0;
   if (watermark === 0) watermark = preLevel;
   let chatGranted = 0;
@@ -92,6 +100,6 @@ export async function POST(req: Request) {
     awarded: def.xp,
     // Bonus chats granted from any level-up this claim triggered.
     chatGranted,
-    ...levelInfo(user.xp),
+    ...levelInfo(user.xp + act),
   });
 }
