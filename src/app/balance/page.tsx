@@ -195,6 +195,15 @@ function Page() {
                         hoverPoint ? hoverPoint.balance : summary!.latest,
                       )}
                     </div>
+                    {/* Reserve the height of the taller (non-hover) state so
+                        the chart below doesn't jump when hovering collapses
+                        this to a single date line. */}
+                    <div
+                      style={{
+                        minHeight:
+                          hasFlows && summary!.netFlow !== 0 ? 37 : 20,
+                      }}
+                    >
                     {hoverPoint ? (
                       // Hovering: show the date of the point under the cursor.
                       <div className="text-[13px] text-white/50 tabular-nums">
@@ -247,6 +256,7 @@ function Page() {
                         )}
                       </>
                     )}
+                    </div>
                   </div>
 
                   <div className="flex flex-col items-end gap-2">
