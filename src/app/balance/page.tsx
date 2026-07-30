@@ -304,13 +304,19 @@ function Page() {
                         margin={{ top: 8, right: 8, left: 8, bottom: 0 }}
                         onMouseMove={(s) => {
                           const st = s as {
-                            activeTooltipIndex?: number | null;
+                            activeTooltipIndex?: number | string | null;
+                            activeIndex?: number | string | null;
                             isTooltipActive?: boolean;
                           };
+                          // recharts 3 reports the index as a string.
+                          const raw = st.activeTooltipIndex ?? st.activeIndex;
+                          const idx =
+                            raw == null || raw === "" ? NaN : Number(raw);
                           setHoverIndex(
                             st.isTooltipActive &&
-                              typeof st.activeTooltipIndex === "number"
-                              ? st.activeTooltipIndex
+                              Number.isInteger(idx) &&
+                              idx >= 0
+                              ? idx
                               : null,
                           );
                         }}
