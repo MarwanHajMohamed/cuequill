@@ -553,7 +553,7 @@ function ChallengeCard({
       </div>
 
       <div className="relative">
-        <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+        <div className="h-1 rounded-full bg-white/[0.06] overflow-hidden">
           <motion.div
             className={`h-full rounded-full bg-gradient-to-r ${
               c.complete ? style.bar : "from-white/25 to-white/20"
@@ -566,7 +566,7 @@ function ChallengeCard({
         </div>
         <div className="mt-2 flex items-center justify-between">
           <span className="text-[11px] text-white/45 tabular-nums">
-            {shown} / {c.target}
+            {shown}/{c.target}
           </span>
           {c.claimed ? (
             <button
