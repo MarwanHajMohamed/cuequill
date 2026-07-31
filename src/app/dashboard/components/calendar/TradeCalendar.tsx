@@ -396,35 +396,46 @@ export default function TradeCalendar({ userId }: { userId: string }) {
       getDaySummary(date);
     if (total === 0 && !isToday && !isFed && !marketDay) return null;
 
-    return (
-      <>
-        {isFed && (
-          <span className="absolute bottom-1 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-500/35 text-purple-100 border border-purple-400/60 shadow-[0_0_8px_rgba(168,85,247,0.35)] text-[9px] md:text-[10px] font-bold tracking-wide leading-none">
+    // Event pill (Fed / holiday). When the day has trades it's rendered inline
+    // beneath the P/L + trade count so it stacks instead of overlapping them;
+    // on empty days it's absolutely anchored to the bottom-centre of the cell.
+    const hasTrades = total > 0;
+    const pos = hasTrades ? "mt-1" : "absolute bottom-1 left-1/2 -translate-x-1/2";
+    const pill =
+      isFed || marketDay ? (
+        isFed ? (
+          <span
+            className={`${pos} inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-500/35 text-purple-100 border border-purple-400/60 shadow-[0_0_8px_rgba(168,85,247,0.35)] text-[9px] md:text-[10px] font-bold tracking-wide leading-none`}
+          >
             <span className="w-1 h-1 rounded-full bg-purple-200" aria-hidden />
             Fed
           </span>
-        )}
-        {marketDay &&
-          (marketDay.early ? (
-            <span
-              title={`early close 1:00pm ET — ${marketDay.name}`}
-              className="absolute bottom-1 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-500/35 text-sky-100 border border-sky-400/60 shadow-[0_0_8px_rgba(56,189,248,0.35)] text-[9px] md:text-[10px] font-bold tracking-wide leading-none"
-            >
-              <i className="fa-solid fa-clock text-[8px]" aria-hidden />
-              1pm
-            </span>
-          ) : (
-            <span
-              title={`market closed — ${marketDay.name}`}
-              className="absolute bottom-1 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/35 text-amber-100 border border-amber-400/60 shadow-[0_0_8px_rgba(245,158,11,0.4)] text-[9px] md:text-[10px] font-bold tracking-wide leading-none"
-            >
-              <i className="fa-solid fa-lock text-[8px]" aria-hidden />
-              Closed
-            </span>
-          ))}
+        ) : marketDay!.early ? (
+          <span
+            title={`early close 1:00pm ET — ${marketDay!.name}`}
+            className={`${pos} inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-500/35 text-sky-100 border border-sky-400/60 shadow-[0_0_8px_rgba(56,189,248,0.35)] text-[9px] md:text-[10px] font-bold tracking-wide leading-none`}
+          >
+            <i className="fa-solid fa-clock text-[8px]" aria-hidden />
+            1pm
+          </span>
+        ) : (
+          <span
+            title={`market closed — ${marketDay!.name}`}
+            className={`${pos} inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/35 text-amber-100 border border-amber-400/60 shadow-[0_0_8px_rgba(245,158,11,0.4)] text-[9px] md:text-[10px] font-bold tracking-wide leading-none`}
+          >
+            <i className="fa-solid fa-lock text-[8px]" aria-hidden />
+            Closed
+          </span>
+        )
+      ) : null;
+
+    return (
+      <>
+        {/* Empty days: pill floats at the bottom-centre. */}
+        {!hasTrades && pill}
         <div className="mt-1 flex flex-col items-center gap-0.5 text-[10px] md:text-xs">
           {isToday && <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />}
-          {total > 0 && (
+          {hasTrades && (
             <>
               {closedCount > 0 ? (
                 <div
@@ -442,6 +453,8 @@ export default function TradeCalendar({ userId }: { userId: string }) {
               </div>
             </>
           )}
+          {/* Days with trades: pill stacks beneath the count. */}
+          {hasTrades && pill}
         </div>
       </>
     );
