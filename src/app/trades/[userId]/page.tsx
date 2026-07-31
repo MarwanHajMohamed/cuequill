@@ -6,14 +6,7 @@ import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useTrades } from "@/hooks/useTrades";
 import { withAuth } from "@/lib/withAuth";
 import { useQueryClient } from "@tanstack/react-query";
-import React, {
-  use,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { use, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import NotesModal from "../NotesModal";
 import ImportedTradesModal from "../ImportedTradesModal";
@@ -241,7 +234,6 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
   // validation the server enforces.
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [mergeConfirmOpen, setMergeConfirmOpen] = useState(false);
   const [merging, setMerging] = useState(false);
   // Snapshot of the most recent merge, kept in memory long enough for
   // the user to click Undo. `originals` is the exact array of docs
@@ -253,61 +245,13 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
     count: number;
   } | null>(null);
   const [undoing, setUndoing] = useState(false);
-  // Position of the Siri ring that wraps the currently merging rows.
-  // Measured from data-trade-id attributes on the rendered <tr>s so
-  // the ring hugs the exact vertical span, even when rows aren't
-  // adjacent. Recomputed on merge/select changes and resize.
   const tableWrapRef = useRef<HTMLDivElement | null>(null);
-  const [siriBox, setSiriBox] = useState<{
-    top: number;
-    left: number;
-    width: number;
-    height: number;
-  } | null>(null);
-  useLayoutEffect(() => {
-    if (!merging || selectedIds.size === 0 || !tableWrapRef.current) {
-      setSiriBox(null);
-      return;
-    }
-    const wrap = tableWrapRef.current;
-    const measure = () => {
-      const wrapRect = wrap.getBoundingClientRect();
-      let top = Infinity;
-      let bottom = -Infinity;
-      for (const id of selectedIds) {
-        const el = wrap.querySelector<HTMLElement>(`[data-trade-id="${id}"]`);
-        if (!el) continue;
-        const r = el.getBoundingClientRect();
-        if (r.top < top) top = r.top;
-        if (r.bottom > bottom) bottom = r.bottom;
-      }
-      const table = wrap.querySelector("table");
-      if (!table || !Number.isFinite(top) || !Number.isFinite(bottom)) {
-        setSiriBox(null);
-        return;
-      }
-      const tRect = table.getBoundingClientRect();
-      // Pad the ring slightly outside the rows so it reads as a halo
-      // rather than a tight border on the row hairlines.
-      const PAD = 4;
-      setSiriBox({
-        top: top - wrapRect.top + wrap.scrollTop - PAD,
-        left: tRect.left - wrapRect.left + wrap.scrollLeft - PAD,
-        width: tRect.width + PAD * 2,
-        height: bottom - top + PAD * 2,
-      });
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(wrap);
-    window.addEventListener("resize", measure);
-    window.addEventListener("scroll", measure, true);
-    return () => {
-      ro.disconnect();
-      window.removeEventListener("resize", measure);
-      window.removeEventListener("scroll", measure, true);
-    };
-  }, [merging, selectedIds]);
+  // Slide-up merge animation. When a merge starts we measure each selected
+  // row's position and record, per row, how far it must travel up to reach the
+  // topmost selected row. The lower selected rows then slide up into the top
+  // one (and fade) to symbolise them merging, just before the merge commits.
+  const [mergeOffsets, setMergeOffsets] = useState<Record<string, number>>({});
+  const [topSelectedId, setTopSelectedId] = useState<string | null>(null);
   // Auto-dismiss the undo pill after ~20s so it doesn't linger
   // forever. Any new merge replaces the previous snapshot outright.
   useEffect(() => {
@@ -344,12 +288,44 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
       setUndoing(false);
     }
   };
-  const handleMergeConfirm = async () => {
+  // Duration of the slide-up animation before the merge is committed. Kept in
+  // sync with the transition on the merging rows (see the row style below).
+  const MERGE_ANIM_MS = 380;
+  const handleMerge = async () => {
     if (merging) return;
     const ids = Array.from(selectedIds);
     if (ids.length < 2) return;
+
+    // Measure where each selected row currently sits, then record how far it
+    // must slide up to land on the topmost selected row. Lower rows get a
+    // negative offset; the top row gets 0 and stays put.
+    const wrap = tableWrapRef.current;
+    const offsets: Record<string, number> = {};
+    let topId: string | null = null;
+    if (wrap) {
+      const tops: Record<string, number> = {};
+      let minTop = Infinity;
+      for (const id of ids) {
+        const el = wrap.querySelector<HTMLElement>(`[data-trade-id="${id}"]`);
+        if (!el) continue;
+        const t = el.getBoundingClientRect().top;
+        tops[id] = t;
+        if (t < minTop) {
+          minTop = t;
+          topId = id;
+        }
+      }
+      for (const id of ids) {
+        if (tops[id] != null) offsets[id] = minTop - tops[id];
+      }
+    }
+    setMergeOffsets(offsets);
+    setTopSelectedId(topId);
     setMerging(true);
+
     try {
+      // Let the rows visibly slide together before the table refetches.
+      await new Promise((r) => setTimeout(r, MERGE_ANIM_MS));
       const res = await fetch("/api/trades/merge", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -361,7 +337,6 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
         return;
       }
       toast(`Merged ${ids.length} trades into one.`);
-      setMergeConfirmOpen(false);
       exitSelectMode();
       const mergedId: string | undefined = data?.trade?._id;
       const originals: unknown[] = Array.isArray(data?.originals)
@@ -377,6 +352,8 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
       );
     } finally {
       setMerging(false);
+      setMergeOffsets({});
+      setTopSelectedId(null);
     }
   };
   const exitSelectMode = () => {
@@ -933,18 +910,6 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
               ref={tableWrapRef}
               className="relative w-full max-w-[1500px] rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md overflow-x-auto max-[1130px]:mt-0 mt-3 p-2 md:p-3"
             >
-              {siriBox && (
-                <div
-                  className="siri-ring absolute z-10"
-                  style={{
-                    top: siriBox.top,
-                    left: siriBox.left,
-                    width: siriBox.width,
-                    height: siriBox.height,
-                  }}
-                  aria-hidden
-                />
-              )}
               {filteredTrades?.length === 0 ? (
                 <div className="text-center text-[13px] text-white/40 py-10">
                   No trades match the current filters.
@@ -1102,10 +1067,27 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                             !!seed &&
                             !isSelected &&
                             !isMergeableWithSeed(seed, trade);
+                          // While merging, the selected rows slide up toward
+                          // the topmost selected row and the lower ones fade,
+                          // so they visibly collapse into one.
+                          const mergingRow = merging && isSelected;
+                          const isTopSelected = tradeId === topSelectedId;
                           return (
                             <tr
                               key={index}
                               data-trade-id={tradeId}
+                              style={
+                                mergingRow
+                                  ? {
+                                      transform: `translateY(${mergeOffsets[tradeId] ?? 0}px)`,
+                                      opacity: isTopSelected ? 1 : 0,
+                                      transition: `transform ${MERGE_ANIM_MS}ms cubic-bezier(0.4,0,0.2,1), opacity ${MERGE_ANIM_MS}ms ease`,
+                                      position: "relative",
+                                      zIndex: isTopSelected ? 2 : 1,
+                                      pointerEvents: "none",
+                                    }
+                                  : undefined
+                              }
                               className={`group text-xs md:text-[13.5px] border-t border-white/[0.06] transition cursor-pointer ${
                                 isSelected
                                   ? "bg-teal-500/[0.08] hover:bg-teal-500/[0.12]"
@@ -1467,32 +1449,6 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
       {/* Floating merge action bar + inline confirm popover */}
       {selectMode && selectedIds.size > 0 && (
         <div className="fixed left-1/2 -translate-x-1/2 bottom-[calc(env(safe-area-inset-bottom)+100px)] md:bottom-8 z-[55] flex flex-col md:items-start gap-2 pointer-events-none">
-          {mergeConfirmOpen && (
-            <div className="pointer-events-auto flex items-center gap-2 px-3 py-2 rounded-full bg-[var(--surface,#141419)]/95 border border-white/15 shadow-[0_12px_40px_var(--shadow,rgba(0,0,0,0.5))] backdrop-blur-md">
-              <span className="text-[12.5px] text-white/80 font-medium">
-                Merge {selectedIds.size}?
-              </span>
-              <button
-                type="button"
-                onClick={() => setMergeConfirmOpen(false)}
-                disabled={merging}
-                className="px-2.5 py-1 rounded-full text-[12px] text-white/70 hover:text-white hover:bg-white/[0.08] transition cursor-pointer disabled:opacity-50"
-              >
-                No
-              </button>
-              <button
-                type="button"
-                onClick={handleMergeConfirm}
-                disabled={merging}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-teal-500/25 text-teal-200 border border-teal-500/40 hover:bg-teal-500/35 transition text-[12px] font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {merging && (
-                  <i className="fa-solid fa-spinner animate-spin text-[10px]" />
-                )}
-                Yes
-              </button>
-            </div>
-          )}
           <div className="pointer-events-auto flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2 md:py-2.5 rounded-full bg-[var(--surface,#141419)]/95 border border-white/15 shadow-[0_20px_60px_var(--shadow,rgba(0,0,0,0.6))] backdrop-blur-md">
             <button
               type="button"
@@ -1506,10 +1462,14 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
             <button
               type="button"
               disabled={selectedIds.size < 2 || merging}
-              onClick={() => setMergeConfirmOpen((v) => !v)}
+              onClick={handleMerge}
               className="shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-3 md:px-3.5 py-1.5 rounded-full bg-teal-500/25 text-teal-200 border border-teal-500/40 hover:bg-teal-500/35 transition text-[12.5px] md:text-[13px] font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              <i className="fa-solid fa-object-group text-[11px]" />
+              {merging ? (
+                <i className="fa-solid fa-spinner animate-spin text-[11px]" />
+              ) : (
+                <i className="fa-solid fa-object-group text-[11px]" />
+              )}
               Merge {selectedIds.size}
             </button>
           </div>
