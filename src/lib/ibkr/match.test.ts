@@ -82,13 +82,13 @@ test("FIFO matches a sell across two buys and leaves the remainder OPEN", () => 
   // First closed: 5 from buy A.
   assert.equal(first.qty, 5);
   assert.equal(first.contractPrice, 1);
-  assert.equal(first.profitLoss, 500); // 800/8 * 5
+  assert.equal(first.profitLoss, 1000); // gross (3 - 1) * 100 * 5
   assert.equal(first.fees, 10); // (1.0 + 1.0) * 5
   assert.equal(first.ibkrTradeId, "A-S");
   // Second closed: 3 from buy B.
   assert.equal(second.qty, 3);
   assert.equal(second.contractPrice, 2);
-  assert.equal(second.profitLoss, 300); // 800/8 * 3
+  assert.equal(second.profitLoss, 300); // gross (3 - 2) * 100 * 3
   assert.equal(second.fees, 9); // (2.0 + 1.0) * 3
   assert.equal(second.ibkrTradeId, "B-S");
   // Remaining 2 of buy B stays open.
@@ -107,7 +107,7 @@ test("fills are matched in time order even if supplied out of order", () => {
   ]);
   assert.equal(drafts.length, 1);
   assert.equal(drafts[0].status, "WIN");
-  assert.equal(drafts[0].profitLoss, 50);
+  assert.equal(drafts[0].profitLoss, 100); // gross (2 - 1) * 100 * 1
 });
 
 test("a sell with no matching buy is ignored", () => {
@@ -119,9 +119,9 @@ test("a sell with no matching buy is ignored", () => {
 
 test("different contracts are matched independently", () => {
   const drafts = matchFills([
-    fill({ symbol: "SPY", strike: 600, signedQty: 1, time: new Date("2026-01-02T15:00:00Z") }),
+    fill({ symbol: "SPY", strike: 600, signedQty: 1, price: 1, time: new Date("2026-01-02T15:00:00Z") }),
     fill({ symbol: "QQQ", strike: 500, signedQty: 1, time: new Date("2026-01-02T15:00:00Z") }),
-    fill({ symbol: "SPY", strike: 600, signedQty: -1, realizedPnl: 10, time: new Date("2026-01-02T16:00:00Z") }),
+    fill({ symbol: "SPY", strike: 600, signedQty: -1, price: 2, realizedPnl: 10, time: new Date("2026-01-02T16:00:00Z") }),
   ]);
   // SPY round-trips (closed); QQQ stays open.
   assert.equal(drafts.length, 2);

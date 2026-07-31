@@ -137,13 +137,17 @@ export function matchFills(fills: NormalizedFill[]): TradeDraft[] {
           const lot = openQueue[0];
           const matchQty = Math.min(lot.remainingQty, remainingSell);
           const buy = lot.fill;
-          // Prefer the broker's reported realized P/L (IBKR); otherwise
-          // derive it from the round-trip prices, gross of fees (which
-          // are stored separately) to match the IBKR convention.
-          const pnl =
-            fill.realizedPnl !== undefined
-              ? (fill.realizedPnl / qty) * matchQty
-              : (fill.price - buy.price) * CONTRACT_MULTIPLIER * matchQty;
+          // Derive GROSS realized P/L from the round-trip prices, matching the
+          // app's canonical convention everywhere else (manual entry, the edit
+          // modal, and merge all use (close - open) * 100 * qty). We do NOT use
+          // the broker's FifoPnlRealized here: IBKR reports it NET of
+          // commissions, and we store commissions separately as `fees` — so
+          // net P/L (profitLoss - fees) would double-count commissions if
+          // profitLoss were already net. Gross here keeps the maths consistent
+          // and matches what re-saving a trade in the modal produces.
+          const pnl = round2(
+            (fill.price - buy.price) * CONTRACT_MULTIPLIER * matchQty,
+          );
           const fees = round2((lot.commissionPerContract + sellCpc) * matchQty);
 
           drafts.push({
