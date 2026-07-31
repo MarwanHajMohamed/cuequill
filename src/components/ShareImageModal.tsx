@@ -3,6 +3,7 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toBlob } from "html-to-image";
 import { CARD_SKINS, skinById, type CardSkin } from "@/lib/cardSkins";
+import { useScrollLock } from "@/hooks/useScrollLock";
 
 // Generic "preview a fixed-size card and save/share it as a PNG" modal.
 // The card is rendered at its natural size, scaled down to fit the preview,
@@ -46,6 +47,8 @@ export default function ShareImageModal({
   const [canShareFiles, setCanShareFiles] = useState(false);
   const [skinId, setSkinId] = useState(initialSkin);
   const skin = skinById(skinId);
+
+  useScrollLock();
 
   useLayoutEffect(() => {
     const fit = () => {

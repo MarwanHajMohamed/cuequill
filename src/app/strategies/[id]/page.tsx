@@ -17,6 +17,7 @@ import { fileToDownscaledDataUrl } from "@/lib/imageDataUrl";
 import type { StrategyExample, ExampleOutcome } from "@/lib/strategySeed";
 import StrategyStats from "./StrategyStats";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { useScrollLock } from "@/hooks/useScrollLock";
 
 type Direction = "CALL" | "PUT";
 type Mode = "view" | "edit";
@@ -72,6 +73,8 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
   const [examples, setExamples] = useState<StrategyExample[]>([]);
   const [saving, setSaving] = useState(false);
   const [delConfirm, setDelConfirm] = useState(false);
+
+  useScrollLock(delConfirm);
 
   // Hydrate the edit buffer from the loaded doc. Runs on load and again
   // whenever we re-sync (e.g. after a save invalidates the query).
@@ -697,6 +700,7 @@ function ExamplesEditor({
 }
 
 function Lightbox({ src, onClose }: { src: string; onClose: () => void }) {
+  useScrollLock();
   return (
     <div
       className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center z-50 p-4"

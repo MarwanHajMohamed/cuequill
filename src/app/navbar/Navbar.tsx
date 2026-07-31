@@ -11,6 +11,7 @@ import React, {
 } from "react";
 import { signOut, useSession } from "next-auth/react";
 import { useProfile } from "@/hooks/useProfile";
+import { useScrollLock } from "@/hooks/useScrollLock";
 import { clearAccent } from "@/hooks/useAccent";
 import { avatarGradient } from "@/lib/avatarColors";
 import { avatarFrameRing } from "@/lib/avatarFrames";
@@ -337,17 +338,10 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    if (openMore) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [openMore]);
+  // Lock background scroll while the mobile "More" sheet is open. Uses the
+  // shared ref-counted lock (handles <html>/iOS and won't clobber other
+  // modals' locks) instead of poking body.style directly.
+  useScrollLock(openMore);
 
   // Which key in itemRefs is currently active? Computed from activePath
   // so the measurement effect re-runs as soon as a click optimistically

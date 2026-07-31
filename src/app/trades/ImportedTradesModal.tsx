@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import React, { useEffect, useState } from "react";
+import { useScrollLock } from "@/hooks/useScrollLock";
 
 type ImportedTrade = {
   _id: string;
@@ -30,6 +31,8 @@ export default function ImportedTradesModal({
   const [trades, setTrades] = useState<ImportedTrade[] | null>(null);
   const [error, setError] = useState("");
   const [deleting, setDeleting] = useState<Record<string, boolean>>({});
+
+  useScrollLock();
 
   useEffect(() => {
     const load = async () => {

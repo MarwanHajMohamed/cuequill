@@ -67,8 +67,15 @@ function releaseLock() {
   window.scrollTo(0, y);
 }
 
-export function useScrollLock() {
+/**
+ * @param active Whether the lock should be engaged. Defaults to true so a
+ *   modal that is only mounted while open can call `useScrollLock()` with no
+ *   args. Pass the open/visible flag for overlays that stay mounted and toggle
+ *   (e.g. the mobile nav drawer) so the lock tracks their visibility.
+ */
+export function useScrollLock(active: boolean = true) {
   useEffect(() => {
+    if (!active) return;
     lockCount += 1;
     if (lockCount === 1) applyLock();
 
@@ -76,5 +83,5 @@ export function useScrollLock() {
       lockCount = Math.max(0, lockCount - 1);
       if (lockCount === 0) releaseLock();
     };
-  }, []);
+  }, [active]);
 }

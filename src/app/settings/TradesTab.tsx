@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useToast } from "@/hooks/useToast";
+import { useScrollLock } from "@/hooks/useScrollLock";
 import { handleDeleteAllTrades } from "@/handlers/tradeHandlers";
 
 type TradesTabProps = {
@@ -35,6 +36,8 @@ export default function TradesTab({
   // wiping the journal with a misclick.
   const [confirmText, setConfirmText] = useState("");
   const canDelete = confirmText.trim().toLowerCase() === "delete";
+
+  useScrollLock(confirmOpen);
 
   useEffect(() => {
     if (!confirmOpen) return;

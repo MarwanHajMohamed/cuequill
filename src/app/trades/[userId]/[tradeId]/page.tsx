@@ -18,6 +18,7 @@ import { withAuth } from "@/lib/withAuth";
 import RichNotesEditor from "@/components/RichNotesEditor";
 import { Skeleton } from "@/components/Loaders";
 import TradeShareModal from "@/components/TradeShareModal";
+import { useScrollLock } from "@/hooks/useScrollLock";
 
 // Full-page trade editor. Trade fields live on the left, the rich
 // notes editor lives on the right. Replaces the row-click → modal
@@ -63,6 +64,10 @@ function TradeDetailPage() {
   const [saving, setSaving] = useState(false);
   const [delConfirm, setDelConfirm] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+
+  // Share modal locks scroll itself (via ShareImageModal); cover the
+  // delete-confirmation dialog here.
+  useScrollLock(delConfirm);
 
   useEffect(() => {
     if (trade) {

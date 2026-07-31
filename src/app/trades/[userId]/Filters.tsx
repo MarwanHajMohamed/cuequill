@@ -1,6 +1,7 @@
 import { StrategyList } from "@/app/types/Trades";
 import React from "react";
 import { DateRangeControl } from "./DateRangeControl";
+import { useScrollLock } from "@/hooks/useScrollLock";
 
 export default function Filters({
   filter,
@@ -39,6 +40,19 @@ export default function Filters({
 }) {
   const isPanelOpen = isOpen;
   const setIsPanelOpen = setIsOpen;
+
+  // The panel is a persistent push-sidebar on desktop but a modal overlay on
+  // mobile (<768px). Only lock background scroll in the mobile modal case, so
+  // opening filters on desktop still lets you scroll the trades list.
+  const [isMobile, setIsMobile] = React.useState(false);
+  React.useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+  useScrollLock(isPanelOpen && isMobile);
 
   const activeFilterCount = [
     filter !== "All",

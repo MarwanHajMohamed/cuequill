@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import React, { useEffect, useState } from "react";
 import RichNotesEditor from "@/components/RichNotesEditor";
+import { useScrollLock } from "@/hooks/useScrollLock";
 
 type NotesModalProps = {
   onClose: () => void;
@@ -24,6 +25,8 @@ export default function NotesModal({
   const [value, setValue] = useState(notes);
   const dirty = value !== notes;
   const canSave = !!tradeId && dirty;
+
+  useScrollLock();
 
   const handleSave = () => {
     if (!canSave || !tradeId) return;

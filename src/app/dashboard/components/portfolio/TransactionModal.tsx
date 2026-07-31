@@ -1,6 +1,7 @@
 "use client";
 
 import { useToast } from "@/hooks/useToast";
+import { useScrollLock } from "@/hooks/useScrollLock";
 import { format } from "date-fns";
 import React, { useState } from "react";
 
@@ -17,6 +18,8 @@ export default function TransactionModal({ type, userId, onClose }: Props) {
     format(today, "yyyy-MM-dd")
   );
   const [loading, setLoading] = useState(false);
+
+  useScrollLock();
 
   const toast = useToast();
 

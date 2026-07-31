@@ -8,6 +8,7 @@ import {
   titleLabel,
   type LevelReward,
 } from "@/lib/levelRewards";
+import { useScrollLock } from "@/hooks/useScrollLock";
 
 const ROW_H = 118; // px per level — equal so the spine fill lines up with nodes
 
@@ -191,6 +192,8 @@ function RewardsModal({
   onClose: () => void;
 }) {
   const rewards = rewardsForLevel(level);
+
+  useScrollLock();
 
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import ImportedTradesModal from "@/app/trades/ImportedTradesModal";
+import { useScrollLock } from "@/hooks/useScrollLock";
 
 // Shows a small welcome pop-up on the first authenticated page load
 // after the nightly IBKR sync (or any earlier session's manual sync)
@@ -19,6 +20,9 @@ export default function AutoImportNotifier() {
   const [insertedCount, setInsertedCount] = useState(0);
   const [showNotice, setShowNotice] = useState(false);
   const [showImported, setShowImported] = useState(false);
+
+  // Imported modal locks scroll itself; here we cover just the notice pop-up.
+  useScrollLock(showNotice);
 
   useEffect(() => {
     // Wait until NextAuth resolves the session — status starts as
