@@ -8,7 +8,7 @@ import { type CardSkin, skinById } from "@/lib/cardSkins";
 // light mode; the exported PNG must look identical in any theme.
 
 export const CARD_W = 600;
-export const CARD_H = 300;
+export const CARD_H = 250;
 
 const fmtMoneySigned = (n: number) => {
   const sign = n >= 0 ? "+" : "-";
@@ -54,7 +54,6 @@ const MonthlyShareCard = forwardRef<
     const hasClosed = stats.closed > 0;
     const positive = stats.netPL >= 0;
     const accent = !hasClosed ? TEAL : positive ? TEAL : RED;
-    const record = `${stats.wins}W – ${stats.losses}L`;
 
     return (
       <div
@@ -98,24 +97,23 @@ const MonthlyShareCard = forwardRef<
               Cuequill
             </span>
           </div>
-          <span style={{ fontSize: 13, color: MUTED }}>
-            {stats.periodLabel ?? `${stats.monthName} ${stats.year}`}
-          </span>
         </div>
 
-        {/* Middle: month title / Net P/L + win rate */}
+        {/* Middle: title + Net P/L, the two focal points. Centered in the
+            space left by the removed stat tiles. */}
         <div
           style={{
+            flex: 1,
             display: "flex",
-            alignItems: "flex-start",
+            alignItems: "center",
             justifyContent: "space-between",
             gap: 20,
           }}
         >
-          <div style={{ minWidth: 0, maxWidth: 300 }}>
+          <div style={{ minWidth: 0, maxWidth: 280 }}>
             <div
               style={{
-                fontSize: 44,
+                fontSize: 72,
                 fontWeight: 700,
                 letterSpacing: "-0.02em",
                 lineHeight: 1,
@@ -125,7 +123,7 @@ const MonthlyShareCard = forwardRef<
             </div>
             <div
               style={{
-                marginTop: 12,
+                marginTop: 14,
                 fontSize: 15,
                 color: MUTED,
                 lineHeight: 1.35,
@@ -150,7 +148,7 @@ const MonthlyShareCard = forwardRef<
             <div
               style={{
                 marginTop: 4,
-                fontSize: 44,
+                fontSize: 60,
                 fontWeight: 700,
                 letterSpacing: "-0.02em",
                 lineHeight: 1,
@@ -162,8 +160,8 @@ const MonthlyShareCard = forwardRef<
             {stats.winRate != null && (
               <div
                 style={{
-                  marginTop: 6,
-                  fontSize: 16,
+                  marginTop: 8,
+                  fontSize: 17,
                   fontWeight: 600,
                   color: accent,
                 }}
@@ -173,59 +171,12 @@ const MonthlyShareCard = forwardRef<
             )}
           </div>
         </div>
-
-        {/* Stat tiles */}
-        <div style={{ display: "flex", gap: 12 }}>
-          <Stat label="Trades" value={`${stats.trades}`} skin={skin} />
-          <Stat label="Closed" value={`${stats.closed}`} skin={skin} />
-          <Stat label="Record" value={record} skin={skin} />
-        </div>
       </div>
     );
   },
 );
 
 export default MonthlyShareCard;
-
-function Stat({
-  label,
-  value,
-  skin,
-}: {
-  label: string;
-  value: string;
-  skin: CardSkin;
-}) {
-  return (
-    <div
-      style={{
-        flex: 1,
-        minWidth: 0,
-        background: skin.tile,
-        border: `1px solid ${skin.hair}`,
-        borderRadius: 14,
-        padding: "12px 10px 13px",
-        textAlign: "center",
-      }}
-    >
-      <div style={{ fontSize: 12, color: skin.muted, marginBottom: 5 }}>
-        {label}
-      </div>
-      <div
-        style={{
-          fontSize: 18,
-          fontWeight: 600,
-          color: skin.ink,
-          whiteSpace: "nowrap",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-        }}
-      >
-        {value}
-      </div>
-    </div>
-  );
-}
 
 // Inlined Cuequill quill mark so the capture doesn't depend on an external
 // asset or icon font.
