@@ -292,6 +292,74 @@ function Page() {
     };
   };
 
+  // Aggregate an arbitrary set of trades into the shared card's stat shape.
+  const statsFor = (
+    subset: typeof trades,
+    extra: Partial<MonthlyShareStats> & { monthName: string; year: string },
+  ): MonthlyShareStats => {
+    const rows = subset ?? [];
+    const closed = rows.filter(
+      (t) => t.status === "WIN" || t.status === "LOSS",
+    );
+    const wins = closed.filter((t) => t.status === "WIN").length;
+    const losses = closed.filter((t) => t.status === "LOSS").length;
+    const netPL = closed.reduce((s, t) => s + tradeNetPL(t), 0);
+    return {
+      netPL,
+      trades: rows.length,
+      closed: closed.length,
+      wins,
+      losses,
+      winRate: closed.length ? (wins / closed.length) * 100 : null,
+      ...extra,
+    };
+  };
+
+  // The displayed week (Mon–Sun), for the week-view share card.
+  const weekShareStats = (): MonthlyShareStats => {
+    const start = displayedWeekStart;
+    const end = addDays(start, 6);
+    const startKey = format(start, "yyyy-MM-dd");
+    const endKey = format(end, "yyyy-MM-dd");
+    const inWeek = (trades ?? []).filter((t) => {
+      const k = bucketDateFor(t);
+      return k >= startKey && k <= endKey;
+    });
+    return statsFor(inWeek, {
+      monthName: format(start, "MMM d"),
+      year: `${start.getFullYear()}`,
+      title: "This week",
+      periodLabel: `${format(start, "MMM d")} – ${format(end, "MMM d")}`,
+      periodNoun: "week",
+    });
+  };
+
+  // The displayed year, for the zoomed-out (year drill-up) share card.
+  const yearShareStats = (): MonthlyShareStats => {
+    const y = displayedMonth.getFullYear();
+    const inYear = (trades ?? []).filter((t) =>
+      bucketDateFor(t).startsWith(`${y}-`),
+    );
+    return statsFor(inYear, {
+      monthName: `${y}`,
+      year: `${y}`,
+      title: `${y}`,
+      periodLabel: `${y}`,
+      periodNoun: "year",
+    });
+  };
+
+  // What the share button captures, keyed to the current view: the week (week
+  // view), the whole year (zoomed out to the months grid), else the month.
+  const shareContext: "week" | "month" | "year" =
+    view === "week" ? "week" : calView === "month" ? "month" : "year";
+  const activeShareStats = (): MonthlyShareStats =>
+    shareContext === "week"
+      ? weekShareStats()
+      : shareContext === "year"
+        ? yearShareStats()
+        : monthShareStats();
+
   const handleDateClick = (date: Date) => {
     setSelectedDate(date);
     const dayStr = format(date, "yyyy-MM-dd");
@@ -839,17 +907,16 @@ function Page() {
   // Control buttons shared between the desktop cluster (top-right of the
   // P/L) and the mobile row (below the P/L, beside Show earnings). Kept
   // as small render helpers so the markup isn't duplicated per breakpoint.
-  const shareButton = () =>
-    view === "month" ? (
-      <button
-        onClick={() => setShowMonthShare(true)}
-        className="w-8 h-8 inline-flex items-center justify-center rounded-full border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/75 hover:text-white transition cursor-pointer"
-        title="Share this month's P/L as an image"
-        aria-label="Share this month"
-      >
-        <i className="fa-solid fa-share-nodes text-[11px]" />
-      </button>
-    ) : null;
+  const shareButton = () => (
+    <button
+      onClick={() => setShowMonthShare(true)}
+      className="w-8 h-8 inline-flex items-center justify-center rounded-full border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/75 hover:text-white transition cursor-pointer"
+      title={`Share this ${shareContext}'s P/L as an image`}
+      aria-label={`Share this ${shareContext}`}
+    >
+      <i className="fa-solid fa-share-nodes text-[11px]" />
+    </button>
+  );
 
   const todayButton = () => (
     <button
@@ -968,24 +1035,28 @@ function Page() {
                   </div>
                 );
               })()}
-              {/* Desktop: buttons stay top-right beside the P/L. */}
-              <div className="hidden md:flex items-center gap-2">
-                <button
-                  onClick={() => setDetailed((v) => !v)}
-                  className={`w-8 h-8 inline-flex items-center justify-center rounded-full border transition cursor-pointer ${
-                    detailed
-                      ? "bg-teal-500/15 text-teal-300 border-teal-500/30 hover:bg-teal-500/25"
-                      : "border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/75 hover:text-white"
-                  }`}
-                  title="Overlay watchlist earnings and open-position expiries"
-                  aria-label={detailed ? "Hide earnings overlay" : "Show earnings overlay"}
-                  aria-pressed={detailed}
-                >
-                  <i className="fa-solid fa-layer-group text-[11px]" />
-                </button>
+              {/* Share sits at the very top-right (under the profile avatar)
+                  on every breakpoint and in every view; the rest of the
+                  controls stay in the desktop cluster / mobile row. */}
+              <div className="flex items-center gap-2">
                 {shareButton()}
-                {todayButton()}
-                {viewToggle()}
+                <div className="hidden md:flex items-center gap-2">
+                  <button
+                    onClick={() => setDetailed((v) => !v)}
+                    className={`w-8 h-8 inline-flex items-center justify-center rounded-full border transition cursor-pointer ${
+                      detailed
+                        ? "bg-teal-500/15 text-teal-300 border-teal-500/30 hover:bg-teal-500/25"
+                        : "border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/75 hover:text-white"
+                    }`}
+                    title="Overlay watchlist earnings and open-position expiries"
+                    aria-label={detailed ? "Hide earnings overlay" : "Show earnings overlay"}
+                    aria-pressed={detailed}
+                  >
+                    <i className="fa-solid fa-layer-group text-[11px]" />
+                  </button>
+                  {todayButton()}
+                  {viewToggle()}
+                </div>
               </div>
             </div>
 
@@ -1005,7 +1076,6 @@ function Page() {
                 <i className="fa-solid fa-layer-group text-[11px]" />
                 {detailed ? "Hide earnings" : "Show earnings"}
               </button>
-              {shareButton()}
               {todayButton()}
               {viewToggle()}
             </div>
@@ -1161,23 +1231,29 @@ function Page() {
         )}
       </AnimatePresence>
 
-      {showMonthShare && (
-        <ShareImageModal
-          cardW={MONTH_CARD_W}
-          cardH={MONTH_CARD_H}
-          fileName={`cuequill-${monthShareStats().monthName.toLowerCase()}-${monthShareStats().year}.png`}
-          shareTitle={`${monthShareStats().monthName} ${monthShareStats().year} — Cuequill`}
-          shareText={`My ${monthShareStats().monthName} trading recap — Cuequill`}
-          renderCard={(ref, skin) => (
-            <MonthlyShareCard ref={ref} stats={monthShareStats()} skin={skin} />
-          )}
-          skinnable
-          userLevel={cardSkinPrefs.level}
-          initialSkin={cardSkinPrefs.cardSkin}
-          onSkinChange={cardSkinPrefs.persist}
-          onClose={() => setShowMonthShare(false)}
-        />
-      )}
+      {showMonthShare &&
+        (() => {
+          const s = activeShareStats();
+          const label = s.periodLabel ?? `${s.monthName} ${s.year}`;
+          const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+          return (
+            <ShareImageModal
+              cardW={MONTH_CARD_W}
+              cardH={MONTH_CARD_H}
+              fileName={`cuequill-${slug}.png`}
+              shareTitle={`${label} — Cuequill`}
+              shareText={`My ${label} trading recap — Cuequill`}
+              renderCard={(ref, skin) => (
+                <MonthlyShareCard ref={ref} stats={s} skin={skin} />
+              )}
+              skinnable
+              userLevel={cardSkinPrefs.level}
+              initialSkin={cardSkinPrefs.cardSkin}
+              onSkinChange={cardSkinPrefs.persist}
+              onClose={() => setShowMonthShare(false)}
+            />
+          );
+        })()}
     </>
   );
 }

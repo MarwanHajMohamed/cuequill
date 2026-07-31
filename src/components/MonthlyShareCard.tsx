@@ -31,6 +31,11 @@ export type MonthlyShareStats = {
   wins: number;
   losses: number;
   winRate: number | null; // 0-100, null when nothing closed
+  // Optional period overrides so the same card can present a week or a year,
+  // not just a month. All default to the month presentation.
+  title?: string; // big headline (defaults to monthName)
+  periodLabel?: string; // header-right label (defaults to `${monthName} ${year}`)
+  periodNoun?: string; // "month" | "week" | "year" — used in "N trades this ___"
 };
 
 const MonthlyShareCard = forwardRef<
@@ -94,7 +99,7 @@ const MonthlyShareCard = forwardRef<
             </span>
           </div>
           <span style={{ fontSize: 13, color: MUTED }}>
-            {stats.monthName} {stats.year}
+            {stats.periodLabel ?? `${stats.monthName} ${stats.year}`}
           </span>
         </div>
 
@@ -116,7 +121,7 @@ const MonthlyShareCard = forwardRef<
                 lineHeight: 1,
               }}
             >
-              {stats.monthName}
+              {stats.title ?? stats.monthName}
             </div>
             <div
               style={{
@@ -126,7 +131,8 @@ const MonthlyShareCard = forwardRef<
                 lineHeight: 1.35,
               }}
             >
-              {stats.trades} {stats.trades === 1 ? "trade" : "trades"} this month
+              {stats.trades} {stats.trades === 1 ? "trade" : "trades"} this{" "}
+              {stats.periodNoun ?? "month"}
             </div>
           </div>
 
