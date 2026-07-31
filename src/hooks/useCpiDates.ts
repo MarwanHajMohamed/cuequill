@@ -1,13 +1,14 @@
 import { useMemo } from "react";
-import { CPI_RELEASE_DATES } from "@/lib/cpiDates";
+import { useEconDates } from "./useEconDates";
 
 /**
  * US CPI (inflation report) release dates as a Set of "yyyy-MM-dd".
  *
- * Mirrors useMarketHolidays: the dates are a fixed, locally-known
- * schedule (from the BLS release calendar in lib/cpiDates), so they
- * render instantly and work offline — no fetch required.
+ * Backed by /api/econ-dates (FRED), which keeps the schedule current
+ * automatically; the local BLS list in lib/cpiDates is the instant/offline
+ * fallback used until the fetch resolves (and whenever it can't).
  */
 export function useCpiDates(): Set<string> {
-  return useMemo(() => new Set(CPI_RELEASE_DATES), []);
+  const { cpi } = useEconDates();
+  return useMemo(() => new Set(cpi), [cpi]);
 }
