@@ -16,7 +16,7 @@ import {
 } from "date-fns";
 import "react-calendar/dist/Calendar.css";
 import "./calendar-custom.css";
-import DayTradesModal from "../modals/DayTradesModal";
+import DayTradesModal, { type DayEvent } from "../modals/DayTradesModal";
 import TradeModal from "../modals/TradeModal";
 import { Trade } from "@/app/types/Trades";
 import { useTrades } from "@/hooks/useTrades";
@@ -25,7 +25,12 @@ import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useRouter } from "next/navigation";
 import { handleSaveTrade, handleDeleteTrade } from "@/handlers/tradeHandlers";
 import { useFedDates } from "@/hooks/useFedDates";
+import { useCpiDates } from "@/hooks/useCpiDates";
+import { usePpiDates } from "@/hooks/usePpiDates";
+import { usePceDates } from "@/hooks/usePceDates";
 import { useMarketHolidays } from "@/hooks/useMarketHolidays";
+import { useWatchlist } from "@/hooks/useWatchlist";
+import { useEarnings } from "@/hooks/useEarnings";
 import AnimatedCalendar from "@/app/reusablecalendar/AnimatedCalendar";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
 import { AnimatePresence } from "framer-motion";
@@ -88,7 +93,24 @@ export default function TradeCalendar({ userId }: { userId: string }) {
   const [dayListOpen, setDayListOpen] = useState(false);
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
   const fedDates = useFedDates();
+  const cpiDates = useCpiDates();
+  const ppiDates = usePpiDates();
+  const pceDates = usePceDates();
   const holidays = useMarketHolidays();
+  const { data: watchlistSymbols = [] } = useWatchlist();
+  const { data: earnings = [] } = useEarnings(watchlistSymbols);
+
+  // "yyyy-MM-dd" → the watchlist symbols reporting earnings that day.
+  const earningsByDay = useMemo(() => {
+    const map = new Map<string, { symbol: string; isEstimate: boolean }[]>();
+    for (const e of earnings) {
+      if (!e.date) continue;
+      const list = map.get(e.date) ?? [];
+      list.push({ symbol: e.symbol, isEstimate: e.isEstimate });
+      map.set(e.date, list);
+    }
+    return map;
+  }, [earnings]);
 
   const [simulated] = useLocalStorage<boolean>("simulated", false);
 
@@ -306,11 +328,40 @@ export default function TradeCalendar({ userId }: { userId: string }) {
       total: 0,
     };
 
+  // Economic events + watchlist earnings landing on a given day, for the
+  // day-detail modal.
+  const getDayEvents = (date: Date): DayEvent[] => {
+    const s = format(date, "yyyy-MM-dd");
+    const evs: DayEvent[] = [];
+    if (fedDates.has(s)) evs.push({ kind: "fed", label: "FOMC meeting" });
+    if (cpiDates.has(s)) evs.push({ kind: "cpi", label: "CPI release" });
+    if (ppiDates.has(s)) evs.push({ kind: "ppi", label: "PPI release" });
+    if (pceDates.has(s)) evs.push({ kind: "pce", label: "PCE release" });
+    const h = holidays.get(s);
+    if (h) {
+      evs.push({
+        kind: "holiday",
+        label: h.name,
+        detail: h.early ? "early close · 1:00pm ET" : "market closed",
+      });
+    }
+    for (const e of earningsByDay.get(s) ?? []) {
+      evs.push({
+        kind: "earnings",
+        label: `${e.symbol} earnings`,
+        detail: e.isEstimate ? "estimated" : undefined,
+      });
+    }
+    return evs;
+  };
+
   const handleDateClick = (date: Date) => {
     setSelectedDate(date);
     const dayStr = format(date, "yyyy-MM-dd");
     const dayTrades = trades?.filter((t) => bucketDateFor(t) === dayStr) ?? [];
-    if (dayTrades.length > 0) {
+    // Open the day detail when there are trades OR events to show; otherwise
+    // jump straight to adding a trade for an empty day.
+    if (dayTrades.length > 0 || getDayEvents(date).length > 0) {
       setDayListOpen(true);
     } else {
       setEditingTrade(null);
@@ -323,6 +374,12 @@ export default function TradeCalendar({ userId }: { userId: string }) {
     const dayStr = format(selectedDate, "yyyy-MM-dd");
     return trades.filter((t) => bucketDateFor(t) === dayStr);
   }, [selectedDate, trades]);
+
+  const eventsForSelectedDay = useMemo(
+    () => (selectedDate ? getDayEvents(selectedDate) : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [selectedDate, fedDates, cpiDates, ppiDates, pceDates, holidays, earningsByDay],
+  );
 
   const getDaySummary = (date: Date) => {
     const dayStr = format(date, "yyyy-MM-dd");
@@ -561,6 +618,7 @@ export default function TradeCalendar({ userId }: { userId: string }) {
         <DayTradesModal
           date={selectedDate}
           trades={tradesForSelectedDay}
+          events={eventsForSelectedDay}
           onClose={() => setDayListOpen(false)}
           onAddTrade={() => {
             setDayListOpen(false);
