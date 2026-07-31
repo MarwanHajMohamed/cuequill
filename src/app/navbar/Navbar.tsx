@@ -98,8 +98,8 @@ function NavCountBadge({
       aria-label={`${count} unclaimed`}
       className={
         corner
-          ? "absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-teal-500 text-[9px] font-bold text-[#04211d] flex items-center justify-center leading-none tabular-nums ring-2 ring-[var(--background)]"
-          : "ml-auto min-w-[18px] h-[18px] px-1.5 rounded-full bg-teal-500 text-[10px] font-bold text-[#04211d] inline-flex items-center justify-center leading-none tabular-nums"
+          ? "absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-teal-500/30 backdrop-blur-md border border-white/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.4)] text-[9px] font-bold text-white flex items-center justify-center leading-none tabular-nums ring-2 ring-[var(--background)]"
+          : "ml-auto min-w-[18px] h-[18px] px-1.5 rounded-full bg-teal-500/30 backdrop-blur-md border border-white/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.4)] text-[10px] font-bold text-white inline-flex items-center justify-center leading-none tabular-nums"
       }
     >
       {label}
