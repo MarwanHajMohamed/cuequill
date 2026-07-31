@@ -109,8 +109,7 @@ export default function AutoImportNotifier() {
                     : `${insertedCount} new trades imported`}
                 </div>
                 <div className="mt-1.5 text-[12.5px] text-white/55 leading-snug">
-                  Your IBKR account synced automatically overnight while you
-                  were away.
+                  New trades imported from your IBKR account.
                 </div>
               </div>
               <div className="flex items-center gap-2 px-5 md:px-6 py-3 md:py-4">
