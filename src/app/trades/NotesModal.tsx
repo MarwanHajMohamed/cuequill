@@ -67,7 +67,7 @@ export default function NotesModal({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.97, y: 4 }}
           transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className="bg-[var(--surface)] border border-white/10 rounded-2xl w-full max-w-lg shadow-[0_24px_80px_var(--shadow)] overflow-hidden"
+          className="bg-[var(--surface)] border border-white/10 rounded-2xl w-full max-w-3xl shadow-[0_24px_80px_var(--shadow)] overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
@@ -99,7 +99,7 @@ export default function NotesModal({
             <RichNotesEditor
               value={value}
               onChange={setValue}
-              className="min-h-[200px] max-h-[55vh]"
+              className="min-h-[360px] max-h-[70vh]"
             />
           </div>
 
