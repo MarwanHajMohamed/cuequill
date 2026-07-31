@@ -523,6 +523,7 @@ const SummaryTile = ({
   style,
   dataId,
   handle,
+  reorder = false,
 }: {
   label: string;
   info?: string;
@@ -531,9 +532,14 @@ const SummaryTile = ({
   style?: React.CSSProperties;
   dataId?: string;
   handle?: React.ReactNode;
+  reorder?: boolean;
 }) => (
   <motion.div
-    layout="position"
+    // Only track layout while reordering in Customize mode. Otherwise an
+    // incidental page shift (e.g. a modal opening and locking scroll) makes
+    // framer-motion animate every tile from its shifted position back into
+    // place — the "stats jump from the top" glitch.
+    layout={reorder ? "position" : false}
     transition={{ type: "spring", stiffness: 500, damping: 40 }}
     data-tile-id={dataId}
     style={style}
@@ -1561,6 +1567,7 @@ export default function Statistics({
           {sectionControls("summary", "Summary tiles")}
           {visibility.netPL && (
             <SummaryTile
+              reorder={editing}
               label="Net P&L"
               info="Total profit/loss across all closed trades."
               className="basis-[100px] md:basis-[200px] grow max-w-[280px]"
@@ -1580,6 +1587,7 @@ export default function Statistics({
 
           {visibility.profitFactor && (
             <SummaryTile
+              reorder={editing}
               label="Profit factor"
               info="Gross wins ÷ gross losses. Above 1.0 = profitable; above 2.0 = strong system."
               className="basis-[100px] md:basis-[200px] grow max-w-[280px]"
@@ -1606,6 +1614,7 @@ export default function Statistics({
 
           {visibility.winRate && (
             <SummaryTile
+              reorder={editing}
               label="Win rate"
               info="Percentage of closed trades that ended as wins."
               className="basis-[100px] md:basis-[200px] grow max-w-[280px]"
@@ -1624,6 +1633,7 @@ export default function Statistics({
 
           {visibility.avgRR && (
             <SummaryTile
+              reorder={editing}
               label="Avg R:R"
               info="Average winner size ÷ average loser size. Above 1R means your wins are bigger than your losses on average."
               className="basis-[100px] md:basis-[200px] grow max-w-[280px]"
@@ -1651,6 +1661,7 @@ export default function Statistics({
 
           {visibility.winStreak && (
             <SummaryTile
+              reorder={editing}
               label="Best win streak"
               info="Longest run of consecutive winning trades in your history (open trades are skipped, losses break the streak)."
               className="basis-[100px] md:basis-[200px] grow max-w-[280px]"
@@ -1673,7 +1684,7 @@ export default function Statistics({
       {/* Equity curve */}
       {visibility.equityCurve && (
         <motion.div
-          layout="position"
+          layout={editing ? "position" : false}
           transition={{ type: "spring", stiffness: 500, damping: 40 }}
           data-sec-id="equityCurve"
           style={{ order: secOrder("equityCurve") }}
@@ -1729,7 +1740,7 @@ export default function Statistics({
           if (cards.length === 0) return null;
           return (
             <motion.div
-              layout="position"
+              layout={editing ? "position" : false}
               transition={{ type: "spring", stiffness: 500, damping: 40 }}
               data-sec-id="quickGlance"
               style={{ order: secOrder("quickGlance") }}
@@ -1787,7 +1798,7 @@ export default function Statistics({
       {/* Performance by tag */}
       {visibility.tagStats && tagStats.length > 0 && (
         <motion.div
-          layout="position"
+          layout={editing ? "position" : false}
           transition={{ type: "spring", stiffness: 500, damping: 40 }}
           data-sec-id="tagStats"
           style={{ order: secOrder("tagStats") }}
@@ -1870,7 +1881,7 @@ export default function Statistics({
       {/* ── Filter Insights ─────────────────────────────────────────── */}
       {visibility.filteredStats && (
         <motion.div
-          layout="position"
+          layout={editing ? "position" : false}
           transition={{ type: "spring", stiffness: 500, damping: 40 }}
           data-sec-id="filterInsights"
           style={{ order: secOrder("filterInsights") }}
@@ -1992,7 +2003,7 @@ export default function Statistics({
       {/* ── Performance Breakdown ───────────────────────────────────── */}
       {visibility.totalStats && (
         <motion.div
-          layout="position"
+          layout={editing ? "position" : false}
           transition={{ type: "spring", stiffness: 500, damping: 40 }}
           data-sec-id="breakdown"
           style={{ order: secOrder("breakdown") }}
@@ -2308,7 +2319,7 @@ export default function Statistics({
 
           return (
             <motion.div
-              layout="position"
+              layout={editing ? "position" : false}
               transition={{ type: "spring", stiffness: 500, damping: 40 }}
               data-sec-id="monthly"
               style={{ order: secOrder("monthly") }}
