@@ -386,7 +386,10 @@
   background: rgba(255, 255, 255, 0.045);
   backdrop-filter: blur(14px) saturate(1.5);
   -webkit-backdrop-filter: blur(14px) saturate(1.5);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  /* No real `border`: the edge is drawn entirely by the ::before gradient
+     ring below. A real border would push the ring (positioned to inset:0 =
+     the padding box) one pixel inward, making it look like a second border
+     sitting inside the card. */
   box-shadow:
     0 6px 26px -12px rgba(0, 0, 0, 0.6),
     inset 0 1px 0 0 rgba(255, 255, 255, 0.16);
@@ -399,13 +402,15 @@
   inset: 0;
   border-radius: inherit;
   padding: 1px;
+  /* Keep a faint baseline alpha at every stop so the whole rim is defined,
+     with a bright top-left catch and a cool glint at the bottom-right. */
   background: linear-gradient(
     135deg,
     rgba(255, 255, 255, 0.55) 0%,
-    rgba(255, 255, 255, 0.06) 28%,
-    transparent 52%,
-    rgba(255, 255, 255, 0.04) 74%,
-    rgba(170, 214, 255, 0.32) 100%
+    rgba(255, 255, 255, 0.14) 30%,
+    rgba(255, 255, 255, 0.1) 55%,
+    rgba(255, 255, 255, 0.14) 78%,
+    rgba(170, 214, 255, 0.34) 100%
   );
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
@@ -439,19 +444,20 @@
 }
 :root.light .glass-card {
   background: rgba(255, 255, 255, 0.55);
-  border-color: rgba(255, 255, 255, 0.7);
   box-shadow:
     0 8px 24px -14px rgba(2, 6, 23, 0.22),
     inset 0 1px 0 0 rgba(255, 255, 255, 0.9);
 }
 :root.light .glass-card::before {
+  /* A near-white edge is invisible on a white card, so the rim is a soft
+     slate baseline (defines the whole perimeter) with a bright top-left
+     highlight and a cool blue glint at the bottom-right. */
   background: linear-gradient(
     135deg,
     rgba(255, 255, 255, 0.95) 0%,
-    rgba(255, 255, 255, 0.25) 28%,
-    transparent 52%,
-    rgba(120, 160, 220, 0.18) 74%,
-    rgba(120, 160, 220, 0.3) 100%
+    rgba(148, 163, 184, 0.4) 32%,
+    rgba(148, 163, 184, 0.34) 60%,
+    rgba(120, 160, 220, 0.42) 100%
   );
 }
 :root.light .glass-card::after {
@@ -464,9 +470,7 @@
 }
 @media (prefers-reduced-motion: no-preference) {
   .glass-card {
-    transition:
-      box-shadow 0.25s ease,
-      border-color 0.25s ease;
+    transition: box-shadow 0.25s ease;
   }
 }
 
