@@ -69,7 +69,11 @@
   position: relative;
   background: transparent;
   color: rgb(var(--fg-rgb));
-  height: 96px;
+  /* min-height (not a fixed height) so a cell can grow to fit its content —
+     e.g. a day that has both trades and an event pill (Fed / holiday). The
+     grid row stretches to the tallest cell, keeping the week aligned. */
+  min-height: 96px;
+  height: auto;
   padding: 6px 0 10px;
   border: 1px solid transparent;
   border-radius: 8px;
@@ -173,7 +177,8 @@
 
 @media (max-width: 768px) {
   .react-calendar__tile {
-    height: 72px;
+    min-height: 72px;
+    height: auto;
     font-size: 10px;
     padding: 4px 0 8px;
   }
