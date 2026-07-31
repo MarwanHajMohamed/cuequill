@@ -365,9 +365,20 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
     // waiting on the network — the server merge runs in the background below.
     if (burst) setParticleBurst({ ...burst, key: Date.now() });
     const optimistic = computeMergedTrade(selectedTrades);
+    // Keep the merged row where the merge happened: drop the extra selected
+    // rows and replace the topmost selected row (the one the others slid into)
+    // in place, rather than prepending to the top of the list.
+    const anchorId = topId ?? ids[0];
     queryClient.setQueryData<Trade[]>(key, (prev) => {
-      const rest = (prev ?? []).filter((t) => !ids.includes(t._id ?? ""));
-      return [optimistic, ...rest];
+      if (!prev) return prev;
+      const out: Trade[] = [];
+      for (const t of prev) {
+        const id = t._id ?? "";
+        if (id === anchorId) out.push(optimistic);
+        else if (ids.includes(id)) continue; // the other legs are absorbed
+        else out.push(t);
+      }
+      return out;
     });
     exitSelectMode();
     setMerging(false);
