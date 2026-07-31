@@ -135,7 +135,7 @@ export default function DayTradesModal({
             </button>
 
             <div className="flex items-center gap-2">
-              <span className="text-[10.5px] uppercase tracking-[0.14em] text-white/40 font-semibold">
+              <span className="text-[11px] tracking-wide text-white/45 font-semibold">
                 {format(date, "EEEE")}
               </span>
               {isToday && (
@@ -179,19 +179,19 @@ export default function DayTradesModal({
             {(wins > 0 || losses > 0 || opens > 0) && (
               <div className="mt-3.5 flex flex-wrap items-center gap-2">
                 {wins > 0 && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11.5px] font-medium bg-green-500/12 text-green-200 border border-green-400/25">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11.5px] font-semibold bg-green-500/15 text-green-300 border border-green-400/30">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
                     {wins} {wins === 1 ? "win" : "wins"}
                   </span>
                 )}
                 {losses > 0 && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11.5px] font-medium bg-red-500/12 text-red-200 border border-red-400/25">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11.5px] font-semibold bg-red-500/15 text-red-300 border border-red-400/30">
                     <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
                     {losses} {losses === 1 ? "loss" : "losses"}
                   </span>
                 )}
                 {opens > 0 && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11.5px] font-medium bg-orange-500/12 text-orange-200 border border-orange-400/25">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11.5px] font-semibold bg-orange-500/15 text-orange-300 border border-orange-400/30">
                     <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
                     {opens} open
                   </span>
@@ -203,7 +203,7 @@ export default function DayTradesModal({
           {/* Events on this day */}
           {events.length > 0 && (
             <div className="shrink-0 px-5 pb-4 pt-1">
-              <div className="text-[10px] uppercase tracking-[0.14em] text-white/35 font-semibold mb-2">
+              <div className="text-[11px] tracking-wide text-white/40 font-semibold mb-2">
                 On this day
               </div>
               <div className="flex flex-col gap-1.5">
@@ -234,10 +234,10 @@ export default function DayTradesModal({
 
           {/* Trades */}
           <div className="flex-1 min-h-0 overflow-y-auto px-5 pb-3 flex flex-col">
-            <div className="text-[10px] uppercase tracking-[0.14em] text-white/35 font-semibold mb-2 flex items-center gap-2">
+            <div className="text-[11px] tracking-wide text-white/40 font-semibold mb-2 flex items-center gap-2">
               Trades
               {trades.length > 0 && (
-                <span className="text-white/30 tabular-nums font-bold">
+                <span className="text-white/35 tabular-nums font-bold">
                   {trades.length}
                 </span>
               )}
@@ -251,19 +251,12 @@ export default function DayTradesModal({
                 {trades.map((t, i) => {
                   const pl = tradeNetPL(t);
                   const isClosed = t.status === "WIN" || t.status === "LOSS";
-                  const isWin = t.status === "WIN";
-                  const dot = isWin
-                    ? "bg-green-400"
-                    : t.status === "LOSS"
-                      ? "bg-red-400"
-                      : "bg-orange-400";
                   return (
                     <button
                       key={t._id || `${t.symbol}-${t.dateBought}-${i}`}
                       onClick={() => onTradeClick(t)}
                       className="group flex items-center gap-3 px-3 py-2.5 rounded-xl border border-white/[0.07] bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.05] transition cursor-pointer text-left"
                     >
-                      <span className={`w-2 h-2 rounded-full shrink-0 ${dot}`} />
                       <div className="flex flex-col gap-0.5 min-w-0 flex-1">
                         <div className="flex items-baseline gap-1.5">
                           <span className="font-semibold tracking-tight">
@@ -278,9 +271,11 @@ export default function DayTradesModal({
                           >
                             {t.option}
                           </span>
+                          <span className="text-[11px] font-medium text-white/45 tabular-nums">
+                            ×{t.qty}
+                          </span>
                         </div>
                         <div className="text-[11.5px] text-white/45 truncate tabular-nums">
-                          ${t.strike} · {t.qty} qty ·{" "}
                           {format(new Date(t.expiryDate), "MMM d")}
                         </div>
                       </div>
