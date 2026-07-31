@@ -14,6 +14,7 @@ import {
 } from "@/lib/affirmationStreak";
 import { titleLabel } from "@/lib/challenges";
 import RewardsTimeline from "./RewardsTimeline";
+import { Skeleton } from "@/components/Loaders";
 import ShareImageModal from "@/components/ShareImageModal";
 import AchievementShareCard, {
   CARD_W as ACH_CARD_W,
@@ -159,7 +160,7 @@ function Page() {
         </AnimatePresence>
 
         {isLoading || !data ? (
-          <div className="mt-10 text-[13px] text-white/40">Loading…</div>
+          <ChallengesSkeleton />
         ) : (
           <>
             {/* Level summary — kept quiet. */}
@@ -448,6 +449,54 @@ function StreakChallengeSection({
         </motion.div>
       </div>
     </section>
+  );
+}
+
+// Loading placeholder that mirrors the page: level summary row (ring + title/
+// XP + hero stats), then a couple of category sections of glass cards.
+function ChallengesSkeleton() {
+  return (
+    <div className="mt-8">
+      {/* Level summary */}
+      <div className="flex items-center gap-4 flex-wrap">
+        <Skeleton className="w-16 h-16 rounded-full shrink-0" />
+        <div className="flex-1 min-w-[220px] flex flex-col gap-2">
+          <Skeleton className="h-4 w-44" delay={0.04} />
+          <Skeleton className="h-1.5 w-full max-w-md rounded-full" delay={0.08} />
+          <Skeleton className="h-3 w-24" delay={0.12} />
+        </div>
+        <div className="flex items-center gap-6 pr-1">
+          {[0, 1].map((s) => (
+            <div key={s} className="flex flex-col items-center gap-1.5">
+              <Skeleton className="h-6 w-8" delay={0.1 + s * 0.04} />
+              <Skeleton className="h-2.5 w-10" delay={0.14 + s * 0.04} />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Streak + category sections */}
+      {[3, 6].map((n, s) => (
+        <div key={s} className="mt-8">
+          <div className="flex items-center gap-2.5 mb-3">
+            <Skeleton
+              className="w-2.5 h-2.5 rounded-full"
+              delay={0.1 + s * 0.06}
+            />
+            <Skeleton className="h-3.5 w-28" delay={0.13 + s * 0.06} />
+          </div>
+          <div className="chal-grid">
+            {Array.from({ length: n }).map((_, i) => (
+              <Skeleton
+                key={i}
+                className="h-[132px] rounded-2xl"
+                delay={0.16 + s * 0.06 + i * 0.03}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 

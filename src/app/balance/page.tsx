@@ -3,6 +3,7 @@
 import React, { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { withAuth } from "@/lib/withAuth";
+import { Skeleton } from "@/components/Loaders";
 import { useBalanceTimeline } from "@/hooks/useBalanceTimeline";
 import { useTransactions } from "@/hooks/useTransactions";
 import { fmtMoneyFull, fmtMoneySignedCompact } from "@/lib/helpers/fmt";
@@ -178,7 +179,16 @@ function Page() {
         )}
 
         {loading ? (
-          <div className="mt-10 text-[13px] text-white/40">Loading balance…</div>
+          <div className="mt-8">
+            <div className="flex items-end justify-between gap-4 flex-wrap">
+              <div className="flex flex-col gap-2">
+                <Skeleton className="h-3 w-16" />
+                <Skeleton className="h-9 md:h-11 w-48 md:w-64" delay={0.05} />
+              </div>
+              <Skeleton className="h-8 w-40 rounded-full" delay={0.1} />
+            </div>
+            <Skeleton className="mt-8 h-[280px] md:h-[340px] w-full" delay={0.15} />
+          </div>
         ) : (
           <>
             {!hasData && <EmptyState />}

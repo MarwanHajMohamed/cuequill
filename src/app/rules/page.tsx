@@ -1,6 +1,7 @@
 "use client";
 
 import { withAuth } from "@/lib/withAuth";
+import { Skeleton } from "@/components/Loaders";
 import ProGate from "@/components/ProGate";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
@@ -32,8 +33,13 @@ function Page() {
 
       <div className="w-full max-w-[1500px] mt-30 md:mt-10 px-5 md:px-10">
         {sections === null ? (
-          <div className="mt-10 text-center text-[13px] text-white/40">
-            Loading…
+          <div className="mt-8 md:mt-10 flex flex-col gap-4">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="flex flex-col gap-2.5">
+                <Skeleton className="h-4 w-40" delay={i * 0.06} />
+                <Skeleton className="h-[120px] rounded-2xl" delay={0.04 + i * 0.06} />
+              </div>
+            ))}
           </div>
         ) : (
           <>

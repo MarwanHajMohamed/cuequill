@@ -8,6 +8,7 @@ import { withAuth } from "@/lib/withAuth";
 import { useChallenges, type Trophy } from "@/hooks/useChallenges";
 import { useToast } from "@/hooks/useToast";
 import { useTheme } from "@/hooks/useTheme";
+import { Skeleton } from "@/components/Loaders";
 
 function Page() {
   const qc = useQueryClient();
@@ -70,7 +71,7 @@ function Page() {
         </header>
 
         {isLoading || !data ? (
-          <div className="mt-10 text-[13px] text-white/40">Loading…</div>
+          <TrophiesSkeleton />
         ) : (
           <>
             {/* Summary */}
@@ -147,6 +148,42 @@ function Page() {
             </section>
           </>
         )}
+      </div>
+    </div>
+  );
+}
+
+// Loading placeholder mirroring the page: summary row, trophy grid, nameplate.
+function TrophiesSkeleton() {
+  return (
+    <div className="mt-8">
+      <div className="flex items-center gap-3">
+        <Skeleton className="w-9 h-9 rounded-lg shrink-0" />
+        <div className="flex-1 min-w-0 flex flex-col gap-2">
+          <Skeleton className="h-3.5 w-40" delay={0.04} />
+          <Skeleton className="h-1 w-full max-w-md rounded-full" delay={0.08} />
+        </div>
+      </div>
+      <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <Skeleton
+            key={i}
+            className="h-[150px] rounded-2xl"
+            delay={0.12 + i * 0.03}
+          />
+        ))}
+      </div>
+      <div className="mt-12 flex flex-col gap-3">
+        <Skeleton className="h-3.5 w-28" delay={0.3} />
+        <div className="flex flex-wrap gap-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton
+              key={i}
+              className="h-7 w-24 rounded-full"
+              delay={0.34 + i * 0.03}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
 import { withAuth } from "@/lib/withAuth";
+import { Skeleton } from "@/components/Loaders";
 import { useIsPro } from "@/hooks/useIsPro";
 import { useStrategies, type StrategyDoc } from "@/hooks/useStrategies";
 import { SchematicPreview } from "@/components/SchematicEditor";
@@ -185,9 +186,11 @@ function Column({
         </button>
       </div>
       <div className="flex flex-col gap-2.5">
-        {loading && items.length === 0 && (
-          <div className="text-[12.5px] text-white/40 px-1">Loading…</div>
-        )}
+        {loading &&
+          items.length === 0 &&
+          Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-[64px] rounded-xl" delay={i * 0.05} />
+          ))}
         {!loading && items.length === 0 && (
           <div className="text-[12.5px] text-white/40 px-1 italic">
             No {direction} strategies yet.

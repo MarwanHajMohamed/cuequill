@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import React, { useEffect, useMemo, useState } from "react";
+import { Skeleton } from "@/components/Loaders";
 import { useStocks, useSaveStocks, type StockRow } from "@/hooks/useStocks";
 import { useToast } from "@/hooks/useToast";
 
@@ -230,8 +231,10 @@ export default function Page() {
             </table>
 
             {isLoading && rows.length === 0 && (
-              <div className="py-10 text-center text-[13px] text-white/40">
-                Loading…
+              <div className="flex flex-col gap-2 py-3">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <Skeleton key={i} className="h-11 w-full" delay={i * 0.04} />
+                ))}
               </div>
             )}
             {!isLoading && rows.length === 0 && (

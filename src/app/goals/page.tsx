@@ -1,6 +1,7 @@
 "use client";
 
 import { withAuth } from "@/lib/withAuth";
+import { Skeleton } from "@/components/Loaders";
 import ProGate from "@/components/ProGate";
 import { motion } from "framer-motion";
 import { useState } from "react";
@@ -401,8 +402,14 @@ function Page() {
         )}
 
         {isLoading ? (
-          <div className="mt-10 text-center text-[13px] text-white/40">
-            Loading…
+          <div className="mt-8 flex flex-col gap-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton
+                key={i}
+                className="h-[92px] rounded-2xl"
+                delay={i * 0.05}
+              />
+            ))}
           </div>
         ) : goals.length === 0 && !adding ? (
           <div className="mt-10 rounded-2xl border border-white/10 bg-white/[0.03] py-12 text-center">
