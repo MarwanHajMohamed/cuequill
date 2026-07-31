@@ -252,11 +252,14 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
   // one (and fade) to symbolise them merging, just before the merge commits.
   const [mergeOffsets, setMergeOffsets] = useState<Record<string, number>>({});
   const [topSelectedId, setTopSelectedId] = useState<string | null>(null);
-  // A one-shot particle burst fired at the merge point once rows collapse.
-  // `key` re-mounts the burst component so repeated merges re-trigger it.
+  // A one-shot particle burst fired around the merged row once rows collapse.
+  // Carries the row's box so sparks spawn across its width; `key` re-mounts
+  // the burst component so repeated merges re-trigger it.
   const [particleBurst, setParticleBurst] = useState<{
     x: number;
     y: number;
+    width: number;
+    height: number;
     key: number;
   } | null>(null);
   // Auto-dismiss the undo pill after ~20s so it doesn't linger
@@ -302,89 +305,105 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
     if (merging) return;
     const ids = Array.from(selectedIds);
     if (ids.length < 2) return;
+
+    const key = ["trades", userId, simulated] as const;
+    const snapshot = queryClient.getQueryData<Trade[]>(key);
+    const selectedTrades = (snapshot ?? []).filter((t) =>
+      ids.includes(t._id ?? ""),
+    );
+    if (selectedTrades.length < 2) return;
+
     setMerging(true);
 
-    try {
-      // Commit the merge on the server FIRST — the slide-up should only play
-      // once the trades have actually merged, never optimistically.
-      const res = await fetch("/api/trades/merge", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast(`Merge failed: ${data.error ?? "Unknown error"}`);
-        return;
-      }
-
-      // Merge succeeded and the original rows are still on screen (we haven't
-      // refetched yet). Measure each selected row and record how far it must
-      // travel up to land on the topmost selected row, plus the burst origin.
-      const wrap = tableWrapRef.current;
-      const offsets: Record<string, number> = {};
-      let topId: string | null = null;
-      let burst: { x: number; y: number } | null = null;
-      if (wrap) {
-        const tops: Record<string, number> = {};
-        let minTop = Infinity;
-        for (const id of ids) {
-          const el = wrap.querySelector<HTMLElement>(`[data-trade-id="${id}"]`);
-          if (!el) continue;
-          const t = el.getBoundingClientRect().top;
-          tops[id] = t;
-          if (t < minTop) {
-            minTop = t;
-            topId = id;
-          }
-        }
-        for (const id of ids) {
-          if (tops[id] != null) offsets[id] = minTop - tops[id];
-        }
-        if (topId) {
-          const topEl = wrap.querySelector<HTMLElement>(
-            `[data-trade-id="${topId}"]`,
-          );
-          if (topEl) {
-            const wr = wrap.getBoundingClientRect();
-            const tr = topEl.getBoundingClientRect();
-            burst = {
-              x: tr.left - wr.left + wrap.scrollLeft + tr.width / 2,
-              y: tr.top - wr.top + wrap.scrollTop + tr.height / 2,
-            };
-          }
+    // Measure each selected row and record how far it must travel up to land
+    // on the topmost selected row, plus the burst box (the top row's rect).
+    const wrap = tableWrapRef.current;
+    const offsets: Record<string, number> = {};
+    let topId: string | null = null;
+    let burst: { x: number; y: number; width: number; height: number } | null =
+      null;
+    if (wrap) {
+      const tops: Record<string, number> = {};
+      let minTop = Infinity;
+      for (const id of ids) {
+        const el = wrap.querySelector<HTMLElement>(`[data-trade-id="${id}"]`);
+        if (!el) continue;
+        const t = el.getBoundingClientRect().top;
+        tops[id] = t;
+        if (t < minTop) {
+          minTop = t;
+          topId = id;
         }
       }
-
-      // Play the slide-up: lower rows collapse into the top row and fade.
-      setMergeOffsets(offsets);
-      setTopSelectedId(topId);
-      await new Promise((r) => setTimeout(r, MERGE_ANIM_MS));
-
-      // Burst particles at the merge point, then swap in the merged row. We
-      // refetch BEFORE clearing the selection/slide state so the collapsed
-      // rows are replaced by the merged row in one step — they never flash
-      // back to their original positions.
-      if (burst) setParticleBurst({ ...burst, key: Date.now() });
-      const mergedId: string | undefined = data?.trade?._id;
-      const originals: unknown[] = Array.isArray(data?.originals)
-        ? data.originals
-        : [];
-      if (mergedId && originals.length >= 2) {
-        setLastMerge({ mergedId, originals, count: ids.length });
+      for (const id of ids) {
+        if (tops[id] != null) offsets[id] = minTop - tops[id];
       }
-      await queryClient.invalidateQueries({ queryKey: ["trades", userId] });
-      toast(`Merged ${ids.length} trades into one.`);
-      exitSelectMode();
-    } catch (err) {
-      toast(
-        `Merge failed: ${err instanceof Error ? err.message : "Unknown error"}`,
-      );
-    } finally {
-      setMerging(false);
-      setMergeOffsets({});
-      setTopSelectedId(null);
+      if (topId) {
+        const topEl = wrap.querySelector<HTMLElement>(
+          `[data-trade-id="${topId}"]`,
+        );
+        if (topEl) {
+          const wr = wrap.getBoundingClientRect();
+          const tr = topEl.getBoundingClientRect();
+          burst = {
+            x: tr.left - wr.left + wrap.scrollLeft,
+            y: tr.top - wr.top + wrap.scrollTop,
+            width: tr.width,
+            height: tr.height,
+          };
+        }
+      }
     }
+
+    // Play the slide-up: lower rows collapse into the top row and fade.
+    setMergeOffsets(offsets);
+    setTopSelectedId(topId);
+    await new Promise((r) => setTimeout(r, MERGE_ANIM_MS));
+
+    // Burst particles around the merged row, then swap the cache CLIENT-SIDE:
+    // remove the originals and drop in a locally-computed merged row. No
+    // waiting on the network — the server merge runs in the background below.
+    if (burst) setParticleBurst({ ...burst, key: Date.now() });
+    const optimistic = computeMergedTrade(selectedTrades);
+    queryClient.setQueryData<Trade[]>(key, (prev) => {
+      const rest = (prev ?? []).filter((t) => !ids.includes(t._id ?? ""));
+      return [optimistic, ...rest];
+    });
+    exitSelectMode();
+    setMerging(false);
+    setMergeOffsets({});
+    setTopSelectedId(null);
+    toast(`Merged ${ids.length} trades into one.`);
+
+    // Background: commit on the server, then reconcile with canonical data.
+    // If it fails, roll the cache back to the pre-merge snapshot.
+    void (async () => {
+      try {
+        const res = await fetch("/api/trades/merge", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ids }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error ?? "Unknown error");
+        const mergedId: string | undefined = data?.trade?._id;
+        const originals: unknown[] = Array.isArray(data?.originals)
+          ? data.originals
+          : [];
+        if (mergedId && originals.length >= 2) {
+          setLastMerge({ mergedId, originals, count: ids.length });
+        }
+        // Replace the optimistic temp row with the real merged doc.
+        await queryClient.invalidateQueries({ queryKey: ["trades", userId] });
+      } catch (err) {
+        // Put the original rows back exactly as they were.
+        if (snapshot) queryClient.setQueryData(key, snapshot);
+        else queryClient.invalidateQueries({ queryKey: ["trades", userId] });
+        toast(
+          `Merge failed: ${err instanceof Error ? err.message : "Unknown error"}`,
+        );
+      }
+    })();
   };
   const exitSelectMode = () => {
     setSelectMode(false);
@@ -945,6 +964,8 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                   key={particleBurst.key}
                   x={particleBurst.x}
                   y={particleBurst.y}
+                  width={particleBurst.width}
+                  height={particleBurst.height}
                   onDone={() => setParticleBurst(null)}
                 />
               )}
@@ -1531,42 +1552,52 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
   );
 }
 
-// A one-shot burst of accent-coloured sparks fired at the point where merged
-// rows collapse together. Positioned absolutely inside the table wrap; the
-// parent re-mounts it (via key) for each merge and clears it when `onDone`
-// fires after the animation completes.
+// A one-shot burst of accent-coloured sparks that spawn ALONG the merged
+// row's width (not from a single centre point) and fly outward. Positioned
+// absolutely over the row inside the table wrap; the parent re-mounts it (via
+// key) for each merge and clears it when `onDone` fires.
 function MergeParticles({
   x,
   y,
+  width,
+  height,
   onDone,
 }: {
   x: number;
   y: number;
+  width: number;
+  height: number;
   onDone: () => void;
 }) {
   const parts = useMemo(() => {
-    const N = 16;
-    return Array.from({ length: N }).map((_, i) => {
-      const angle = (i / N) * Math.PI * 2 + Math.random() * 0.5;
-      const dist = 26 + Math.random() * 40;
+    const N = 24;
+    return Array.from({ length: N }).map(() => {
+      // Spread the origin across the whole row so the burst hugs the row
+      // rather than erupting from its middle.
+      const startX = Math.random() * width;
+      const startY = height / 2 + (Math.random() - 0.5) * height * 0.7;
+      const angle = Math.random() * Math.PI * 2;
+      const dist = 16 + Math.random() * 34;
       return {
+        startX,
+        startY,
         dx: Math.cos(angle) * dist,
         dy: Math.sin(angle) * dist,
-        size: 3 + Math.random() * 3,
-        duration: 0.5 + Math.random() * 0.35,
+        size: 2.5 + Math.random() * 3,
+        duration: 0.5 + Math.random() * 0.4,
       };
     });
-  }, []);
+  }, [width, height]);
 
   useEffect(() => {
-    const t = setTimeout(onDone, 950);
+    const t = setTimeout(onDone, 1000);
     return () => clearTimeout(t);
   }, [onDone]);
 
   return (
     <div
       className="pointer-events-none absolute z-20"
-      style={{ left: x, top: y }}
+      style={{ left: x, top: y, width, height }}
       aria-hidden
     >
       {parts.map((p, i) => (
@@ -1574,6 +1605,8 @@ function MergeParticles({
           key={i}
           className="absolute rounded-full"
           style={{
+            left: p.startX,
+            top: p.startY,
             width: p.size,
             height: p.size,
             marginLeft: -p.size / 2,
@@ -1588,6 +1621,86 @@ function MergeParticles({
       ))}
     </div>
   );
+}
+
+// Client-side mirror of the server merge (src/app/api/trades/merge/route.ts):
+// qty summed, entry/exit prices weighted-avg'd by qty, fees/P/L summed,
+// earliest entry / latest exit preserved. Produces an optimistic row (with a
+// temporary id) shown instantly; the server's canonical row replaces it once
+// the background merge resolves.
+function computeMergedTrade(trades: Trade[]): Trade {
+  const round2 = (n: number) => Math.round(n * 100) / 100;
+  const round4 = (n: number) => Math.round(n * 10000) / 10000;
+  const wavg = (pick: (t: Trade) => number | null | undefined) => {
+    let num = 0;
+    let den = 0;
+    for (const t of trades) {
+      const v = pick(t);
+      if (v == null || Number.isNaN(v)) continue;
+      const q = t.qty || 0;
+      num += Number(v) * q;
+      den += q;
+    }
+    return den > 0 ? num / den : 0;
+  };
+  const byEntry = [...trades].sort(
+    (a, b) =>
+      new Date(a.dateBought).getTime() - new Date(b.dateBought).getTime(),
+  );
+  const firstWith = <T,>(pick: (t: Trade) => T | undefined | null) => {
+    for (const t of byEntry) {
+      const v = pick(t);
+      if (v != null && v !== "") return v;
+    }
+    return undefined;
+  };
+
+  const first = trades[0];
+  const allClosed = trades.every(
+    (t) => t.status === "WIN" || t.status === "LOSS",
+  );
+  const dateBought = new Date(
+    Math.min(...trades.map((t) => new Date(t.dateBought).getTime())),
+  ).toISOString();
+
+  const base: Trade = {
+    _id: `optimistic-${Date.now()}`,
+    symbol: first.symbol,
+    option: first.option,
+    strike: first.strike,
+    expiryDate: first.expiryDate,
+    dateBought,
+    dateClosed: "",
+    contractPrice: round4(wavg((t) => t.contractPrice)),
+    qty: trades.reduce((s, t) => s + (t.qty || 0), 0),
+    fees: round2(trades.reduce((s, t) => s + (t.fees || 0), 0)),
+    simulated: first.simulated,
+    favourite: trades.some((t) => !!t.favourite),
+    strategy: firstWith((t) => t.strategy) ?? "Other",
+    notes: firstWith((t) => t.notes) ?? "",
+    tags: Array.from(
+      new Set(trades.flatMap((t) => (Array.isArray(t.tags) ? t.tags : []))),
+    ),
+    status: "OPEN",
+  };
+
+  if (allClosed) {
+    const profitLoss = round2(
+      trades.reduce((s, t) => s + (t.profitLoss || 0), 0),
+    );
+    base.closingContractPrice = round4(wavg((t) => t.closingContractPrice));
+    base.profitLoss = profitLoss;
+    base.dateClosed = new Date(
+      Math.max(
+        ...trades.map((t) =>
+          new Date(t.dateClosed || t.dateBought).getTime(),
+        ),
+      ),
+    ).toISOString();
+    base.status = profitLoss >= 0 ? "WIN" : "LOSS";
+  }
+
+  return base;
 }
 
 export default withAuth(Page);
