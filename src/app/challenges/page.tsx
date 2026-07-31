@@ -401,7 +401,7 @@ function StreakChallengeSection({
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-40px" }}
           transition={{ duration: 0.35, ease: "easeOut" }}
-          className="relative flex flex-col gap-4 p-5"
+          className="glass-card flex flex-col gap-4 p-5"
         >
           <div className="relative flex flex-col gap-2">
             <div className="flex items-center gap-2.5">
@@ -512,7 +512,7 @@ function ChallengeCard({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
       transition={{ duration: 0.35, ease: "easeOut", delay: index * 0.04 }}
-      className={`relative flex flex-col gap-4 p-5 ${locked ? "opacity-60" : ""}`}
+      className={`glass-card flex flex-col gap-4 p-5 ${locked ? "opacity-60" : ""}`}
     >
       <div className="relative flex flex-col gap-2">
         <div className="flex items-center gap-2.5">

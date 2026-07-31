@@ -351,18 +351,11 @@
   background: #f4f6f8;
 }
 
-/* Challenge grid: borderless cells separated by inset hairlines instead of
-   per-card boxes. Vertical rules sit on each cell's LEFT edge and are hidden
-   on the first column; horizontal rules sit on the TOP edge and are hidden on
-   the first row. Anchoring to the leading edge (rather than trailing) means a
-   rule always has a neighbour on the other side, so partial last rows never
-   leave a dangling line. Rules are inset from the cell edges so they read
-   shorter than the cell. Colour follows the foreground so it works in both
-   themes. */
+/* Challenge grid: responsive columns of glass cards with a gutter between. */
 .chal-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 0;
+  gap: 1rem;
 }
 @media (min-width: 640px) {
   .chal-grid {
@@ -374,59 +367,106 @@
     grid-template-columns: 1fr 1fr 1fr;
   }
 }
-.chal-grid > * {
+
+/* ── Liquid-glass card ──────────────────────────────────────────────────
+   A frosted, translucent panel that refracts the accent-tinted background
+   behind it. Three layers stacked:
+   - the element itself: a faint translucent fill + backdrop blur/saturate
+     (the "frost"), a top specular inset highlight, and a soft drop shadow;
+   - ::before — a 1px gradient border RING (masked so only the edge shows)
+     that runs bright→clear→cool-glint from top-left to bottom-right, reading
+     as light bending around the rim (the refraction);
+   - ::after — a broad diagonal glare across the surface, like the sheen on
+     curved glass.
+   Colours are literal (not the white token that the light theme flips) with a
+   dedicated light-theme variant below. */
+.glass-card {
   position: relative;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.045);
+  backdrop-filter: blur(14px) saturate(1.5);
+  -webkit-backdrop-filter: blur(14px) saturate(1.5);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 6px 26px -12px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.16);
+  overflow: hidden;
+  isolation: isolate;
 }
-.chal-grid > *::after {
+.glass-card::before {
   content: "";
   position: absolute;
-  left: 0;
-  top: 24px;
-  bottom: 24px;
-  width: 1px;
-  background: rgb(var(--fg-rgb) / 0.14);
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.55) 0%,
+    rgba(255, 255, 255, 0.06) 28%,
+    transparent 52%,
+    rgba(255, 255, 255, 0.04) 74%,
+    rgba(170, 214, 255, 0.32) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
   pointer-events: none;
+  z-index: 1;
 }
-.chal-grid > *::before {
+.glass-card::after {
   content: "";
   position: absolute;
-  top: 0;
-  left: 24px;
-  right: 24px;
-  height: 1px;
-  background: rgb(var(--fg-rgb) / 0.14);
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.02) 22%,
+    transparent 40%
+  );
   pointer-events: none;
+  z-index: 0;
 }
-/* Hide the vertical rule on the first column (varies with breakpoint). */
-@media (max-width: 639.98px) {
-  .chal-grid > *::after {
-    display: none;
-  }
+/* The card's own content should sit above the sheen/ring layers. */
+.glass-card > * {
+  position: relative;
+  z-index: 2;
 }
-@media (min-width: 640px) and (max-width: 1023.98px) {
-  .chal-grid > *:nth-child(2n + 1)::after {
-    display: none;
-  }
+:root.light .glass-card {
+  background: rgba(255, 255, 255, 0.55);
+  border-color: rgba(255, 255, 255, 0.7);
+  box-shadow:
+    0 8px 24px -14px rgba(2, 6, 23, 0.22),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.9);
 }
-@media (min-width: 1024px) {
-  .chal-grid > *:nth-child(3n + 1)::after {
-    display: none;
-  }
+:root.light .glass-card::before {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(255, 255, 255, 0.25) 28%,
+    transparent 52%,
+    rgba(120, 160, 220, 0.18) 74%,
+    rgba(120, 160, 220, 0.3) 100%
+  );
 }
-/* Hide the horizontal rule on the first row (always full, so this is exact). */
-@media (max-width: 639.98px) {
-  .chal-grid > *:first-child::before {
-    display: none;
-  }
+:root.light .glass-card::after {
+  background: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0.5) 0%,
+    rgba(255, 255, 255, 0.12) 22%,
+    transparent 40%
+  );
 }
-@media (min-width: 640px) and (max-width: 1023.98px) {
-  .chal-grid > *:nth-child(-n + 2)::before {
-    display: none;
-  }
-}
-@media (min-width: 1024px) {
-  .chal-grid > *:nth-child(-n + 3)::before {
-    display: none;
+@media (prefers-reduced-motion: no-preference) {
+  .glass-card {
+    transition:
+      box-shadow 0.25s ease,
+      border-color 0.25s ease;
   }
 }
 
