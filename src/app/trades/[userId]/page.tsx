@@ -386,15 +386,25 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.error ?? "Unknown error");
-        const mergedId: string | undefined = data?.trade?._id;
+        const realRow = data?.trade as Trade | undefined;
+        const mergedId: string | undefined = realRow?._id;
         const originals: unknown[] = Array.isArray(data?.originals)
           ? data.originals
           : [];
         if (mergedId && originals.length >= 2) {
           setLastMerge({ mergedId, originals, count: ids.length });
         }
-        // Replace the optimistic temp row with the real merged doc.
-        await queryClient.invalidateQueries({ queryKey: ["trades", userId] });
+        // Swap the optimistic temp row for the real merged doc IN PLACE, so
+        // the row keeps its position instead of jumping when a refetch would
+        // reorder it. No invalidate — the optimistic row already mirrors the
+        // server's math, so only the id/timestamps change.
+        if (realRow?._id) {
+          queryClient.setQueryData<Trade[]>(key, (prev) =>
+            (prev ?? []).map((t) =>
+              t._id === optimistic._id ? realRow : t,
+            ),
+          );
+        }
       } catch (err) {
         // Put the original rows back exactly as they were.
         if (snapshot) queryClient.setQueryData(key, snapshot);
