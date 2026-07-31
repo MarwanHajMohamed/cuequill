@@ -11,6 +11,7 @@ import React, {
 } from "react";
 import { signOut, useSession } from "next-auth/react";
 import { useProfile } from "@/hooks/useProfile";
+import { useChallenges } from "@/hooks/useChallenges";
 import { useScrollLock } from "@/hooks/useScrollLock";
 import { clearAccent } from "@/hooks/useAccent";
 import { avatarGradient } from "@/lib/avatarColors";
@@ -79,6 +80,33 @@ const CuequillLogo = ({ className = "" }: { className?: string }) => (
   </svg>
 );
 
+// Small accent notification badge (e.g. unclaimed reward count). `corner`
+// absolutely pins it to the top-right of a relatively-positioned icon; the
+// default flows inline (used at the end of an expanded nav row). Uses literal
+// dark ink so it stays readable on the accent fill in both themes.
+function NavCountBadge({
+  count,
+  corner = false,
+}: {
+  count: number;
+  corner?: boolean;
+}) {
+  if (count <= 0) return null;
+  const label = count > 9 ? "9+" : String(count);
+  return (
+    <span
+      aria-label={`${count} unclaimed`}
+      className={
+        corner
+          ? "absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-teal-500 text-[9px] font-bold text-[#04211d] flex items-center justify-center leading-none tabular-nums ring-2 ring-[var(--background)]"
+          : "ml-auto min-w-[18px] h-[18px] px-1.5 rounded-full bg-teal-500 text-[10px] font-bold text-[#04211d] inline-flex items-center justify-center leading-none tabular-nums"
+      }
+    >
+      {label}
+    </span>
+  );
+}
+
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname() ?? "";
@@ -102,6 +130,11 @@ export default function Navbar() {
   const { data: profile } = useProfile();
   const avatarGrad = avatarGradient(profile?.avatarColor);
   const avatarRing = avatarFrameRing(profile?.avatarFrame);
+  // Unclaimed challenge rewards — surfaced as a badge on the Challenges nav
+  // item (and, on mobile where Challenges lives inside "More", on the More
+  // tab too) so it's visible from anywhere in the app.
+  const { data: challengeData } = useChallenges();
+  const unclaimedRewards = challengeData?.claimable ?? 0;
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   // Persistent pill: one element whose position/width is animated via
@@ -707,6 +740,8 @@ export default function Navbar() {
                 )}
                 {section.map((item) => {
                   const active = isActive(item.slug);
+                  const badge =
+                    item.slug === "challenges" ? unclaimedRewards : 0;
                   return (
                     <Link
                       key={item.slug}
@@ -725,10 +760,16 @@ export default function Navbar() {
                           : "text-white/60 hover:bg-white/5 hover:text-white"
                       }`}
                     >
-                      <i
-                        className={`${item.icon} w-4 text-center text-[13px]`}
-                      />
+                      <span className="relative flex items-center justify-center">
+                        <i
+                          className={`${item.icon} w-4 text-center text-[13px]`}
+                        />
+                        {collapsed && (
+                          <NavCountBadge count={badge} corner />
+                        )}
+                      </span>
                       {!collapsed && <span>{item.label}</span>}
+                      {!collapsed && <NavCountBadge count={badge} />}
                     </Link>
                   );
                 })}
@@ -1011,13 +1052,16 @@ export default function Navbar() {
             onClick={() => setOpenMore((v) => !v)}
             className="relative flex flex-col items-center justify-center flex-1 py-2 cursor-pointer"
           >
-            <i
-              className={`relative fa-solid fa-ellipsis text-[15px] transition-colors ${
-                activeBottomKey === "__more__"
-                  ? "text-teal-300"
-                  : "text-white/55"
-              }`}
-            />
+            <span className="relative inline-flex items-center justify-center">
+              <i
+                className={`relative fa-solid fa-ellipsis text-[15px] transition-colors ${
+                  activeBottomKey === "__more__"
+                    ? "text-teal-300"
+                    : "text-white/55"
+                }`}
+              />
+              <NavCountBadge count={unclaimedRewards} corner />
+            </span>
             <span
               className={`relative text-[10px] mt-0.5 transition-colors ${
                 activeBottomKey === "__more__"
@@ -1084,6 +1128,8 @@ export default function Navbar() {
             <div className="px-3 pb-3 grid grid-cols-1 gap-1">
               {moreItems.map((item) => {
                 const active = isActive(item.slug);
+                const badge =
+                  item.slug === "challenges" ? unclaimedRewards : 0;
                 return (
                   <Link
                     key={item.slug}
@@ -1105,6 +1151,7 @@ export default function Navbar() {
                     <span className="text-[14px] font-medium">
                       {item.label}
                     </span>
+                    <NavCountBadge count={badge} />
                   </Link>
                 );
               })}
