@@ -2484,27 +2484,26 @@ export default function Statistics({
                       </div>
                     ) : (
                       <>
-                        {/* Hero card - net P/L + headline metrics */}
-                        <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-5 md:p-6">
-                          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                            <div className="flex flex-col gap-1 min-w-0">
-                              <div className="text-[10px] md:text-[11px] tracking-[0.1em] text-white/45 font-medium flex items-center gap-1.5">
-                                Net P/L
-                                <InfoTooltip text="Total realized profit/loss for trades closed this month, after fees." />
-                              </div>
+                        {/* Net P/L — compact summary bar */}
+                        <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md px-4 py-3 flex items-center justify-between gap-4">
+                          <div className="min-w-0">
+                            <div className="text-[10px] md:text-[11px] tracking-[0.1em] text-white/45 font-medium flex items-center gap-1.5">
+                              Net P/L
+                              <InfoTooltip text="Total realized profit/loss for trades closed this month, after fees." />
+                            </div>
+                            <div className="mt-0.5 flex items-baseline gap-x-2.5 gap-y-0.5 flex-wrap">
                               <CountUpMoney
                                 key={`${year}-${date.monthIndex}`}
                                 value={monthSummary.netPL}
-                                className={`text-3xl md:text-5xl font-semibold tracking-tight tabular-nums ${
+                                className={`text-xl md:text-2xl font-semibold tracking-tight tabular-nums ${
                                   monthSummary.netPL >= 0
                                     ? "text-green-400"
                                     : "text-red-400"
                                 }`}
                               />
-                              {/* Month-over-month trend */}
                               {prevMonthClosed.length > 0 && (
-                                <div
-                                  className={`mt-0.5 inline-flex items-center gap-1 text-[11px] font-medium w-fit ${
+                                <span
+                                  className={`text-[11px] font-medium ${
                                     momDelta >= 0
                                       ? "text-green-400/90"
                                       : "text-red-400/90"
@@ -2512,48 +2511,47 @@ export default function Statistics({
                                 >
                                   {fmtMoneySignedCompact(momDelta)}
                                   <span className="text-white/40">
+                                    {" "}
                                     vs last month
                                   </span>
-                                </div>
+                                </span>
                               )}
-                              <div className="text-[12px] text-white/50 mt-0.5">
-                                {monthSummary.n} trade
+                              <span className="text-[11.5px] text-white/45">
+                                · {monthSummary.n} trade
                                 {monthSummary.n === 1 ? "" : "s"} ·{" "}
-                                {monthSummary.winRate.toFixed(0)}% win rate
-                              </div>
+                                {monthSummary.winRate.toFixed(0)}% win
+                              </span>
                             </div>
-                            {tradedDays > 0 && (
-                              <div className="flex items-center gap-2.5 shrink-0 border-t border-white/[0.06] pt-3 md:border-t-0 md:pt-0 md:pl-4">
-                                <MiniDonut
-                                  greenPct={
-                                    tradedDays > 0
-                                      ? (greenDays / tradedDays) * 100
-                                      : 0
-                                  }
-                                  onSegHover={(seg, e) =>
-                                    showDonutSeg(
-                                      e,
-                                      seg,
-                                      greenDays,
-                                      tradedDays - greenDays,
-                                    )
-                                  }
-                                  onSegLeave={hideTip}
-                                  size={56}
-                                  center={
-                                    <div className="flex flex-col items-center leading-none">
-                                      <span className="text-[15px] font-semibold tabular-nums">
-                                        {tradedDays}
-                                      </span>
-                                      <span className="text-[7px] tracking-[0.08em] uppercase text-white/40 mt-0.5">
-                                        days
-                                      </span>
-                                    </div>
-                                  }
-                                />
-                              </div>
-                            )}
                           </div>
+                          {tradedDays > 0 && (
+                            <MiniDonut
+                              greenPct={
+                                tradedDays > 0
+                                  ? (greenDays / tradedDays) * 100
+                                  : 0
+                              }
+                              onSegHover={(seg, e) =>
+                                showDonutSeg(
+                                  e,
+                                  seg,
+                                  greenDays,
+                                  tradedDays - greenDays,
+                                )
+                              }
+                              onSegLeave={hideTip}
+                              size={48}
+                              center={
+                                <div className="flex flex-col items-center leading-none">
+                                  <span className="text-[13px] font-semibold tabular-nums">
+                                    {tradedDays}
+                                  </span>
+                                  <span className="text-[6px] tracking-[0.08em] uppercase text-white/40 mt-0.5">
+                                    days
+                                  </span>
+                                </div>
+                              }
+                            />
+                          )}
                         </div>
 
                         {/* Calendar heatmap (hugs its grid) + daily P/L strip
