@@ -2484,74 +2484,40 @@ export default function Statistics({
                       </div>
                     ) : (
                       <>
-                        {/* Net P/L — compact summary bar */}
-                        <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md px-4 py-3 flex items-center justify-between gap-4">
-                          <div className="min-w-0">
-                            <div className="text-[10px] md:text-[11px] tracking-[0.1em] text-white/45 font-medium flex items-center gap-1.5">
-                              Net P/L
-                              <InfoTooltip text="Total realized profit/loss for trades closed this month, after fees." />
-                            </div>
-                            <div className="mt-0.5 flex items-baseline gap-x-2.5 gap-y-0.5 flex-wrap">
-                              <CountUpMoney
-                                key={`${year}-${date.monthIndex}`}
-                                value={monthSummary.netPL}
-                                className={`text-xl md:text-2xl font-semibold tracking-tight tabular-nums ${
-                                  monthSummary.netPL >= 0
-                                    ? "text-green-400"
-                                    : "text-red-400"
-                                }`}
-                              />
-                              {prevMonthClosed.length > 0 && (
-                                <span
-                                  className={`text-[11px] font-medium ${
-                                    momDelta >= 0
-                                      ? "text-green-400/90"
-                                      : "text-red-400/90"
-                                  }`}
-                                >
-                                  {fmtMoneySignedCompact(momDelta)}
-                                  <span className="text-white/40">
-                                    {" "}
-                                    vs last month
-                                  </span>
-                                </span>
-                              )}
-                              <span className="text-[11.5px] text-white/45">
-                                · {monthSummary.n} trade
-                                {monthSummary.n === 1 ? "" : "s"} ·{" "}
-                                {monthSummary.winRate.toFixed(0)}% win
-                              </span>
-                            </div>
+                        {/* Net P/L — sits directly on the background. */}
+                        <div className="min-w-0 px-1">
+                          <div className="text-[10px] md:text-[11px] tracking-[0.1em] text-white/45 font-medium flex items-center gap-1.5">
+                            Net P/L
+                            <InfoTooltip text="Total realized profit/loss for trades closed this month, after fees." />
                           </div>
-                          {tradedDays > 0 && (
-                            <MiniDonut
-                              greenPct={
-                                tradedDays > 0
-                                  ? (greenDays / tradedDays) * 100
-                                  : 0
-                              }
-                              onSegHover={(seg, e) =>
-                                showDonutSeg(
-                                  e,
-                                  seg,
-                                  greenDays,
-                                  tradedDays - greenDays,
-                                )
-                              }
-                              onSegLeave={hideTip}
-                              size={48}
-                              center={
-                                <div className="flex flex-col items-center leading-none">
-                                  <span className="text-[13px] font-semibold tabular-nums">
-                                    {tradedDays}
-                                  </span>
-                                  <span className="text-[6px] tracking-[0.08em] uppercase text-white/40 mt-0.5">
-                                    days
-                                  </span>
-                                </div>
-                              }
+                          <div className="mt-0.5 flex items-baseline gap-x-2.5 gap-y-0.5 flex-wrap">
+                            <CountUpMoney
+                              key={`${year}-${date.monthIndex}`}
+                              value={monthSummary.netPL}
+                              className={`text-xl md:text-2xl font-semibold tracking-tight tabular-nums ${
+                                monthSummary.netPL >= 0
+                                  ? "text-green-400"
+                                  : "text-red-400"
+                              }`}
                             />
-                          )}
+                            {prevMonthClosed.length > 0 && (
+                              <span
+                                className={`text-[11px] font-medium ${
+                                  momDelta >= 0
+                                    ? "text-green-400/90"
+                                    : "text-red-400/90"
+                                }`}
+                              >
+                                {fmtMoneySignedCompact(momDelta)}
+                                <span className="text-white/40"> vs last month</span>
+                              </span>
+                            )}
+                            <span className="text-[11.5px] text-white/45">
+                              · {monthSummary.n} trade
+                              {monthSummary.n === 1 ? "" : "s"} ·{" "}
+                              {monthSummary.winRate.toFixed(0)}% win
+                            </span>
+                          </div>
                         </div>
 
                         {/* Calendar heatmap (hugs its grid) + daily P/L strip
@@ -2723,6 +2689,42 @@ export default function Statistics({
                                 <span>1</span>
                                 <span>{Math.ceil(daysInMonth / 2)}</span>
                                 <span>{daysInMonth}</span>
+                              </div>
+                            </div>
+
+                            {/* Days traded — donut in its own card. */}
+                            <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5 flex flex-col gap-3 md:w-fit md:shrink-0">
+                              <div className="text-[10px] md:text-[11px] tracking-[0.1em] text-white/45 font-medium">
+                                Days traded
+                              </div>
+                              <div className="flex-1 flex items-center justify-center">
+                                <MiniDonut
+                                  greenPct={
+                                    tradedDays > 0
+                                      ? (greenDays / tradedDays) * 100
+                                      : 0
+                                  }
+                                  onSegHover={(seg, e) =>
+                                    showDonutSeg(
+                                      e,
+                                      seg,
+                                      greenDays,
+                                      tradedDays - greenDays,
+                                    )
+                                  }
+                                  onSegLeave={hideTip}
+                                  size={72}
+                                  center={
+                                    <div className="flex flex-col items-center leading-none">
+                                      <span className="text-lg font-semibold tabular-nums">
+                                        {tradedDays}
+                                      </span>
+                                      <span className="text-[7px] tracking-[0.08em] uppercase text-white/40 mt-0.5">
+                                        days
+                                      </span>
+                                    </div>
+                                  }
+                                />
                               </div>
                             </div>
                           </div>
