@@ -2227,7 +2227,6 @@ export default function Statistics({
           const greenDays = Array.from(monthDayMap.values()).filter(
             (v) => v > 0,
           ).length;
-          const redDays = tradedDays - greenDays;
           const dayValues = Array.from(monthDayMap.values());
           const monthBestDay = dayValues.length ? Math.max(...dayValues) : 0;
           const monthWorstDay = dayValues.length ? Math.min(...dayValues) : 0;
@@ -2296,10 +2295,6 @@ export default function Statistics({
             0,
           );
           const momDelta = monthSummary.netPL - prevMonthNet;
-          const momPct =
-            prevMonthNet !== 0
-              ? (momDelta / Math.abs(prevMonthNet)) * 100
-              : null;
 
           const isCurrentMonth =
             date.monthIndex === new Date().getMonth() &&
@@ -2438,12 +2433,6 @@ export default function Statistics({
                                   }`}
                                 >
                                   {fmtMoneySignedCompact(momDelta)}
-                                  {momPct !== null && (
-                                    <span className="text-white/40">
-                                      ({momPct >= 0 ? "+" : ""}
-                                      {momPct.toFixed(0)}%)
-                                    </span>
-                                  )}
                                   <span className="text-white/40">
                                     vs last month
                                   </span>
@@ -2452,18 +2441,7 @@ export default function Statistics({
                               <div className="text-[12px] text-white/50 mt-0.5">
                                 {monthSummary.n} trade
                                 {monthSummary.n === 1 ? "" : "s"} ·{" "}
-                                {monthSummary.winRate.toFixed(0)}% win rate ·{" "}
-                                <span
-                                  className={
-                                    monthSummary.expectancy >= 0
-                                      ? "text-green-400/85"
-                                      : "text-red-400/85"
-                                  }
-                                >
-                                  {monthSummary.expectancy >= 0 ? "+" : "−"}$
-                                  {Math.abs(monthSummary.expectancy).toFixed(2)}
-                                  /trade
-                                </span>
+                                {monthSummary.winRate.toFixed(0)}% win rate
                               </div>
                             </div>
                             {tradedDays > 0 && (
@@ -2474,15 +2452,6 @@ export default function Statistics({
                                   </div>
                                   <div className="text-xl md:text-2xl font-semibold tabular-nums">
                                     {tradedDays}
-                                  </div>
-                                  <div className="text-[11px] text-white/50">
-                                    <span className="text-green-400/85">
-                                      {greenDays} green
-                                    </span>
-                                    {" · "}
-                                    <span className="text-red-400/85">
-                                      {redDays} red
-                                    </span>
                                   </div>
                                 </div>
                                 <MiniDonut
