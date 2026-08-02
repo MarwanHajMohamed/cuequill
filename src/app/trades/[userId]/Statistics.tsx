@@ -701,14 +701,13 @@ function MetricTile({
   value,
   sub,
   tone,
-  icon,
   info,
 }: {
   label: string;
   value: string;
   sub?: string;
   tone: "good" | "bad" | "neutral";
-  icon: string;
+  icon?: string; // accepted for call-site compatibility; no longer rendered
   info?: string;
 }) {
   const valueColor =
@@ -717,25 +716,12 @@ function MetricTile({
       : tone === "bad"
         ? "text-red-400"
         : "text-white";
-  const chip =
-    tone === "good"
-      ? "bg-green-500/10 text-green-300 border-green-500/25"
-      : tone === "bad"
-        ? "bg-red-500/10 text-red-300 border-red-500/25"
-        : "bg-white/[0.04] text-white/60 border-white/10";
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4 flex flex-col gap-2 min-w-0">
       <div className="flex items-center justify-between gap-1.5">
-        <div className="flex items-center gap-2 min-w-0">
-          <div
-            className={`shrink-0 w-7 h-7 rounded-lg border flex items-center justify-center ${chip}`}
-          >
-            <i className={`fa-solid ${icon} text-[11px]`} />
-          </div>
-          <span className="text-[10px] md:text-[11px] tracking-[0.08em] text-white/45 font-medium truncate">
-            {label}
-          </span>
-        </div>
+        <span className="text-[10px] md:text-[11px] tracking-[0.08em] text-white/45 font-medium truncate">
+          {label}
+        </span>
         {info && <InfoTooltip text={info} />}
       </div>
       <div className="flex flex-col gap-0.5 min-w-0">
@@ -1011,6 +997,18 @@ export default function Statistics({
   // Reorder (Customize) mode + saved section/tile order. CSS `order` on
   // each block does the actual repositioning, driven by these arrays.
   const [editing, setEditing] = useState(false);
+  // Custom hover tooltip shared by the monthly heatmap cells and the daily
+  // P/L bars — shows the day's net P/L. Follows the cursor; portalled to
+  // <body> so the cards' backdrop-blur doesn't trap the fixed positioning.
+  const [dayTip, setDayTip] = useState<{
+    x: number;
+    y: number;
+    label: string;
+    pl: number | null;
+  } | null>(null);
+  const showDayTip = (e: React.MouseEvent, label: string, pl: number | null) =>
+    setDayTip({ x: e.clientX, y: e.clientY, label, pl });
+  const hideDayTip = () => setDayTip(null);
   const [sectionOrderRaw, setSectionOrder] = useLocalStorage<string[]>(
     "cuequill:stats-section-order",
     DEFAULT_SECTION_ORDER,
@@ -2537,10 +2535,17 @@ export default function Statistics({
                                       <div key={`b${i}`} className="aspect-square" />
                                     );
                                   if (c.pl === null || c.pl === undefined) {
+                                    const label = `${currentMonth} ${c.day}`;
                                     return (
                                       <div
                                         key={c.day}
-                                        title={`${currentMonth} ${c.day}: no trades`}
+                                        onMouseEnter={(e) =>
+                                          showDayTip(e, label, null)
+                                        }
+                                        onMouseMove={(e) =>
+                                          showDayTip(e, label, null)
+                                        }
+                                        onMouseLeave={hideDayTip}
                                         className={`aspect-square rounded-md flex items-start justify-end p-1 text-[9px] leading-none ${
                                           c.isWeekend
                                             ? "bg-white/[0.02] text-white/20"
@@ -2558,16 +2563,22 @@ export default function Statistics({
                                   const op = 0.18 + intensity * 0.62;
                                   const rgb =
                                     c.pl >= 0 ? "34,197,94" : "239,68,68";
+                                  const cellPL = c.pl;
+                                  const label = `${currentMonth} ${c.day}`;
                                   return (
                                     <div
                                       key={c.day}
-                                      title={`${currentMonth} ${c.day}: ${
-                                        c.pl >= 0 ? "+" : "−"
-                                      }$${Math.abs(c.pl).toFixed(2)}`}
+                                      onMouseEnter={(e) =>
+                                        showDayTip(e, label, cellPL)
+                                      }
+                                      onMouseMove={(e) =>
+                                        showDayTip(e, label, cellPL)
+                                      }
+                                      onMouseLeave={hideDayTip}
                                       style={{
                                         backgroundColor: `rgba(${rgb},${op})`,
                                       }}
-                                      className="aspect-square rounded-md flex items-start justify-end p-1 text-[9px] leading-none text-white/80 font-medium"
+                                      className="aspect-square rounded-md flex items-start justify-end p-1 text-[9px] leading-none text-white/80 font-medium cursor-default"
                                     >
                                       {c.day}
                                     </div>
@@ -2598,29 +2609,45 @@ export default function Statistics({
                               </div>
                               <div className="flex-1 flex items-end gap-[2px] md:gap-[3px] min-h-[80px]">
                                 {dailyBars.map((b) => {
+                                  const label = `${currentMonth} ${b.day}`;
                                   if (b.pl === null) {
                                     return (
                                       <div
                                         key={b.day}
-                                        title={`${currentMonth} ${b.day}: no trades`}
-                                        className={`flex-1 self-center h-px ${
-                                          b.isWeekend
-                                            ? "bg-white/[0.04]"
-                                            : "bg-white/10"
-                                        }`}
-                                      />
+                                        onMouseEnter={(e) =>
+                                          showDayTip(e, label, null)
+                                        }
+                                        onMouseMove={(e) =>
+                                          showDayTip(e, label, null)
+                                        }
+                                        onMouseLeave={hideDayTip}
+                                        className="flex-1 flex items-center justify-center min-w-0 h-full"
+                                      >
+                                        <div
+                                          className={`w-full h-px ${
+                                            b.isWeekend
+                                              ? "bg-white/[0.04]"
+                                              : "bg-white/10"
+                                          }`}
+                                        />
+                                      </div>
                                     );
                                   }
                                   const heightPct =
                                     (Math.abs(b.pl) / maxAbsDayPL) * 100;
                                   const isProfit = b.pl >= 0;
+                                  const barPL = b.pl;
                                   return (
                                     <div
                                       key={b.day}
-                                      title={`${currentMonth} ${b.day}: ${
-                                        isProfit ? "+" : "−"
-                                      }$${Math.abs(b.pl).toFixed(2)}`}
-                                      className="flex-1 flex items-end justify-center min-w-0 h-full"
+                                      onMouseEnter={(e) =>
+                                        showDayTip(e, label, barPL)
+                                      }
+                                      onMouseMove={(e) =>
+                                        showDayTip(e, label, barPL)
+                                      }
+                                      onMouseLeave={hideDayTip}
+                                      className="flex-1 flex items-end justify-center min-w-0 h-full cursor-default"
                                     >
                                       <div
                                         style={{
@@ -2700,6 +2727,45 @@ export default function Statistics({
             </motion.div>
           );
         })()}
+
+      {/* Shared day tooltip for the heatmap + daily P/L strip. */}
+      {dayTip &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            style={{
+              position: "fixed",
+              left: Math.min(
+                dayTip.x + 14,
+                (typeof window !== "undefined" ? window.innerWidth : 9999) - 148,
+              ),
+              top: Math.min(
+                dayTip.y + 14,
+                (typeof window !== "undefined" ? window.innerHeight : 9999) - 60,
+              ),
+              pointerEvents: "none",
+            }}
+            className="z-[999] bg-[var(--surface)] border border-white/10 rounded-md px-2.5 py-1.5 shadow-md"
+          >
+            <div className="text-[10.5px] text-white/55 font-medium leading-tight">
+              {dayTip.label}
+            </div>
+            <div
+              className={`mt-0.5 text-[13px] font-semibold tabular-nums leading-tight ${
+                dayTip.pl === null
+                  ? "text-white/40"
+                  : dayTip.pl >= 0
+                    ? "text-green-400"
+                    : "text-red-400"
+              }`}
+            >
+              {dayTip.pl === null
+                ? "No trades"
+                : `${dayTip.pl >= 0 ? "+" : "−"}$${Math.abs(dayTip.pl).toFixed(2)}`}
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }
