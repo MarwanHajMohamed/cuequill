@@ -356,39 +356,67 @@ const MiniDonut = ({
   greenPct,
   size = 40,
   center,
+  onSegHover,
+  onSegLeave,
 }: {
   greenPct: number;
   size?: number;
   center?: React.ReactNode; // optional overlay in the ring's hole
+  // When provided, the green and red arcs are drawn as separate, individually
+  // hoverable segments (used for the days-traded donut's per-arc tooltip).
+  onSegHover?: (seg: "green" | "red", e: React.MouseEvent) => void;
+  onSegLeave?: () => void;
 }) => {
   const r = size / 2 - 4;
   const c = 2 * Math.PI * r;
   const safe = Math.max(0, Math.min(100, greenPct));
-  const dash = (safe / 100) * c;
+  const greenLen = (safe / 100) * c;
+  const redLen = c - greenLen;
+  const segProps = (seg: "green" | "red") =>
+    onSegHover
+      ? {
+          style: { pointerEvents: "stroke" as const, cursor: "default" },
+          onMouseEnter: (e: React.MouseEvent) => onSegHover(seg, e),
+          onMouseMove: (e: React.MouseEvent) => onSegHover(seg, e),
+          onMouseLeave: onSegLeave,
+        }
+      : {};
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
       <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          fill="none"
-          stroke="#dc2626"
-          strokeWidth="5"
-        />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          fill="none"
-          stroke="#16a34a"
-          strokeWidth="5"
-          strokeDasharray={`${dash} ${c}`}
-          strokeLinecap="butt"
-        />
+        {/* Red segment — the complement, drawn where the green arc ends. */}
+        {redLen > 0.01 && (
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            fill="none"
+            stroke="#dc2626"
+            strokeWidth="5"
+            strokeDasharray={`${redLen} ${c}`}
+            strokeDashoffset={-greenLen}
+            {...segProps("red")}
+          />
+        )}
+        {/* Green segment. */}
+        {greenLen > 0.01 && (
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            fill="none"
+            stroke="#16a34a"
+            strokeWidth="5"
+            strokeDasharray={`${greenLen} ${c}`}
+            {...segProps("green")}
+          />
+        )}
       </svg>
       {center != null && (
-        <div className="absolute inset-0 flex items-center justify-center">
+        <div
+          className="absolute inset-0 flex items-center justify-center"
+          style={{ pointerEvents: "none" }}
+        >
           {center}
         </div>
       )}
@@ -1032,23 +1060,32 @@ export default function Statistics({
   );
   const showDayTip = (e: React.MouseEvent, label: string, pl: number | null) =>
     setTip({ x: e.clientX, y: e.clientY, content: dayTipContent(label, pl) });
-  const showDonutTip = (e: React.MouseEvent, green: number, red: number) =>
+  const showDonutSeg = (
+    e: React.MouseEvent,
+    seg: "green" | "red",
+    green: number,
+    red: number,
+  ) => {
+    const n = seg === "green" ? green : red;
     setTip({
       x: e.clientX,
       y: e.clientY,
       content: (
         <>
           <div className="text-[10.5px] text-white/55 font-medium leading-tight">
-            Days traded
+            {seg === "green" ? "Green days" : "Red days"}
           </div>
-          <div className="mt-0.5 text-[13px] font-semibold tabular-nums leading-tight flex items-center gap-1.5">
-            <span className="text-green-400">{green} green</span>
-            <span className="text-white/30">·</span>
-            <span className="text-red-400">{red} red</span>
+          <div
+            className={`mt-0.5 text-[13px] font-semibold tabular-nums leading-tight ${
+              seg === "green" ? "text-green-400" : "text-red-400"
+            }`}
+          >
+            {n} {n === 1 ? "day" : "days"}
           </div>
         </>
       ),
     });
+  };
   const hideDayTip = hideTip;
   const [sectionOrderRaw, setSectionOrder] = useLocalStorage<string[]>(
     "cuequill:stats-section-order",
@@ -2486,30 +2523,22 @@ export default function Statistics({
                               </div>
                             </div>
                             {tradedDays > 0 && (
-                              <div
-                                className="flex items-center gap-2.5 shrink-0 border-t border-white/[0.06] pt-3 md:border-t-0 md:pt-0 md:pl-4 cursor-default"
-                                onMouseEnter={(e) =>
-                                  showDonutTip(
-                                    e,
-                                    greenDays,
-                                    tradedDays - greenDays,
-                                  )
-                                }
-                                onMouseMove={(e) =>
-                                  showDonutTip(
-                                    e,
-                                    greenDays,
-                                    tradedDays - greenDays,
-                                  )
-                                }
-                                onMouseLeave={hideTip}
-                              >
+                              <div className="flex items-center gap-2.5 shrink-0 border-t border-white/[0.06] pt-3 md:border-t-0 md:pt-0 md:pl-4">
                                 <MiniDonut
                                   greenPct={
                                     tradedDays > 0
                                       ? (greenDays / tradedDays) * 100
                                       : 0
                                   }
+                                  onSegHover={(seg, e) =>
+                                    showDonutSeg(
+                                      e,
+                                      seg,
+                                      greenDays,
+                                      tradedDays - greenDays,
+                                    )
+                                  }
+                                  onSegLeave={hideTip}
                                   size={56}
                                   center={
                                     <div className="flex flex-col items-center leading-none">
