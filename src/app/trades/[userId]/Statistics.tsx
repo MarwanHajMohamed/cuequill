@@ -2693,7 +2693,7 @@ export default function Statistics({
                             </div>
 
                             {/* Days traded — donut in its own card. */}
-                            <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5 flex flex-col gap-3 md:w-fit md:shrink-0">
+                            <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5 flex flex-col gap-3 md:w-52 md:shrink-0">
                               <div className="text-[10px] md:text-[11px] tracking-[0.1em] text-white/45 font-medium">
                                 Days traded
                               </div>
