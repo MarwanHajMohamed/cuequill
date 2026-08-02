@@ -355,40 +355,44 @@ const CustomizeMenu = ({
 const MiniDonut = ({
   greenPct,
   size = 40,
+  center,
 }: {
   greenPct: number;
   size?: number;
+  center?: React.ReactNode; // optional overlay in the ring's hole
 }) => {
   const r = size / 2 - 4;
   const c = 2 * Math.PI * r;
   const safe = Math.max(0, Math.min(100, greenPct));
   const dash = (safe / 100) * c;
   return (
-    <svg
-      width={size}
-      height={size}
-      style={{ transform: "rotate(-90deg)" }}
-      className="shrink-0"
-    >
-      <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={r}
-        fill="none"
-        stroke="#dc2626"
-        strokeWidth="5"
-      />
-      <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={r}
-        fill="none"
-        stroke="#16a34a"
-        strokeWidth="5"
-        strokeDasharray={`${dash} ${c}`}
-        strokeLinecap="butt"
-      />
-    </svg>
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke="#dc2626"
+          strokeWidth="5"
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke="#16a34a"
+          strokeWidth="5"
+          strokeDasharray={`${dash} ${c}`}
+          strokeLinecap="butt"
+        />
+      </svg>
+      {center != null && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          {center}
+        </div>
+      )}
+    </div>
   );
 };
 
@@ -2445,22 +2449,24 @@ export default function Statistics({
                               </div>
                             </div>
                             {tradedDays > 0 && (
-                              <div className="flex items-center justify-between md:justify-start gap-3 shrink-0 border-t border-white/[0.06] pt-3 md:border-t-0 md:pt-0 md:pl-4">
-                                <div className="flex flex-col items-start md:items-end">
-                                  <div className="text-[10px] tracking-[0.08em] text-white/40">
-                                    Days traded
-                                  </div>
-                                  <div className="text-xl md:text-2xl font-semibold tabular-nums">
-                                    {tradedDays}
-                                  </div>
-                                </div>
+                              <div className="flex items-center gap-2.5 shrink-0 border-t border-white/[0.06] pt-3 md:border-t-0 md:pt-0 md:pl-4">
                                 <MiniDonut
                                   greenPct={
                                     tradedDays > 0
                                       ? (greenDays / tradedDays) * 100
                                       : 0
                                   }
-                                  size={48}
+                                  size={56}
+                                  center={
+                                    <div className="flex flex-col items-center leading-none">
+                                      <span className="text-[15px] font-semibold tabular-nums">
+                                        {tradedDays}
+                                      </span>
+                                      <span className="text-[7px] tracking-[0.08em] uppercase text-white/40 mt-0.5">
+                                        days
+                                      </span>
+                                    </div>
+                                  }
                                 />
                               </div>
                             )}
