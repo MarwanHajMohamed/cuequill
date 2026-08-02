@@ -1001,18 +1001,55 @@ export default function Statistics({
   // Reorder (Customize) mode + saved section/tile order. CSS `order` on
   // each block does the actual repositioning, driven by these arrays.
   const [editing, setEditing] = useState(false);
-  // Custom hover tooltip shared by the monthly heatmap cells and the daily
-  // P/L bars — shows the day's net P/L. Follows the cursor; portalled to
-  // <body> so the cards' backdrop-blur doesn't trap the fixed positioning.
-  const [dayTip, setDayTip] = useState<{
+  // Custom hover tooltip shared by the monthly heatmap cells, the daily P/L
+  // bars, and the days-traded donut. Follows the cursor; portalled to <body>
+  // so the cards' backdrop-blur doesn't trap the fixed positioning.
+  const [tip, setTip] = useState<{
     x: number;
     y: number;
-    label: string;
-    pl: number | null;
+    content: React.ReactNode;
   } | null>(null);
+  const hideTip = () => setTip(null);
+  const dayTipContent = (label: string, pl: number | null) => (
+    <>
+      <div className="text-[10.5px] text-white/55 font-medium leading-tight">
+        {label}
+      </div>
+      <div
+        className={`mt-0.5 text-[13px] font-semibold tabular-nums leading-tight ${
+          pl === null
+            ? "text-white/40"
+            : pl >= 0
+              ? "text-green-400"
+              : "text-red-400"
+        }`}
+      >
+        {pl === null
+          ? "No trades"
+          : `${pl >= 0 ? "+" : "−"}$${Math.abs(pl).toFixed(2)}`}
+      </div>
+    </>
+  );
   const showDayTip = (e: React.MouseEvent, label: string, pl: number | null) =>
-    setDayTip({ x: e.clientX, y: e.clientY, label, pl });
-  const hideDayTip = () => setDayTip(null);
+    setTip({ x: e.clientX, y: e.clientY, content: dayTipContent(label, pl) });
+  const showDonutTip = (e: React.MouseEvent, green: number, red: number) =>
+    setTip({
+      x: e.clientX,
+      y: e.clientY,
+      content: (
+        <>
+          <div className="text-[10.5px] text-white/55 font-medium leading-tight">
+            Days traded
+          </div>
+          <div className="mt-0.5 text-[13px] font-semibold tabular-nums leading-tight flex items-center gap-1.5">
+            <span className="text-green-400">{green} green</span>
+            <span className="text-white/30">·</span>
+            <span className="text-red-400">{red} red</span>
+          </div>
+        </>
+      ),
+    });
+  const hideDayTip = hideTip;
   const [sectionOrderRaw, setSectionOrder] = useLocalStorage<string[]>(
     "cuequill:stats-section-order",
     DEFAULT_SECTION_ORDER,
@@ -2449,7 +2486,24 @@ export default function Statistics({
                               </div>
                             </div>
                             {tradedDays > 0 && (
-                              <div className="flex items-center gap-2.5 shrink-0 border-t border-white/[0.06] pt-3 md:border-t-0 md:pt-0 md:pl-4">
+                              <div
+                                className="flex items-center gap-2.5 shrink-0 border-t border-white/[0.06] pt-3 md:border-t-0 md:pt-0 md:pl-4 cursor-default"
+                                onMouseEnter={(e) =>
+                                  showDonutTip(
+                                    e,
+                                    greenDays,
+                                    tradedDays - greenDays,
+                                  )
+                                }
+                                onMouseMove={(e) =>
+                                  showDonutTip(
+                                    e,
+                                    greenDays,
+                                    tradedDays - greenDays,
+                                  )
+                                }
+                                onMouseLeave={hideTip}
+                              >
                                 <MiniDonut
                                   greenPct={
                                     tradedDays > 0
@@ -2703,41 +2757,26 @@ export default function Statistics({
           );
         })()}
 
-      {/* Shared day tooltip for the heatmap + daily P/L strip. */}
-      {dayTip &&
+      {/* Shared hover tooltip: heatmap cells, daily P/L bars, days donut. */}
+      {tip &&
         typeof document !== "undefined" &&
         createPortal(
           <div
             style={{
               position: "fixed",
               left: Math.min(
-                dayTip.x + 14,
-                (typeof window !== "undefined" ? window.innerWidth : 9999) - 148,
+                tip.x + 14,
+                (typeof window !== "undefined" ? window.innerWidth : 9999) - 160,
               ),
               top: Math.min(
-                dayTip.y + 14,
+                tip.y + 14,
                 (typeof window !== "undefined" ? window.innerHeight : 9999) - 60,
               ),
               pointerEvents: "none",
             }}
             className="z-[999] bg-[var(--surface)] border border-white/10 rounded-md px-2.5 py-1.5 shadow-md"
           >
-            <div className="text-[10.5px] text-white/55 font-medium leading-tight">
-              {dayTip.label}
-            </div>
-            <div
-              className={`mt-0.5 text-[13px] font-semibold tabular-nums leading-tight ${
-                dayTip.pl === null
-                  ? "text-white/40"
-                  : dayTip.pl >= 0
-                    ? "text-green-400"
-                    : "text-red-400"
-              }`}
-            >
-              {dayTip.pl === null
-                ? "No trades"
-                : `${dayTip.pl >= 0 ? "+" : "−"}$${Math.abs(dayTip.pl).toFixed(2)}`}
-            </div>
+            {tip.content}
           </div>,
           document.body,
         )}
