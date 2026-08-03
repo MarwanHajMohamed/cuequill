@@ -755,6 +755,15 @@ body {
   :root.nav-collapsed .content-shell {
     padding-left: 84px;
   }
+  /* Top market-alert bar spans the content area, so its left edge tracks
+     the sidebar (full width minus the rail) and animates with it. */
+  .market-alerts-bar {
+    left: 244px;
+    transition: left 0.3s ease;
+  }
+  :root.nav-collapsed .market-alerts-bar {
+    left: 76px;
+  }
 }
 
 /* Trades filter drawer + its pull tab sit just right of the nav sidebar,

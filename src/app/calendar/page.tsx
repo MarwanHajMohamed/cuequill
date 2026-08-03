@@ -613,8 +613,8 @@ function Page() {
         )}
         {isFedMinutes && (
           <span title="FOMC meeting minutes release" className={NO_TRADE_PILL}>
-            <i className="fa-solid fa-file-lines text-[7px]" aria-hidden />
-            Minutes
+            <span className="w-1 h-1 rounded-full bg-red-200" aria-hidden />
+            Fed
           </span>
         )}
         {isCpi && (

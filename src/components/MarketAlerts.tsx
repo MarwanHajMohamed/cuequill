@@ -103,7 +103,7 @@ export default function MarketAlerts() {
       : `${earningsToday.slice(0, 3).join(", ")} +${earningsToday.length - 3}`;
 
   return (
-    <div className="fixed left-1/2 -translate-x-1/2 z-[45] top-[70px] md:top-5 w-full max-w-md px-4 flex flex-col items-center gap-2 pointer-events-none">
+    <div className="market-alerts-bar fixed left-0 right-0 z-[45] top-[70px] md:top-5 px-4 md:px-6 flex flex-col items-stretch gap-2 pointer-events-none">
       <AnimatePresence>
         {showFomc && (
           <AlertPill
@@ -149,11 +149,11 @@ function AlertPill({
       animate={{ y: 0, opacity: 1, scale: 1 }}
       exit={{ y: -16, opacity: 0, scale: 0.98 }}
       transition={{ type: "spring", stiffness: 400, damping: 32 }}
-      className="pointer-events-auto max-w-full inline-flex items-center gap-2.5 pl-3.5 pr-2 py-2 rounded-full bg-[var(--surface)] border border-white/12 shadow-[0_12px_40px_var(--shadow)] backdrop-blur-md"
+      className="pointer-events-auto w-full flex items-center justify-between gap-2.5 pl-4 pr-2 py-2.5 rounded-2xl bg-[var(--surface)] border border-white/12 shadow-[0_12px_40px_var(--shadow)] backdrop-blur-md"
     >
       <Link
         href={href}
-        className="inline-flex items-center gap-2.5 min-w-0 group"
+        className="inline-flex items-center gap-2.5 min-w-0 flex-1 group"
       >
         <i className={`fa-solid ${icon} text-[12px] shrink-0 ${iconClass}`} />
         <span className="text-[12.5px] font-medium text-white/85 truncate group-hover:text-white transition">
