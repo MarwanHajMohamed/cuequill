@@ -60,7 +60,7 @@ export default function DashboardUpcoming() {
   const events = useMemo<UpcomingEvent[]>(() => {
     const out: UpcomingEvent[] = [];
 
-    for (const d of fedDates) {
+    for (const d of fedDates.meetings) {
       if (d >= todayStr) out.push({ date: d, kind: "fed" });
     }
     for (const e of earnings) {
