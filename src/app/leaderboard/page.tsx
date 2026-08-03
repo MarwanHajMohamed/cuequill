@@ -162,8 +162,7 @@ function LeaderboardPage() {
                 You&apos;re not on the leaderboard yet
               </div>
               <p className="text-[12.5px] text-white/55 mt-0.5">
-                Join to appear in the rankings. You&apos;ll be shown as your
-                first name and last initial — never your P/L. Leave any time.
+                Join to appear in the rankings.
               </p>
             </div>
             <button
