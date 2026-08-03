@@ -204,7 +204,7 @@ function LeaderboardPage() {
             <div className="flex flex-col gap-3">
               {/* Podium */}
               {podium.length > 0 && (
-                <div className="grid grid-cols-3 gap-2.5 md:gap-4 items-end">
+                <div className="grid grid-cols-3 gap-2.5 md:gap-4 items-end pt-2 pb-2">
                   {/* Order visually as 2 · 1 · 3 for a real podium */}
                   {[podium[1], podium[0], podium[2]].map((e, col) =>
                     e ? (
@@ -271,33 +271,44 @@ function PodiumCard({
   tall: boolean;
 }) {
   const medal = MEDAL[rank - 1];
+  const size = tall ? 76 : 60;
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`relative rounded-2xl border p-3 md:p-4 flex flex-col items-center text-center ${
-        tall ? "md:pt-6" : ""
-      } ${
-        entry.isMe
-          ? "border-teal-400/40 bg-teal-500/[0.07]"
-          : "border-white/10 bg-white/[0.03]"
+      className={`flex flex-col items-center text-center px-1 md:px-3 ${
+        tall ? "" : "pt-6 md:pt-9"
       }`}
     >
-      <div
-        className="absolute -top-2.5 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold text-black tabular-nums shadow"
-        style={{ background: medal }}
-      >
-        {rank}
-      </div>
-      <div className="relative mt-1">
-        <Avatar entry={entry} size={tall ? 60 : 48} />
+      {/* Avatar on its pedestal — no card, just a medal-tinted shelf line
+          beneath, mirroring the trophy medallions. */}
+      <div className="relative flex flex-col items-center">
         <i
-          className="fa-solid fa-crown absolute -top-3 left-1/2 -translate-x-1/2 text-[13px]"
+          className="fa-solid fa-crown text-[15px] mb-1"
           style={{ color: medal, opacity: rank === 1 ? 1 : 0 }}
+          aria-hidden
+        />
+        <div className="relative">
+          <Avatar entry={entry} size={size} />
+          <div
+            className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold text-black tabular-nums shadow ring-2 ring-[var(--background)]"
+            style={{ background: medal }}
+          >
+            {rank}
+          </div>
+        </div>
+        {/* Shelf line + soft reflection under the avatar. */}
+        <span
+          aria-hidden
+          className="mt-3 block h-px w-16 md:w-20"
+          style={{
+            background: `linear-gradient(to right, transparent, ${medal}66, transparent)`,
+          }}
         />
       </div>
-      <div className="mt-2 text-[13px] md:text-[14px] font-semibold truncate max-w-full">
+
+      <div className="mt-3 text-[13px] md:text-[14px] font-semibold truncate max-w-full">
         {entry.name}
         {entry.isMe && <span className="text-teal-300"> (you)</span>}
       </div>
