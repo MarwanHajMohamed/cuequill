@@ -135,9 +135,7 @@ function LeaderboardPage() {
               Leaderboard
             </h1>
             <p className="mt-1.5 text-[13px] md:text-sm text-white/55 max-w-xl">
-              How you stack up on the habits that matter — consistency of
-              journaling, not profit. Rankings update as you log trades and keep
-              your streak alive.
+              Ranked by consistency, not profit.
             </p>
           </div>
 
