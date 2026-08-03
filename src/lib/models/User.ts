@@ -147,6 +147,11 @@ export interface IUser extends Document {
   // name. Must be one of their earned titles (current level title or a
   // title granted by an earned trophy); purely cosmetic.
   equippedTitle?: string;
+  // Leaderboard participation. Off by default (opt-in): only when true does
+  // the user appear on the public leaderboards, shown as first name + last
+  // initial. Ranking metrics (level/XP, trades, streak) are all process /
+  // discipline based — never P/L.
+  leaderboardOptIn?: boolean;
 }
 
 const UserSchema = new Schema<IUser>({
@@ -240,6 +245,7 @@ const UserSchema = new Schema<IUser>({
   bonusChatMessages: { type: Number, default: 0 },
   chatRewardLevel: { type: Number, default: 0 },
   equippedTitle: { type: String, default: "" },
+  leaderboardOptIn: { type: Boolean, default: false },
   challengeClaims: {
     type: [
       new Schema(
