@@ -475,7 +475,7 @@ export default function TradeCalendar({ userId }: { userId: string }) {
         ) : isFedMinutes ? (
           <span
             title="FOMC meeting minutes"
-            className={`${pos} inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-200 border border-purple-400/40 text-[9px] md:text-[10px] font-bold tracking-wide leading-none`}
+            className={`${pos} inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-500/35 text-purple-100 border border-purple-400/60 shadow-[0_0_8px_rgba(168,85,247,0.35)] text-[9px] md:text-[10px] font-bold tracking-wide leading-none`}
           >
             <i className="fa-solid fa-file-lines text-[8px]" aria-hidden />
             Minutes

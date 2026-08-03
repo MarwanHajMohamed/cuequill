@@ -15,9 +15,16 @@ import { CARD_CLASS_BASE } from "../DashboardCard";
 
 type UpcomingEvent = {
   date: string; // yyyy-MM-dd
-  kind: "fed" | "earnings";
+  kind: "fed" | "fedMinutes" | "earnings";
   symbol?: string;
   isEstimate?: boolean;
+};
+
+// Sort rank within a single day: meeting, then minutes, then earnings.
+const KIND_RANK: Record<UpcomingEvent["kind"], number> = {
+  fed: 0,
+  fedMinutes: 1,
+  earnings: 2,
 };
 
 const MAX_EVENTS = 6;
@@ -63,6 +70,9 @@ export default function DashboardUpcoming() {
     for (const d of fedDates.meetings) {
       if (d >= todayStr) out.push({ date: d, kind: "fed" });
     }
+    for (const d of fedDates.minutes) {
+      if (d >= todayStr) out.push({ date: d, kind: "fedMinutes" });
+    }
     for (const e of earnings) {
       if (e.date && e.date >= todayStr) {
         out.push({
@@ -74,10 +84,10 @@ export default function DashboardUpcoming() {
       }
     }
 
-    // Soonest first; within a day, Fed before earnings then alphabetical.
+    // Soonest first; within a day, meeting → minutes → earnings, then alpha.
     out.sort((a, b) => {
       if (a.date !== b.date) return a.date < b.date ? -1 : 1;
-      if (a.kind !== b.kind) return a.kind === "fed" ? -1 : 1;
+      if (a.kind !== b.kind) return KIND_RANK[a.kind] - KIND_RANK[b.kind];
       return (a.symbol ?? "").localeCompare(b.symbol ?? "");
     });
 
@@ -172,7 +182,7 @@ export default function DashboardUpcoming() {
 }
 
 function EventRow({ ev, n }: { ev: UpcomingEvent; n: number }) {
-  const isFed = ev.kind === "fed";
+  const isFed = ev.kind === "fed" || ev.kind === "fedMinutes";
   const d = parseDay(ev.date);
   const soon = n <= 2;
 
@@ -198,15 +208,23 @@ function EventRow({ ev, n }: { ev: UpcomingEvent; n: number }) {
         }`}
       >
         <i
-          className={`fa-solid ${isFed ? "fa-landmark" : "fa-bullhorn"} text-[12px]`}
+          className={`fa-solid ${
+            ev.kind === "fedMinutes"
+              ? "fa-file-lines"
+              : ev.kind === "fed"
+                ? "fa-landmark"
+                : "fa-bullhorn"
+          } text-[12px]`}
         />
       </div>
 
       {/* Label */}
       <div className="flex-1 min-w-0">
         <div className="text-[13.5px] md:text-[14px] font-medium truncate">
-          {isFed ? (
+          {ev.kind === "fed" ? (
             "FOMC meeting"
+          ) : ev.kind === "fedMinutes" ? (
+            "FOMC minutes"
           ) : (
             <>
               {ev.symbol} earnings

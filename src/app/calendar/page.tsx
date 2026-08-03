@@ -53,11 +53,6 @@ const today = now.toISOString().split("T")[0];
 const NO_TRADE_PILL =
   "inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/35 text-red-100 border border-red-400/60 shadow-[0_0_8px_rgba(239,68,68,0.35)] text-[9px] md:text-[10px] font-bold tracking-wide leading-none";
 
-// FOMC minutes release — informational, lower-impact than the meeting, so a
-// distinct purple pill rather than the red "don't trade" look.
-const MINUTES_PILL =
-  "inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-500/25 text-purple-100 border border-purple-400/50 text-[9px] md:text-[10px] font-bold tracking-wide leading-none";
-
 // Week-summary card for the calendar sidebar (desktop only).
 const WeekSummary = ({
   weekNum,
@@ -617,7 +612,7 @@ function Page() {
           </span>
         )}
         {isFedMinutes && (
-          <span title="FOMC meeting minutes release" className={MINUTES_PILL}>
+          <span title="FOMC meeting minutes release" className={NO_TRADE_PILL}>
             <i className="fa-solid fa-file-lines text-[7px]" aria-hidden />
             Minutes
           </span>
