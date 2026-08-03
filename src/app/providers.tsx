@@ -5,6 +5,7 @@ import { ReactNode, useState } from "react";
 import { SessionProvider } from "next-auth/react";
 import AutoImportNotifier from "@/components/AutoImportNotifier";
 import CurrencySync from "@/components/CurrencySync";
+import MarketAlerts from "@/components/MarketAlerts";
 
 export default function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -31,6 +32,7 @@ export default function Providers({ children }: { children: ReactNode }) {
         {children}
         <CurrencySync />
         <AutoImportNotifier />
+        <MarketAlerts />
       </QueryClientProvider>
     </SessionProvider>
   );
