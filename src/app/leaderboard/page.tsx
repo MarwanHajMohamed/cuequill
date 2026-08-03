@@ -139,7 +139,7 @@ function LeaderboardPage() {
             </p>
           </div>
 
-          {myRank && (
+          {myRank ? (
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-center">
               <div className="text-[10px] uppercase tracking-[0.14em] text-white/45">
                 Your rank
@@ -148,34 +148,21 @@ function LeaderboardPage() {
                 #{myRank}
               </div>
             </div>
+          ) : (
+            !isLoading &&
+            !optedIn && (
+              <button
+                type="button"
+                onClick={() => optInMut.mutate(true)}
+                disabled={optInMut.isPending}
+                className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-[#fff] text-[13px] font-semibold transition disabled:opacity-60 cursor-pointer"
+              >
+                <i className="fa-solid fa-ranking-star text-[12px]" />
+                Join leaderboard
+              </button>
+            )
           )}
         </div>
-
-        {/* Opt-in banner */}
-        {!isLoading && !optedIn && (
-          <div className="mt-5 rounded-2xl border border-teal-500/25 bg-teal-500/[0.06] px-4 md:px-5 py-4 flex items-center gap-4 flex-wrap">
-            <div className="w-10 h-10 shrink-0 rounded-xl bg-teal-500/15 border border-teal-500/25 text-teal-300 flex items-center justify-center">
-              <i className="fa-solid fa-user-plus text-[15px]" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-[14px] font-medium">
-                You&apos;re not on the leaderboard yet
-              </div>
-              <p className="text-[12.5px] text-white/55 mt-0.5">
-                Join to appear in the rankings.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => optInMut.mutate(true)}
-              disabled={optInMut.isPending}
-              className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-white text-[13px] font-semibold transition disabled:opacity-60 cursor-pointer"
-            >
-              <i className="fa-solid fa-ranking-star text-[12px]" />
-              Join leaderboard
-            </button>
-          </div>
-        )}
 
         {/* Tabs */}
         <div className="mt-6 inline-flex items-center gap-1 p-1 rounded-2xl border border-white/10 bg-white/[0.03] self-start">
