@@ -109,6 +109,11 @@ export default function DashboardChallenges({
                       {Math.min(c.progress, c.target)}/{c.target}
                     </span>
                   </div>
+                  {c.description && (
+                    <div className="pl-[22px] text-[10.5px] text-white/40 leading-snug truncate">
+                      {c.description}
+                    </div>
+                  )}
                   <div className="h-1 rounded-full bg-white/[0.06] overflow-hidden">
                     <div
                       className="h-full rounded-full bg-gradient-to-r from-teal-400 to-emerald-400"
