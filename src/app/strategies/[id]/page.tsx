@@ -11,6 +11,7 @@ import SchematicEditor, {
 } from "@/components/SchematicEditor";
 import RichNotesEditor from "@/components/RichNotesEditor";
 import { fetchStrategy, type StrategyDoc } from "@/hooks/useStrategies";
+import { buildBundle, bundleFilename } from "@/lib/strategyTransfer";
 import { useToast } from "@/hooks/useToast";
 import { Skeleton } from "@/components/Loaders";
 import { fileToDownscaledDataUrl } from "@/lib/imageDataUrl";
@@ -171,6 +172,22 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
     setMode("view");
   };
 
+  // Download this single strategy as a portable JSON bundle (same format the
+  // library export uses, so it re-imports cleanly on any account).
+  const handleExport = () => {
+    if (!data) return;
+    const bundle = buildBundle([data]);
+    const blob = new Blob([JSON.stringify(bundle, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = bundleFilename(data.name);
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleDelete = async () => {
     setSaving(true);
     try {
@@ -248,6 +265,16 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
               {data.name}
             </h1>
             <DirectionBadge direction={data.direction} />
+            <button
+              type="button"
+              onClick={handleExport}
+              title="Export this strategy as JSON"
+              aria-label="Export strategy"
+              className="shrink-0 inline-flex items-center gap-2 px-3 py-2 text-[13px] font-medium text-white/70 hover:text-white transition cursor-pointer"
+            >
+              <i className="fa-solid fa-file-export text-[12px]" />
+              <span className="hidden sm:inline">Export</span>
+            </button>
             <button
               type="button"
               onClick={() => setMode("edit")}

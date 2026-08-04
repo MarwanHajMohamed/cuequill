@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -11,6 +11,7 @@ import { useIsPro } from "@/hooks/useIsPro";
 import { useStrategies, type StrategyDoc } from "@/hooks/useStrategies";
 import { SchematicPreview } from "@/components/SchematicEditor";
 import { FREE_STRATEGY_LIMIT } from "@/lib/strategyConstants";
+import { useToast } from "@/hooks/useToast";
 
 type Direction = "CALL" | "PUT";
 
@@ -32,10 +33,13 @@ const directionStyle = {
 function Page() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const toast = useToast();
   const { isPro } = useIsPro();
   const { data: strategies = [], isLoading } = useStrategies();
   const [creating, setCreating] = useState(false);
   const [createErr, setCreateErr] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const calls = useMemo(
     () => strategies.filter((s) => s.direction === "CALL"),
@@ -71,6 +75,55 @@ function Page() {
     }
   };
 
+  // Download the whole library. The endpoint streams a JSON attachment, so a
+  // plain navigation (with cookies) triggers the browser's save dialog.
+  const handleExportAll = () => {
+    if (strategies.length === 0) return;
+    window.location.href = "/api/strategies/export";
+  };
+
+  const handleImportClick = () => fileInputRef.current?.click();
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    // Reset the input so re-selecting the same file fires onChange again.
+    e.target.value = "";
+    if (!file) return;
+    setImporting(true);
+    try {
+      const text = await file.text();
+      let json: unknown;
+      try {
+        json = JSON.parse(text);
+      } catch {
+        toast("That file isn't valid JSON");
+        return;
+      }
+      const res = await fetch("/api/strategies/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(json),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast(data.error ?? "Import failed");
+        return;
+      }
+      await queryClient.invalidateQueries({ queryKey: ["strategies"] });
+      const n = data.imported ?? 0;
+      const skipped = data.skippedCap ?? 0;
+      toast(
+        skipped > 0
+          ? `Imported ${n} · ${skipped} skipped (free limit)`
+          : `Imported ${n} strateg${n === 1 ? "y" : "ies"}`,
+      );
+    } catch {
+      toast("Import failed");
+    } finally {
+      setImporting(false);
+    }
+  };
+
   return (
     <div className="w-full flex flex-col md:items-start min-h-screen pb-16">
       {/* Aurora */}
@@ -101,6 +154,40 @@ function Page() {
                 {strategies.length} / {FREE_STRATEGY_LIMIT}
               </span>
             )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/json,.json"
+              onChange={handleImportFile}
+              className="hidden"
+            />
+            <button
+              type="button"
+              onClick={handleImportClick}
+              disabled={importing}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11.5px] font-medium border border-white/12 bg-white/[0.03] text-white/75 hover:text-white hover:border-white/25 transition disabled:opacity-60 cursor-pointer"
+            >
+              <i
+                className={`fa-solid ${
+                  importing ? "fa-spinner fa-spin" : "fa-file-import"
+                } text-[11px]`}
+              />
+              Import
+            </button>
+            <button
+              type="button"
+              onClick={handleExportAll}
+              disabled={strategies.length === 0}
+              title={
+                strategies.length === 0
+                  ? "No strategies to export"
+                  : "Download all strategies as JSON"
+              }
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11.5px] font-medium border border-white/12 bg-white/[0.03] text-white/75 hover:text-white hover:border-white/25 transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+            >
+              <i className="fa-solid fa-file-export text-[11px]" />
+              Export all
+            </button>
           </div>
         </div>
 
