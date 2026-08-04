@@ -1,38 +1,63 @@
 "use client";
 
-import React from "react";
+import React, { useLayoutEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useChallenges } from "@/hooks/useChallenges";
 import { CARD_CLASS_BASE } from "../DashboardCard";
 
 // Compact challenges/rewards summary: level + XP progress, claimable count,
-// and the challenges nearest to completion. The number shown scales with the
-// widget's size — the bigger you make it, the more you see. Links to
-// /challenges.
-export default function DashboardChallenges({
-  rowSpan = 1,
-}: {
-  rowSpan?: number;
-}) {
+// and the challenges nearest to completion. The list fills whatever height
+// the widget has — grow it to see more challenges, shrink it to see fewer —
+// never scrolling and never showing a partial row. Links to /challenges.
+export default function DashboardChallenges() {
   const { data, isLoading } = useChallenges();
+
+  // Closest unclaimed, unlocked, not-yet-complete challenges — the "next up"
+  // list, sorted by how close each is. We render the whole list and hide the
+  // rows that don't fit below (see the layout effect), so the widget always
+  // uses all its space without scrolling.
+  const nearest = useMemo(() => {
+    if (!data) return [];
+    return data.challenges
+      .filter((c) => !c.complete && !c.locked)
+      .map((c) => ({ c, ratio: c.target > 0 ? c.progress / c.target : 0 }))
+      .sort((a, b) => b.ratio - a.ratio)
+      .map((x) => x.c);
+  }, [data]);
+
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const nearestKey = nearest.map((c) => c.id).join(",");
+
+  // Show every row, then measure and hide from the first row that overflows
+  // the visible area onward (no partial rows). Re-runs on resize.
+  useLayoutEffect(() => {
+    const wrap = wrapRef.current;
+    const list = listRef.current;
+    if (!wrap || !list) return;
+
+    const apply = () => {
+      const items = Array.from(list.children) as HTMLElement[];
+      items.forEach((el) => (el.style.display = ""));
+      const maxBottom = wrap.getBoundingClientRect().top + wrap.clientHeight;
+      let overflowed = false;
+      for (const el of items) {
+        if (overflowed || el.getBoundingClientRect().bottom > maxBottom + 0.5) {
+          el.style.display = "none";
+          overflowed = true;
+        }
+      }
+    };
+
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(wrap);
+    return () => ro.disconnect();
+  }, [nearestKey]);
 
   if (isLoading || !data) return null;
 
   const pct = data.per > 0 ? (data.into / data.per) * 100 : 0;
-  // Show one challenge per row of height — the list grows downward as the
-  // widget gets taller. Width doesn't add rows, so a wide-but-short widget
-  // stays a single line instead of overflowing.
-  const count = Math.max(1, rowSpan);
-  // Closest unclaimed challenges that aren't done yet — the "next up" list.
-  const nearest = data.challenges
-    .filter((c) => !c.complete && !c.locked)
-    .map((c) => ({
-      c,
-      ratio: c.target > 0 ? c.progress / c.target : 0,
-    }))
-    .sort((a, b) => b.ratio - a.ratio)
-    .slice(0, count)
-    .map((x) => x.c);
 
   return (
     <Link href="/challenges" className="block h-full">
@@ -75,54 +100,42 @@ export default function DashboardChallenges({
         </div>
 
         {nearest.length > 0 && (
-          <div className="pt-2 border-t border-white/[0.06] flex flex-col gap-2">
-            {count > 1 && (
-              <div className="text-[10px] uppercase tracking-wide text-white/35">
-                Closest to completing
-              </div>
-            )}
-            {nearest.map((c) => {
-              const p =
-                c.target > 0 ? Math.min(100, (c.progress / c.target) * 100) : 0;
-              return count === 1 ? (
-                <div
-                  key={c.id}
-                  className="flex items-center gap-2 text-[11.5px] text-white/55"
-                >
-                  <i className={`${c.icon} text-teal-300/70 text-[11px]`} />
-                  <span className="truncate">
-                    Next: {c.title}
-                    <span className="text-white/35 tabular-nums">
-                      {" "}
-                      ({Math.min(c.progress, c.target)}/{c.target})
-                    </span>
-                  </span>
-                </div>
-              ) : (
-                <div key={c.id} className="flex flex-col gap-1">
-                  <div className="flex items-center gap-2 text-[11.5px] text-white/60">
-                    <i
-                      className={`${c.icon} text-teal-300/70 text-[10px] w-3.5 text-center shrink-0`}
-                    />
-                    <span className="truncate flex-1">{c.title}</span>
-                    <span className="text-white/35 tabular-nums shrink-0">
-                      {Math.min(c.progress, c.target)}/{c.target}
-                    </span>
-                  </div>
-                  {c.description && (
-                    <div className="pl-[22px] text-[10.5px] text-white/40 leading-snug truncate">
-                      {c.description}
+          <div
+            ref={wrapRef}
+            className="flex-1 min-h-0 pt-2 border-t border-white/[0.06] overflow-hidden"
+          >
+            <div ref={listRef} className="flex flex-col gap-2.5">
+              {nearest.map((c) => {
+                const p =
+                  c.target > 0
+                    ? Math.min(100, (c.progress / c.target) * 100)
+                    : 0;
+                return (
+                  <div key={c.id} className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2 text-[11.5px] text-white/60">
+                      <i
+                        className={`${c.icon} text-teal-300/70 text-[10px] w-3.5 text-center shrink-0`}
+                      />
+                      <span className="truncate flex-1">{c.title}</span>
+                      <span className="text-white/35 tabular-nums shrink-0">
+                        {Math.min(c.progress, c.target)}/{c.target}
+                      </span>
                     </div>
-                  )}
-                  <div className="h-1 rounded-full bg-white/[0.06] overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-teal-400 to-emerald-400"
-                      style={{ width: `${p}%` }}
-                    />
+                    {c.description && (
+                      <div className="pl-[22px] text-[10.5px] text-white/40 leading-snug truncate">
+                        {c.description}
+                      </div>
+                    )}
+                    <div className="h-1 rounded-full bg-white/[0.06] overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-teal-400 to-emerald-400"
+                        style={{ width: `${p}%` }}
+                      />
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         )}
       </section>

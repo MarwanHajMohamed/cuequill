@@ -72,7 +72,7 @@ export const WIDGETS: WidgetDef[] = [
   {
     id: "challenges",
     title: "Challenges",
-    render: (_userId, rowSpan) => <DashboardChallenges rowSpan={rowSpan} />,
+    render: () => <DashboardChallenges />,
   },
   {
     id: "riskBudget",
