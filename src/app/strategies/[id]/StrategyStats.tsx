@@ -104,8 +104,8 @@ function Breakdown({
   );
 }
 
-const CARD =
-  "rounded-2xl border border-white/10 bg-white/[0.02] p-4 md:p-5 flex flex-col gap-4";
+// The performance section sits directly on the page (no card container).
+const CARD = "flex flex-col gap-4";
 
 export default function StrategyStats({ strategyName }: { strategyName: string }) {
   const { data: session } = useSession();
@@ -137,10 +137,6 @@ export default function StrategyStats({ strategyName }: { strategyName: string }
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="text-[13px] font-semibold">Performance</div>
         <div className="flex items-center gap-3">
-          <span className="text-[11px] text-white/40">
-            {s.total} used · {s.closedCount} closed
-            {s.openCount > 0 ? ` · ${s.openCount} open` : ""}
-          </span>
           <Link
             href={`/chat?prompt=${encodeURIComponent(
               `Analyse my "${strategyName}" strategy using its stats — what's working, what's my biggest leak, and how can I tighten it up?`,
