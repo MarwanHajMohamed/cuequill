@@ -294,12 +294,7 @@ export default function StrategyStats({ strategyName }: { strategyName: string }
       )}
 
       {/* Breakdowns */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 border-t border-white/[0.06] pt-4">
-        <Breakdown
-          title="By direction"
-          slices={s.byDirection}
-          worstKey={worstKey}
-        />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 border-t border-white/[0.06] pt-4">
         <Breakdown
           title="By weekday"
           slices={s.byWeekday}
