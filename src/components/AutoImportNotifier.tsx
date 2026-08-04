@@ -94,7 +94,7 @@ export default function AutoImportNotifier() {
               exit={{ opacity: 0, scale: 0.96, y: 12 }}
               transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
             >
-              <div className="bg-gradient-to-br from-teal-500/15 via-transparent to-transparent px-5 md:px-6 pt-5 md:pt-6 pb-4 md:pb-5 border-b border-white/5">
+              <div className="bg-gradient-to-br from-teal-500/15 via-transparent to-transparent px-5 md:px-6 pt-5 md:pt-6 pb-4 md:pb-5">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-8 h-8 rounded-full bg-teal-500/20 border border-teal-500/40 flex items-center justify-center">
                     <i className="fa-solid fa-cloud-arrow-down text-teal-300 text-[13px]" />
@@ -126,7 +126,7 @@ export default function AutoImportNotifier() {
                   className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 rounded-full bg-teal-500/20 text-teal-200 border border-teal-500/40 hover:bg-teal-500/30 transition text-[13px] font-semibold cursor-pointer"
                 >
                   <i className="fa-solid fa-list-check text-[11px]" />
-                  See what changed
+                  See imported
                 </button>
               </div>
             </motion.div>
