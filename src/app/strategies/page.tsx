@@ -335,7 +335,7 @@ function StrategyCard({
             </div>
           </div>
           {hasSchematic && (
-            <div className="hidden md:block shrink-0 w-24 h-14 rounded border border-white/10 overflow-hidden">
+            <div className="hidden md:block shrink-0 w-24 h-14 rounded border border-white/10 overflow-hidden bg-[#0c0c11]">
               <SchematicPreview
                 schematic={strategy.schematic}
                 className="w-full h-full"
