@@ -93,7 +93,7 @@ export default function ViewTradeModal({
               ? "bg-gradient-to-br from-green-500/15 via-transparent to-transparent"
               : isLoss
                 ? "bg-gradient-to-br from-red-500/15 via-transparent to-transparent"
-                : "bg-gradient-to-br from-orange-500/10 via-transparent to-transparent"
+                : "bg-gradient-to-br from-blue-500/10 via-transparent to-transparent"
           }`}
         >
           {/* Close button */}
@@ -148,7 +148,7 @@ export default function ViewTradeModal({
                 <span className="text-xs text-white/40">Net</span>
               </>
             ) : (
-              <span className="text-2xl md:text-3xl font-bold text-orange-400">
+              <span className="text-2xl md:text-3xl font-bold text-blue-500">
                 Open position
               </span>
             )}
