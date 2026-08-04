@@ -478,7 +478,7 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
 // editor's inline CSS so saved content looks identical out of edit mode.
 function DescriptionDisplay({ html }: { html: string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 md:p-5">
+    <div className="border-t border-white/[0.06] pt-4">
       <div
         className="strategy-desc text-[14px] text-white/85 leading-relaxed"
         dangerouslySetInnerHTML={{ __html: html }}
@@ -568,7 +568,7 @@ function ExamplesGallery({ examples }: { examples: StrategyExample[] }) {
     );
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 md:p-5 flex flex-col gap-4">
+    <div className="border-t border-white/[0.06] pt-4 flex flex-col gap-4">
       <div className="flex items-center gap-2">
         <i className="fa-solid fa-images text-[12px] text-teal-300/80" />
         <span className="text-[10.5px] tracking-[0.12em] text-white/45">
