@@ -103,7 +103,7 @@ export default function MarketAlerts() {
       : `${earningsToday.slice(0, 3).join(", ")} +${earningsToday.length - 3}`;
 
   return (
-    <div className="market-alerts-bar fixed left-0 right-0 z-[45] top-[70px] md:top-5 px-4 md:px-6 flex flex-col items-stretch gap-2 pointer-events-none">
+    <div className="market-alerts-bar fixed left-0 right-0 z-[55] top-[70px] md:top-5 px-4 md:px-6 flex flex-col items-stretch gap-2 pointer-events-none">
       <AnimatePresence>
         {showFomc && (
           <AlertPill
