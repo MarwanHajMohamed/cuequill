@@ -438,26 +438,31 @@ function Page() {
     return buckets;
   }, [trades, displayedMonth]);
 
-  const handleSaveTrade = async (trade: Trade) => {
-    if (trade._id) {
-      // UPDATE EXISTING TRADE
-      await fetch(`/api/trades/${trade._id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(trade),
-      });
-    } else {
-      // CREATE NEW TRADE
-      await fetch("/api/trades", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...trade, userId }),
-      });
-    }
+  const handleSaveTrade = async (trade: Trade): Promise<boolean> => {
+    try {
+      const res = trade._id
+        ? // UPDATE EXISTING TRADE
+          await fetch(`/api/trades/${trade._id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(trade),
+          })
+        : // CREATE NEW TRADE
+          await fetch("/api/trades", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...trade, userId }),
+          });
 
-    await queryClient.invalidateQueries({ queryKey: ["trades", userId] });
-    setIsModalOpen(false);
-    setEditingTrade(null);
+      if (!res.ok) return false;
+
+      await queryClient.invalidateQueries({ queryKey: ["trades", userId] });
+      setIsModalOpen(false);
+      setEditingTrade(null);
+      return true;
+    } catch {
+      return false;
+    }
   };
 
   const handleDeleteTrade = async (tradeId: string) => {

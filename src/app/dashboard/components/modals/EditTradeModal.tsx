@@ -19,7 +19,10 @@ import { handleSave, type InvalidField } from "./helpers";
 type TradeModalProps = {
   date: Date;
   onClose: () => void;
-  onSave: (trade: Trade) => void;
+  // Persists the trade. May return a boolean (or a promise of one) indicating
+  // whether the save actually succeeded, which drives the success/failure
+  // toast; a void/undefined return is treated as success.
+  onSave: (trade: Trade) => void | boolean | Promise<void | boolean>;
   initialTrade?: Partial<Trade>;
   onDelete?: (_id: string) => void;
   // Optional back-out handler. When set, Cancel / X / Escape / backdrop
@@ -110,8 +113,55 @@ export default function EditTradeModal({
       return next;
     });
   const [delModal, setDelModal] = useState<boolean>(false);
+  const [saving, setSaving] = useState<boolean>(false);
 
   const toast = useToast();
+
+  // Validate + build the trade, persist it via onSave, and only then toast the
+  // real outcome. Keeps the button in a loading state for the whole round trip.
+  const submit = async () => {
+    if (saving) return;
+    const tradeData = handleSave(
+      setInvalidFields,
+      date,
+      selectedOption,
+      userId as string,
+      symbol,
+      contractPrice,
+      qty,
+      strike,
+      dateBought,
+      expiryDate,
+      status,
+      closingContractPrice,
+      strategy,
+      dateClosed,
+      notes,
+      tags,
+      simulated,
+      initialTrade!,
+      fees,
+    );
+    if (!tradeData) return; // validation failed — fields already highlighted
+
+    setSaving(true);
+    try {
+      const ok = await onSave(tradeData);
+      if (ok === false) {
+        toast("Couldn't save trade. Please try again.");
+      } else {
+        toast(
+          tradeData._id
+            ? `Trade ${tradeData.symbol} updated successfully!`
+            : `Trade ${tradeData.symbol} added successfully!`,
+        );
+      }
+    } catch {
+      toast("Couldn't save trade. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
   useScrollLock();
 
   // Pull the user's custom strategy library and filter to the
@@ -527,35 +577,16 @@ export default function EditTradeModal({
               </button>
               <button
                 type="button"
-                onClick={() =>
-                  handleSave(
-                    setInvalidFields,
-                    date,
-                    selectedOption,
-                    userId as string,
-                    symbol,
-                    contractPrice,
-                    qty,
-                    strike,
-                    dateBought,
-                    expiryDate,
-                    status,
-                    closingContractPrice,
-                    strategy,
-                    dateClosed,
-                    notes,
-                    tags,
-                    simulated,
-                    toast,
-                    onSave,
-                    initialTrade!,
-                    fees,
-                  )
-                }
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[13px] font-medium cursor-pointer"
+                onClick={submit}
+                disabled={saving}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[13px] font-medium cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                <i className="fa-solid fa-floppy-disk text-[11px]" />
-                {isEditing ? "Save" : "Create trade"}
+                <i
+                  className={`fa-solid ${
+                    saving ? "fa-circle-notch animate-spin" : "fa-floppy-disk"
+                  } text-[11px]`}
+                />
+                {saving ? "Saving…" : isEditing ? "Save" : "Create trade"}
               </button>
             </div>
           </div>

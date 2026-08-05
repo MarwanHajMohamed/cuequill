@@ -46,6 +46,11 @@ const validate = (
   return invalid;
 };
 
+// Validate the form and, when valid, build the Trade payload. Returns the
+// built trade, or null when validation fails (invalid fields are highlighted
+// via setInvalidFields). Persistence + the success/failure toast are handled
+// by the caller once the network request actually resolves — this function no
+// longer fires a toast, so "saved" can never be shown before the save lands.
 export const handleSave = (
   setInvalidFields: React.Dispatch<React.SetStateAction<Set<InvalidField>>>,
   date: Date,
@@ -64,11 +69,9 @@ export const handleSave = (
   notes: string,
   tags: string[],
   simulated: boolean,
-  toast: (message: string) => void,
-  onSave: (trade: Trade) => void,
   initialTrade: Partial<Trade> | null,
   fees?: number | null,
-) => {
+): Trade | null => {
   const invalid = validate(
     selectedOption,
     symbol,
@@ -82,7 +85,7 @@ export const handleSave = (
   );
   if (invalid.size > 0) {
     setInvalidFields(invalid);
-    return;
+    return null;
   }
   // Clear any prior highlights now that the form passes validation.
   setInvalidFields(new Set());
@@ -121,11 +124,5 @@ export const handleSave = (
     favourite: false,
   };
 
-  if (tradeData._id) {
-    toast(`Trade ${tradeData.symbol} updated successfully!`);
-  } else {
-    toast(`Trade ${tradeData.symbol} added successfully!`);
-  }
-
-  onSave(tradeData);
+  return tradeData;
 };

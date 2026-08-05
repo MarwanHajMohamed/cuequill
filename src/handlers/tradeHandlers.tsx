@@ -1,33 +1,41 @@
 import { Trade } from "@/app/types/Trades";
 import { QueryClient } from "@tanstack/react-query";
 
+// Persist a new or edited trade. Returns true only when the request actually
+// succeeds, so the caller can toast success/failure based on the real result.
+// The modal is closed (and edit state cleared) only on success — a failed save
+// keeps the form open so the user can retry.
 export const handleSaveTrade = async (
   trade: Trade,
   userId: string,
   setIsModalOpen: React.Dispatch<React.SetStateAction<boolean>>,
   queryClient: QueryClient,
   setEditingTrade?: React.Dispatch<React.SetStateAction<Trade | null>>
-) => {
-  if (trade._id) {
-    // UPDATE EXISTING TRADE
-    await fetch(`/api/trades/${trade._id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(trade),
-    });
-  } else {
-    // CREATE NEW TRADE
-    await fetch("/api/trades", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...trade, userId }),
-    });
+): Promise<boolean> => {
+  try {
+    const res = trade._id
+      ? // UPDATE EXISTING TRADE
+        await fetch(`/api/trades/${trade._id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(trade),
+        })
+      : // CREATE NEW TRADE
+        await fetch("/api/trades", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...trade, userId }),
+        });
+
+    if (!res.ok) return false;
+
+    await queryClient.invalidateQueries({ queryKey: ["trades", userId] });
+    setIsModalOpen(false);
+    if (setEditingTrade) setEditingTrade(null);
+    return true;
+  } catch {
+    return false;
   }
-
-  await queryClient.invalidateQueries({ queryKey: ["trades", userId] });
-  setIsModalOpen(false);
-
-  if (setEditingTrade) setEditingTrade(null);
 };
 
 export const handleDeleteTrade = async (

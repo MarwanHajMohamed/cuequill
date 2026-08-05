@@ -8,7 +8,7 @@ import ViewTradeModal from "./ViewTradeModal";
 type TradeModalProps = {
   date?: Date;
   onClose: () => void;
-  onSave?: (trade: Trade) => void;
+  onSave?: (trade: Trade) => void | boolean | Promise<void | boolean>;
   initialTrade?: Partial<Trade>;
   onDelete?: (_id: string) => void;
   // When set, ViewTradeModal shows a top-left chevron that returns
