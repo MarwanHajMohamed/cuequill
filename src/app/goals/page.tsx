@@ -368,7 +368,7 @@ function Page() {
         }}
       />
 
-      <div className="w-full max-w-[1000px] mt-28 md:mt-10 px-5 md:px-10">
+      <div className="w-full max-w-[1500px] mt-28 md:mt-10 px-5 md:px-10">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
