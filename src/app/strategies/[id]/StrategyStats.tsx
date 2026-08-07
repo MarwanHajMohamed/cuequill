@@ -250,6 +250,8 @@ export default function StrategyStats({ strategyName }: { strategyName: string }
                     fontSize: 12,
                     color: "var(--foreground)",
                   }}
+                  itemStyle={{ color: "var(--foreground)" }}
+                  labelStyle={{ color: "var(--foreground)" }}
                   labelFormatter={(l) => `Trade ${l}`}
                   formatter={(v: number) => [fmtMoneyCompact(v), "Cumulative"]}
                 />

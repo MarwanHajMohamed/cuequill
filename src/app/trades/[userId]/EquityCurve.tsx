@@ -122,6 +122,7 @@ export default function EquityCurve({ trades }: { trades: Trade[] }) {
                 fontSize: 12,
                 color: "var(--foreground)",
               }}
+              itemStyle={{ color: "var(--foreground)" }}
               labelStyle={{ color: "var(--foreground)", marginBottom: 4 }}
               labelFormatter={(d) => format(new Date(d), "MMM d, yyyy")}
               formatter={(v: number, name: string) => [
