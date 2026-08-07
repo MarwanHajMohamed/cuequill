@@ -590,6 +590,11 @@ function ReportChart({ table }: { table: ReportTable }) {
               fontSize: 12,
               color: "var(--foreground)",
             }}
+            // Recharts colours the item/label text inline (black by default),
+            // overriding contentStyle — set them explicitly so the text stays
+            // legible in dark mode.
+            itemStyle={{ color: "var(--foreground)" }}
+            labelStyle={{ color: "var(--foreground)" }}
             formatter={(v: number | string) => [fmtUsd(Number(v)), "Net P/L"]}
           />
           <Bar dataKey="net" radius={[3, 3, 0, 0]}>
