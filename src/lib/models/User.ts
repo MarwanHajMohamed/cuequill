@@ -140,6 +140,14 @@ export interface IUser extends Document {
   // Bonus Quill AI messages earned from level-up rewards — a finite pool
   // consumed once the daily message limit is hit.
   bonusChatMessages?: number;
+  // Gemini context-cache registry for Quill. The big, stable system
+  // instruction (trader snapshot + rules + strategies + goals) is cached
+  // server-side so multi-turn chats on an unchanged journal don't re-send /
+  // re-bill it every message. `chatCacheHash` is a hash of the cached
+  // instruction so we recreate the cache when the snapshot changes.
+  chatCacheName?: string;
+  chatCacheHash?: string;
+  chatCacheExpiresAt?: Date;
   // High-water mark: the highest level for which level-up chat rewards have
   // already been granted, so reaching a level pays out exactly once.
   chatRewardLevel?: number;
@@ -243,6 +251,9 @@ const UserSchema = new Schema<IUser>({
   dashChallengesMigrated: { type: Boolean, default: false },
   xp: { type: Number, default: 0 },
   bonusChatMessages: { type: Number, default: 0 },
+  chatCacheName: { type: String, default: "" },
+  chatCacheHash: { type: String, default: "" },
+  chatCacheExpiresAt: { type: Date },
   chatRewardLevel: { type: Number, default: 0 },
   equippedTitle: { type: String, default: "" },
   leaderboardOptIn: { type: Boolean, default: false },

@@ -12,11 +12,14 @@ import {
   buildStrategiesContext,
   buildGoalsContext,
   buildDateContext,
+  computeQueryStats,
   type LeanTrade,
   type LeanRulesBoard,
   type LeanStrategy,
   type LeanGoal,
+  type QueryStatsFilter,
 } from "@/lib/quillContext";
+import { getQuillModel } from "@/lib/quillCache";
 import mongoose from "mongoose";
 import {
   GoogleGenerativeAI,
@@ -171,17 +174,32 @@ export async function POST(req: Request) {
   const userTz = session.user.timezone || "America/New_York";
   const dateBlock = buildDateContext(userTz);
 
+  // Valid trade ids for this user — used to strip any trade:// card the model
+  // emits for an id that isn't actually in the snapshot (hallucination guard).
+  const validTradeIds = new Set(trades.map((t) => String(t._id)));
+
   // ── Build Gemini request ────────────────────────────────────────────
   const genAI = new GoogleGenerativeAI(apiKey);
-  const TOOLS = [ADD_TRADE_TOOL, EDIT_TRADE_TOOL, DELETE_TRADE_TOOL];
-  const model = genAI.getGenerativeModel({
-    model: "gemini-2.5-flash",
-    systemInstruction: SYSTEM_PROMPT(
-      session.user.firstname ?? "trader",
-      context,
-      dateBlock,
-    ),
-    tools: [{ functionDeclarations: TOOLS }],
+  const TOOLS = [
+    ADD_TRADE_TOOL,
+    EDIT_TRADE_TOOL,
+    DELETE_TRADE_TOOL,
+    QUERY_STATS_TOOL,
+  ];
+  const systemInstruction = SYSTEM_PROMPT(
+    session.user.firstname ?? "trader",
+    context,
+    dateBlock,
+  );
+  // Reuses (or creates) a Gemini context cache for the big, stable system
+  // instruction so multi-turn chats don't re-bill it each message. Falls back
+  // to an uncached model automatically on any caching problem.
+  const model = await getQuillModel({
+    genAI,
+    apiKey,
+    userId: session.user.id,
+    systemInstruction,
+    tools: TOOLS,
   });
 
   // Convert our message history into Gemini's format. The last message
@@ -204,10 +222,9 @@ export async function POST(req: Request) {
   lastParts.push(...imageParts);
   if (lastParts.length === 0) lastParts.push({ text: "" });
 
-  const chat = model.startChat({
-    history,
-    tools: [{ functionDeclarations: TOOLS }],
-  });
+  // Tools live on the model (or its context cache), so they don't need to be
+  // repeated here.
+  const chat = model.startChat({ history });
 
   // ── Stream the response back ────────────────────────────────────────
   // Sentinel emitted at the end of any response that touched the trades
@@ -215,18 +232,55 @@ export async function POST(req: Request) {
   // A null byte won't appear in Gemini's natural-language output.
   const REFRESH_SENTINEL = "[[CUEQUILL_REFRESH_TRADES]]";
   const encoder = new TextEncoder();
+  // Drop any trade card the model emits for an id not in the snapshot, so a
+  // hallucinated id never renders as a broken card. Cards look like
+  // "[trade-card](trade://<id>)".
+  const CARD_RE = /\[[^\]]*\]\(trade:\/\/([^)]+)\)/g;
+  const sanitizeCards = (s: string): string =>
+    s.replace(CARD_RE, (full, id: string) =>
+      validTradeIds.has(id.trim()) ? full : "",
+    );
+
   const stream = new ReadableStream({
     async start(controller) {
+      // Stream text through a small buffer so a card link is never split
+      // across chunks when we sanitise it: we hold back only from an open
+      // "[" that hasn't closed with ")" yet, so normal prose still streams
+      // token-by-token.
+      let buf = "";
+      const flush = (final: boolean) => {
+        if (final) {
+          if (buf) controller.enqueue(encoder.encode(sanitizeCards(buf)));
+          buf = "";
+          return;
+        }
+        const open = buf.lastIndexOf("[");
+        const safeUpto =
+          open === -1
+            ? buf.length
+            : buf.indexOf(")", open) === -1
+              ? open
+              : buf.length;
+        if (safeUpto > 0) {
+          controller.enqueue(encoder.encode(sanitizeCards(buf.slice(0, safeUpto))));
+          buf = buf.slice(safeUpto);
+        }
+      };
+
       const drainStream = async (
         result: Awaited<ReturnType<typeof chat.sendMessageStream>>,
       ): Promise<FunctionCall[]> => {
         const collected: FunctionCall[] = [];
         for await (const chunk of result.stream) {
           const text = chunk.text();
-          if (text) controller.enqueue(encoder.encode(text));
+          if (text) {
+            buf += text;
+            flush(false);
+          }
           const fc = chunk.functionCalls();
           if (fc && fc.length) collected.push(...fc);
         }
+        flush(true);
         return collected;
       };
 
@@ -282,6 +336,16 @@ export async function POST(req: Request) {
                 call.args as Record<string, unknown>,
               );
               if (res.ok) touchedTrades = true;
+              fnResponses.push({
+                functionResponse: { name: call.name, response: res },
+              });
+            } else if (call.name === "query_stats") {
+              // Read-only: exact aggregates over the in-scope trades. No DB
+              // write, so it never sets touchedTrades.
+              const res = computeQueryStats(
+                trades,
+                (call.args ?? {}) as QueryStatsFilter,
+              );
               fnResponses.push({
                 functionResponse: { name: call.name, response: res },
               });
@@ -730,6 +794,59 @@ const DELETE_TRADE_TOOL: FunctionDeclaration = {
   },
 };
 
+// ── Tool: query_stats (read-only) ──────────────────────────────────────
+
+const QUERY_STATS_TOOL: FunctionDeclaration = {
+  name: "query_stats",
+  description:
+    "Compute EXACT performance stats for a slice of the user's trades (win rate, net P/L, expectancy, profit factor, payoff, avg win/loss, best/worst, max drawdown). ALWAYS prefer this over counting or adding up rows yourself when the user asks for a specific number — e.g. 'win rate on NVDA', 'net P/L in July', 'how do my Monday trades do'. All filters are optional and combined with AND. Omit a filter to include everything on that dimension. Returns numbers you can quote directly.",
+  parameters: {
+    type: SchemaType.OBJECT,
+    properties: {
+      symbol: {
+        type: SchemaType.STRING,
+        description: "Ticker to filter to, uppercase (e.g. NVDA). Omit for all.",
+      },
+      strategy: {
+        type: SchemaType.STRING,
+        description:
+          "Exact strategy name to filter to (as shown in the snapshot). Omit for all.",
+      },
+      tag: {
+        type: SchemaType.STRING,
+        description: "A single tag to filter to. Omit for all.",
+      },
+      option: {
+        type: SchemaType.STRING,
+        description: "CALL or PUT. Omit for both.",
+        enum: ["CALL", "PUT"],
+        format: "enum",
+      },
+      status: {
+        type: SchemaType.STRING,
+        description: "WIN, LOSS, or OPEN. Omit for all statuses.",
+        enum: ["WIN", "LOSS", "OPEN"],
+        format: "enum",
+      },
+      startDate: {
+        type: SchemaType.STRING,
+        description:
+          "Inclusive start date YYYY-MM-DD. Matches a trade's exit day (or entry day if still open).",
+      },
+      endDate: {
+        type: SchemaType.STRING,
+        description: "Inclusive end date YYYY-MM-DD.",
+      },
+      weekday: {
+        type: SchemaType.STRING,
+        description:
+          "Entry weekday name to filter to, e.g. 'Monday'. Omit for all days.",
+      },
+    },
+    required: [],
+  },
+};
+
 async function executeDeleteTrade(
   userId: string,
   rawArgs: Record<string, unknown>,
@@ -877,11 +994,22 @@ STYLE & ANALYSIS
   oversized losses, strategies underperforming.
 - Stay concise. Bullet points and short paragraphs over prose walls.
 - Never make up trades, P/L, or stats. If the snapshot doesn't show it, say so.
+- The KEY METRICS block and any query_stats result are pre-computed and exact —
+  quote them as-is. Don't re-derive expectancy, profit factor, win rate, etc.
+  by hand from the row list; use those numbers or call query_stats.
 - This is journaling and analysis only - do NOT give personalized investment
   advice, trade recommendations, or predictions.
 
 TOOLS
-You have three tools available:
+You have four tools available:
+
+- query_stats(...) - compute EXACT stats for any slice of the journal (by
+  symbol, strategy, tag, option, status, date range, or weekday). ALWAYS use
+  this when the user asks for a specific number ("what's my win rate on NVDA",
+  "net P/L in July", "how do Mondays do") instead of counting or summing the
+  rows yourself — your mental arithmetic over the row list is error-prone, the
+  tool is exact. It's read-only and instant; call it freely, even several times
+  to compare slices. Quote the numbers it returns directly.
 
 - add_trade(...) - log a NEW open options trade in the user's journal.
   Call this when the user clearly says they took a trade (e.g. "I just

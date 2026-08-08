@@ -65,6 +65,122 @@ export function net(t: LeanTrade): number {
   return (t.profitLoss ?? 0) - (t.fees ?? 0);
 }
 
+const WEEKDAY_NAMES = [
+  "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday",
+];
+
+const isClosedTrade = (t: LeanTrade) =>
+  t.status === "WIN" || t.status === "LOSS";
+
+// Days a closed trade was held (entry → exit); null if either date is missing.
+function holdDays(t: LeanTrade): number | null {
+  const a = new Date(t.dateBought).getTime();
+  const b = t.dateClosed ? new Date(t.dateClosed).getTime() : NaN;
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return null;
+  return Math.max(0, (b - a) / 86_400_000);
+}
+
+// Core derived metrics over a set of CLOSED trades. Pre-computing these (and
+// handing them to the model as ground truth) keeps Quill from doing unreliable
+// arithmetic over hundreds of rows.
+export type CoreStats = {
+  n: number;
+  wins: number;
+  losses: number;
+  winRate: number;
+  net: number;
+  expectancy: number;
+  profitFactor: number | null;
+  payoff: number | null;
+  avgWin: number;
+  avgLoss: number; // negative
+  best: number;
+  worst: number;
+  avgHoldWin: number | null;
+  avgHoldLoss: number | null;
+  maxDrawdown: number; // positive magnitude
+  currentStreak: { type: "WIN" | "LOSS" | null; len: number };
+  longestWin: number;
+  longestLoss: number;
+};
+
+export function coreStats(closed: LeanTrade[]): CoreStats {
+  const winsArr = closed.filter((t) => t.status === "WIN");
+  const lossArr = closed.filter((t) => t.status === "LOSS");
+  const netTotal = closed.reduce((s, t) => s + net(t), 0);
+  const grossWin = winsArr.reduce((s, t) => s + net(t), 0);
+  const grossLoss = -lossArr.reduce((s, t) => s + net(t), 0); // positive
+  const avgWin = winsArr.length ? grossWin / winsArr.length : 0;
+  const avgLoss = lossArr.length
+    ? lossArr.reduce((s, t) => s + net(t), 0) / lossArr.length
+    : 0;
+  const nets = closed.map(net);
+
+  const avgHold = (arr: LeanTrade[]): number | null => {
+    const ds = arr.map(holdDays).filter((d): d is number => d != null);
+    return ds.length ? ds.reduce((s, d) => s + d, 0) / ds.length : null;
+  };
+
+  // Chronological (by exit day) for equity-derived metrics.
+  const chron = [...closed].sort(
+    (a, b) =>
+      new Date(a.dateClosed ?? a.dateBought).getTime() -
+      new Date(b.dateClosed ?? b.dateBought).getTime(),
+  );
+  let cum = 0,
+    peak = 0,
+    maxDrawdown = 0,
+    runW = 0,
+    runL = 0,
+    longestWin = 0,
+    longestLoss = 0;
+  for (const t of chron) {
+    cum += net(t);
+    if (cum > peak) peak = cum;
+    if (peak - cum > maxDrawdown) maxDrawdown = peak - cum;
+    if (t.status === "WIN") {
+      runW += 1;
+      runL = 0;
+      if (runW > longestWin) longestWin = runW;
+    } else {
+      runL += 1;
+      runW = 0;
+      if (runL > longestLoss) longestLoss = runL;
+    }
+  }
+  let curType: "WIN" | "LOSS" | null = null;
+  let curLen = 0;
+  for (let i = chron.length - 1; i >= 0; i--) {
+    const s = chron[i].status as "WIN" | "LOSS";
+    if (curType === null) {
+      curType = s;
+      curLen = 1;
+    } else if (s === curType) curLen += 1;
+    else break;
+  }
+
+  return {
+    n: closed.length,
+    wins: winsArr.length,
+    losses: lossArr.length,
+    winRate: closed.length ? (winsArr.length / closed.length) * 100 : 0,
+    net: netTotal,
+    expectancy: closed.length ? netTotal / closed.length : 0,
+    profitFactor: grossLoss > 0 ? grossWin / grossLoss : null,
+    payoff: avgLoss < 0 ? avgWin / Math.abs(avgLoss) : null,
+    avgWin,
+    avgLoss,
+    best: nets.length ? Math.max(...nets) : 0,
+    worst: nets.length ? Math.min(...nets) : 0,
+    avgHoldWin: avgHold(winsArr),
+    avgHoldLoss: avgHold(lossArr),
+    maxDrawdown,
+    currentStreak: { type: curType, len: curLen },
+    longestWin,
+    longestLoss,
+  };
+}
+
 function groupBy<T>(arr: T[], key: (t: T) => string): Record<string, T[]> {
   const out: Record<string, T[]> = {};
   for (const item of arr) {
@@ -115,9 +231,9 @@ export function buildTradeContext(trades: LeanTrade[]): string {
 
   const symbolRows = Object.entries(bySymbol)
     .map(([k, ts]) => {
-      const n = ts.reduce((s, t) => s + net(t), 0);
-      const w = ts.filter((t) => t.status === "WIN").length;
-      return `  - ${k}: ${ts.length} closed, win ${((w / ts.length) * 100).toFixed(0)}%, net ${fmtMoney(n)}`;
+      const s = coreStats(ts);
+      const pf = s.profitFactor == null ? "n/a" : s.profitFactor.toFixed(2);
+      return `  - ${k}: ${ts.length} closed, win ${s.winRate.toFixed(0)}%, net ${fmtMoney(s.net)}, exp ${fmtMoney(s.expectancy)}/trade, PF ${pf}`;
     })
     .join("\n");
 
@@ -142,9 +258,7 @@ export function buildTradeContext(trades: LeanTrade[]): string {
     .join("\n");
 
   // ── Per weekday of entry, Mon → Sun ─────────────────────────────────
-  const WEEKDAYS = [
-    "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday",
-  ];
+  const WEEKDAYS = WEEKDAY_NAMES;
   const weekdayAgg = new Map<number, { n: number; wins: number; net: number }>();
   for (const t of closed) {
     const d = new Date(t.dateBought);
@@ -264,12 +378,40 @@ export function buildTradeContext(trades: LeanTrade[]): string {
     })
     .join("\n");
 
+  // ── Pre-computed portfolio metrics (authoritative) ──────────────────
+  const core = coreStats(closed);
+  const cs = core.currentStreak;
+  const streakStr =
+    cs.type && cs.len
+      ? `${cs.len} ${
+          cs.type === "WIN"
+            ? cs.len > 1
+              ? "wins"
+              : "win"
+            : cs.len > 1
+              ? "losses"
+              : "loss"
+        } in a row`
+      : "none";
+  const keyMetrics = [
+    "KEY METRICS (pre-computed over the closed trades in this snapshot —",
+    "treat as authoritative; do NOT recompute these from the row list):",
+    `  - Expectancy: ${fmtMoney(core.expectancy)}/trade`,
+    `  - Profit factor: ${core.profitFactor == null ? "n/a" : core.profitFactor.toFixed(2)} · Payoff ratio: ${core.payoff == null ? "n/a" : core.payoff.toFixed(2) + "x"}`,
+    `  - Best trade: ${fmtMoney(core.best)} · Worst trade: ${fmtMoney(core.worst)}`,
+    `  - Max drawdown (closed equity): -$${core.maxDrawdown.toFixed(2)}`,
+    `  - Avg hold: winners ${core.avgHoldWin == null ? "—" : core.avgHoldWin.toFixed(1) + "d"} vs losers ${core.avgHoldLoss == null ? "—" : core.avgHoldLoss.toFixed(1) + "d"}`,
+    `  - Streaks: current ${streakStr}; longest win ${core.longestWin}, longest loss ${core.longestLoss}`,
+  ].join("\n");
+
   return [
     `Snapshot from the most recent ${trades.length} trades (non-simulated):`,
     `- Closed: ${closed.length} (${wins} W / ${losses} L), Win rate ${winRate.toFixed(0)}%`,
     `- Net P/L (all closed in snapshot): ${fmtMoney(totalNet)}`,
     `- Avg winner: ${fmtMoney(avgWin)} · Avg loser: ${fmtMoney(avgLoss)}`,
     `- Currently open: ${open.length}`,
+    "",
+    keyMetrics,
     "",
     "By strategy:",
     strategyRows || "  (none)",
@@ -295,6 +437,75 @@ export function buildTradeContext(trades: LeanTrade[]): string {
     `All ${trades.length} trades (entry → exit | symbol option strike qty | entry$ → exit$ | status | strategy | net):`,
     tradeRows,
   ].join("\n");
+}
+
+// ── query_stats tool backend ──────────────────────────────────────────
+// Exact, server-computed aggregates for an arbitrary slice of the user's
+// trades, so Quill can look up a precise number (e.g. "win rate on NVDA PUTs
+// in July") instead of eyeballing the row list. All fields are optional and
+// AND-combined. Dates match a trade's "bucket day" (exit day for closed,
+// entry day for open) — the same attribution the snapshot uses.
+export type QueryStatsFilter = {
+  symbol?: string;
+  strategy?: string;
+  tag?: string;
+  option?: "CALL" | "PUT";
+  status?: "WIN" | "LOSS" | "OPEN";
+  startDate?: string; // yyyy-mm-dd inclusive
+  endDate?: string; // yyyy-mm-dd inclusive
+  weekday?: string; // entry weekday name, e.g. "Monday"
+};
+
+export function computeQueryStats(trades: LeanTrade[], f: QueryStatsFilter) {
+  const round = (n: number) => Math.round(n * 100) / 100;
+  const bucketDay = (t: LeanTrade) => {
+    const src = isClosedTrade(t) && t.dateClosed ? t.dateClosed : t.dateBought;
+    return new Date(src).toISOString().slice(0, 10);
+  };
+
+  const sym = f.symbol?.trim().toUpperCase();
+  const strat = f.strategy?.trim().toLowerCase();
+  const tag = f.tag?.trim().toLowerCase();
+  const wday = f.weekday?.trim().toLowerCase();
+
+  const matched = trades.filter((t) => {
+    if (sym && t.symbol.toUpperCase() !== sym) return false;
+    if (strat && (t.strategy ?? "").toLowerCase() !== strat) return false;
+    if (tag && !(t.tags ?? []).some((x) => x.toLowerCase() === tag))
+      return false;
+    if (f.option && t.option !== f.option) return false;
+    if (f.status && t.status !== f.status) return false;
+    if (f.startDate && bucketDay(t) < f.startDate) return false;
+    if (f.endDate && bucketDay(t) > f.endDate) return false;
+    if (wday) {
+      const d = new Date(t.dateBought);
+      if (Number.isNaN(d.getTime())) return false;
+      if (WEEKDAY_NAMES[d.getUTCDay()].toLowerCase() !== wday) return false;
+    }
+    return true;
+  });
+
+  const closed = matched.filter(isClosedTrade);
+  const s = coreStats(closed);
+  return {
+    ok: true as const,
+    filters: f,
+    matched: matched.length,
+    open: matched.length - closed.length,
+    closed: closed.length,
+    wins: s.wins,
+    losses: s.losses,
+    winRate: round(s.winRate),
+    net: round(s.net),
+    expectancy: round(s.expectancy),
+    profitFactor: s.profitFactor == null ? null : round(s.profitFactor),
+    payoff: s.payoff == null ? null : round(s.payoff),
+    avgWin: round(s.avgWin),
+    avgLoss: round(s.avgLoss),
+    best: round(s.best),
+    worst: round(s.worst),
+    maxDrawdown: round(s.maxDrawdown),
+  };
 }
 
 // Strip HTML tags + collapse whitespace so a rich-text strategy
