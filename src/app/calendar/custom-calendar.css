@@ -54,19 +54,17 @@
   color: rgb(var(--fg-rgb) / 0.6);
   min-width: 32px;
 }
+/* Highlight the nav arrows on hover and keyboard focus only — not on the
+   sticky :focus a mouse click leaves behind, which otherwise kept the
+   background lit until the button blurred (user clicked elsewhere). */
 .react-calendar.custom-calendar_full-view
   .react-calendar__navigation
   button:enabled:hover,
 .react-calendar.custom-calendar_full-view
   .react-calendar__navigation
-  button:enabled:focus {
+  button:enabled:focus-visible {
   background-color: rgb(var(--fg-rgb) / 0.05) !important;
   color: rgb(var(--fg-rgb));
-}
-.react-calendar.custom-calendar_full-view
-  .react-calendar__navigation
-  button:focus {
-  background-color: transparent !important;
 }
 
 /* ─── Weekday labels ──────────────────────────────────────────────── */
