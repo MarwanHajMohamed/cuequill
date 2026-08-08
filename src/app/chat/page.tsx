@@ -692,6 +692,11 @@ function Page() {
 
   const submit = () => send(input, pendingImages);
 
+  // Whether there's anything to send. Drives the right-hand button: show the
+  // record (mic) button while the box is empty, and swap it for Send the
+  // moment the user types (or stages an image).
+  const hasContent = input.trim().length > 0 || pendingImages.length > 0;
+
   // Tap-to-talk: dictate into the input, and auto-send the phrase once the
   // user stops speaking — so a position can be closed hands-free
   // ("close my 5 SPY 600 calls at $2.30").
@@ -936,7 +941,7 @@ function Page() {
               stageFiles(e.dataTransfer.files);
             }
           }}
-          className="fixed left-5 right-5 z-30 bottom-[calc(74px+env(safe-area-inset-bottom))] bg-[var(--background)]/85 backdrop-blur-md md:static md:left-auto md:right-auto md:bottom-auto md:mt-3 md:bg-white/[0.04] md:backdrop-blur-0 flex flex-col gap-2 rounded-2xl border border-white/10 px-3 py-2"
+          className="fixed left-5 right-5 z-30 bottom-[calc(74px+env(safe-area-inset-bottom))] bg-[var(--background)]/85 backdrop-blur-md md:static md:left-auto md:right-auto md:bottom-auto md:mt-3 md:bg-white/[0.04] md:backdrop-blur-0 flex flex-col gap-1.5 rounded-3xl border border-white/10 px-2 py-1.5"
         >
           {/* Staged screenshot thumbnails, removable before send. */}
           {pendingImages.length > 0 && (
@@ -1006,28 +1011,10 @@ function Page() {
               disabled={pendingImages.length >= MAX_IMAGES || streaming}
               title="Attach a screenshot"
               aria-label="Attach a screenshot"
-              className="shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-full border border-white/10 bg-white/[0.02] text-white/50 hover:bg-white/[0.06] hover:text-white/80 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full border border-white/10 bg-white/[0.02] text-white/50 hover:bg-white/[0.06] hover:text-white/80 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              <i className="fa-solid fa-paperclip text-[13px]" />
+              <i className="fa-solid fa-paperclip text-[12px]" />
             </button>
-            {speech.supported && (
-              <button
-                type="button"
-                onClick={speech.toggle}
-                disabled={streaming}
-                title={speech.listening ? "Stop listening" : "Speak to Quill"}
-                aria-label={
-                  speech.listening ? "Stop listening" : "Speak to Quill"
-                }
-                className={`shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-full border transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
-                  speech.listening
-                    ? "bg-red-500/20 text-red-300 border-red-500/40 animate-pulse"
-                    : "bg-white/[0.02] text-white/50 border-white/10 hover:bg-white/[0.06] hover:text-white/80"
-                }`}
-              >
-                <i className="fa-solid fa-microphone text-[13px]" />
-              </button>
-            )}
             <textarea
               ref={inputRef}
               value={input}
@@ -1038,22 +1025,42 @@ function Page() {
               placeholder="Ask about your trades…"
               className="flex-1 resize-none bg-transparent text-[14px] text-white placeholder:text-white/35 placeholder:text-[12px] focus:outline-none py-1.5 max-h-[160px]"
             />
-            <button
-              type="submit"
-              disabled={(!input.trim() && pendingImages.length === 0) || streaming}
-              className={`shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-full border transition ${
-                (!input.trim() && pendingImages.length === 0) || streaming
-                  ? "bg-white/[0.02] text-white/30 border-white/10 cursor-not-allowed"
-                  : "bg-teal-500/15 text-teal-300 border-teal-500/25 hover:bg-teal-500/25 cursor-pointer"
-              }`}
-              aria-label="Send"
-            >
-              {streaming ? (
-                <i className="fa-solid fa-circle-notch text-[12px] animate-spin" />
-              ) : (
-                <i className="fa-solid fa-chevron-up text-[12px]" />
-              )}
-            </button>
+            {/* Record button while the box is empty; swaps to Send as soon as
+                there's something to send (or while a reply is streaming). */}
+            {!hasContent && !streaming && speech.supported ? (
+              <button
+                type="button"
+                onClick={speech.toggle}
+                title={speech.listening ? "Stop listening" : "Speak to Quill"}
+                aria-label={
+                  speech.listening ? "Stop listening" : "Speak to Quill"
+                }
+                className={`shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full border transition cursor-pointer ${
+                  speech.listening
+                    ? "bg-red-500/20 text-red-300 border-red-500/40 animate-pulse"
+                    : "bg-white/[0.02] text-white/50 border-white/10 hover:bg-white/[0.06] hover:text-white/80"
+                }`}
+              >
+                <i className="fa-solid fa-microphone text-[12px]" />
+              </button>
+            ) : (
+              <button
+                type="submit"
+                disabled={!hasContent || streaming}
+                className={`shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full border transition ${
+                  !hasContent || streaming
+                    ? "bg-white/[0.02] text-white/30 border-white/10 cursor-not-allowed"
+                    : "bg-teal-500/15 text-teal-300 border-teal-500/25 hover:bg-teal-500/25 cursor-pointer"
+                }`}
+                aria-label="Send"
+              >
+                {streaming ? (
+                  <i className="fa-solid fa-circle-notch text-[12px] animate-spin" />
+                ) : (
+                  <i className="fa-solid fa-chevron-up text-[12px]" />
+                )}
+              </button>
+            )}
           </div>
         </form>
 
