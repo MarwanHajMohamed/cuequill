@@ -745,16 +745,13 @@ function Page() {
               onClick={() => send(s.prompt)}
               className="group text-left rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/20 transition px-3.5 py-3 cursor-pointer"
             >
-              <div className="flex items-center gap-2.5 mb-0.5">
+              <div className="flex items-center gap-2.5">
                 <i
                   className={`${s.icon} text-[11px] text-teal-300/80 group-hover:text-teal-300 transition`}
                 />
                 <span className="text-[13px] font-medium text-white">
                   {s.title}
                 </span>
-              </div>
-              <div className="text-[11.5px] text-white/45 leading-snug">
-                {s.body}
               </div>
             </button>
           ))}
