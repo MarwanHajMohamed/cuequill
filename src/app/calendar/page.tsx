@@ -20,7 +20,9 @@ import {
 } from "date-fns";
 import { useSession } from "next-auth/react";
 import React, { useLayoutEffect, useMemo, useRef, useState } from "react";
-import DayTradesModal from "../dashboard/components/modals/DayTradesModal";
+import DayTradesModal, {
+  type DayEvent,
+} from "../dashboard/components/modals/DayTradesModal";
 import TradeModal from "../dashboard/components/modals/TradeModal";
 import { useQueryClient } from "@tanstack/react-query";
 import { Trade } from "../types/Trades";
@@ -153,9 +155,10 @@ function Page() {
     false,
   );
   const { data: watchlist = [] } = useWatchlist();
-  // Only fetch earnings while extended mode is on — the hook no-ops on
-  // an empty symbol list.
-  const { data: earnings = [] } = useEarnings(detailed ? watchlist : []);
+  // Fetch earnings whenever there's a watchlist so the day-detail modal can
+  // always list them (the tile overlay is still gated on extended mode). The
+  // query is shared/cached with the dashboard, so this is usually a cache hit.
+  const { data: earnings = [] } = useEarnings(watchlist);
 
   // "yyyy-MM-dd" → symbols reporting that day (watchlist only).
   const earningsByDay = useMemo(() => {
@@ -360,11 +363,43 @@ function Page() {
         ? yearShareStats()
         : monthShareStats();
 
+  // Economic events + watchlist earnings landing on a day, for the day-detail
+  // modal — mirrors the dashboard calendar's getDayEvents.
+  const getDayEvents = (date: Date): DayEvent[] => {
+    const s = format(date, "yyyy-MM-dd");
+    const evs: DayEvent[] = [];
+    if (fedDates.meetings.has(s))
+      evs.push({ kind: "fed", label: "FOMC meeting" });
+    if (fedDates.minutes.has(s))
+      evs.push({ kind: "fed", label: "FOMC minutes" });
+    if (cpiDates.has(s)) evs.push({ kind: "cpi", label: "CPI release" });
+    if (ppiDates.has(s)) evs.push({ kind: "ppi", label: "PPI release" });
+    if (pceDates.has(s)) evs.push({ kind: "pce", label: "PCE release" });
+    const h = holidays.get(s);
+    if (h) {
+      evs.push({
+        kind: "holiday",
+        label: h.name,
+        detail: h.early ? "early close · 1:00pm ET" : "market closed",
+      });
+    }
+    for (const e of earningsByDay.get(s) ?? []) {
+      evs.push({
+        kind: "earnings",
+        label: `${e.symbol} earnings`,
+        detail: e.isEstimate ? "estimated" : undefined,
+      });
+    }
+    return evs;
+  };
+
   const handleDateClick = (date: Date) => {
     setSelectedDate(date);
     const dayStr = format(date, "yyyy-MM-dd");
     const dayTrades = trades?.filter((t) => bucketDateFor(t) === dayStr) ?? [];
-    if (dayTrades.length > 0) {
+    // Open the day detail when there are trades OR events to show; otherwise
+    // jump straight to adding a trade for an empty day.
+    if (dayTrades.length > 0 || getDayEvents(date).length > 0) {
       setDayListOpen(true);
     } else {
       setEditingTrade(null);
@@ -377,6 +412,12 @@ function Page() {
     const dayStr = format(selectedDate, "yyyy-MM-dd");
     return trades.filter((t) => bucketDateFor(t) === dayStr);
   }, [selectedDate, trades]);
+
+  const eventsForSelectedDay = useMemo(
+    () => (selectedDate ? getDayEvents(selectedDate) : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [selectedDate, fedDates, cpiDates, ppiDates, pceDates, holidays, earningsByDay],
+  );
 
   // Per-week summaries for the displayed month - used by the sidebar.
   // Buckets trades by the date string (yyyy-MM-dd) prefix of dateBought, the
@@ -1202,6 +1243,7 @@ function Page() {
         <DayTradesModal
           date={selectedDate}
           trades={tradesForSelectedDay}
+          events={eventsForSelectedDay}
           onClose={() => setDayListOpen(false)}
           onAddTrade={() => {
             setDayListOpen(false);
