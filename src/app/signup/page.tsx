@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { getProviders, signIn } from "next-auth/react";
 
 // Pre-launch signup. Cuequill is currently invite-only, so instead of
 // creating a real account this collects an email into the waitlist
@@ -35,6 +36,15 @@ function SignupInner() {
   // Set when NextAuth's OAuth signIn callback bounces a user here
   // because their Google/Apple email isn't on the waitlist yet.
   const oauthNotInvited = searchParams.get("reason") === "oauth-not-invited";
+
+  // Google sign-up: only offered when the provider is configured server-side.
+  // An invited email creates an account and lands on /dashboard; anyone else
+  // is bounced back here with the not-invited notice above.
+  const [googleAvailable, setGoogleAvailable] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  useEffect(() => {
+    getProviders().then((p) => setGoogleAvailable(!!p?.google));
+  }, []);
 
   const canSubmit =
     email.trim().length > 0 && state.kind !== "submitting";
@@ -134,6 +144,32 @@ function SignupInner() {
                   email below to request access.
                 </span>
               </div>
+            )}
+
+            {googleAvailable && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setGoogleLoading(true);
+                    signIn("google", { callbackUrl: "/dashboard" });
+                  }}
+                  disabled={googleLoading}
+                  className="w-full inline-flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-full border border-white/15 bg-white text-black hover:bg-white/90 transition text-[13.5px] font-medium cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {googleLoading ? (
+                    <i className="fa-solid fa-circle-notch animate-spin text-[12px]" />
+                  ) : (
+                    <i className="fa-brands fa-google text-[13px]" />
+                  )}
+                  Sign up with Google
+                </button>
+                <div className="flex items-center gap-3 my-5 text-[10.5px] tracking-[0.12em] text-white/35">
+                  <div className="flex-1 h-px bg-white/10" />
+                  OR JOIN THE WAITLIST
+                  <div className="flex-1 h-px bg-white/10" />
+                </div>
+              </>
             )}
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">

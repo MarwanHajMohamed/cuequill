@@ -2,7 +2,9 @@ import mongoose, { Schema, Document } from "mongoose";
 
 export interface IUser extends Document {
   email: string;
-  password: string;
+  // Optional: OAuth-only accounts (e.g. Sign up with Google) have no
+  // password. Credentials login is blocked for such users (see auth.ts).
+  password?: string;
   // Account lockout counters, incremented by the sign-in flow. The
   // `authorize` callback rejects logins while `lockedUntil` is in the
   // future so a single account can't be brute-forced even without
@@ -176,7 +178,7 @@ const UserSchema = new Schema<IUser>({
   // select:false → the hash is never returned by default queries.
   // The two callsites that legitimately need it (sign-in verification
   // and password change) opt in with `.select("+password")`.
-  password: { type: String, required: true, select: false },
+  password: { type: String, required: false, select: false },
   failedLoginAttempts: { type: Number, default: 0 },
   lockedUntil: { type: Date },
   firstname: { type: String, required: true },

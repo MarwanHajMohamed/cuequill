@@ -3,6 +3,7 @@ import GoogleProvider from "next-auth/providers/google";
 import AppleProvider from "next-auth/providers/apple";
 import connectDb from "@/lib/db";
 import { User } from "@/lib/models/User";
+import { Waitlist } from "@/lib/models/Waitlist";
 import bcrypt from "bcryptjs";
 import { NextAuthOptions } from "next-auth";
 import type { Provider } from "next-auth/providers/index";
@@ -27,12 +28,25 @@ type DbUser = {
   firstname: string;
   surname: string;
   email: string;
-  password: string;
+  password?: string; // absent for OAuth-only (e.g. Google) accounts
   timezone: string;
   isPro?: boolean;
   failedLoginAttempts?: number;
   lockedUntil?: Date | null;
 };
+
+// Split a Google display name ("Marwan Haj Mohammed") into first + surname,
+// falling back to the waitlist first name (or a neutral default) when Google
+// doesn't share a name.
+function splitName(
+  name: string | null | undefined,
+  fallbackFirst?: string,
+): { first: string; last: string } {
+  const n = (name ?? "").trim();
+  if (!n) return { first: fallbackFirst?.trim() || "Trader", last: "" };
+  const parts = n.split(/\s+/);
+  return { first: parts[0], last: parts.slice(1).join(" ") };
+}
 
 // How long a token's isPro value is trusted before the jwt callback
 // re-reads it from the DB. Bounds how long a membership change can lag
@@ -115,6 +129,13 @@ providers.push(
         return null;
       }
 
+      // OAuth-only account (signed up with Google, no password set). Burn a
+      // compare cycle for timing parity and reject — they must use Google.
+      if (!user.password) {
+        await bcrypt.compare(password, DUMMY_HASH);
+        return null;
+      }
+
       // Account locked from a prior burst of bad guesses. Throwing
       // (rather than returning null) surfaces the specific code to
       // the client via res.error so the login UI can show a
@@ -183,10 +204,11 @@ export const authOptions: NextAuthOptions = {
   },
   secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
-    // Gate OAuth sign-ins to users already on the platform. The
-    // app is invite-only; letting a Google user auto-create an
-    // account would side-step the waitlist funnel. Unknown OAuth
-    // emails get redirected to /signup with a reason param.
+    // OAuth sign-in / sign-up gate. Existing users sign in. New Google
+    // users can create an account only if their email has been invited off
+    // the waitlist (invitedAt set) — the app stays invite-only, but invited
+    // users can self-serve with Google instead of a set-password flow.
+    // Everyone else is bounced to /signup with a reason param.
     async signIn({ user, account }) {
       if (!account) return false;
       if (account.provider === "credentials") return true;
@@ -196,7 +218,27 @@ export const authOptions: NextAuthOptions = {
       const existing = await User.findOne({ email })
         .collation(EMAIL_COLLATION)
         .select("_id");
-      if (!existing) return "/signup?reason=oauth-not-invited";
+      if (existing) return true;
+
+      // Not a user yet — allow account creation only for an invited
+      // waitlist entry.
+      const invited = await Waitlist.findOne({ email })
+        .collation(EMAIL_COLLATION)
+        .select("invitedAt firstname")
+        .lean<{ invitedAt?: Date; firstname?: string }>();
+      if (!invited?.invitedAt) return "/signup?reason=oauth-not-invited";
+
+      const { first, last } = splitName(user.name, invited.firstname);
+      try {
+        await User.create({ email, firstname: first, surname: last });
+      } catch {
+        // A concurrent sign-in (two tabs) may have created it already;
+        // treat an existing row as success, otherwise fail the flow.
+        const now = await User.findOne({ email })
+          .collation(EMAIL_COLLATION)
+          .select("_id");
+        if (!now) return "/login?error=OAuthCreateFailed";
+      }
       return true;
     },
     async jwt({ token, user, account, trigger, session }) {
