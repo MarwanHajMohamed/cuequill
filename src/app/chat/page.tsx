@@ -941,7 +941,7 @@ function Page() {
               stageFiles(e.dataTransfer.files);
             }
           }}
-          className="fixed left-5 right-5 z-30 bottom-[calc(74px+env(safe-area-inset-bottom))] bg-[var(--background)]/85 backdrop-blur-md md:static md:left-auto md:right-auto md:bottom-auto md:mt-3 md:bg-white/[0.04] md:backdrop-blur-0 flex flex-col gap-1.5 rounded-3xl border border-white/10 px-2 py-1.5"
+          className="fixed left-5 right-5 z-30 bottom-[calc(74px+env(safe-area-inset-bottom))] bg-[var(--background)]/85 backdrop-blur-md md:static md:left-auto md:right-auto md:bottom-auto md:mt-3 md:w-3/5 md:mx-auto md:bg-white/[0.04] md:backdrop-blur-0 flex flex-col gap-1.5 rounded-3xl border border-white/10 px-2 py-1.5"
         >
           {/* Staged screenshot thumbnails, removable before send. */}
           {pendingImages.length > 0 && (
