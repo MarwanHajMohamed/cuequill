@@ -83,8 +83,6 @@ export default function DayTradesModal({
   const closed = trades.filter(
     (t) => t.status === "WIN" || t.status === "LOSS",
   );
-  const wins = closed.filter((t) => t.status === "WIN").length;
-  const losses = closed.filter((t) => t.status === "LOSS").length;
   const opens = trades.filter((t) => t.status === "OPEN").length;
   const netPL = closed.reduce((sum, t) => sum + tradeNetPL(t), 0);
   const showNet = closed.length > 0;
@@ -116,7 +114,7 @@ export default function DayTradesModal({
           animate={{ y: 0, opacity: 1, scale: 1 }}
           exit={{ y: 14, opacity: 0, scale: 0.98 }}
           transition={{ type: "spring", stiffness: 380, damping: 32 }}
-          className="relative flex flex-col bg-[var(--surface)] border border-white/10 rounded-3xl w-full max-w-md text-white max-h-[88vh] overflow-hidden shadow-[0_24px_80px_var(--shadow)]"
+          className="relative flex flex-col bg-[var(--background)] border border-white/10 rounded-3xl w-full max-w-md text-white max-h-[88vh] overflow-hidden shadow-[0_24px_80px_var(--shadow)]"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Top accent hairline */}
@@ -163,39 +161,21 @@ export default function DayTradesModal({
                   />
                   {fmtMoneySignedCompact(netPL)}
                 </div>
-                <div className="pb-1 text-[11px] uppercase tracking-wider text-white/40 font-medium">
-                  Net P/L
-                </div>
               </div>
-            ) : (
+            ) : opens > 0 ? (
               <div className="mt-3 text-[13px] text-white/55">
-                {opens > 0
-                  ? `${opens} open ${opens === 1 ? "position" : "positions"} — no closes yet`
-                  : "No closed trades"}
+                {opens} open {opens === 1 ? "position" : "positions"} — no closes
+                yet
               </div>
-            )}
+            ) : null}
 
-            {/* Outcome chips */}
-            {(wins > 0 || losses > 0 || opens > 0) && (
+            {/* Open-positions chip */}
+            {opens > 0 && (
               <div className="mt-3.5 flex flex-wrap items-center gap-2">
-                {wins > 0 && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11.5px] font-semibold bg-green-500/15 text-green-300 border border-green-400/30">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
-                    {wins} {wins === 1 ? "win" : "wins"}
-                  </span>
-                )}
-                {losses > 0 && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11.5px] font-semibold bg-red-500/15 text-red-300 border border-red-400/30">
-                    <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
-                    {losses} {losses === 1 ? "loss" : "losses"}
-                  </span>
-                )}
-                {opens > 0 && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11.5px] font-semibold bg-orange-500/15 text-orange-300 border border-orange-400/30">
-                    <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
-                    {opens} open
-                  </span>
-                )}
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11.5px] font-semibold bg-orange-500/15 text-orange-300 border border-orange-400/30">
+                  <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
+                  {opens} open
+                </span>
               </div>
             )}
           </div>
@@ -203,9 +183,6 @@ export default function DayTradesModal({
           {/* Events on this day */}
           {events.length > 0 && (
             <div className="shrink-0 px-5 pb-4 pt-1">
-              <div className="text-[11px] tracking-wide text-white/40 font-semibold mb-2">
-                On this day
-              </div>
               <div className="flex flex-col gap-1.5">
                 {events.map((ev, i) => {
                   const s = EVENT_STYLE[ev.kind];
