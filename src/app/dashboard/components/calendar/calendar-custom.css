@@ -46,6 +46,12 @@
   background-color: rgb(var(--fg-rgb) / 0.05) !important;
   color: rgb(var(--fg-rgb));
 }
+/* Cancel react-calendar's default light (#e6e6e6) focus background left on
+   the arrow after a mouse click — but only for mouse focus, so keyboard
+   focus-visible keeps its highlight above. */
+.react-calendar .react-calendar__navigation button:focus:not(:focus-visible) {
+  background-color: transparent !important;
+}
 
 /* Weekday labels (Mon Tue Wed ...) */
 .react-calendar .react-calendar__month-view__weekdays {
