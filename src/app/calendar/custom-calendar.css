@@ -152,7 +152,9 @@
 .react-calendar.custom-calendar_full-view .react-calendar__month-view__days {
   display: grid !important;
   grid-template-columns: repeat(5, 1fr) !important;
-  grid-auto-rows: minmax(110px, 1fr) !important;
+  /* Fixed row height so every week is the same height — minmax(…,1fr) let a
+     busier week grow taller than the others and made the grid uneven. */
+  grid-auto-rows: 116px !important;
   gap: 4px;
   margin: 0;
   overflow: hidden;
@@ -194,7 +196,11 @@
   .react-calendar__century-view__decades {
   display: grid !important;
   grid-template-columns: repeat(4, 1fr) !important;
-  gap: 6px;
+  /* Fixed row height so every tile is the same height regardless of whether
+     the month has trades — otherwise empty (e.g. future) months collapse
+     shorter than the filled ones and the grid looks ragged. */
+  grid-auto-rows: 92px !important;
+  gap: 8px;
 }
 .react-calendar.custom-calendar_full-view
   .react-calendar__year-view__months__month,
@@ -203,17 +209,23 @@
 .react-calendar.custom-calendar_full-view
   .react-calendar__century-view__decades__decade {
   position: relative;
-  background: transparent;
+  /* Center the label + P/L within the fixed-height tile so content never
+     clips against the edge, and read like a dashboard card. */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 100%;
+  background: rgb(var(--fg-rgb) / 0.02);
   color: rgb(var(--fg-rgb));
-  border: 1px solid transparent;
-  border-radius: 8px;
-  padding: 14px 0;
+  border: 1px solid rgb(var(--fg-rgb) / 0.08);
+  border-radius: 10px;
+  padding: 6px 4px;
   font-size: 14px;
   font-weight: 500;
+  overflow: hidden;
   transition: background-color 120ms ease, border-color 120ms ease;
-  /* Day-grid tiles have explicit height; month/year tiles use padding
-     so they read like dashboard cards instead of squat buttons. */
-  min-height: 64px;
 }
 .react-calendar.custom-calendar_full-view
   .react-calendar__year-view__months__month:enabled:hover,
