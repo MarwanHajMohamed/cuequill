@@ -11,6 +11,7 @@ import { useWatchlist } from "@/hooks/useWatchlist";
 import { useEarnings } from "@/hooks/useEarnings";
 import { useTrades } from "@/hooks/useTrades";
 import { useProfile } from "@/hooks/useProfile";
+import { useBalanceTimeline } from "@/hooks/useBalanceTimeline";
 import {
   addDays,
   endOfMonth,
@@ -145,6 +146,9 @@ function Page() {
   const { data: trades } = useTrades(userId, simulated);
   const { data: profile } = useProfile();
   const startingBalance = profile?.startingBalance ?? 0;
+  // Running account balance (starting balance + deposits/withdrawals + realised
+  // P/L), in date order — the basis for each month's return %.
+  const { points: balancePoints } = useBalanceTimeline();
   const fedDates = useFedDates();
   const cpiDates = useCpiDates();
   const pceDates = usePceDates();
@@ -893,23 +897,29 @@ function Page() {
     return map;
   }, [trades]);
 
-  // Each month's return as a % of the account balance at the START of that
-  // month (starting balance compounded by earlier months' realised P/L), so
-  // later months aren't measured against the original balance. Trading P/L
-  // only (deposits/withdrawals aren't factored in). Empty when there's no
-  // starting balance to measure against.
+  // Each month's return as a % of the ACCOUNT BALANCE at the start of that
+  // month (starting balance + deposits/withdrawals + realised P/L up to then),
+  // so later months aren't measured against the original balance and it works
+  // for deposit-funded accounts too. Skipped for simulated trades (no real
+  // balance) and any month whose start-of-month balance isn't positive.
   const monthPctByKey = useMemo(() => {
     const map = new Map<string, number>();
-    if (startingBalance <= 0) return map;
+    if (simulated) return map;
     const keys = Array.from(tradesByMonth.keys()).sort(); // chronological
-    let running = startingBalance;
     for (const key of keys) {
+      const firstDay = `${key}-01`;
+      // Balance as of the last event strictly before this month; falls back to
+      // the opening balance when nothing precedes it.
+      let base = startingBalance;
+      for (const p of balancePoints) {
+        if (p.date < firstDay) base = p.balance;
+        else break;
+      }
       const m = tradesByMonth.get(key)!;
-      if (running > 0) map.set(key, (m.netPL / running) * 100);
-      running += m.netPL;
+      if (base > 0) map.set(key, (m.netPL / base) * 100);
     }
     return map;
-  }, [tradesByMonth, startingBalance]);
+  }, [tradesByMonth, balancePoints, startingBalance, simulated]);
 
   // Per-year aggregates for the decade (years) drill-up view.
   const tradesByYear = useMemo(() => {
