@@ -1103,6 +1103,15 @@ function Page() {
                       year: "numeric",
                     })}`;
                 const positive = summary.netPL >= 0;
+                // Month-view only: this month's return %, on the same basis as
+                // the year-view tiles.
+                const monthKey = `${displayedMonth.getFullYear()}-${String(
+                  displayedMonth.getMonth() + 1,
+                ).padStart(2, "0")}`;
+                const pct =
+                  !isWeek && summary.closedCount > 0
+                    ? monthPctByKey.get(monthKey)
+                    : undefined;
                 return (
                   <div className="flex flex-col gap-0.5">
                     <div className="text-[10px] md:text-[11px] tracking-[0.1em] text-white/40 font-medium">
@@ -1120,6 +1129,12 @@ function Page() {
                       {summary.closedCount === 0
                         ? "-"
                         : `${positive ? "" : "-"}${fmtMoneyFull(Math.abs(summary.netPL))}`}
+                      {pct != null && (
+                        <span className="ml-2 text-[12px] md:text-[14px] opacity-70">
+                          ({pct >= 0 ? "+" : ""}
+                          {pct.toFixed(1)}%)
+                        </span>
+                      )}
                     </div>
                   </div>
                 );
