@@ -10,6 +10,7 @@ import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useWatchlist } from "@/hooks/useWatchlist";
 import { useEarnings } from "@/hooks/useEarnings";
 import { useTrades } from "@/hooks/useTrades";
+import { useProfile } from "@/hooks/useProfile";
 import {
   addDays,
   endOfMonth,
@@ -142,6 +143,8 @@ function Page() {
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
 
   const { data: trades } = useTrades(userId, simulated);
+  const { data: profile } = useProfile();
+  const startingBalance = profile?.startingBalance ?? 0;
   const fedDates = useFedDates();
   const cpiDates = useCpiDates();
   const pceDates = usePceDates();
@@ -555,6 +558,8 @@ function Page() {
     if (view === "year") {
       const { total, closedCount, netPL } = getMonthSummary(date);
       if (total === 0) return null;
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      const pct = monthPctByKey.get(key);
       return (
         <div className="mt-1 flex flex-col items-center gap-0.5 text-[10px] md:text-xs">
           {closedCount > 0 ? (
@@ -564,6 +569,12 @@ function Page() {
               }`}
             >
               {fmtMoneySignedCompact(netPL)}
+              {pct != null && (
+                <span className="ml-1 text-[9px] md:text-[10px] opacity-70">
+                  ({pct >= 0 ? "+" : ""}
+                  {pct.toFixed(1)}%)
+                </span>
+              )}
             </div>
           ) : (
             <div className="font-semibold text-orange-400">Open</div>
@@ -881,6 +892,24 @@ function Page() {
     }
     return map;
   }, [trades]);
+
+  // Each month's return as a % of the account balance at the START of that
+  // month (starting balance compounded by earlier months' realised P/L), so
+  // later months aren't measured against the original balance. Trading P/L
+  // only (deposits/withdrawals aren't factored in). Empty when there's no
+  // starting balance to measure against.
+  const monthPctByKey = useMemo(() => {
+    const map = new Map<string, number>();
+    if (startingBalance <= 0) return map;
+    const keys = Array.from(tradesByMonth.keys()).sort(); // chronological
+    let running = startingBalance;
+    for (const key of keys) {
+      const m = tradesByMonth.get(key)!;
+      if (running > 0) map.set(key, (m.netPL / running) * 100);
+      running += m.netPL;
+    }
+    return map;
+  }, [tradesByMonth, startingBalance]);
 
   // Per-year aggregates for the decade (years) drill-up view.
   const tradesByYear = useMemo(() => {
