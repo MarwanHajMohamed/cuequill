@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
@@ -31,6 +31,44 @@ export default function TradesTab({
   const toast = useToast();
   const [simulated] = useLocalStorage<boolean>("simulated", false);
 
+  // Cuequill "All trades" CSV round-trip import (self-contained; separate
+  // from the IBKR Flex import wired through the parent page).
+  const cqInputRef = useRef<HTMLInputElement>(null);
+  const [cqFile, setCqFile] = useState<File | null>(null);
+  const [cqStatus, setCqStatus] = useState("");
+  const [cqBusy, setCqBusy] = useState(false);
+  const cqError = cqStatus.toLowerCase().startsWith("error");
+  const cqSuccess = cqStatus.toLowerCase().startsWith("imported");
+
+  const handleCuequillUpload = async () => {
+    if (!cqFile) return;
+    setCqBusy(true);
+    setCqStatus("Uploading…");
+    try {
+      const fd = new FormData();
+      fd.append("file", cqFile);
+      const res = await fetch("/api/import-trades/cuequill", {
+        method: "POST",
+        body: fd,
+      });
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setCqStatus(`Error: ${result.error ?? "Import failed"}`);
+        return;
+      }
+      const bits = [`Imported ${result.inserted}`];
+      if (result.duplicates) bits.push(`${result.duplicates} already existed`);
+      if (result.skipped) bits.push(`${result.skipped} skipped`);
+      setCqStatus(bits.join(" · "));
+      setCqFile(null);
+      queryClient.invalidateQueries({ queryKey: ["trades", userId] });
+    } catch {
+      setCqStatus("Error: Network error. Try again.");
+    } finally {
+      setCqBusy(false);
+    }
+  };
+
   const [confirmOpen, setConfirmOpen] = useState(false);
   // Type "delete" before the destructive button enables; saves you from
   // wiping the journal with a misclick.
@@ -53,7 +91,7 @@ export default function TradesTab({
       {/* Header */}
       <section className="flex flex-col gap-2">
         <div className="text-[11px] tracking-[0.1em] text-teal-400/80 font-medium">
-          Import trades
+          Import from IBKR
         </div>
         <p className="text-[13px] md:text-[14px] text-white/70 leading-relaxed">
           One-time CSV import from your IBKR Flex Query. For ongoing automated
@@ -171,6 +209,89 @@ export default function TradesTab({
             }`}
           >
             {status}
+          </div>
+        )}
+      </section>
+
+      {/* Import from a Cuequill export */}
+      <section className="flex flex-col gap-3 border-t border-white/[0.06] pt-6">
+        <div className="text-[11px] tracking-[0.1em] text-teal-400/80 font-medium">
+          Import from a Cuequill export
+        </div>
+        <p className="text-[13px] md:text-[14px] text-white/70 leading-relaxed">
+          Restore or move your journal from a CSV you exported here via{" "}
+          <span className="text-white">Reports &rsaquo; All trades &rsaquo; Download CSV</span>.
+          Trades that already exist are skipped, so re-importing the same file
+          won&apos;t create duplicates.
+        </p>
+
+        <input
+          type="file"
+          accept=".csv,text/csv"
+          ref={cqInputRef}
+          className="hidden"
+          onChange={(e) => {
+            if (e.target.files?.[0]) {
+              setCqFile(e.target.files[0]);
+              setCqStatus("");
+            }
+          }}
+        />
+
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => cqInputRef.current?.click()}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/80 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer"
+          >
+            <i className="fa-solid fa-file-arrow-up text-[11px]" />
+            Choose CSV
+          </button>
+          <button
+            onClick={handleCuequillUpload}
+            disabled={!cqFile || cqBusy}
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border transition text-[13px] font-medium ${
+              cqFile && !cqBusy
+                ? "bg-teal-500/15 text-teal-300 border-teal-500/25 hover:bg-teal-500/25 cursor-pointer"
+                : "bg-white/[0.02] text-white/30 border-white/10 cursor-not-allowed"
+            }`}
+          >
+            <i
+              className={`fa-solid ${
+                cqBusy ? "fa-circle-notch animate-spin" : "fa-arrow-up-from-bracket"
+              } text-[11px]`}
+            />
+            Import
+          </button>
+        </div>
+
+        {cqFile && (
+          <div className="inline-flex self-start items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-white/[0.03] text-[12px]">
+            <i className="fa-regular fa-file text-white/55 text-[11px]" />
+            <span className="text-white/85 truncate max-w-[280px]">
+              {cqFile.name}
+            </span>
+            <button
+              type="button"
+              onClick={() => setCqFile(null)}
+              className="text-white/40 hover:text-white transition cursor-pointer"
+              aria-label="Remove file"
+            >
+              <i className="fa-solid fa-xmark text-[10px]" />
+            </button>
+          </div>
+        )}
+
+        {cqStatus && (
+          <div
+            className={`text-[12.5px] px-3 py-2 rounded-xl border ${
+              cqError
+                ? "bg-red-500/10 text-red-300 border-red-500/25"
+                : cqSuccess
+                  ? "bg-green-500/10 text-green-300 border-green-500/25"
+                  : "bg-white/[0.03] text-white/65 border-white/10"
+            }`}
+          >
+            {cqStatus}
           </div>
         )}
       </section>
