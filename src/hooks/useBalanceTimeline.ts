@@ -38,7 +38,14 @@ export function useBalanceTimeline() {
 
     for (const t of transactions) {
       const day = isoDay(t.date);
-      const signed = t.type === "DEPOSIT" ? t.amount : -t.amount;
+      // DEPOSIT adds, WITHDRAW subtracts, ADJUST (reconciliation) is already a
+      // signed correction — apply it as-is.
+      const signed =
+        t.type === "DEPOSIT"
+          ? t.amount
+          : t.type === "WITHDRAW"
+            ? -t.amount
+            : t.amount;
       flowByDay.set(day, (flowByDay.get(day) ?? 0) + signed);
     }
 

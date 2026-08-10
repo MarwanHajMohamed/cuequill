@@ -12,7 +12,7 @@ type TxLean = {
   _id: mongoose.Types.ObjectId;
   date: Date;
   amount: number;
-  type: "DEPOSIT" | "WITHDRAW";
+  type: "DEPOSIT" | "WITHDRAW" | "ADJUST";
 };
 
 export async function GET() {
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (type !== "DEPOSIT" && type !== "WITHDRAW") {
+    if (type !== "DEPOSIT" && type !== "WITHDRAW" && type !== "ADJUST") {
       return NextResponse.json(
         { error: "Invalid transaction type" },
         { status: 400 }
@@ -64,10 +64,13 @@ export async function POST(req: NextRequest) {
     // No cash-only "insufficient balance" gate: the running balance now
     // includes realized trade P/L, so trading gains can fund a withdrawal
     // and the timeline is recomputed chronologically on the client anyway.
+    // ADJUST (reconciliation) keeps its sign — it's the +/- correction that
+    // snaps the balance to the actual figure; deposits/withdrawals are stored
+    // as a positive magnitude.
     const transaction = await Transaction.create({
       userID: session.user.id,
       type,
-      amount: Math.abs(amount),
+      amount: type === "ADJUST" ? amount : Math.abs(amount),
       date: new Date(date),
     });
 

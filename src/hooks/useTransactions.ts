@@ -3,8 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 export type Transaction = {
   _id: string;
   date: string; // ISO
-  amount: number;
-  type: "DEPOSIT" | "WITHDRAW";
+  amount: number; // positive for DEPOSIT/WITHDRAW; signed for ADJUST
+  type: "DEPOSIT" | "WITHDRAW" | "ADJUST";
 };
 
 const fetchTransactions = async (): Promise<Transaction[]> => {
