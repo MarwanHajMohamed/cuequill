@@ -31,6 +31,43 @@ export default function TradesTab({
   const toast = useToast();
   const [simulated] = useLocalStorage<boolean>("simulated", false);
 
+  // Tastytrade transaction-history CSV import (file-mode broker adapter).
+  const ttInputRef = useRef<HTMLInputElement>(null);
+  const [ttFile, setTtFile] = useState<File | null>(null);
+  const [ttStatus, setTtStatus] = useState("");
+  const [ttBusy, setTtBusy] = useState(false);
+  const ttError = ttStatus.toLowerCase().startsWith("error");
+  const ttSuccess = ttStatus.toLowerCase().startsWith("imported");
+
+  const handleTastytradeUpload = async () => {
+    if (!ttFile) return;
+    setTtBusy(true);
+    setTtStatus("Uploading…");
+    try {
+      const fd = new FormData();
+      fd.append("file", ttFile);
+      fd.append("broker", "tastytrade");
+      const res = await fetch("/api/brokers/import", {
+        method: "POST",
+        body: fd,
+      });
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setTtStatus(`Error: ${result.error ?? "Import failed"}`);
+        return;
+      }
+      const bits = [`Imported ${result.inserted}`];
+      if (result.skipped) bits.push(`${result.skipped} already existed`);
+      setTtStatus(bits.join(" · "));
+      setTtFile(null);
+      queryClient.invalidateQueries({ queryKey: ["trades", userId] });
+    } catch {
+      setTtStatus("Error: Network error. Try again.");
+    } finally {
+      setTtBusy(false);
+    }
+  };
+
   // Cuequill "All trades" CSV round-trip import (self-contained; separate
   // from the IBKR Flex import wired through the parent page).
   const cqInputRef = useRef<HTMLInputElement>(null);
@@ -209,6 +246,90 @@ export default function TradesTab({
             }`}
           >
             {status}
+          </div>
+        )}
+      </section>
+
+      {/* Import from Tastytrade */}
+      <section className="flex flex-col gap-3 border-t border-white/[0.06] pt-6">
+        <div className="text-[11px] tracking-[0.1em] text-teal-400/80 font-medium">
+          Import from Tastytrade
+        </div>
+        <p className="text-[13px] md:text-[14px] text-white/70 leading-relaxed">
+          In Tastytrade, open{" "}
+          <span className="text-white">History &rsaquo; Transactions</span>,
+          export your transaction history as CSV, and upload it here. Option
+          trades are matched into round-trips automatically; ones you&apos;ve
+          already imported are skipped.
+        </p>
+
+        <input
+          type="file"
+          accept=".csv,text/csv"
+          ref={ttInputRef}
+          className="hidden"
+          onChange={(e) => {
+            if (e.target.files?.[0]) {
+              setTtFile(e.target.files[0]);
+              setTtStatus("");
+            }
+          }}
+        />
+
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => ttInputRef.current?.click()}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/80 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer"
+          >
+            <i className="fa-solid fa-file-arrow-up text-[11px]" />
+            Choose CSV
+          </button>
+          <button
+            onClick={handleTastytradeUpload}
+            disabled={!ttFile || ttBusy}
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border transition text-[13px] font-medium ${
+              ttFile && !ttBusy
+                ? "bg-teal-500/15 text-teal-300 border-teal-500/25 hover:bg-teal-500/25 cursor-pointer"
+                : "bg-white/[0.02] text-white/30 border-white/10 cursor-not-allowed"
+            }`}
+          >
+            <i
+              className={`fa-solid ${
+                ttBusy ? "fa-circle-notch animate-spin" : "fa-arrow-up-from-bracket"
+              } text-[11px]`}
+            />
+            Import
+          </button>
+        </div>
+
+        {ttFile && (
+          <div className="inline-flex self-start items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-white/[0.03] text-[12px]">
+            <i className="fa-regular fa-file text-white/55 text-[11px]" />
+            <span className="text-white/85 truncate max-w-[280px]">
+              {ttFile.name}
+            </span>
+            <button
+              type="button"
+              onClick={() => setTtFile(null)}
+              className="text-white/40 hover:text-white transition cursor-pointer"
+              aria-label="Remove file"
+            >
+              <i className="fa-solid fa-xmark text-[10px]" />
+            </button>
+          </div>
+        )}
+
+        {ttStatus && (
+          <div
+            className={`text-[12.5px] px-3 py-2 rounded-xl border ${
+              ttError
+                ? "bg-red-500/10 text-red-300 border-red-500/25"
+                : ttSuccess
+                  ? "bg-green-500/10 text-green-300 border-green-500/25"
+                  : "bg-white/[0.03] text-white/65 border-white/10"
+            }`}
+          >
+            {ttStatus}
           </div>
         )}
       </section>
