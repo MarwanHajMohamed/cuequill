@@ -77,8 +77,9 @@ function Page() {
             })}
           </nav>
 
-          {/* Content */}
-          <div className="flex-1 min-w-0 min-h-[520px] rounded-2xl border border-white/10 bg-white/[0.02] md:backdrop-blur-md overflow-hidden">
+          {/* Content — sits on the page (no card); a divider separates it
+              from the tab rail (top border on mobile, left border on desktop). */}
+          <div className="flex-1 min-w-0 min-h-[520px] border-t md:border-t-0 md:border-l border-white/10">
             {settingsTabs.map((tab) =>
               selectedSetting === tab.title ? (
                 <div key={tab.title}>{tab.content}</div>
