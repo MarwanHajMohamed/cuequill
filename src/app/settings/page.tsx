@@ -53,7 +53,7 @@ function Page() {
           <h1 className="text-[24px] font-semibold tracking-tight">Settings</h1>
         </header>
 
-        <div className="mt-6 flex flex-col md:flex-row gap-6 md:gap-10">
+        <div className="mt-6 flex flex-col md:flex-row gap-6 md:gap-8">
           {/* Nav rail — sticky on desktop, a horizontal scroller on mobile */}
           <nav className="md:w-56 md:shrink-0 flex md:flex-col gap-1 overflow-x-auto md:overflow-visible md:sticky md:top-12 md:self-start">
             {settingsTabs.map((tab) => {
@@ -77,9 +77,18 @@ function Page() {
             })}
           </nav>
 
-          {/* Content — sits on the page (no card); a divider separates it
-              from the tab rail (top border on mobile, left border on desktop). */}
-          <div className="flex-1 min-w-0 min-h-[520px] border-t md:border-t-0 md:border-l border-white/10">
+          {/* Desktop divider between the tab rail and the content. Sticky +
+              fixed height so it stays in view (spanning the screen minus the
+              top/bottom margins) while the content scrolls. */}
+          <div
+            aria-hidden
+            className="hidden md:block w-px shrink-0 self-start sticky top-12 bg-white/10"
+            style={{ height: "calc(100dvh - 6rem)" }}
+          />
+
+          {/* Content — sits on the page (no card). On mobile a top border
+              divides it from the tab rail; on desktop the sticky divider does. */}
+          <div className="flex-1 min-w-0 min-h-[520px] border-t md:border-t-0 border-white/10">
             {settingsTabs.map((tab) =>
               selectedSetting === tab.title ? (
                 <div key={tab.title}>{tab.content}</div>
