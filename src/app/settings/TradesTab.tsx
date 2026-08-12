@@ -61,7 +61,7 @@ const SOURCES: ImportSource[] = [
   {
     id: "tastytrade",
     label: "Tastytrade",
-    logo: { bg: "#111827", fg: "#8fd14f", mono: "ty" },
+    logo: { img: "/tastytrade.jpg" },
     endpoint: "brokers",
     brokerId: "tastytrade",
     blurb: "Import your transaction history CSV.",
