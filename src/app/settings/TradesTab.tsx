@@ -7,113 +7,237 @@ import { useToast } from "@/hooks/useToast";
 import { useScrollLock } from "@/hooks/useScrollLock";
 import { handleDeleteAllTrades } from "@/handlers/tradeHandlers";
 
-type TradesTabProps = {
-  file: File | null;
-  status: string;
-  setFile: (file: File | null) => void;
-  fileInputRef: React.RefObject<HTMLInputElement | null>;
-  handleUpload: () => void;
+// ── Import sources ─────────────────────────────────────────────────────
+// Each source is a broker (or a Cuequill re-import). `endpoint` picks the
+// API: "ibkr" (Flex CSV), "cuequill" (All-trades re-import), or "brokers"
+// (the shared file-adapter route, keyed by `brokerId`).
+type SourceId =
+  | "ibkr"
+  | "tastytrade"
+  | "robinhood"
+  | "webull"
+  | "firstrade"
+  | "cuequill";
+
+type ImportSource = {
+  id: SourceId;
+  label: string;
+  logo: { bg: string; fg: string; mono?: string; icon?: string };
+  endpoint: "ibkr" | "cuequill" | "brokers";
+  brokerId?: string;
+  blurb: string;
+  steps: React.ReactNode[];
 };
 
-export default function TradesTab({
-  file,
-  status,
-  setFile,
-  fileInputRef,
-  handleUpload,
-}: TradesTabProps) {
-  const isError = status.toLowerCase().startsWith("error");
-  const isSuccess = status.toLowerCase().startsWith("success");
+const SOURCES: ImportSource[] = [
+  {
+    id: "ibkr",
+    label: "Interactive Brokers",
+    logo: { bg: "#d4111e", fg: "#fff", mono: "IB" },
+    endpoint: "ibkr",
+    blurb: "One-time CSV import from an IBKR Flex Query.",
+    steps: [
+      <>Log in to your IBKR account.</>,
+      <>
+        Go to{" "}
+        <span className="text-white">Performance &amp; Reports &rsaquo; Flex Queries</span>.
+      </>,
+      <>Create a new Activity Flex Query.</>,
+      <>
+        Under <span className="text-white">Trades</span>, select: Symbol, Strike,
+        Date/Time, Expiry, Put/Call, Quantity, Buy/Sell, TradePrice, Realized
+        P/L, <span className="text-white">IBCommission</span>, and{" "}
+        <span className="text-white">Taxes</span>.
+      </>,
+      <>
+        Save and run it with <span className="text-white">Format</span> ={" "}
+        <span className="text-white">CSV</span>.
+      </>,
+      <>Download the CSV and drop it below.</>,
+    ],
+  },
+  {
+    id: "tastytrade",
+    label: "Tastytrade",
+    logo: { bg: "#111827", fg: "#8fd14f", mono: "ty" },
+    endpoint: "brokers",
+    brokerId: "tastytrade",
+    blurb: "Import your transaction history CSV.",
+    steps: [
+      <>Open Tastytrade (web or desktop).</>,
+      <>
+        Go to <span className="text-white">History &rsaquo; Transactions</span>.
+      </>,
+      <>Export the transaction history as CSV.</>,
+      <>Drop the CSV below.</>,
+    ],
+  },
+  {
+    id: "robinhood",
+    label: "Robinhood",
+    logo: { bg: "#00c805", fg: "#0b1f11", mono: "Rh" },
+    endpoint: "brokers",
+    brokerId: "robinhood",
+    blurb: "Import your options activity CSV.",
+    steps: [
+      <>Open Robinhood on the web.</>,
+      <>
+        Go to <span className="text-white">Account &rsaquo; Reports &amp; statements</span>.
+      </>,
+      <>Generate/export your account activity as CSV.</>,
+      <>Drop the CSV below.</>,
+    ],
+  },
+  {
+    id: "webull",
+    label: "Webull",
+    logo: { bg: "#1c72f9", fg: "#fff", mono: "W" },
+    endpoint: "brokers",
+    brokerId: "webull",
+    blurb: "Import your filled order history CSV.",
+    steps: [
+      <>Open Webull (desktop gives the fullest export).</>,
+      <>
+        Go to <span className="text-white">Orders / Order History</span>.
+      </>,
+      <>Export your filled orders as CSV.</>,
+      <>Drop the CSV below.</>,
+    ],
+  },
+  {
+    id: "firstrade",
+    label: "Firstrade",
+    logo: { bg: "#0a4d9c", fg: "#fff", mono: "Ft" },
+    endpoint: "brokers",
+    brokerId: "firstrade",
+    blurb: "Import your account history CSV.",
+    steps: [
+      <>Log in to Firstrade.</>,
+      <>
+        Go to <span className="text-white">Accounts &rsaquo; History</span>.
+      </>,
+      <>Export your trade history as CSV.</>,
+      <>Drop the CSV below.</>,
+    ],
+  },
+  {
+    id: "cuequill",
+    label: "Cuequill",
+    logo: { bg: "linear-gradient(135deg,#14b8a6,#059669)", fg: "#fff", icon: "fa-feather-pointed" },
+    endpoint: "cuequill",
+    blurb: "Re-import a CSV you exported from Cuequill.",
+    steps: [
+      <>
+        Go to <span className="text-white">Reports &rsaquo; All trades</span>.
+      </>,
+      <>
+        Click <span className="text-white">Download CSV</span>.
+      </>,
+      <>Drop that CSV below. Trades you already have are skipped.</>,
+    ],
+  },
+];
 
+function BrokerLogo({
+  logo,
+  size = 44,
+}: {
+  logo: ImportSource["logo"];
+  size?: number;
+}) {
+  return (
+    <div
+      className="shrink-0 rounded-xl flex items-center justify-center font-bold"
+      style={{
+        width: size,
+        height: size,
+        background: logo.bg,
+        color: logo.fg,
+        fontSize: size * 0.34,
+      }}
+    >
+      {logo.icon ? (
+        <i className={`fa-solid ${logo.icon}`} style={{ fontSize: size * 0.42 }} />
+      ) : (
+        logo.mono
+      )}
+    </div>
+  );
+}
+
+export default function TradesTab() {
   const { data: session } = useSession();
   const userId = session?.user?.id;
   const queryClient = useQueryClient();
   const toast = useToast();
   const [simulated] = useLocalStorage<boolean>("simulated", false);
 
-  // Tastytrade transaction-history CSV import (file-mode broker adapter).
-  const ttInputRef = useRef<HTMLInputElement>(null);
-  const [ttFile, setTtFile] = useState<File | null>(null);
-  const [ttStatus, setTtStatus] = useState("");
-  const [ttBusy, setTtBusy] = useState(false);
-  const ttError = ttStatus.toLowerCase().startsWith("error");
-  const ttSuccess = ttStatus.toLowerCase().startsWith("imported");
+  const [selected, setSelected] = useState<ImportSource | null>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [status, setStatus] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleTastytradeUpload = async () => {
-    if (!ttFile) return;
-    setTtBusy(true);
-    setTtStatus("Uploading…");
-    try {
-      const fd = new FormData();
-      fd.append("file", ttFile);
-      fd.append("broker", "tastytrade");
-      const res = await fetch("/api/brokers/import", {
-        method: "POST",
-        body: fd,
-      });
-      const result = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setTtStatus(`Error: ${result.error ?? "Import failed"}`);
-        return;
-      }
-      const bits = [`Imported ${result.inserted}`];
-      if (result.skipped) bits.push(`${result.skipped} already existed`);
-      setTtStatus(bits.join(" · "));
-      setTtFile(null);
-      queryClient.invalidateQueries({ queryKey: ["trades", userId] });
-    } catch {
-      setTtStatus("Error: Network error. Try again.");
-    } finally {
-      setTtBusy(false);
-    }
+  const isError = status.toLowerCase().startsWith("error");
+  const isSuccess = status.toLowerCase().startsWith("imported");
+
+  const openSource = (s: ImportSource) => {
+    setSelected(s);
+    setFile(null);
+    setStatus("");
   };
 
-  // Cuequill "All trades" CSV round-trip import (self-contained; separate
-  // from the IBKR Flex import wired through the parent page).
-  const cqInputRef = useRef<HTMLInputElement>(null);
-  const [cqFile, setCqFile] = useState<File | null>(null);
-  const [cqStatus, setCqStatus] = useState("");
-  const [cqBusy, setCqBusy] = useState(false);
-  const cqError = cqStatus.toLowerCase().startsWith("error");
-  const cqSuccess = cqStatus.toLowerCase().startsWith("imported");
+  const pickFile = (f: File | null) => {
+    if (!f) return;
+    if (!/\.csv$/i.test(f.name) && f.type !== "text/csv") {
+      setStatus("Error: Please choose a .csv file.");
+      return;
+    }
+    setFile(f);
+    setStatus("");
+  };
 
-  const handleCuequillUpload = async () => {
-    if (!cqFile) return;
-    setCqBusy(true);
-    setCqStatus("Uploading…");
+  const handleImport = async () => {
+    if (!file || !selected) return;
+    setBusy(true);
+    setStatus("Uploading…");
     try {
       const fd = new FormData();
-      fd.append("file", cqFile);
-      const res = await fetch("/api/import-trades/cuequill", {
-        method: "POST",
-        body: fd,
-      });
-      const result = await res.json().catch(() => ({}));
+      fd.append("file", file);
+      let url = "/api/brokers/import";
+      if (selected.endpoint === "ibkr") {
+        url = "/api/import-trades";
+        if (userId) fd.append("userId", userId);
+      } else if (selected.endpoint === "cuequill") {
+        url = "/api/import-trades/cuequill";
+      } else {
+        fd.append("broker", selected.brokerId ?? selected.id);
+      }
+
+      const res = await fetch(url, { method: "POST", body: fd });
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setCqStatus(`Error: ${result.error ?? "Import failed"}`);
+        setStatus(`Error: ${data.error ?? "Import failed"}`);
         return;
       }
-      const bits = [`Imported ${result.inserted}`];
-      if (result.duplicates) bits.push(`${result.duplicates} already existed`);
-      if (result.skipped) bits.push(`${result.skipped} skipped`);
-      setCqStatus(bits.join(" · "));
-      setCqFile(null);
+      const bits = [`Imported ${data.inserted ?? 0}`];
+      const dupes = (data.duplicates ?? 0) + (data.skipped ?? 0);
+      if (dupes) bits.push(`${dupes} already existed`);
+      setStatus(bits.join(" · "));
+      setFile(null);
       queryClient.invalidateQueries({ queryKey: ["trades", userId] });
     } catch {
-      setCqStatus("Error: Network error. Try again.");
+      setStatus("Error: Network error. Try again.");
     } finally {
-      setCqBusy(false);
+      setBusy(false);
     }
   };
 
   const [confirmOpen, setConfirmOpen] = useState(false);
-  // Type "delete" before the destructive button enables; saves you from
-  // wiping the journal with a misclick.
   const [confirmText, setConfirmText] = useState("");
   const canDelete = confirmText.trim().toLowerCase() === "delete";
-
   useScrollLock(confirmOpen);
-
   useEffect(() => {
     if (!confirmOpen) return;
     const onKey = (e: KeyboardEvent) => {
@@ -125,300 +249,159 @@ export default function TradesTab({
 
   return (
     <div className="p-5 md:p-7 flex flex-col gap-6">
-      {/* Header */}
-      <section className="flex flex-col gap-2">
-        <div className="text-[11px] tracking-[0.1em] text-teal-400/80 font-medium">
-          Import from IBKR
-        </div>
-        <p className="text-[13px] md:text-[14px] text-white/70 leading-relaxed">
-          One-time CSV import from your IBKR Flex Query. For ongoing automated
-          imports, use the IBKR Auto-sync tab.
-        </p>
-      </section>
+      {!selected ? (
+        <section className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <div className="text-[11px] tracking-[0.1em] text-teal-400/80 font-medium">
+              Import trades
+            </div>
+            <p className="text-[13px] md:text-[14px] text-white/70 leading-relaxed">
+              Select a broker below to import from.
+            </p>
+          </div>
 
-      {/* Steps */}
-      <section className="flex flex-col gap-3">
-        <div className="text-[11px] tracking-[0.1em] text-white/45 font-medium">
-          Setup
-        </div>
-        <ol className="flex flex-col gap-2.5 text-[13px] text-white/75 leading-relaxed">
-          {[
-            <>Log in to your IBKR account.</>,
-            <>
-              Go to{" "}
-              <span className="text-white">
-                Performance &amp; Reports &rsaquo; Flex Queries
-              </span>
-              .
-            </>,
-            <>Create a new Activity Flex Query.</>,
-            <>
-              Under <span className="text-white">Trades</span>, select: Symbol,
-              Strike, Date/Time, Expiry, Put/Call, Quantity, Buy/Sell, TradePrice,
-              Realized P/L,{" "}
-              <span className="text-white">IBCommission</span>, and{" "}
-              <span className="text-white">Taxes</span>.
-            </>,
-            <>Save, then run the query.</>,
-            <>
-              Set <span className="text-white">Period</span> to{" "}
-              <span className="text-white">Year to Date</span> and{" "}
-              <span className="text-white">Format</span> to{" "}
-              <span className="text-white">CSV</span>.
-            </>,
-            <>Download the CSV and upload it below.</>,
-          ].map((step, i) => (
-            <li key={i} className="flex gap-3">
-              <span className="shrink-0 w-6 h-6 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center text-[11px] tabular-nums text-white/55 font-semibold">
-                {i + 1}
-              </span>
-              <span className="pt-0.5">{step}</span>
-            </li>
-          ))}
-        </ol>
-      </section>
-
-      {/* Upload */}
-      <section className="flex flex-col gap-3">
-        <div className="text-[11px] tracking-[0.1em] text-white/45 font-medium">
-          Upload
-        </div>
-
-        <input
-          type="file"
-          accept=".csv,text/csv"
-          ref={fileInputRef}
-          className="hidden"
-          onChange={(e) => {
-            if (e.target.files?.[0]) setFile(e.target.files[0]);
-          }}
-        />
-
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={() => fileInputRef?.current?.click()}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/80 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer"
-          >
-            <i className="fa-solid fa-file-arrow-up text-[11px]" />
-            Choose CSV
-          </button>
-          <button
-            onClick={handleUpload}
-            disabled={!file}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border transition text-[13px] font-medium ${
-              file
-                ? "bg-teal-500/15 text-teal-300 border-teal-500/25 hover:bg-teal-500/25 cursor-pointer"
-                : "bg-white/[0.02] text-white/30 border-white/10 cursor-not-allowed"
-            }`}
-          >
-            <i className="fa-solid fa-arrow-up-from-bracket text-[11px]" />
-            Import
-          </button>
-        </div>
-
-        {/* File chip */}
-        {file && (
-          <div className="inline-flex self-start items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-white/[0.03] text-[12px]">
-            <i className="fa-regular fa-file text-white/55 text-[11px]" />
-            <span className="text-white/85 truncate max-w-[280px]">
-              {file.name}
-            </span>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+            {SOURCES.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => openSource(s)}
+                className="group flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/20 transition px-3.5 py-3 text-left cursor-pointer"
+              >
+                <BrokerLogo logo={s.logo} />
+                <div className="min-w-0">
+                  <div className="text-[13.5px] font-medium truncate">
+                    {s.label}
+                  </div>
+                  <div className="text-[11px] text-white/45 truncate">
+                    CSV import
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </section>
+      ) : (
+        <section className="flex flex-col gap-5">
+          {/* Selected-source header */}
+          <div className="flex items-center gap-3">
             <button
-              type="button"
-              onClick={() => setFile(null)}
-              className="text-white/40 hover:text-white transition cursor-pointer"
-              aria-label="Remove file"
+              onClick={() => setSelected(null)}
+              aria-label="Back to brokers"
+              className="shrink-0 w-8 h-8 rounded-full border border-white/10 bg-white/[0.03] text-white/60 hover:text-white hover:bg-white/[0.06] transition flex items-center justify-center cursor-pointer"
             >
-              <i className="fa-solid fa-xmark text-[10px]" />
+              <i className="fa-solid fa-chevron-left text-[12px]" />
             </button>
+            <BrokerLogo logo={selected.logo} size={40} />
+            <div className="min-w-0">
+              <div className="text-[15px] font-semibold truncate">
+                Import from {selected.label}
+              </div>
+              <div className="text-[12px] text-white/50 truncate">
+                {selected.blurb}
+              </div>
+            </div>
           </div>
-        )}
 
-        {/* Status */}
-        {status && (
+          {/* Steps */}
+          <ol className="flex flex-col gap-2.5 text-[13px] text-white/75 leading-relaxed">
+            {selected.steps.map((step, i) => (
+              <li key={i} className="flex gap-3">
+                <span className="shrink-0 w-6 h-6 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center text-[11px] tabular-nums text-white/55 font-semibold">
+                  {i + 1}
+                </span>
+                <span className="pt-0.5">{step}</span>
+              </li>
+            ))}
+          </ol>
+
+          {/* Drop zone */}
+          <input
+            type="file"
+            accept=".csv,text/csv"
+            ref={fileInputRef}
+            className="hidden"
+            onChange={(e) => pickFile(e.target.files?.[0] ?? null)}
+          />
           <div
-            className={`text-[12.5px] px-3 py-2 rounded-xl border ${
-              isError
-                ? "bg-red-500/10 text-red-300 border-red-500/25"
-                : isSuccess
-                  ? "bg-green-500/10 text-green-300 border-green-500/25"
-                  : "bg-white/[0.03] text-white/65 border-white/10"
+            onClick={() => fileInputRef.current?.click()}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragOver(true);
+            }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragOver(false);
+              pickFile(e.dataTransfer.files?.[0] ?? null);
+            }}
+            className={`rounded-2xl border border-dashed px-5 py-8 text-center transition cursor-pointer ${
+              dragOver
+                ? "border-teal-400/50 bg-teal-500/[0.06]"
+                : "border-white/15 bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/25"
             }`}
           >
-            {status}
+            <i className="fa-solid fa-file-arrow-up text-[18px] text-white/45" />
+            <div className="mt-2 text-[13px] text-white/70">
+              {file ? (
+                <span className="text-white/90 font-medium">{file.name}</span>
+              ) : (
+                <>
+                  Drop your CSV here, or{" "}
+                  <span className="text-teal-300">browse</span>
+                </>
+              )}
+            </div>
+            {file && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setFile(null);
+                  setStatus("");
+                }}
+                className="mt-2 text-[11.5px] text-white/45 hover:text-white transition cursor-pointer"
+              >
+                Remove
+              </button>
+            )}
           </div>
-        )}
-      </section>
 
-      {/* Import from Tastytrade */}
-      <section className="flex flex-col gap-3 border-t border-white/[0.06] pt-6">
-        <div className="text-[11px] tracking-[0.1em] text-teal-400/80 font-medium">
-          Import from Tastytrade
-        </div>
-        <p className="text-[13px] md:text-[14px] text-white/70 leading-relaxed">
-          In Tastytrade, open{" "}
-          <span className="text-white">History &rsaquo; Transactions</span>,
-          export your transaction history as CSV, and upload it here. Option
-          trades are matched into round-trips automatically; ones you&apos;ve
-          already imported are skipped.
-        </p>
-
-        <input
-          type="file"
-          accept=".csv,text/csv"
-          ref={ttInputRef}
-          className="hidden"
-          onChange={(e) => {
-            if (e.target.files?.[0]) {
-              setTtFile(e.target.files[0]);
-              setTtStatus("");
-            }
-          }}
-        />
-
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={() => ttInputRef.current?.click()}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/80 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer"
-          >
-            <i className="fa-solid fa-file-arrow-up text-[11px]" />
-            Choose CSV
-          </button>
-          <button
-            onClick={handleTastytradeUpload}
-            disabled={!ttFile || ttBusy}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border transition text-[13px] font-medium ${
-              ttFile && !ttBusy
-                ? "bg-teal-500/15 text-teal-300 border-teal-500/25 hover:bg-teal-500/25 cursor-pointer"
-                : "bg-white/[0.02] text-white/30 border-white/10 cursor-not-allowed"
-            }`}
-          >
-            <i
-              className={`fa-solid ${
-                ttBusy ? "fa-circle-notch animate-spin" : "fa-arrow-up-from-bracket"
-              } text-[11px]`}
-            />
-            Import
-          </button>
-        </div>
-
-        {ttFile && (
-          <div className="inline-flex self-start items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-white/[0.03] text-[12px]">
-            <i className="fa-regular fa-file text-white/55 text-[11px]" />
-            <span className="text-white/85 truncate max-w-[280px]">
-              {ttFile.name}
-            </span>
+          <div className="flex items-center gap-3">
             <button
-              type="button"
-              onClick={() => setTtFile(null)}
-              className="text-white/40 hover:text-white transition cursor-pointer"
-              aria-label="Remove file"
+              onClick={handleImport}
+              disabled={!file || busy}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border transition text-[13px] font-medium ${
+                file && !busy
+                  ? "bg-teal-500/15 text-teal-300 border-teal-500/25 hover:bg-teal-500/25 cursor-pointer"
+                  : "bg-white/[0.02] text-white/30 border-white/10 cursor-not-allowed"
+              }`}
             >
-              <i className="fa-solid fa-xmark text-[10px]" />
+              <i
+                className={`fa-solid ${
+                  busy ? "fa-circle-notch animate-spin" : "fa-arrow-up-from-bracket"
+                } text-[11px]`}
+              />
+              Import
             </button>
+            {status && (
+              <div
+                className={`text-[12.5px] px-3 py-2 rounded-xl border ${
+                  isError
+                    ? "bg-red-500/10 text-red-300 border-red-500/25"
+                    : isSuccess
+                      ? "bg-green-500/10 text-green-300 border-green-500/25"
+                      : "bg-white/[0.03] text-white/65 border-white/10"
+                }`}
+              >
+                {status}
+              </div>
+            )}
           </div>
-        )}
-
-        {ttStatus && (
-          <div
-            className={`text-[12.5px] px-3 py-2 rounded-xl border ${
-              ttError
-                ? "bg-red-500/10 text-red-300 border-red-500/25"
-                : ttSuccess
-                  ? "bg-green-500/10 text-green-300 border-green-500/25"
-                  : "bg-white/[0.03] text-white/65 border-white/10"
-            }`}
-          >
-            {ttStatus}
-          </div>
-        )}
-      </section>
-
-      {/* Import from a Cuequill export */}
-      <section className="flex flex-col gap-3 border-t border-white/[0.06] pt-6">
-        <div className="text-[11px] tracking-[0.1em] text-teal-400/80 font-medium">
-          Import from a Cuequill export
-        </div>
-        <p className="text-[13px] md:text-[14px] text-white/70 leading-relaxed">
-          Restore or move your journal from a CSV you exported here via{" "}
-          <span className="text-white">Reports &rsaquo; All trades &rsaquo; Download CSV</span>.
-          Trades that already exist are skipped, so re-importing the same file
-          won&apos;t create duplicates.
-        </p>
-
-        <input
-          type="file"
-          accept=".csv,text/csv"
-          ref={cqInputRef}
-          className="hidden"
-          onChange={(e) => {
-            if (e.target.files?.[0]) {
-              setCqFile(e.target.files[0]);
-              setCqStatus("");
-            }
-          }}
-        />
-
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={() => cqInputRef.current?.click()}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/80 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer"
-          >
-            <i className="fa-solid fa-file-arrow-up text-[11px]" />
-            Choose CSV
-          </button>
-          <button
-            onClick={handleCuequillUpload}
-            disabled={!cqFile || cqBusy}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border transition text-[13px] font-medium ${
-              cqFile && !cqBusy
-                ? "bg-teal-500/15 text-teal-300 border-teal-500/25 hover:bg-teal-500/25 cursor-pointer"
-                : "bg-white/[0.02] text-white/30 border-white/10 cursor-not-allowed"
-            }`}
-          >
-            <i
-              className={`fa-solid ${
-                cqBusy ? "fa-circle-notch animate-spin" : "fa-arrow-up-from-bracket"
-              } text-[11px]`}
-            />
-            Import
-          </button>
-        </div>
-
-        {cqFile && (
-          <div className="inline-flex self-start items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-white/[0.03] text-[12px]">
-            <i className="fa-regular fa-file text-white/55 text-[11px]" />
-            <span className="text-white/85 truncate max-w-[280px]">
-              {cqFile.name}
-            </span>
-            <button
-              type="button"
-              onClick={() => setCqFile(null)}
-              className="text-white/40 hover:text-white transition cursor-pointer"
-              aria-label="Remove file"
-            >
-              <i className="fa-solid fa-xmark text-[10px]" />
-            </button>
-          </div>
-        )}
-
-        {cqStatus && (
-          <div
-            className={`text-[12.5px] px-3 py-2 rounded-xl border ${
-              cqError
-                ? "bg-red-500/10 text-red-300 border-red-500/25"
-                : cqSuccess
-                  ? "bg-green-500/10 text-green-300 border-green-500/25"
-                  : "bg-white/[0.03] text-white/65 border-white/10"
-            }`}
-          >
-            {cqStatus}
-          </div>
-        )}
-      </section>
+        </section>
+      )}
 
       {/* Danger zone */}
-      <section className="flex flex-col gap-3 mt-2">
+      <section className="flex flex-col gap-3 mt-2 border-t border-white/[0.06] pt-6">
         <div className="text-[11px] tracking-[0.1em] text-red-300/80 font-medium">
           Danger zone
         </div>
@@ -428,8 +411,8 @@ export default function TradesTab({
               Delete all trades
             </div>
             <div className="text-[12px] text-white/55 leading-relaxed">
-              Permanently removes every {simulated ? "simulated" : "live"}{" "}
-              trade in this journal. This cannot be undone.
+              Permanently removes every {simulated ? "simulated" : "live"} trade
+              in this journal. This cannot be undone.
             </div>
           </div>
           <button
@@ -462,8 +445,8 @@ export default function TradesTab({
               <div className="text-lg font-semibold">Delete all trades?</div>
               <div className="text-[13px] text-white/55 leading-relaxed">
                 This permanently removes every{" "}
-                {simulated ? "simulated" : "live"} trade in this journal.
-                The action can&apos;t be undone.
+                {simulated ? "simulated" : "live"} trade in this journal. The
+                action can&apos;t be undone.
               </div>
             </div>
             <label className="w-full flex flex-col gap-1.5 text-left">

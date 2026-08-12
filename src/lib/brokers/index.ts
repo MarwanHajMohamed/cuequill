@@ -1,12 +1,18 @@
 import type { BrokerAdapter, BrokerId } from "./types";
 import { ibkrAdapter } from "./ibkr";
 import { tastytradeAdapter } from "./tastytrade";
+import { robinhoodAdapter } from "./robinhood";
+import { webullAdapter } from "./webull";
+import { firstradeAdapter } from "./firstrade";
 
 // Registry of supported brokers. Adding a broker = implement a
 // BrokerAdapter and register it here; the sync/import pipeline picks it up.
 const ADAPTERS: Record<BrokerId, BrokerAdapter> = {
   ibkr: ibkrAdapter,
   tastytrade: tastytradeAdapter,
+  robinhood: robinhoodAdapter,
+  webull: webullAdapter,
+  firstrade: firstradeAdapter,
 };
 
 // The broker assumed when a caller doesn't specify one. IBKR is the

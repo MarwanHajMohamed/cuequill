@@ -1,9 +1,7 @@
 "use client";
 import { withAuth } from "@/lib/withAuth";
-import { useSession } from "next-auth/react";
-import React, { useRef, useState } from "react";
+import React, { useState } from "react";
 import TradesTab from "./TradesTab";
-import { useQueryClient } from "@tanstack/react-query";
 import Account from "./Account";
 import IBKRTab from "./IBKRTab";
 import NotificationsTab from "./NotificationsTab";
@@ -12,50 +10,6 @@ import AppearanceTab from "./AppearanceTab";
 
 function Page() {
   const [selectedSetting, setSelectedSetting] = useState<string>("Account");
-
-  const [file, setFile] = useState<File | null>(null);
-  const [status, setStatus] = useState<string>("");
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  const { data: session } = useSession();
-  const userId = session?.user?.id;
-
-  const queryClient = useQueryClient();
-
-  const handleUpload = async () => {
-    if (!file) {
-      setStatus("Please select a file.");
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("userId", userId!);
-
-    try {
-      setStatus("Uploading...");
-
-      const res = await fetch("/api/import-trades", {
-        method: "POST",
-        body: formData,
-      });
-
-      const result = await res.json();
-
-      if (res.ok) {
-        setStatus(`Success: imported ${result.inserted} trades`);
-        queryClient.invalidateQueries({ queryKey: ["trades", userId] });
-      } else {
-        console.error("Error: ", result.error);
-        setStatus(`Error: ${result.error}`);
-      }
-    } catch (err) {
-      console.error("Network error:", err);
-      setStatus(
-        "Error: Something went wrong. Ensure the headers are the same as the ones stated above.",
-      );
-    }
-  };
 
   const settingsTabs = [
     { title: "Account", icon: "fa-solid fa-user", content: <Account /> },
@@ -68,15 +22,7 @@ function Page() {
     {
       title: "Trades",
       icon: "fa-solid fa-file-import",
-      content: (
-        <TradesTab
-          file={file}
-          status={status}
-          setFile={setFile}
-          fileInputRef={fileInputRef}
-          handleUpload={handleUpload}
-        />
-      ),
+      content: <TradesTab />,
     },
     {
       title: "IBKR auto-sync",

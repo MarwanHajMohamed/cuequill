@@ -2,7 +2,12 @@ import type { NormalizedFill } from "@/lib/ibkr/match";
 
 // Identifier for a supported broker. Add new brokers here as adapters
 // are implemented, then register them in ./index.
-export type BrokerId = "ibkr" | "tastytrade";
+export type BrokerId =
+  | "ibkr"
+  | "tastytrade"
+  | "robinhood"
+  | "webull"
+  | "firstrade";
 
 // How a broker's trades get into the app:
 //   "pull" — fetched from the broker's API using stored credentials
