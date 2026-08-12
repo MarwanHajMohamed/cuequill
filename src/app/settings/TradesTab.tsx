@@ -22,7 +22,9 @@ type SourceId =
 type ImportSource = {
   id: SourceId;
   label: string;
-  logo: { bg: string; fg: string; mono?: string; icon?: string };
+  // `img` renders a real logo (public asset) on a white tile; otherwise a
+  // branded monogram / icon tile is drawn from bg/fg/mono/icon.
+  logo: { img?: string; bg?: string; fg?: string; mono?: string; icon?: string };
   endpoint: "ibkr" | "cuequill" | "brokers";
   brokerId?: string;
   blurb: string;
@@ -33,7 +35,7 @@ const SOURCES: ImportSource[] = [
   {
     id: "ibkr",
     label: "Interactive Brokers",
-    logo: { bg: "#d4111e", fg: "#fff", mono: "IB" },
+    logo: { img: "/IBKR.png" },
     endpoint: "ibkr",
     blurb: "One-time CSV import from an IBKR Flex Query.",
     steps: [
@@ -75,7 +77,7 @@ const SOURCES: ImportSource[] = [
   {
     id: "robinhood",
     label: "Robinhood",
-    logo: { bg: "#00c805", fg: "#0b1f11", mono: "Rh" },
+    logo: { img: "/robinhood.png" },
     endpoint: "brokers",
     brokerId: "robinhood",
     blurb: "Import your options activity CSV.",
@@ -91,7 +93,7 @@ const SOURCES: ImportSource[] = [
   {
     id: "webull",
     label: "Webull",
-    logo: { bg: "#1c72f9", fg: "#fff", mono: "W" },
+    logo: { img: "/webull.png" },
     endpoint: "brokers",
     brokerId: "webull",
     blurb: "Import your filled order history CSV.",
@@ -107,7 +109,7 @@ const SOURCES: ImportSource[] = [
   {
     id: "firstrade",
     label: "Firstrade",
-    logo: { bg: "#0a4d9c", fg: "#fff", mono: "Ft" },
+    logo: { img: "/firstrade.png" },
     endpoint: "brokers",
     brokerId: "firstrade",
     blurb: "Import your account history CSV.",
@@ -145,6 +147,22 @@ function BrokerLogo({
   logo: ImportSource["logo"];
   size?: number;
 }) {
+  if (logo.img) {
+    // Real brand logo on a white tile so any dark/transparent mark reads well.
+    return (
+      <div
+        className="shrink-0 rounded-xl bg-white overflow-hidden flex items-center justify-center"
+        style={{ width: size, height: size }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={logo.img}
+          alt=""
+          className="w-full h-full object-contain p-1.5"
+        />
+      </div>
+    );
+  }
   return (
     <div
       className="shrink-0 rounded-xl flex items-center justify-center font-bold"
