@@ -161,7 +161,8 @@ const SOURCES: ImportSource[] = [
     id: "cuequill",
     label: "Cuequill",
     logo: {
-      bg: "linear-gradient(135deg,#14b8a6,#059669)",
+      bg: "#fff",
+      fg: "#0d9488",
       node: <QuillMark className="h-[62%] w-auto" />,
     },
     endpoint: "cuequill",
@@ -201,8 +202,13 @@ function BrokerLogo({
   if (logo.node) {
     return (
       <div
-        className="shrink-0 rounded-xl overflow-hidden flex items-center justify-center text-white"
-        style={{ width: size, height: size, background: logo.bg }}
+        className="shrink-0 rounded-xl overflow-hidden flex items-center justify-center"
+        style={{
+          width: size,
+          height: size,
+          background: logo.bg,
+          color: logo.fg ?? "#fff",
+        }}
       >
         {logo.node}
       </div>
