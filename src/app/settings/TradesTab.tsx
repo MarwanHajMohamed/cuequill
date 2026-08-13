@@ -38,34 +38,6 @@ type ImportSource = {
   steps: React.ReactNode[];
 };
 
-// The Cuequill quill mark (matches the navbar logo).
-function QuillMark({ className = "" }: { className?: string }) {
-  return (
-    <svg
-      viewBox="16 25 30 52"
-      xmlns="http://www.w3.org/2000/svg"
-      className={className}
-      fill="none"
-      aria-hidden
-    >
-      <path
-        d="M31 27.2C37 39.8 43.5 61.2 40.5 62.6C37.5 64 31 75.2 31 75.2C31 75.2 24.5 64.5 21.5 62.6C18.5 60.7 25 39.8 31 27.2Z"
-        fill="currentColor"
-      />
-      <path
-        d="M31 47V75"
-        style={{ stroke: "var(--background)" }}
-        strokeWidth="1.32"
-        strokeLinecap="round"
-      />
-      <path
-        d="M31 54.56C31.8616 54.56 32.56 53.8616 32.56 53C32.56 52.1384 31.8616 51.44 31 51.44C30.1384 51.44 29.44 52.1384 29.44 53C29.44 53.8616 30.1384 54.56 31 54.56Z"
-        style={{ fill: "var(--background)" }}
-      />
-    </svg>
-  );
-}
-
 const SOURCES: ImportSource[] = [
   {
     id: "ibkr",
@@ -160,11 +132,7 @@ const SOURCES: ImportSource[] = [
   {
     id: "cuequill",
     label: "Cuequill",
-    logo: {
-      bg: "#fff",
-      fg: "#0d9488",
-      node: <QuillMark className="h-[62%] w-auto" />,
-    },
+    logo: { img: "/cuequill-icon.png" },
     endpoint: "cuequill",
     blurb: "Re-import a CSV you exported from Cuequill.",
     steps: [
