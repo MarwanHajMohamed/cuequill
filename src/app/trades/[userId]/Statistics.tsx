@@ -28,6 +28,7 @@ type StatsVisibility = {
   winStreak: boolean;
   equityCurve: boolean;
   tagStats: boolean;
+  strategyStats: boolean;
   filteredStats: boolean;
   totalStats: boolean;
   monthlyStats: boolean;
@@ -41,6 +42,7 @@ const DEFAULT_VISIBILITY: StatsVisibility = {
   winStreak: true,
   equityCurve: true,
   tagStats: true,
+  strategyStats: true,
   filteredStats: true,
   totalStats: true,
   monthlyStats: true,
@@ -57,6 +59,7 @@ const TILE_OPTIONS: Array<{ key: keyof StatsVisibility; label: string }> = [
 const SECTION_OPTIONS: Array<{ key: keyof StatsVisibility; label: string }> = [
   { key: "equityCurve", label: "Equity curve" },
   { key: "tagStats", label: "Performance by tag" },
+  { key: "strategyStats", label: "Performance by strategy" },
   { key: "filteredStats", label: "Filter insights" },
   { key: "totalStats", label: "Performance breakdown" },
   { key: "monthlyStats", label: "Monthly stats" },
@@ -70,6 +73,7 @@ const STATS_SECTIONS: Array<{ id: string; label: string }> = [
   { id: "equityCurve", label: "Equity curve" },
   { id: "quickGlance", label: "Top / worst" },
   { id: "tagStats", label: "Performance by tag" },
+  { id: "strategyStats", label: "Performance by strategy" },
   { id: "filterInsights", label: "Filter insights" },
   { id: "breakdown", label: "Performance breakdown" },
   { id: "monthly", label: "Monthly stats" },
@@ -1249,6 +1253,48 @@ export default function Statistics({
       .sort((a, b) => b.count - a.count);
   }, [data]);
 
+  // Performance by strategy — net P/L, win rate, expectancy and profit factor
+  // per strategy across all closed trades (like the tag breakdown, but grouped
+  // by the strategy each trade is tagged with).
+  type StrategyStatRow = {
+    label: string;
+    count: number;
+    totalPL: number;
+    avgPL: number;
+    winRate: number;
+    profitFactor: number | null;
+  };
+  const strategyStats: StrategyStatRow[] = useMemo(() => {
+    const closed = data.filter(
+      (t) => t.status === "WIN" || t.status === "LOSS",
+    );
+    const by = new Map<
+      string,
+      { count: number; totalPL: number; wins: number; gw: number; gl: number }
+    >();
+    for (const t of closed) {
+      const key = (t.strategy ?? "").trim() || "Unassigned";
+      const prev = by.get(key) ?? { count: 0, totalPL: 0, wins: 0, gw: 0, gl: 0 };
+      const pl = tradeNetPL(t);
+      prev.count += 1;
+      prev.totalPL += pl;
+      if (t.status === "WIN") prev.wins += 1;
+      if (pl >= 0) prev.gw += pl;
+      else prev.gl += -pl;
+      by.set(key, prev);
+    }
+    return Array.from(by.entries())
+      .map(([label, v]) => ({
+        label,
+        count: v.count,
+        totalPL: v.totalPL,
+        avgPL: v.count > 0 ? v.totalPL / v.count : 0,
+        winRate: v.count > 0 ? (v.wins / v.count) * 100 : 0,
+        profitFactor: v.gl > 0 ? v.gw / v.gl : null,
+      }))
+      .sort((a, b) => b.totalPL - a.totalPL);
+  }, [data]);
+
   const strategyCounts: Record<string, number> = {};
   const optionCounts: Record<string, number> = {};
   const symbolCounts: Record<string, number> = {};
@@ -1937,6 +1983,81 @@ export default function Statistics({
                       }`}
                     >
                       {s.avgPL >= 0 ? "+" : "−"}${Math.abs(s.avgPL).toFixed(2)}
+                    </td>
+                    <td
+                      className={`text-right py-2.5 pl-3 font-medium tabular-nums ${
+                        s.totalPL >= 0 ? "text-green-400" : "text-red-400"
+                      }`}
+                    >
+                      {s.totalPL >= 0 ? "+" : "−"}$
+                      {Math.abs(s.totalPL).toFixed(2)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Performance by strategy */}
+      {visibility.strategyStats && strategyStats.length > 0 && (
+        <motion.div
+          layout={editing ? "position" : false}
+          transition={{ type: "spring", stiffness: 500, damping: 40 }}
+          data-sec-id="strategyStats"
+          style={{ order: secOrder("strategyStats") }}
+          className={`relative w-full flex flex-col gap-4 md:gap-5 ${
+            editing
+              ? "rounded-2xl outline outline-1 outline-dashed outline-white/15 outline-offset-4"
+              : ""
+          }`}
+        >
+          {sectionControls("strategyStats", "Performance by strategy")}
+          <SectionHeader
+            title="Performance by strategy"
+            info="Net P/L, win rate, expectancy (avg P/L per trade) and profit factor for each of your strategies, across all closed trades."
+          />
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4 overflow-x-auto">
+            <table className="w-full text-sm min-w-[540px]">
+              <thead>
+                <tr className="text-[10px] tracking-[0.08em] text-white/40 border-b border-white/[0.06]">
+                  <th className="text-left py-2.5 pr-3 font-medium">Strategy</th>
+                  <th className="text-right py-2.5 px-3 font-medium">Trades</th>
+                  <th className="text-right py-2.5 px-3 font-medium">Win rate</th>
+                  <th className="text-right py-2.5 px-3 font-medium">Avg P/L</th>
+                  <th className="text-right py-2.5 px-3 font-medium">
+                    Profit factor
+                  </th>
+                  <th className="text-right py-2.5 pl-3 font-medium">Total P/L</th>
+                </tr>
+              </thead>
+              <tbody>
+                {strategyStats.map((s) => (
+                  <tr
+                    key={s.label}
+                    className="border-t border-white/[0.06] hover:bg-white/[0.02] transition"
+                  >
+                    <td className="py-2.5 pr-3">
+                      <span className="px-2 py-0.5 rounded-full text-xs border border-white/15 text-white/75">
+                        {s.label}
+                      </span>
+                    </td>
+                    <td className="text-right py-2.5 px-3 text-white/55 tabular-nums">
+                      {s.count}
+                    </td>
+                    <td className="text-right py-2.5 px-3 text-white/55 tabular-nums">
+                      {s.winRate.toFixed(0)}%
+                    </td>
+                    <td
+                      className={`text-right py-2.5 px-3 font-medium tabular-nums ${
+                        s.avgPL >= 0 ? "text-green-400" : "text-red-400"
+                      }`}
+                    >
+                      {s.avgPL >= 0 ? "+" : "−"}${Math.abs(s.avgPL).toFixed(2)}
+                    </td>
+                    <td className="text-right py-2.5 px-3 text-white/55 tabular-nums">
+                      {s.profitFactor == null ? "∞" : s.profitFactor.toFixed(2)}
                     </td>
                     <td
                       className={`text-right py-2.5 pl-3 font-medium tabular-nums ${
