@@ -895,27 +895,21 @@ function TornadoChart({
   if (sorted.length === 0) return null;
   const maxAbs = Math.max(...sorted.map((r) => Math.abs(r.value)), 1);
   return (
-    // flex-1 + justify-between lets the rows spread to fill the card's height
-    // so the chart stands as tall as the table beside it.
-    <div className="flex flex-col gap-1 flex-1 justify-between">
+    <div className="flex flex-col gap-1.5">
       {sorted.map((r) => {
         const pos = r.value >= 0;
         // Half the track is the widest possible bar (50% of the row width).
         const pct = (Math.abs(r.value) / maxAbs) * 50;
         return (
-          <div key={r.label} className="flex items-center gap-2 text-[10.5px]">
-            <div className="w-28 shrink-0 truncate text-right text-white/60">
+          <div key={r.label} className="flex items-center gap-2 text-[11px]">
+            <div className="w-24 shrink-0 truncate text-right text-white/60">
               {r.label}
             </div>
-            <div className="flex-1 relative h-3">
+            <div className="flex-1 relative h-4">
               <div className="absolute left-1/2 top-0 bottom-0 w-px bg-white/15" />
-              {/* Square edge where the bar meets the centre axis; rounded on
-                  the outer end only. */}
               <div
-                className={`absolute top-1/2 -translate-y-1/2 h-2 ${
-                  pos
-                    ? "bg-green-500/70 rounded-l-none rounded-r-sm"
-                    : "bg-red-500/70 rounded-r-none rounded-l-sm"
+                className={`absolute top-1/2 -translate-y-1/2 h-2.5 rounded-sm ${
+                  pos ? "bg-green-500/70" : "bg-red-500/70"
                 }`}
                 style={
                   pos
@@ -925,7 +919,7 @@ function TornadoChart({
               />
             </div>
             <div
-              className={`w-14 shrink-0 text-right tabular-nums font-medium ${
+              className={`w-16 shrink-0 text-right tabular-nums font-medium ${
                 pos ? "text-green-400" : "text-red-400"
               }`}
             >
@@ -934,6 +928,57 @@ function TornadoChart({
           </div>
         );
       })}
+    </div>
+  );
+}
+
+// A compact highlights panel that sits under a tornado chart: the top and
+// bottom performer for that dimension, plus how many categories are net green.
+function TornadoSummary({
+  rows,
+}: {
+  rows: { label: string; value: number }[];
+}) {
+  if (rows.length === 0) return null;
+  const sorted = [...rows].sort((a, b) => b.value - a.value);
+  const best = sorted[0];
+  const worst = sorted[sorted.length - 1];
+  const positive = rows.filter((r) => r.value > 0).length;
+  const Line = ({
+    label,
+    name,
+    value,
+  }: {
+    label: string;
+    name: string;
+    value: number;
+  }) => (
+    <div className="flex items-center justify-between gap-2">
+      <span className="text-white/45 shrink-0">{label}</span>
+      <span className="flex items-center gap-2 min-w-0">
+        <span className="truncate text-white/70">{name}</span>
+        <span
+          className={`tabular-nums font-medium shrink-0 ${
+            value >= 0 ? "text-green-400" : "text-red-400"
+          }`}
+        >
+          {fmtMoneySignedCompact(value)}
+        </span>
+      </span>
+    </div>
+  );
+  return (
+    <div className="mt-3 pt-3 border-t border-white/[0.06] flex flex-col gap-1.5 text-[11px]">
+      <Line label="Most profitable" name={best.label} value={best.value} />
+      {worst.value < 0 && (
+        <Line label="Biggest drag" name={worst.label} value={worst.value} />
+      )}
+      <div className="flex items-center justify-between">
+        <span className="text-white/45">Net positive</span>
+        <span className="text-white/70 tabular-nums">
+          {positive} of {rows.length}
+        </span>
+      </div>
     </div>
   );
 }
@@ -1999,9 +2044,12 @@ export default function Statistics({
             title="Performance by tag"
             info="Net P/L grouped by the tags you've added to your trades. Highlights which mistakes are costing the most and which patterns are paying off."
           />
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4 items-stretch">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4 items-start">
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4 flex flex-col">
             <TornadoChart
+              rows={tagStats.map((s) => ({ label: s.label, value: s.totalPL }))}
+            />
+            <TornadoSummary
               rows={tagStats.map((s) => ({ label: s.label, value: s.totalPL }))}
             />
           </div>
@@ -2089,9 +2137,15 @@ export default function Statistics({
             title="Performance by strategy"
             info="Net P/L, win rate, expectancy (avg P/L per trade) and profit factor for each of your strategies, across all closed trades."
           />
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4 items-stretch">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4 items-start">
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4 flex flex-col">
             <TornadoChart
+              rows={strategyStats.map((s) => ({
+                label: s.label,
+                value: s.totalPL,
+              }))}
+            />
+            <TornadoSummary
               rows={strategyStats.map((s) => ({
                 label: s.label,
                 value: s.totalPL,
@@ -2178,9 +2232,15 @@ export default function Statistics({
             feature="Per-symbol stats"
             description="See net P/L and win rate broken down by ticker. Available on Pro."
           >
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4 items-stretch">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4 items-start">
               <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4 flex flex-col">
                 <TornadoChart
+                  rows={bySymbol.map((r) => ({
+                    label: r.label,
+                    value: r.netPL,
+                  }))}
+                />
+                <TornadoSummary
                   rows={bySymbol.map((r) => ({
                     label: r.label,
                     value: r.netPL,
