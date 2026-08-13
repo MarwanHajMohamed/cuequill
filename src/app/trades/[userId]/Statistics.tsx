@@ -874,6 +874,60 @@ function BreakdownTable({
   );
 }
 
+// Tornado chart: net P/L per category as horizontal bars diverging from a
+// centre axis, sorted by magnitude (biggest mover on top) so the profile
+// funnels like a tornado. Positive bars grow right (green), negative left
+// (red). `rows` is any {label, value}; capped to `max` entries.
+function TornadoChart({
+  rows,
+  max = 10,
+}: {
+  rows: { label: string; value: number }[];
+  max?: number;
+}) {
+  const sorted = [...rows]
+    .sort((a, b) => Math.abs(b.value) - Math.abs(a.value))
+    .slice(0, max);
+  if (sorted.length === 0) return null;
+  const maxAbs = Math.max(...sorted.map((r) => Math.abs(r.value)), 1);
+  return (
+    <div className="flex flex-col gap-1.5">
+      {sorted.map((r) => {
+        const pos = r.value >= 0;
+        // Half the track is the widest possible bar (50% of the row width).
+        const pct = (Math.abs(r.value) / maxAbs) * 50;
+        return (
+          <div key={r.label} className="flex items-center gap-2 text-[11px]">
+            <div className="w-24 md:w-28 shrink-0 truncate text-right text-white/60">
+              {r.label}
+            </div>
+            <div className="flex-1 relative h-4">
+              <div className="absolute left-1/2 top-0 bottom-0 w-px bg-white/15" />
+              <div
+                className={`absolute top-1/2 -translate-y-1/2 h-2.5 rounded-sm ${
+                  pos ? "bg-green-500/70" : "bg-red-500/70"
+                }`}
+                style={
+                  pos
+                    ? { left: "50%", width: `${pct}%` }
+                    : { right: "50%", width: `${pct}%` }
+                }
+              />
+            </div>
+            <div
+              className={`w-16 shrink-0 text-right tabular-nums font-medium ${
+                pos ? "text-green-400" : "text-red-400"
+              }`}
+            >
+              {fmtMoneySignedCompact(r.value)}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // Eased tween towards `target`. Starts from the previously-rendered
 // value (or straight at `target` on first mount), so the first paint
 // never shows the wrong sign — the old `useState(0)` would flash
@@ -1935,6 +1989,11 @@ export default function Statistics({
             title="Performance by tag"
             info="Net P/L grouped by the tags you've added to your trades. Highlights which mistakes are costing the most and which patterns are paying off."
           />
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4">
+            <TornadoChart
+              rows={tagStats.map((s) => ({ label: s.label, value: s.totalPL }))}
+            />
+          </div>
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4 overflow-x-auto">
             <table className="w-full text-sm min-w-[480px]">
               <thead>
@@ -2018,6 +2077,14 @@ export default function Statistics({
             title="Performance by strategy"
             info="Net P/L, win rate, expectancy (avg P/L per trade) and profit factor for each of your strategies, across all closed trades."
           />
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4">
+            <TornadoChart
+              rows={strategyStats.map((s) => ({
+                label: s.label,
+                value: s.totalPL,
+              }))}
+            />
+          </div>
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4 overflow-x-auto">
             <table className="w-full text-sm min-w-[540px]">
               <thead>
@@ -2310,6 +2377,22 @@ export default function Statistics({
                   rows={bySymbol.slice(0, 8)}
                   info="Net P/L by ticker. The horizontal bar's width is relative to your biggest mover, green for profit and red for loss."
                 />
+              )}
+
+              {bySymbol.length > 0 && (
+                <div className="flex flex-col gap-2.5">
+                  <div className="text-[10px] md:text-[11px] tracking-[0.1em] text-white/45 font-medium">
+                    By symbol — net P/L
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4">
+                    <TornadoChart
+                      rows={bySymbol.map((r) => ({
+                        label: r.label,
+                        value: r.netPL,
+                      }))}
+                    />
+                  </div>
+                </div>
               )}
             </ProGate>
           )}
