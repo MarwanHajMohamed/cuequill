@@ -24,9 +24,10 @@ export function field(row: Row, lower: Map<string, string>, names: string[]): st
   return "";
 }
 
-// Parse a money/number cell: strips $ and commas, treats (x) as -x.
+// Parse a money/number cell: strips $, @ (Webull price prefix) and commas,
+// treats (x) as -x.
 export function num(s: string): number {
-  const cleaned = (s ?? "").replace(/[$,]/g, "").trim();
+  const cleaned = (s ?? "").replace(/[$@,]/g, "").trim();
   const paren = /^\((.*)\)$/.exec(cleaned);
   const n = parseFloat(paren ? `-${paren[1]}` : cleaned);
   return Number.isFinite(n) ? n : 0;
