@@ -884,7 +884,7 @@ function BreakdownTable({
 // (red). `rows` is any {label, value}; capped to `max` entries.
 function TornadoChart({
   rows,
-  max = 10,
+  max = 8,
 }: {
   rows: { label: string; value: number }[];
   max?: number;
@@ -895,20 +895,20 @@ function TornadoChart({
   if (sorted.length === 0) return null;
   const maxAbs = Math.max(...sorted.map((r) => Math.abs(r.value)), 1);
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-1">
       {sorted.map((r) => {
         const pos = r.value >= 0;
         // Half the track is the widest possible bar (50% of the row width).
         const pct = (Math.abs(r.value) / maxAbs) * 50;
         return (
-          <div key={r.label} className="flex items-center gap-2 text-[11px]">
-            <div className="w-24 md:w-28 shrink-0 truncate text-right text-white/60">
+          <div key={r.label} className="flex items-center gap-1.5 text-[10.5px]">
+            <div className="w-16 shrink-0 truncate text-right text-white/55">
               {r.label}
             </div>
-            <div className="flex-1 relative h-4">
+            <div className="flex-1 relative h-3">
               <div className="absolute left-1/2 top-0 bottom-0 w-px bg-white/15" />
               <div
-                className={`absolute top-1/2 -translate-y-1/2 h-2.5 rounded-sm ${
+                className={`absolute top-1/2 -translate-y-1/2 h-2 rounded-sm ${
                   pos ? "bg-green-500/70" : "bg-red-500/70"
                 }`}
                 style={
@@ -919,7 +919,7 @@ function TornadoChart({
               />
             </div>
             <div
-              className={`w-16 shrink-0 text-right tabular-nums font-medium ${
+              className={`w-14 shrink-0 text-right tabular-nums font-medium ${
                 pos ? "text-green-400" : "text-red-400"
               }`}
             >
@@ -1993,6 +1993,7 @@ export default function Statistics({
             title="Performance by tag"
             info="Net P/L grouped by the tags you've added to your trades. Highlights which mistakes are costing the most and which patterns are paying off."
           />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4 items-start">
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4">
             <TornadoChart
               rows={tagStats.map((s) => ({ label: s.label, value: s.totalPL }))}
@@ -2060,6 +2061,7 @@ export default function Statistics({
               </tbody>
             </table>
           </div>
+          </div>
         </motion.div>
       )}
 
@@ -2081,6 +2083,7 @@ export default function Statistics({
             title="Performance by strategy"
             info="Net P/L, win rate, expectancy (avg P/L per trade) and profit factor for each of your strategies, across all closed trades."
           />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4 items-start">
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4">
             <TornadoChart
               rows={strategyStats.map((s) => ({
@@ -2143,6 +2146,7 @@ export default function Statistics({
               </tbody>
             </table>
           </div>
+          </div>
         </motion.div>
       )}
 
@@ -2168,19 +2172,21 @@ export default function Statistics({
             feature="Per-symbol stats"
             description="See net P/L and win rate broken down by ticker. Available on Pro."
           >
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4">
-              <TornadoChart
-                rows={bySymbol.map((r) => ({
-                  label: r.label,
-                  value: r.netPL,
-                }))}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4 items-start">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4">
+                <TornadoChart
+                  rows={bySymbol.map((r) => ({
+                    label: r.label,
+                    value: r.netPL,
+                  }))}
+                />
+              </div>
+              <BreakdownTable
+                title="By symbol"
+                rows={bySymbol.slice(0, 8)}
+                info="Net P/L by ticker. The horizontal bar's width is relative to your biggest mover, green for profit and red for loss."
               />
             </div>
-            <BreakdownTable
-              title="By symbol"
-              rows={bySymbol.slice(0, 8)}
-              info="Net P/L by ticker. The horizontal bar's width is relative to your biggest mover, green for profit and red for loss."
-            />
           </ProGate>
         </motion.div>
       )}
