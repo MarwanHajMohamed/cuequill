@@ -29,6 +29,7 @@ type StatsVisibility = {
   equityCurve: boolean;
   tagStats: boolean;
   strategyStats: boolean;
+  symbolStats: boolean;
   filteredStats: boolean;
   totalStats: boolean;
   monthlyStats: boolean;
@@ -43,6 +44,7 @@ const DEFAULT_VISIBILITY: StatsVisibility = {
   equityCurve: true,
   tagStats: true,
   strategyStats: true,
+  symbolStats: true,
   filteredStats: true,
   totalStats: true,
   monthlyStats: true,
@@ -60,8 +62,9 @@ const SECTION_OPTIONS: Array<{ key: keyof StatsVisibility; label: string }> = [
   { key: "equityCurve", label: "Equity curve" },
   { key: "tagStats", label: "Performance by tag" },
   { key: "strategyStats", label: "Performance by strategy" },
+  { key: "symbolStats", label: "Performance by symbol" },
   { key: "filteredStats", label: "Filter insights" },
-  { key: "totalStats", label: "Performance breakdown" },
+  { key: "totalStats", label: "Statistics summaries" },
   { key: "monthlyStats", label: "Monthly stats" },
 ];
 
@@ -74,8 +77,9 @@ const STATS_SECTIONS: Array<{ id: string; label: string }> = [
   { id: "quickGlance", label: "Top / worst" },
   { id: "tagStats", label: "Performance by tag" },
   { id: "strategyStats", label: "Performance by strategy" },
+  { id: "symbolStats", label: "Performance by symbol" },
   { id: "filterInsights", label: "Filter insights" },
-  { id: "breakdown", label: "Performance breakdown" },
+  { id: "breakdown", label: "Statistics summaries" },
   { id: "monthly", label: "Monthly stats" },
 ];
 const DEFAULT_SECTION_ORDER = STATS_SECTIONS.map((s) => s.id);
@@ -2142,6 +2146,45 @@ export default function Statistics({
         </motion.div>
       )}
 
+      {/* Performance by symbol */}
+      {visibility.symbolStats && bySymbol.length > 0 && (
+        <motion.div
+          layout={editing ? "position" : false}
+          transition={{ type: "spring", stiffness: 500, damping: 40 }}
+          data-sec-id="symbolStats"
+          style={{ order: secOrder("symbolStats") }}
+          className={`relative w-full flex flex-col gap-4 md:gap-5 ${
+            editing
+              ? "rounded-2xl outline outline-1 outline-dashed outline-white/15 outline-offset-4"
+              : ""
+          }`}
+        >
+          {sectionControls("symbolStats", "Performance by symbol")}
+          <SectionHeader
+            title="Performance by symbol"
+            info="Net P/L and win rate by ticker across all closed trades, with a tornado chart of each symbol's net P/L."
+          />
+          <ProGate
+            feature="Per-symbol stats"
+            description="See net P/L and win rate broken down by ticker. Available on Pro."
+          >
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4">
+              <TornadoChart
+                rows={bySymbol.map((r) => ({
+                  label: r.label,
+                  value: r.netPL,
+                }))}
+              />
+            </div>
+            <BreakdownTable
+              title="By symbol"
+              rows={bySymbol.slice(0, 8)}
+              info="Net P/L by ticker. The horizontal bar's width is relative to your biggest mover, green for profit and red for loss."
+            />
+          </ProGate>
+        </motion.div>
+      )}
+
       {/* ── Filter Insights ─────────────────────────────────────────── */}
       {visibility.filteredStats && (
         <motion.div
@@ -2277,10 +2320,10 @@ export default function Statistics({
               : ""
           }`}
         >
-          {sectionControls("breakdown", "Performance breakdown")}
+          {sectionControls("breakdown", "Statistics summaries")}
           <SectionHeader
-            title="Performance breakdown"
-            info="A bird's-eye view of where your edge is across your entire trading history - split by direction, strategy, symbol, streaks, and best/worst day."
+            title="Statistics summaries"
+            info="A bird's-eye view of your edge across your whole history — direction (CALL vs PUT), streaks, drawdown, and best/worst day."
           />
 
           {/* CALL vs PUT */}
@@ -2355,47 +2398,6 @@ export default function Statistics({
               );
             })}
           </div>
-
-          {/* By Strategy + By Symbol — Pro-only. Wrapped together so a
-              single upgrade card spans both tables. */}
-          {(byStrategy.length > 0 || bySymbol.length > 0) && (
-            <ProGate
-              feature="Per-strategy & per-symbol stats"
-              description="See net P/L and win rate broken down by setup and ticker. Available on Pro."
-            >
-              {byStrategy.length > 0 && (
-                <BreakdownTable
-                  title="By strategy"
-                  rows={byStrategy.slice(0, 8)}
-                  info="Net P/L and win rate for each strategy, ranked by trade count. Highlights which setups consistently make money and which are net losers."
-                />
-              )}
-
-              {bySymbol.length > 0 && (
-                <BreakdownTable
-                  title="By symbol"
-                  rows={bySymbol.slice(0, 8)}
-                  info="Net P/L by ticker. The horizontal bar's width is relative to your biggest mover, green for profit and red for loss."
-                />
-              )}
-
-              {bySymbol.length > 0 && (
-                <div className="flex flex-col gap-2.5">
-                  <div className="text-[10px] md:text-[11px] tracking-[0.1em] text-white/45 font-medium">
-                    By symbol — net P/L
-                  </div>
-                  <div className="rounded-xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4">
-                    <TornadoChart
-                      rows={bySymbol.map((r) => ({
-                        label: r.label,
-                        value: r.netPL,
-                      }))}
-                    />
-                  </div>
-                </div>
-              )}
-            </ProGate>
-          )}
 
           {/* Streaks & Risk */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
