@@ -140,8 +140,7 @@ function Page() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight flex items-center gap-2.5">
-              <i className="fa-solid fa-bezier-curve text-teal-300" />
+            <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight">
               Strategies
             </h1>
             <p className="mt-1.5 text-[13px] text-white/55 leading-relaxed">

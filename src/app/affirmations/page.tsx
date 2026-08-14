@@ -101,12 +101,11 @@ function AffirmationsPage() {
         }}
       />
 
-      <div className="w-full max-w-2xl px-5 md:px-8 pt-24 md:pt-12 pb-24">
+      <div className="w-full max-w-[1500px] px-5 md:px-8 pt-24 md:pt-12 pb-24">
         {/* Header */}
         <header className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight flex items-center gap-2.5">
-              <i className="fa-regular fa-circle-check text-teal-300" />
+            <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight">
               Affirmations
             </h1>
             <p className="mt-1.5 text-[13px] text-white/45 leading-relaxed">

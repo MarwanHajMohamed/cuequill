@@ -50,8 +50,7 @@ function Page() {
 
       <div className="w-full max-w-[1500px] px-5 md:px-8 pt-24 md:pt-12 flex flex-col">
         <header className="pb-6 border-b border-white/10">
-          <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight flex items-center gap-2.5">
-            <i className="fa-solid fa-gear text-teal-300" />
+          <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight">
             Settings
           </h1>
         </header>

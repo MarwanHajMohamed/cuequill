@@ -38,8 +38,7 @@ function Page() {
     <div className="w-full flex justify-center min-h-screen pb-24">
       <div className="w-full max-w-[760px] px-5 md:px-8 pt-24 md:pt-12 flex flex-col">
         <header className="pb-6 border-b border-white/10">
-          <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight flex items-center gap-2.5">
-            <i className="fa-solid fa-file-arrow-down text-teal-300" />
+          <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight">
             Reports
           </h1>
           <p className="text-[13.5px] text-white/50 mt-1.5 leading-relaxed">

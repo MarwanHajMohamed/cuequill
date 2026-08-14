@@ -111,8 +111,7 @@ function EarningsPage() {
       <div className="w-full max-w-[1500px] px-5 md:px-8 pt-24 md:pt-12 flex flex-col gap-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight flex items-center gap-2.5">
-            <i className="fa-solid fa-bullhorn text-teal-300" />
+          <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight">
             Earnings
           </h1>
           <p className="mt-1.5 text-[13px] md:text-sm text-white/55 max-w-xl">

@@ -130,8 +130,7 @@ function LeaderboardPage() {
         {/* Header */}
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight flex items-center gap-2.5">
-              <i className="fa-solid fa-ranking-star text-teal-300" />
+            <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight">
               Leaderboard
             </h1>
             <p className="mt-1.5 text-[13px] md:text-sm text-white/55 max-w-xl">
