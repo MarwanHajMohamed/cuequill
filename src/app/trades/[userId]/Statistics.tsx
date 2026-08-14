@@ -2016,7 +2016,7 @@ export default function Statistics({
               />
             </div>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4 overflow-x-auto">
+          <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[480px]">
               <thead>
                 <tr className="text-[10px] tracking-[0.08em] text-white/40 border-b border-white/[0.06]">
@@ -2125,7 +2125,7 @@ export default function Statistics({
               />
             </div>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4 overflow-x-auto">
+          <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[540px]">
               <thead>
                 <tr className="text-[10px] tracking-[0.08em] text-white/40 border-b border-white/[0.06]">
@@ -2233,7 +2233,7 @@ export default function Statistics({
                   />
                 </div>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4 overflow-x-auto">
+              <div className="overflow-x-auto">
                 <table className="w-full text-sm min-w-[480px]">
                   <thead>
                     <tr className="text-[10px] tracking-[0.08em] text-white/40 border-b border-white/[0.06]">
