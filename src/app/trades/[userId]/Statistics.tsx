@@ -793,21 +793,29 @@ function TornadoChart({
   if (sorted.length === 0) return null;
   const maxAbs = Math.max(...sorted.map((r) => Math.abs(r.value)), 1);
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-0.5">
       {sorted.map((r) => {
         const pos = r.value >= 0;
         // Half the track is the widest possible bar (50% of the row width).
         const pct = (Math.abs(r.value) / maxAbs) * 50;
         return (
-          <div key={r.label} className="flex items-center gap-2 text-[11px]">
-            <div className="w-24 shrink-0 truncate text-right text-white/60">
+          <div
+            key={r.label}
+            className="group flex items-center gap-2 text-[11px] rounded-md px-1 -mx-1 py-0.5 hover:bg-white/[0.03] transition-colors"
+          >
+            <div className="w-24 shrink-0 truncate text-right text-white/60 group-hover:text-white/80 transition-colors">
               {r.label}
             </div>
-            <div className="flex-1 relative h-4">
-              <div className="absolute left-1/2 top-0 bottom-0 w-px bg-white/15" />
+            <div className="flex-1 relative h-5">
+              {/* faint channel behind the bars */}
+              <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-2.5 rounded-full bg-white/[0.03]" />
+              {/* centre axis */}
+              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-3.5 w-px rounded-full bg-white/20" />
               <div
-                className={`absolute top-1/2 -translate-y-1/2 h-2.5 rounded-sm ${
-                  pos ? "bg-green-500/70" : "bg-red-500/70"
+                className={`absolute top-1/2 -translate-y-1/2 h-2.5 shadow-sm transition-[width] duration-300 ${
+                  pos
+                    ? "rounded-r-full bg-gradient-to-r from-emerald-500/90 to-emerald-400/40 shadow-emerald-500/20"
+                    : "rounded-l-full bg-gradient-to-l from-red-500/90 to-red-400/40 shadow-red-500/20"
                 }`}
                 style={
                   pos
@@ -817,8 +825,8 @@ function TornadoChart({
               />
             </div>
             <div
-              className={`w-16 shrink-0 text-right tabular-nums font-medium ${
-                pos ? "text-green-400" : "text-red-400"
+              className={`w-16 shrink-0 text-right tabular-nums font-semibold ${
+                pos ? "text-emerald-400" : "text-red-400"
               }`}
             >
               {fmtMoneySignedCompact(r.value)}
