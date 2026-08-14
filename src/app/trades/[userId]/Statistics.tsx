@@ -776,108 +776,6 @@ function MetricTile({
   );
 }
 
-type BreakdownRow = {
-  label: string;
-  n: number;
-  winRate: number;
-  netPL: number;
-  expectancy: number;
-};
-
-function BreakdownTable({
-  title,
-  rows,
-  info,
-}: {
-  title: string;
-  rows: BreakdownRow[];
-  info?: string;
-}) {
-  // Largest absolute net P/L for the inline bar widths.
-  const maxAbs = Math.max(...rows.map((r) => Math.abs(r.netPL)), 1);
-  return (
-    <div className="flex flex-col gap-2.5">
-      <div className="flex items-center gap-1.5 text-[10px] md:text-[11px] tracking-[0.1em] text-white/45 font-medium">
-        <span>{title}</span>
-        {info && <InfoTooltip text={info} />}
-      </div>
-      <div className="rounded-xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md overflow-x-auto md:overflow-hidden">
-        <table className="w-full min-w-[480px] md:min-w-0 text-xs md:text-sm">
-          <thead>
-            <tr className="text-white/40 bg-white/[0.02] border-b border-white/[0.06]">
-              <th className="text-left font-medium py-2.5 px-3 text-[10px] tracking-[0.08em]">
-                Label
-              </th>
-              <th className="text-right font-medium py-2.5 px-3 text-[10px] tracking-[0.08em]">
-                N
-              </th>
-              <th className="text-right font-medium py-2.5 px-3 text-[10px] tracking-[0.08em]">
-                Win %
-              </th>
-              <th className="text-right font-medium py-2.5 px-3 text-[10px] tracking-[0.08em]">
-                Net
-              </th>
-              <th className="text-right font-medium py-2.5 px-3 text-[10px] tracking-[0.08em]">
-                Avg
-              </th>
-              <th className="w-1/4 text-left font-normal py-2.5 px-3 hidden md:table-cell"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => {
-              const isProfit = r.netPL >= 0;
-              const widthPct = (Math.abs(r.netPL) / maxAbs) * 100;
-              return (
-                <tr
-                  key={r.label}
-                  className="border-t border-white/[0.06] hover:bg-white/[0.02] transition"
-                >
-                  <td className="py-2.5 px-3 truncate max-w-[180px] text-white/85">
-                    {r.label}
-                  </td>
-                  <td className="py-2.5 px-3 text-right text-white/55 tabular-nums">
-                    {r.n}
-                  </td>
-                  <td className="py-2.5 px-3 text-right text-white/55 tabular-nums">
-                    {r.winRate.toFixed(0)}%
-                  </td>
-                  <td
-                    className={`py-2.5 px-3 text-right font-medium tabular-nums ${
-                      isProfit ? "text-green-400" : "text-red-400"
-                    }`}
-                  >
-                    {isProfit ? "+" : "−"}${Math.abs(r.netPL).toFixed(2)}
-                  </td>
-                  <td
-                    className={`py-2.5 px-3 text-right tabular-nums ${
-                      r.expectancy >= 0
-                        ? "text-green-400/80"
-                        : "text-red-400/80"
-                    }`}
-                  >
-                    {r.expectancy >= 0 ? "+" : "−"}$
-                    {Math.abs(r.expectancy).toFixed(2)}
-                  </td>
-                  <td className="py-2.5 px-3 hidden md:table-cell">
-                    <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full ${
-                          isProfit ? "bg-green-500/60" : "bg-red-500/60"
-                        }`}
-                        style={{ width: `${widthPct}%` }}
-                      />
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
 // Tornado chart: net P/L per category as horizontal bars diverging from a
 // centre axis, sorted by magnitude (biggest mover on top) so the profile
 // funnels like a tornado. Positive bars grow right (green), negative left
@@ -2240,7 +2138,10 @@ export default function Statistics({
                     className="border-t border-white/[0.06] hover:bg-white/[0.02] transition"
                   >
                     <td className="py-2.5 pr-3">
-                      <span className="inline-block max-w-[180px] align-middle px-2 py-0.5 rounded-lg text-xs leading-snug border border-white/15 text-white/75">
+                      <span
+                        className="block max-w-[180px] truncate text-xs text-white/75"
+                        title={s.label}
+                      >
                         {s.label}
                       </span>
                     </td>
@@ -2324,11 +2225,68 @@ export default function Statistics({
                   />
                 </div>
               </div>
-              <BreakdownTable
-                title="By symbol"
-                rows={bySymbol.slice(0, 8)}
-                info="Net P/L by ticker. The horizontal bar's width is relative to your biggest mover, green for profit and red for loss."
-              />
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4 overflow-x-auto">
+                <table className="w-full text-sm min-w-[480px]">
+                  <thead>
+                    <tr className="text-[10px] tracking-[0.08em] text-white/40 border-b border-white/[0.06]">
+                      <th className="text-left py-2.5 pr-3 font-medium">
+                        Symbol
+                      </th>
+                      <th className="text-right py-2.5 px-3 font-medium">
+                        Trades
+                      </th>
+                      <th className="text-right py-2.5 px-3 font-medium">
+                        Win rate
+                      </th>
+                      <th className="text-right py-2.5 px-3 font-medium">
+                        Avg P/L
+                      </th>
+                      <th className="text-right py-2.5 pl-3 font-medium">
+                        Total P/L
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bySymbol.slice(0, 8).map((r) => (
+                      <tr
+                        key={r.label}
+                        className="border-t border-white/[0.06] hover:bg-white/[0.02] transition"
+                      >
+                        <td className="py-2.5 pr-3">
+                          <span
+                            className="block max-w-[180px] truncate text-xs text-white/75"
+                            title={r.label}
+                          >
+                            {r.label}
+                          </span>
+                        </td>
+                        <td className="text-right py-2.5 px-3 text-white/55 tabular-nums">
+                          {r.n}
+                        </td>
+                        <td className="text-right py-2.5 px-3 text-white/55 tabular-nums">
+                          {r.winRate.toFixed(0)}%
+                        </td>
+                        <td
+                          className={`text-right py-2.5 px-3 font-medium tabular-nums ${
+                            r.expectancy >= 0 ? "text-green-400" : "text-red-400"
+                          }`}
+                        >
+                          {r.expectancy >= 0 ? "+" : "−"}$
+                          {Math.abs(r.expectancy).toFixed(2)}
+                        </td>
+                        <td
+                          className={`text-right py-2.5 pl-3 font-medium tabular-nums ${
+                            r.netPL >= 0 ? "text-green-400" : "text-red-400"
+                          }`}
+                        >
+                          {r.netPL >= 0 ? "+" : "−"}$
+                          {Math.abs(r.netPL).toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </ProGate>
         </motion.div>
