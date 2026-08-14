@@ -1997,7 +1997,7 @@ export default function Statistics({
             title="Performance by tag"
             info="Net P/L grouped by the tags you've added to your trades. Highlights which mistakes are costing the most and which patterns are paying off."
           />
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-3 md:gap-4 items-start">
           <div className="flex flex-col gap-3 md:gap-4">
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4 flex flex-col">
               <TornadoChart
@@ -2100,7 +2100,7 @@ export default function Statistics({
             title="Performance by strategy"
             info="Net P/L, win rate, expectancy (avg P/L per trade) and profit factor for each of your strategies, across all closed trades."
           />
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-3 md:gap-4 items-start">
           <div className="flex flex-col gap-3 md:gap-4">
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4 flex flex-col">
               <TornadoChart
@@ -2208,7 +2208,7 @@ export default function Statistics({
             feature="Per-symbol stats"
             description="See net P/L and win rate broken down by ticker. Available on Pro."
           >
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-3 md:gap-4 items-start">
               <div className="flex flex-col gap-3 md:gap-4">
                 <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4 flex flex-col">
                   <TornadoChart
