@@ -236,7 +236,7 @@ function AffirmationsPage() {
             </p>
           </div>
         ) : (
-          <div className="mt-8 flex flex-col gap-2">
+          <div className="mt-8 border-t border-white/[0.08]">
             <AnimatePresence initial={false}>
               {affirmations.map((text, i) => {
                 const isRead = read.has(text);
@@ -248,28 +248,24 @@ function AffirmationsPage() {
                     animate={
                       hydrated ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }
                     }
-                    exit={{ opacity: 0, scale: 0.98 }}
+                    exit={{ opacity: 0 }}
                     transition={{
                       duration: 0.28,
                       delay: hydrated ? 0.015 * i : 0,
                       ease: "easeOut",
                     }}
-                    className={`group relative rounded-xl border transition ${
-                      isRead
-                        ? "bg-teal-500/[0.06] border-teal-500/20"
-                        : "bg-white/[0.02] border-white/[0.07] hover:border-white/15"
-                    }`}
+                    className="group relative border-b border-white/[0.08]"
                   >
                     <button
                       onClick={() => toggle(text)}
-                      className="w-full text-left cursor-pointer px-4 md:px-5 py-4"
+                      className="w-full text-left cursor-pointer px-1 py-4"
                     >
                       <div className="flex items-center gap-4">
                         <div
                           className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-medium tabular-nums transition ${
                             isRead
                               ? "bg-teal-500 text-white"
-                              : "bg-white/[0.05] text-white/45"
+                              : "border border-white/15 text-white/40"
                           }`}
                         >
                           {isRead ? (
@@ -292,7 +288,7 @@ function AffirmationsPage() {
                     <button
                       onClick={() => removeAffirmation(text)}
                       aria-label="Remove affirmation"
-                      className="absolute top-1/2 -translate-y-1/2 right-2 w-7 h-7 rounded-full flex items-center justify-center text-white/25 opacity-0 group-hover:opacity-100 hover:text-red-300 hover:bg-red-500/10 transition cursor-pointer"
+                      className="absolute top-1/2 -translate-y-1/2 right-1 w-7 h-7 rounded-full flex items-center justify-center text-white/25 opacity-0 group-hover:opacity-100 hover:text-red-300 hover:bg-red-500/10 transition cursor-pointer"
                     >
                       <i className="fa-solid fa-xmark text-[11px]" />
                     </button>
