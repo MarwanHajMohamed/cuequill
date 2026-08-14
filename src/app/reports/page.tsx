@@ -43,8 +43,7 @@ function Page() {
             Reports
           </h1>
           <p className="text-[13.5px] text-white/50 mt-1.5 leading-relaxed">
-            Review your trade history and performance, then export any report
-            as a spreadsheet-ready file.
+            Review your trade history and performance.
           </p>
         </header>
 

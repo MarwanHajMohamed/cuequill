@@ -3,7 +3,6 @@
 import { withAuth } from "@/lib/withAuth";
 import { Skeleton } from "@/components/Loaders";
 import ProGate from "@/components/ProGate";
-import { motion } from "framer-motion";
 import { useState } from "react";
 import { useGoals, useGoalMutations, type Goal } from "@/hooks/useGoals";
 import {
@@ -369,12 +368,7 @@ function Page() {
       />
 
       <div className="w-full max-w-[1500px] px-5 md:px-8 pt-24 md:pt-12 flex flex-col">
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="flex items-center justify-between gap-3"
-        >
+        <div className="flex items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight flex items-center gap-2.5">
               <i className="fa-solid fa-bullseye text-teal-300" />
@@ -394,7 +388,7 @@ function Page() {
               New goal
             </button>
           )}
-        </motion.div>
+        </div>
 
         {adding && (
           <div className="mt-5">

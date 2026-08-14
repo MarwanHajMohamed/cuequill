@@ -61,7 +61,6 @@ function Page() {
             </h1>
             <p className="text-[13.5px] text-white/50 mt-1.5 leading-relaxed max-w-lg">
               Milestone awards you earn automatically as your journal grows.
-              Some also unlock a title you can wear as a nameplate.
             </p>
           </div>
           <Link
