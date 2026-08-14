@@ -2240,7 +2240,7 @@ export default function Statistics({
                     className="border-t border-white/[0.06] hover:bg-white/[0.02] transition"
                   >
                     <td className="py-2.5 pr-3">
-                      <span className="px-2 py-0.5 rounded-full text-xs border border-white/15 text-white/75">
+                      <span className="inline-block max-w-[180px] align-middle px-2 py-0.5 rounded-lg text-xs leading-snug border border-white/15 text-white/75">
                         {s.label}
                       </span>
                     </td>
