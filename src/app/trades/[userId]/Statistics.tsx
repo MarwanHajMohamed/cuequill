@@ -812,10 +812,10 @@ function TornadoChart({
               {/* centre axis */}
               <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-3.5 w-px rounded-full bg-white/20" />
               <div
-                className={`absolute top-1/2 -translate-y-1/2 h-2.5 shadow-sm transition-[width] duration-300 ${
+                className={`absolute top-1/2 -translate-y-1/2 h-2.5 transition-[width] duration-300 ${
                   pos
-                    ? "rounded-r-full bg-gradient-to-r from-emerald-500/90 to-emerald-400/40 shadow-emerald-500/20"
-                    : "rounded-l-full bg-gradient-to-l from-red-500/90 to-red-400/40 shadow-red-500/20"
+                    ? "rounded-r-full bg-green-500/70"
+                    : "rounded-l-full bg-red-500/70"
                 }`}
                 style={
                   pos
@@ -826,7 +826,7 @@ function TornadoChart({
             </div>
             <div
               className={`w-16 shrink-0 text-right tabular-nums font-semibold ${
-                pos ? "text-emerald-400" : "text-red-400"
+                pos ? "text-green-400" : "text-red-400"
               }`}
             >
               {fmtMoneySignedCompact(r.value)}
