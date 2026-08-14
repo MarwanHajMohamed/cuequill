@@ -358,7 +358,7 @@ function Page() {
   const manualGoals = goals.filter((g) => g.kind === "manual");
 
   return (
-    <div className="w-full flex flex-col md:items-start min-h-screen pb-16">
+    <div className="w-full flex justify-center min-h-screen pb-24">
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0 -z-10"
@@ -368,7 +368,7 @@ function Page() {
         }}
       />
 
-      <div className="w-full max-w-[1500px] mt-28 md:mt-10 px-5 md:px-10">
+      <div className="w-full max-w-[1500px] px-5 md:px-8 pt-24 md:pt-12 flex flex-col">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}

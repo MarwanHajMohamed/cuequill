@@ -97,7 +97,7 @@ function EarningsPage() {
   };
 
   return (
-    <div className="w-full flex flex-col md:items-start min-h-screen pb-24">
+    <div className="w-full flex justify-center min-h-screen pb-24">
       {/* Aurora wash, same as the other app surfaces. */}
       <div
         aria-hidden
@@ -108,7 +108,7 @@ function EarningsPage() {
         }}
       />
 
-      <div className="w-full px-4 md:px-6 pt-24 md:pt-8 flex flex-col gap-6">
+      <div className="w-full max-w-[1500px] px-5 md:px-8 pt-24 md:pt-12 flex flex-col gap-6">
         {/* Header */}
         <div>
           <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight flex items-center gap-2.5">

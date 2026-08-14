@@ -20,7 +20,7 @@ function Page() {
   const [editMode, setEditMode] = useState(false);
 
   return (
-    <div className="w-full flex flex-col md:items-start min-h-screen pb-16">
+    <div className="w-full flex justify-center min-h-screen pb-24">
       {/* Aurora */}
       <div
         aria-hidden
@@ -31,7 +31,7 @@ function Page() {
         }}
       />
 
-      <div className="w-full max-w-[1500px] mt-30 md:mt-10 px-5 md:px-10">
+      <div className="w-full max-w-[1500px] px-5 md:px-8 pt-24 md:pt-12 flex flex-col">
         {/* Header */}
         <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight flex items-center gap-2.5">
           <i className="fa-solid fa-list-check text-teal-300" />

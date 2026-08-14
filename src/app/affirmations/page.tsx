@@ -101,7 +101,7 @@ function AffirmationsPage() {
         }}
       />
 
-      <div className="w-full max-w-2xl px-5 md:px-8 pt-28 md:pt-16 pb-24">
+      <div className="w-full max-w-2xl px-5 md:px-8 pt-24 md:pt-12 pb-24">
         {/* Header */}
         <header className="flex items-start justify-between gap-4">
           <div>
