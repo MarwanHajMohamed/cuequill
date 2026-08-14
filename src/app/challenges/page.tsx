@@ -116,7 +116,8 @@ function Page() {
 
         <header className="pb-6 border-b border-white/10 flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-[24px] font-semibold tracking-tight">
+            <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight flex items-center gap-2.5">
+              <i className="fa-solid fa-trophy text-teal-300" />
               Challenges
             </h1>
             <p className="text-[13.5px] text-white/50 mt-1.5 leading-relaxed max-w-lg">

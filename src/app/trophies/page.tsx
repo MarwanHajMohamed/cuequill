@@ -55,7 +55,10 @@ function Page() {
 
         <header className="pb-6 border-b border-white/10 flex items-end justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-[24px] font-semibold tracking-tight">Trophies</h1>
+            <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight flex items-center gap-2.5">
+              <i className="fa-solid fa-award text-teal-300" />
+              Trophies
+            </h1>
             <p className="text-[13.5px] text-white/50 mt-1.5 leading-relaxed max-w-lg">
               Milestone awards you earn automatically as your journal grows.
               Some also unlock a title you can wear as a nameplate.

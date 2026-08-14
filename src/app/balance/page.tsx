@@ -224,6 +224,15 @@ function Page() {
           }}
         />
 
+        {/* Header */}
+        <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight flex items-center gap-2.5">
+          <i className="fa-solid fa-wallet text-teal-300" />
+          Balance
+        </h1>
+        <p className="mt-1.5 text-[13px] md:text-sm text-white/55 max-w-xl">
+          Your account balance over time.
+        </p>
+
         {status && (
           <div className="mt-4 text-[12.5px] text-white/60">{status}</div>
         )}

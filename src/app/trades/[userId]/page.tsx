@@ -811,6 +811,11 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
               isFiltersOpen ? "md:pl-[264px]" : ""
             }`}
           >
+            {/* Header */}
+            <h1 className="mb-5 text-2xl md:text-[28px] font-semibold tracking-tight flex items-center gap-2.5">
+              <i className="fa-solid fa-chart-column text-teal-300" />
+              Trades
+            </h1>
             <Filters
               filter={filter}
               setFilter={setFilter}

@@ -89,6 +89,15 @@ export default function Page() {
       />
 
       <div className="w-full max-w-[1500px] mt-30 md:mt-10 px-5 md:px-10">
+        {/* Header */}
+        <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight flex items-center gap-2.5">
+          <i className="fa-solid fa-coins text-teal-300" />
+          Stocks &amp; ETFs
+        </h1>
+        <p className="mt-1.5 text-[13px] md:text-sm text-white/55 max-w-xl">
+          Your watchlist of tickers and the levels you care about.
+        </p>
+
         {/* Toolbar - search on the left, add/save on the right. */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}

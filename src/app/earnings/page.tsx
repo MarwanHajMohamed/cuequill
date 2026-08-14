@@ -109,6 +109,17 @@ function EarningsPage() {
       />
 
       <div className="w-full px-4 md:px-6 pt-24 md:pt-8 flex flex-col gap-6">
+        {/* Header */}
+        <div>
+          <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight flex items-center gap-2.5">
+            <i className="fa-solid fa-bullhorn text-teal-300" />
+            Earnings
+          </h1>
+          <p className="mt-1.5 text-[13px] md:text-sm text-white/55 max-w-xl">
+            Upcoming earnings dates for the tickers on your watchlist.
+          </p>
+        </div>
+
         {/* Watchlist editor */}
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md p-4 md:p-5">
           <div className="flex items-center justify-between gap-3 mb-3">

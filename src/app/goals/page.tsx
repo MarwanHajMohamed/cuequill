@@ -376,7 +376,8 @@ function Page() {
           className="flex items-center justify-between gap-3"
         >
           <div>
-            <h1 className="text-[26px] md:text-[32px] font-medium tracking-tight">
+            <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight flex items-center gap-2.5">
+              <i className="fa-solid fa-bullseye text-teal-300" />
               Goals
             </h1>
             <p className="text-[13px] text-white/55 mt-1">

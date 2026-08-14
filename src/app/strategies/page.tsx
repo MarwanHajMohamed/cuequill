@@ -140,8 +140,9 @@ function Page() {
         {/* Header */}
         <div className="mt-8 md:mt-10 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
           <div>
-            <h1 className="text-[28px] md:text-[34px] font-medium tracking-[-0.02em] text-white">
-              Your strategies
+            <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight flex items-center gap-2.5">
+              <i className="fa-solid fa-bezier-curve text-teal-300" />
+              Strategies
             </h1>
             <p className="mt-1.5 text-[13px] text-white/55 leading-relaxed">
               Custom setups, drawn how you see them. Sketch the pattern in the

@@ -32,6 +32,15 @@ function Page() {
       />
 
       <div className="w-full max-w-[1500px] mt-30 md:mt-10 px-5 md:px-10">
+        {/* Header */}
+        <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight flex items-center gap-2.5">
+          <i className="fa-solid fa-list-check text-teal-300" />
+          Rules
+        </h1>
+        <p className="mt-1.5 text-[13px] md:text-sm text-white/55 max-w-xl">
+          Your trading rules, grouped into sections.
+        </p>
+
         {sections === null ? (
           <div className="mt-8 md:mt-10 flex flex-col gap-4">
             {Array.from({ length: 3 }).map((_, i) => (
