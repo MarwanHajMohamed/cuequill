@@ -983,6 +983,53 @@ function TornadoSummary({
   );
 }
 
+// Win-rate bars per category (0-100%), a quality read that complements the
+// net-P/L tornado. Bars are green at/above break-even (50%), red below, with a
+// dashed 50% reference line. Sorted by win rate, top `max`.
+function WinRateBars({
+  rows,
+  max = 8,
+}: {
+  rows: { label: string; winRate: number }[];
+  max?: number;
+}) {
+  const sorted = [...rows]
+    .sort((a, b) => b.winRate - a.winRate)
+    .slice(0, max);
+  if (sorted.length === 0) return null;
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="text-[10px] md:text-[11px] tracking-[0.1em] text-white/45 font-medium">
+        Win rate
+      </div>
+      <div className="flex flex-col gap-1.5">
+        {sorted.map((r) => {
+          const good = r.winRate >= 50;
+          return (
+            <div key={r.label} className="flex items-center gap-2 text-[11px]">
+              <div className="w-24 shrink-0 truncate text-right text-white/60">
+                {r.label}
+              </div>
+              <div className="flex-1 relative h-4 rounded-sm bg-white/[0.05] overflow-hidden">
+                <div
+                  className={`absolute inset-y-0 left-0 rounded-sm ${
+                    good ? "bg-green-500/60" : "bg-red-500/55"
+                  }`}
+                  style={{ width: `${Math.max(0, Math.min(100, r.winRate))}%` }}
+                />
+                <div className="absolute inset-y-0 left-1/2 w-px bg-white/15" />
+              </div>
+              <div className="w-14 shrink-0 text-right tabular-nums font-medium text-white/70">
+                {r.winRate.toFixed(0)}%
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // Eased tween towards `target`. Starts from the previously-rendered
 // value (or straight at `target` on first mount), so the first paint
 // never shows the wrong sign — the old `useState(0)` would flash
@@ -2045,13 +2092,23 @@ export default function Statistics({
             info="Net P/L grouped by the tags you've added to your trades. Highlights which mistakes are costing the most and which patterns are paying off."
           />
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4 items-start">
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4 flex flex-col">
-            <TornadoChart
-              rows={tagStats.map((s) => ({ label: s.label, value: s.totalPL }))}
-            />
-            <TornadoSummary
-              rows={tagStats.map((s) => ({ label: s.label, value: s.totalPL }))}
-            />
+          <div className="flex flex-col gap-3 md:gap-4">
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4 flex flex-col">
+              <TornadoChart
+                rows={tagStats.map((s) => ({ label: s.label, value: s.totalPL }))}
+              />
+              <TornadoSummary
+                rows={tagStats.map((s) => ({ label: s.label, value: s.totalPL }))}
+              />
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4">
+              <WinRateBars
+                rows={tagStats.map((s) => ({
+                  label: s.label,
+                  winRate: s.winRate,
+                }))}
+              />
+            </div>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4 overflow-x-auto">
             <table className="w-full text-sm min-w-[480px]">
@@ -2138,19 +2195,29 @@ export default function Statistics({
             info="Net P/L, win rate, expectancy (avg P/L per trade) and profit factor for each of your strategies, across all closed trades."
           />
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4 items-start">
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4 flex flex-col">
-            <TornadoChart
-              rows={strategyStats.map((s) => ({
-                label: s.label,
-                value: s.totalPL,
-              }))}
-            />
-            <TornadoSummary
-              rows={strategyStats.map((s) => ({
-                label: s.label,
-                value: s.totalPL,
-              }))}
-            />
+          <div className="flex flex-col gap-3 md:gap-4">
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4 flex flex-col">
+              <TornadoChart
+                rows={strategyStats.map((s) => ({
+                  label: s.label,
+                  value: s.totalPL,
+                }))}
+              />
+              <TornadoSummary
+                rows={strategyStats.map((s) => ({
+                  label: s.label,
+                  value: s.totalPL,
+                }))}
+              />
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4">
+              <WinRateBars
+                rows={strategyStats.map((s) => ({
+                  label: s.label,
+                  winRate: s.winRate,
+                }))}
+              />
+            </div>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4 overflow-x-auto">
             <table className="w-full text-sm min-w-[540px]">
@@ -2233,19 +2300,29 @@ export default function Statistics({
             description="See net P/L and win rate broken down by ticker. Available on Pro."
           >
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4 items-start">
-              <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4 flex flex-col">
-                <TornadoChart
-                  rows={bySymbol.map((r) => ({
-                    label: r.label,
-                    value: r.netPL,
-                  }))}
-                />
-                <TornadoSummary
-                  rows={bySymbol.map((r) => ({
-                    label: r.label,
-                    value: r.netPL,
-                  }))}
-                />
+              <div className="flex flex-col gap-3 md:gap-4">
+                <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4 flex flex-col">
+                  <TornadoChart
+                    rows={bySymbol.map((r) => ({
+                      label: r.label,
+                      value: r.netPL,
+                    }))}
+                  />
+                  <TornadoSummary
+                    rows={bySymbol.map((r) => ({
+                      label: r.label,
+                      value: r.netPL,
+                    }))}
+                  />
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4">
+                  <WinRateBars
+                    rows={bySymbol.map((r) => ({
+                      label: r.label,
+                      winRate: r.winRate,
+                    }))}
+                  />
+                </div>
               </div>
               <BreakdownTable
                 title="By symbol"
