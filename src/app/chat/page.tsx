@@ -1210,11 +1210,8 @@ function PromptShortcuts({
 
   return (
     <div className="w-full">
-      {/* Section header + edit controls */}
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-[10px] tracking-[0.12em] uppercase text-white/35 font-medium">
-          Shortcuts
-        </span>
+      {/* Edit controls */}
+      <div className="flex items-center justify-end mb-2">
         {editing ? (
           <div className="flex items-center gap-1.5">
             <button
