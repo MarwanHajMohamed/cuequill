@@ -14,6 +14,13 @@ export default function Filters({
   option,
   setOption,
   symbols,
+  tag,
+  setTag,
+  tags,
+  minReturn,
+  setMinReturn,
+  returnMin,
+  returnMax,
   startDate,
   setStartDate,
   endDate,
@@ -31,6 +38,13 @@ export default function Filters({
   option: "All" | "CALL" | "PUT";
   setOption: React.Dispatch<React.SetStateAction<"All" | "CALL" | "PUT">>;
   symbols: string[];
+  tag: string;
+  setTag: React.Dispatch<React.SetStateAction<string>>;
+  tags: string[];
+  minReturn: number;
+  setMinReturn: React.Dispatch<React.SetStateAction<number>>;
+  returnMin: number;
+  returnMax: number;
   startDate: string;
   setStartDate: React.Dispatch<React.SetStateAction<string>>;
   endDate: string;
@@ -59,10 +73,12 @@ export default function Filters({
     strategy !== strategies[0],
     symbol !== symbols[0],
     option !== "All",
+    tag !== "All",
+    minReturn > returnMin,
     !!startDate || !!endDate,
   ].filter(Boolean).length;
 
-  const FilterContent = () => (
+  const filterContent = (
     <div className="flex flex-col gap-5">
       {/* STATUS */}
       <div>
@@ -158,6 +174,60 @@ export default function Filters({
         </div>
       </div>
 
+      {/* TAG — only shown once the user has tagged at least one trade. */}
+      {tags.length > 1 && (
+        <>
+          <div className="h-[1px] bg-white/10" />
+          <div>
+            <div className="text-[10px] xl:text-xs text-white/40 mb-2 tracking-wider">
+              Tag
+            </div>
+            <select
+              value={tag}
+              onChange={(e) => setTag(e.target.value)}
+              className="w-full p-1.5 bg-white/[0.03] text-xs xl:text-sm text-white rounded cursor-pointer border border-white/10 transition duration-100 hover:border-white/40"
+            >
+              {tags.map((t, i) => (
+                <option value={t} key={i}>
+                  {t}
+                </option>
+              ))}
+            </select>
+          </div>
+        </>
+      )}
+
+      <div className="h-[1px] bg-white/10" />
+
+      {/* RETURN % — minimum realized return a closed trade must clear. */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-[10px] xl:text-xs text-white/40 tracking-wider">
+            Min return
+          </span>
+          <span
+            className={`text-[11px] xl:text-xs font-medium tabular-nums ${
+              minReturn > returnMin ? "text-teal-300" : "text-white/45"
+            }`}
+          >
+            {minReturn > returnMin ? `≥ ${minReturn}%` : "Any"}
+          </span>
+        </div>
+        <input
+          type="range"
+          min={returnMin}
+          max={returnMax}
+          step={5}
+          value={minReturn}
+          onChange={(e) => setMinReturn(Number(e.target.value))}
+          className="w-full cursor-pointer accent-teal-400"
+        />
+        <div className="flex justify-between text-[9px] text-white/30 mt-1 tabular-nums">
+          <span>Any</span>
+          <span>+{returnMax}%</span>
+        </div>
+      </div>
+
       <div className="h-[1px] bg-white/10" />
 
       {/* DATE */}
@@ -241,7 +311,7 @@ export default function Filters({
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto px-5 py-5">
-          <FilterContent />
+          {filterContent}
         </div>
 
         {/* Footer */}
@@ -253,6 +323,8 @@ export default function Filters({
                 setStrategy(strategies[0]);
                 setSymbol(symbols[0]);
                 setOption("All");
+                setTag("All");
+                setMinReturn(returnMin);
                 setStartDate("");
                 setEndDate("");
               }}

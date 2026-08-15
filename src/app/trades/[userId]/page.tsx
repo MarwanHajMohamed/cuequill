@@ -90,6 +90,22 @@ const NUMERIC_COLUMNS = new Set<TradeColumnKey>([
 // Page-size options for the trades table.
 const PAGE_SIZES = [15, 25, 50, 100];
 
+// Lowest possible return: a long option can lose at most its full premium
+// (−100%). Used as the "off" position of the return-% filter slider.
+const RETURN_MIN = -100;
+
+// Realized return of a closed trade as a % of the premium paid
+// (net P/L ÷ cost basis, where cost = entry premium × contracts × 100).
+// Returns null for open trades or a zero/unknown cost basis so they can be
+// excluded from the return filter cleanly.
+function tradeReturnPct(t: Trade): number | null {
+  const closed = t.status === "WIN" || t.status === "LOSS";
+  if (!closed) return null;
+  const cost = (t.contractPrice ?? 0) * (t.qty ?? 0) * 100;
+  if (!Number.isFinite(cost) || cost <= 0) return null;
+  return (tradeNetPL(t) / cost) * 100;
+}
+
 // Comparable value for a column when sorting. Returns `{ missing }` so
 // the comparator can push nullish rows to the end regardless of sort
 // direction — using a sentinel like `-Infinity` only stays at the
@@ -181,6 +197,9 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
   const [symbol, setSymbol] = useState<string>("All");
   const [filter, setFilter] = useState<"All" | "Win" | "Loss">("All");
   const [option, setOption] = useState<"All" | "CALL" | "PUT">("All");
+  const [tag, setTag] = useState<string>("All");
+  // Minimum realized return % a trade must clear to show. RETURN_MIN = off.
+  const [minReturn, setMinReturn] = useState<number>(RETURN_MIN);
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -552,7 +571,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
   // of the new results and the table looks empty.
   useEffect(() => {
     setCurrentPage(1);
-  }, [filter, strategy, symbol, option, startDate, endDate]);
+  }, [filter, strategy, symbol, option, tag, minReturn, startDate, endDate]);
 
   // Memoised so scroll-driven re-renders (the floating header) don't
   // recompute the whole filter/sort each frame.
@@ -564,6 +583,15 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
         if (strategy !== "All" && trade.strategy !== strategy) return false;
         if (symbol !== "All" && trade.symbol !== symbol) return false;
         if (option !== "All" && trade.option !== option) return false;
+        if (tag !== "All" && !(trade.tags ?? []).includes(tag)) return false;
+
+        // Return-% filter: only active above the slider's "off" floor. Trades
+        // with no realized return (open, or unknown cost) are excluded once
+        // the filter is engaged.
+        if (minReturn > RETURN_MIN) {
+          const r = tradeReturnPct(trade);
+          if (r == null || r < minReturn) return false;
+        }
 
         // Date range matches on the trade's EXIT date for closed trades
         // and ENTRY date for open ones - same convention used by the
@@ -578,7 +606,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
         if (to && tradeDate > to) return false;
         return true;
       }),
-    [trades, filter, strategy, symbol, option, startDate, endDate],
+    [trades, filter, strategy, symbol, option, tag, minReturn, startDate, endDate],
   );
 
   const sortedTrades = useMemo(() => {
@@ -645,6 +673,24 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
     "All",
     ...Array.from(new Set(trades?.map((trade: Trade) => trade.symbol) || [])),
   ];
+
+  // Distinct tags across all trades (for the tag filter). Sorted A→Z.
+  const tags = [
+    "All",
+    ...Array.from(
+      new Set((trades ?? []).flatMap((t) => t.tags ?? [])),
+    ).sort((a, b) => a.localeCompare(b)),
+  ];
+
+  // Upper bound for the return-% slider: the best realized return in the
+  // journal, rounded up to a tidy step (min 100%) so the thumb has room.
+  const returnMax =
+    Math.ceil(
+      Math.max(
+        100,
+        ...(trades ?? []).map((t) => tradeReturnPct(t) ?? 0),
+      ) / 50,
+    ) * 50;
 
   const calcChange = (newPrice: number, oldPrice: number) => {
     return (((newPrice - oldPrice) / oldPrice) * 100).toFixed(0);
@@ -822,6 +868,13 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
               option={option}
               setOption={setOption}
               symbols={symbols}
+              tag={tag}
+              setTag={setTag}
+              tags={tags}
+              minReturn={minReturn}
+              setMinReturn={setMinReturn}
+              returnMin={RETURN_MIN}
+              returnMax={returnMax}
               startDate={startDate}
               setStartDate={setStartDate}
               endDate={endDate}
