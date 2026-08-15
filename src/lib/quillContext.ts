@@ -366,7 +366,7 @@ export function buildTradeContext(trades: LeanTrade[]): string {
   // Each row leads with [id:…] so edit_trade can target a specific trade
   // without ambiguity. Format:
   //   [id:…] entry → exit | symbol option strike xqty | entry$ → exit$
-  //   | status | strategy | net
+  //   | status | strategy | net | tags:a,b
   const tradeRows = trades
     .map((t) => {
       const isClosed = t.status === "WIN" || t.status === "LOSS";
@@ -374,7 +374,8 @@ export function buildTradeContext(trades: LeanTrade[]): string {
       const exitPx = isClosed ? (t.closingContractPrice ?? "-") : "-";
       const netVal = isClosed ? fmtMoney(net(t)) : "OPEN";
       const id = String(t._id);
-      return `  - [id:${id}] ${dateStr(t.dateBought)} → ${exitDate} | ${t.symbol} ${t.option} ${t.strike} x${t.qty} | $${t.contractPrice} → $${exitPx} | ${t.status} | ${t.strategy ?? "-"} | ${netVal}`;
+      const tagStr = t.tags && t.tags.length ? t.tags.join(",") : "-";
+      return `  - [id:${id}] ${dateStr(t.dateBought)} → ${exitDate} | ${t.symbol} ${t.option} ${t.strike} x${t.qty} | $${t.contractPrice} → $${exitPx} | ${t.status} | ${t.strategy ?? "-"} | ${netVal} | tags:${tagStr}`;
     })
     .join("\n");
 

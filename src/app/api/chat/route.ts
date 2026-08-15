@@ -610,6 +610,23 @@ const EDIT_TRADE_TOOL: FunctionDeclaration = {
         type: SchemaType.STRING,
         description: "Free-text notes (replaces any existing notes).",
       },
+      addTags: {
+        type: SchemaType.ARRAY,
+        items: { type: SchemaType.STRING },
+        description:
+          "Tags to ADD to the trade (appended to any it already has, deduped). Use this for tagging — e.g. add 'A+ Setup'. Preferred over `tags` because it won't wipe existing tags.",
+      },
+      removeTags: {
+        type: SchemaType.ARRAY,
+        items: { type: SchemaType.STRING },
+        description: "Tags to REMOVE from the trade (case-insensitive).",
+      },
+      tags: {
+        type: SchemaType.ARRAY,
+        items: { type: SchemaType.STRING },
+        description:
+          "REPLACE the trade's entire tag list with exactly these tags. Only use when the user explicitly wants to overwrite all tags; otherwise use addTags/removeTags.",
+      },
       favourite: {
         type: SchemaType.BOOLEAN,
         description: "Flag the trade as a favourite.",
@@ -635,8 +652,32 @@ type EditTradeArgs = {
   fees?: number;
   strategy?: string;
   notes?: string;
+  addTags?: string[];
+  removeTags?: string[];
+  tags?: string[];
   favourite?: boolean;
 };
+
+// Tag guardrails: keep the list tidy so a bulk tagging run can't bloat a
+// document. Free text, deduped case-insensitively (first spelling wins).
+const MAX_TAGS = 30;
+const MAX_TAG_LEN = 40;
+function normalizeTags(list: unknown): string[] {
+  if (!Array.isArray(list)) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const raw of list) {
+    if (typeof raw !== "string") continue;
+    const s = raw.trim().slice(0, MAX_TAG_LEN);
+    if (!s) continue;
+    const key = s.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(s);
+    if (out.length >= MAX_TAGS) break;
+  }
+  return out;
+}
 
 async function executeEditTrade(
   userId: string,
@@ -736,6 +777,25 @@ async function executeEditTrade(
   if (a.notes !== undefined) patch.notes = String(a.notes);
   if (a.favourite !== undefined) patch.favourite = !!a.favourite;
 
+  // Tags: `tags` replaces the whole list; otherwise addTags/removeTags mutate
+  // the existing set. Add/remove is the common path (e.g. tag a batch of
+  // trades) and won't clobber tags the user already applied.
+  if (a.tags !== undefined) {
+    patch.tags = normalizeTags(a.tags);
+  } else if (a.addTags !== undefined || a.removeTags !== undefined) {
+    const current: string[] = Array.isArray(existing.tags)
+      ? existing.tags
+      : [];
+    const remove = new Set(
+      normalizeTags(a.removeTags).map((t) => t.toLowerCase()),
+    );
+    const merged = normalizeTags([
+      ...current.filter((t) => !remove.has(t.toLowerCase())),
+      ...normalizeTags(a.addTags),
+    ]);
+    patch.tags = merged;
+  }
+
   if (Object.keys(patch).length === 0) {
     return { ok: false, error: "No fields to update" };
   }
@@ -764,6 +824,7 @@ async function executeEditTrade(
         fees: updated?.fees,
         strategy: updated?.strategy,
         notes: updated?.notes,
+        tags: updated?.tags,
         favourite: updated?.favourite,
       },
     };
@@ -1000,6 +1061,34 @@ STYLE & ANALYSIS
 - This is journaling and analysis only - do NOT give personalized investment
   advice, trade recommendations, or predictions.
 
+TAGS & GROUP-LEVEL REQUESTS
+Every trade row ends with "tags:…" showing the labels currently on that
+trade ("-" means none). You CAN tag and untag trades — use edit_trade with
+addTags / removeTags.
+
+Win rate, expectancy, profit factor, payoff, drawdown, etc. are GROUP
+metrics: they describe a SET of trades (a strategy, a symbol, a tag, a
+weekday, a date range), never a single trade. One closed trade on its own
+is simply a win or a loss — it has no "win rate". So when a request phrases
+a per-trade action in terms of a group metric, translate it into "find the
+qualifying GROUPS, then act on every trade in them". Do NOT refuse it and
+do NOT ask the user for trade ids — you already have every id in the
+snapshot.
+
+Example — "tag every trade with a 90%+ win rate as 'A+ Setup'":
+  1. Decide the grouping. Default to STRATEGY (the usual meaning of a
+     "setup"). If it's genuinely unclear whether they mean by strategy,
+     symbol, or an existing tag, ask one short clarifying question first.
+  2. Find the groups that meet the threshold. The snapshot's per-strategy
+     and per-tag breakdowns already list each group's win rate; read the
+     qualifying ones from there, or call query_stats per candidate group
+     to be exact.
+  3. For EVERY trade belonging to a qualifying group, call edit_trade with
+     addTags:["A+ Setup"]. Use the ids from the snapshot; make one
+     edit_trade call per trade (they can run in the same round).
+  4. Confirm a brief summary: which groups qualified and how many trades
+     you tagged.
+
 TOOLS
 You have four tools available:
 
@@ -1032,10 +1121,13 @@ You have four tools available:
 - edit_trade(id, ...fields) - update an EXISTING trade. Use this to
   close a trade (set status=WIN/LOSS, plus closingContractPrice,
   dateClosed, and profitLoss), fix a typo (e.g. wrong strike), change
-  strategy, add/replace notes, or flag a favourite. The id MUST come
-  from the "[id:…]" tag at the start of a trade row in the TRADER
-  SNAPSHOT. Only pass the fields you want to change - anything you omit
-  stays the same. If multiple trades could match what the user
+  strategy, add/replace notes, TAG a trade (addTags / removeTags), or
+  flag a favourite. The id MUST come from the "[id:…]" tag at the start
+  of a trade row in the TRADER SNAPSHOT. Only pass the fields you want
+  to change - anything you omit stays the same. To tag trades, pass
+  addTags (e.g. ["A+ Setup"]); this appends without wiping existing
+  tags. Use removeTags to untag. Only use the "tags" field (full
+  replace) when the user explicitly wants to overwrite every tag. If multiple trades could match what the user
   described, ASK which one (read out a few candidates with date +
   symbol + qty so they can pick). For status=WIN/LOSS, if the user
   gave a closing price but no P/L, compute net P/L as
