@@ -142,6 +142,11 @@ export interface IUser extends Document {
   // Bonus Quill AI messages earned from level-up rewards — a finite pool
   // consumed once the daily message limit is hit.
   bonusChatMessages?: number;
+  // Customisable Quill AI starter-prompt shortcuts shown on the empty
+  // chat state. Unset means "use the client defaults"; an empty array
+  // means the user cleared them all. Each entry is a labelled one-tap
+  // prompt.
+  chatPrompts?: { id: string; icon: string; title: string; prompt: string }[];
   // Gemini context-cache registry for Quill. The big, stable system
   // instruction (trader snapshot + rules + strategies + goals) is cached
   // server-side so multi-turn chats on an unchanged journal don't re-send /
@@ -253,6 +258,20 @@ const UserSchema = new Schema<IUser>({
   dashChallengesMigrated: { type: Boolean, default: false },
   xp: { type: Number, default: 0 },
   bonusChatMessages: { type: Number, default: 0 },
+  chatPrompts: {
+    type: [
+      new Schema(
+        {
+          id: { type: String },
+          icon: { type: String, default: "fa-solid fa-bolt" },
+          title: { type: String },
+          prompt: { type: String },
+        },
+        { _id: false },
+      ),
+    ],
+    default: undefined,
+  },
   chatCacheName: { type: String, default: "" },
   chatCacheHash: { type: String, default: "" },
   chatCacheExpiresAt: { type: Date },

@@ -86,47 +86,60 @@ function tradeAwareUrlTransform(url: string): string {
 // any lingering client copy from the previous approach.
 const LEGACY_LOCAL_KEY = "cuequill:chat:v1";
 
-// Compact starter prompts shown on the empty state. Title + body lets
-// each one read as a tappable card rather than a wall of pills.
-const SUGGESTIONS: {
-  title: string;
-  body: string;
+// A one-tap starter prompt shown on the empty state. `title` is the label
+// on the card; `prompt` is the full text sent to Quill when tapped. Users
+// can edit, add, remove, and reorder these — the customised set is saved
+// per-user (see cuequill:chatPrompts below).
+type Suggestion = {
+  id: string;
   icon: string;
+  title: string;
   prompt: string;
-}[] = [
+};
+
+function genPromptId(): string {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return `p-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+const DEFAULT_SUGGESTIONS: Suggestion[] = [
   {
+    id: "default-how",
     icon: "fa-solid fa-chart-line",
     title: "How am I doing?",
-    body: "Performance this month vs the last.",
     prompt: "How am I doing this month?",
   },
   {
+    id: "default-best",
     icon: "fa-solid fa-trophy",
     title: "Best strategy",
-    body: "Which setup wins most for me?",
     prompt: "Which strategy is performing best for me?",
   },
   {
+    id: "default-log",
     icon: "fa-solid fa-pen-to-square",
     title: "Log a trade",
-    body: "Add a new trade in plain English.",
     prompt: "Help me log a trade",
   },
   {
+    id: "default-losses",
     icon: "fa-solid fa-magnifying-glass",
     title: "Review my losses",
-    body: "Last 5 losses - what they had in common.",
-    prompt:
-      "Show me my last 5 losing trades and what they had in common.",
+    prompt: "Show me my last 5 losing trades and what they had in common.",
   },
   {
+    id: "default-week",
     icon: "fa-solid fa-calendar-check",
     title: "Review my week",
-    body: "A debrief: wins, leaks, rules, goals.",
     prompt:
       "Review my trading week. Give me a short debrief: my P/L and record for the week, what went well, the biggest mistake or leak in the data, any rules I broke, and where I stand on my goals. End with one thing to focus on next.",
   },
 ];
+
+// Default icon assigned to newly-added shortcuts.
+const NEW_PROMPT_ICON = "fa-solid fa-bolt";
 
 // Sentinel emitted by the server when the chat turn modified the user's
 // trades. Stripped from display text and used to invalidate the cached
@@ -182,6 +195,44 @@ function Page() {
   const setConv = useCallback((id: string | null) => {
     convIdRef.current = id;
     setConversationId(id);
+  }, []);
+
+  // Customisable starter prompts, persisted per-user server-side (so they
+  // sync across devices). A null response means the user has never
+  // customised them, so we keep the defaults; a stored array (even empty)
+  // is used verbatim.
+  const [suggestions, setSuggestions] =
+    useState<Suggestion[]>(DEFAULT_SUGGESTIONS);
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/chat/prompts", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = (await res.json()) as { prompts: Suggestion[] | null };
+        if (!cancelled && Array.isArray(data.prompts)) {
+          setSuggestions(data.prompts);
+        }
+      } catch {
+        /* keep defaults */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+  const saveSuggestions = useCallback((next: Suggestion[]) => {
+    setSuggestions(next);
+    // Best-effort server persistence; the local state already updated so the
+    // UI reflects the change immediately.
+    fetch("/api/chat/prompts", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompts: next }),
+    }).catch(() => {
+      /* best-effort */
+    });
   }, []);
 
   // Pull the user's full trade list once (React Query caches it across
@@ -738,31 +789,18 @@ function Page() {
             Ask anything about your trades
           </h2>
         </div>
-        <div className="grid grid-cols-2 gap-2 w-full">
-          {SUGGESTIONS.map((s) => (
-            <button
-              key={s.title}
-              onClick={() => send(s.prompt)}
-              className="group text-left rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/20 transition px-3.5 py-3 cursor-pointer"
-            >
-              <div className="flex items-center gap-2.5">
-                <i
-                  className={`${s.icon} text-[11px] text-teal-300/80 group-hover:text-teal-300 transition`}
-                />
-                <span className="text-[13px] font-medium text-white">
-                  {s.title}
-                </span>
-              </div>
-            </button>
-          ))}
-        </div>
+        <PromptShortcuts
+          suggestions={suggestions}
+          onSend={send}
+          onSave={saveSuggestions}
+        />
         <p className="text-[11px] text-white/30 leading-relaxed text-center md:text-left">
           Quill AI can make mistakes and does not give financial advice. It
           analyses your journal for your own review only.
         </p>
       </div>
     ),
-    [send],
+    [send, suggestions, saveSuggestions],
   );
 
   return (
@@ -1116,6 +1154,182 @@ function Page() {
       )}
     </AnimatePresence>
     </TradeChatContext.Provider>
+  );
+}
+
+// The starter-prompt shortcuts on the empty state. In normal mode each is a
+// one-tap button that sends its prompt; a Customise toggle flips the grid
+// into an editor where labels and prompts can be edited, added, removed, or
+// reset — saved via onSave (persisted per-user by the parent).
+function PromptShortcuts({
+  suggestions,
+  onSend,
+  onSave,
+}: {
+  suggestions: Suggestion[];
+  onSend: (prompt: string) => void;
+  onSave: (next: Suggestion[]) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState<Suggestion[]>(suggestions);
+
+  // Keep the draft in sync with the saved set whenever we're not editing.
+  useEffect(() => {
+    if (!editing) setDraft(suggestions);
+  }, [suggestions, editing]);
+
+  const startEdit = () => {
+    setDraft(suggestions);
+    setEditing(true);
+  };
+  const cancel = () => {
+    setDraft(suggestions);
+    setEditing(false);
+  };
+  const saveAll = () => {
+    const cleaned = draft
+      .map((d) => ({
+        ...d,
+        title: d.title.trim(),
+        prompt: d.prompt.trim(),
+      }))
+      .filter((d) => d.title && d.prompt);
+    onSave(cleaned);
+    setEditing(false);
+  };
+  const update = (id: string, patch: Partial<Suggestion>) =>
+    setDraft((prev) => prev.map((d) => (d.id === id ? { ...d, ...patch } : d)));
+  const remove = (id: string) =>
+    setDraft((prev) => prev.filter((d) => d.id !== id));
+  const add = () =>
+    setDraft((prev) => [
+      ...prev,
+      { id: genPromptId(), icon: NEW_PROMPT_ICON, title: "", prompt: "" },
+    ]);
+  const resetDefaults = () => setDraft(DEFAULT_SUGGESTIONS);
+
+  return (
+    <div className="w-full">
+      {/* Section header + edit controls */}
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[10px] tracking-[0.12em] uppercase text-white/35 font-medium">
+          Shortcuts
+        </span>
+        {editing ? (
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={cancel}
+              className="px-2.5 py-1 rounded-full text-[11.5px] text-white/50 hover:text-white transition cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={saveAll}
+              className="px-2.5 py-1 rounded-full text-[11.5px] font-medium bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition cursor-pointer"
+            >
+              Save
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={startEdit}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11.5px] text-white/50 hover:text-white hover:bg-white/[0.05] transition cursor-pointer"
+          >
+            <i className="fa-solid fa-pen text-[9px]" />
+            Customise
+          </button>
+        )}
+      </div>
+
+      {editing ? (
+        <div className="flex flex-col gap-2">
+          {draft.map((s) => (
+            <div
+              key={s.id}
+              className="rounded-xl border border-white/10 bg-white/[0.02] p-2.5 flex flex-col gap-1.5"
+            >
+              <div className="flex items-center gap-2">
+                <i
+                  className={`${s.icon} text-[11px] text-teal-300/80 w-4 text-center shrink-0`}
+                />
+                <input
+                  value={s.title}
+                  onChange={(e) => update(s.id, { title: e.target.value })}
+                  placeholder="Shortcut label"
+                  maxLength={60}
+                  className="flex-1 min-w-0 bg-transparent text-[13px] font-medium text-white placeholder:text-white/30 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => remove(s.id)}
+                  aria-label="Remove shortcut"
+                  className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-white/30 hover:text-red-300 hover:bg-red-500/10 transition cursor-pointer"
+                >
+                  <i className="fa-solid fa-xmark text-[11px]" />
+                </button>
+              </div>
+              <textarea
+                value={s.prompt}
+                onChange={(e) => update(s.id, { prompt: e.target.value })}
+                placeholder="The prompt sent to Quill when tapped…"
+                rows={2}
+                maxLength={1000}
+                className="w-full resize-none rounded-lg bg-white/[0.03] border border-white/10 px-2.5 py-1.5 text-[12.5px] text-white/80 placeholder:text-white/30 focus:outline-none focus:border-white/25 transition"
+              />
+            </div>
+          ))}
+
+          <div className="flex items-center justify-between pt-0.5">
+            <button
+              type="button"
+              onClick={add}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-white/15 text-[12px] font-medium text-white/55 hover:text-white/85 hover:border-white/30 transition cursor-pointer"
+            >
+              <i className="fa-solid fa-plus text-[10px]" />
+              Add shortcut
+            </button>
+            <button
+              type="button"
+              onClick={resetDefaults}
+              className="text-[11.5px] text-white/40 hover:text-white/70 transition cursor-pointer"
+            >
+              Reset to defaults
+            </button>
+          </div>
+        </div>
+      ) : suggestions.length === 0 ? (
+        <button
+          type="button"
+          onClick={startEdit}
+          className="w-full rounded-xl border border-dashed border-white/15 bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/25 transition px-3.5 py-4 text-[12.5px] text-white/45 hover:text-white/70 cursor-pointer"
+        >
+          <i className="fa-solid fa-plus text-[10px] mr-1.5" />
+          Add a shortcut
+        </button>
+      ) : (
+        <div className="grid grid-cols-2 gap-2 w-full">
+          {suggestions.map((s) => (
+            <button
+              key={s.id}
+              onClick={() => onSend(s.prompt)}
+              className="group text-left rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/20 transition px-3.5 py-3 cursor-pointer"
+            >
+              <div className="flex items-center gap-2.5">
+                <i
+                  className={`${s.icon} text-[11px] text-teal-300/80 group-hover:text-teal-300 transition`}
+                />
+                <span className="text-[13px] font-medium text-white truncate">
+                  {s.title}
+                </span>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
