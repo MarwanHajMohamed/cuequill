@@ -703,17 +703,27 @@ function Page() {
     [messages, streaming, enqueueChunk, queryClient, userId, refreshConversations],
   );
 
-  // Deep-link: /chat?prompt=… (e.g. "Ask Quill" on a strategy) auto-sends
-  // the question once the thread is ready, then clears the URL so a refresh
-  // doesn't resend it.
+  // Deep-links, handled once the thread is ready, then the URL is cleared
+  // so a refresh doesn't repeat them:
+  //   /chat?prompt=…  auto-sends the question (e.g. "Ask Quill" on a strategy)
+  //   /chat?draft=…   prefills the composer with the text but does NOT send,
+  //                   so the user can tweak it first (e.g. dashboard insight)
   const promptSentRef = useRef(false);
   useEffect(() => {
     if (!hydrated || promptSentRef.current) return;
-    const p = new URLSearchParams(window.location.search).get("prompt");
+    const params = new URLSearchParams(window.location.search);
+    const p = params.get("prompt");
+    const draft = params.get("draft");
     if (p && p.trim()) {
       promptSentRef.current = true;
       window.history.replaceState({}, "", "/chat");
       send(p);
+    } else if (draft && draft.trim()) {
+      promptSentRef.current = true;
+      window.history.replaceState({}, "", "/chat");
+      setInput(draft);
+      // Focus the composer so the prefilled text is ready to edit or send.
+      requestAnimationFrame(() => inputRef.current?.focus());
     }
   }, [hydrated, send]);
 

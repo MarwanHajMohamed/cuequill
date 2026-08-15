@@ -81,7 +81,11 @@ export default function DashboardQuillInsight() {
           </p>
           <div className="flex items-center justify-between gap-2 mt-auto pt-1">
             <Link
-              href="/chat"
+              href={`/chat?draft=${encodeURIComponent(
+                data?.insight
+                  ? `About today's insight: "${data.insight}" — can you expand on this and suggest what I should do about it?`
+                  : "",
+              )}`}
               className="text-[12px] font-medium text-teal-300 hover:text-teal-200 transition"
             >
               Ask Quill <i className="fa-solid fa-arrow-right text-[10px]" />
