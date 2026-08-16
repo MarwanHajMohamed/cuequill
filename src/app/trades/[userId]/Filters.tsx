@@ -19,6 +19,8 @@ export default function Filters({
   tags,
   minReturn,
   setMinReturn,
+  maxReturn,
+  setMaxReturn,
   returnMin,
   returnMax,
   startDate,
@@ -43,6 +45,8 @@ export default function Filters({
   tags: string[];
   minReturn: number;
   setMinReturn: React.Dispatch<React.SetStateAction<number>>;
+  maxReturn: number;
+  setMaxReturn: React.Dispatch<React.SetStateAction<number>>;
   returnMin: number;
   returnMax: number;
   startDate: string;
@@ -75,6 +79,7 @@ export default function Filters({
     option !== "All",
     tag !== "All",
     minReturn > returnMin,
+    maxReturn < returnMax,
     !!startDate || !!endDate,
   ].filter(Boolean).length;
 
@@ -199,18 +204,25 @@ export default function Filters({
 
       <div className="h-[1px] bg-white/10" />
 
-      {/* RETURN % — minimum realized return a closed trade must clear. */}
+      {/* RETURN % — realized-return window (net P/L as a % of premium).
+          Covers losers (negative) and winners; each bound is "Any" until
+          moved off its extreme. */}
       <div>
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-[10px] xl:text-xs text-white/40 tracking-wider">
-            Min return
-          </span>
+        <div className="text-[10px] xl:text-xs text-white/40 mb-2 tracking-wider">
+          Return %
+        </div>
+
+        {/* Min bound */}
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-[10px] text-white/45">Min</span>
           <span
             className={`text-[11px] xl:text-xs font-medium tabular-nums ${
               minReturn > returnMin ? "text-teal-300" : "text-white/45"
             }`}
           >
-            {minReturn > returnMin ? `≥ ${minReturn}%` : "Any"}
+            {minReturn > returnMin
+              ? `≥ ${minReturn > 0 ? "+" : ""}${minReturn}%`
+              : "Any"}
           </span>
         </div>
         <input
@@ -219,11 +231,46 @@ export default function Filters({
           max={returnMax}
           step={5}
           value={minReturn}
-          onChange={(e) => setMinReturn(Number(e.target.value))}
+          onChange={(e) => {
+            const v = Number(e.target.value);
+            setMinReturn(v);
+            // Keep the window valid: never let Min pass Max.
+            if (maxReturn < returnMax && v > maxReturn) setMaxReturn(v);
+          }}
           className="w-full cursor-pointer accent-teal-400"
         />
+
+        {/* Max bound */}
+        <div className="flex items-center justify-between mb-1 mt-3">
+          <span className="text-[10px] text-white/45">Max</span>
+          <span
+            className={`text-[11px] xl:text-xs font-medium tabular-nums ${
+              maxReturn < returnMax ? "text-teal-300" : "text-white/45"
+            }`}
+          >
+            {maxReturn < returnMax
+              ? `≤ ${maxReturn > 0 ? "+" : ""}${maxReturn}%`
+              : "Any"}
+          </span>
+        </div>
+        <input
+          type="range"
+          min={returnMin}
+          max={returnMax}
+          step={5}
+          value={Number.isFinite(maxReturn) ? maxReturn : returnMax}
+          onChange={(e) => {
+            const v = Number(e.target.value);
+            // Dragging fully right clears the upper bound.
+            setMaxReturn(v >= returnMax ? Number.POSITIVE_INFINITY : v);
+            // Keep the window valid: never let Max drop below Min.
+            if (minReturn > returnMin && v < minReturn) setMinReturn(v);
+          }}
+          className="w-full cursor-pointer accent-teal-400"
+        />
+
         <div className="flex justify-between text-[9px] text-white/30 mt-1 tabular-nums">
-          <span>Any</span>
+          <span>{returnMin}%</span>
           <span>+{returnMax}%</span>
         </div>
       </div>
@@ -325,6 +372,7 @@ export default function Filters({
                 setOption("All");
                 setTag("All");
                 setMinReturn(returnMin);
+                setMaxReturn(Number.POSITIVE_INFINITY);
                 setStartDate("");
                 setEndDate("");
               }}

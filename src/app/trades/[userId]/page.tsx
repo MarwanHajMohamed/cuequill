@@ -198,8 +198,13 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
   const [filter, setFilter] = useState<"All" | "Win" | "Loss">("All");
   const [option, setOption] = useState<"All" | "CALL" | "PUT">("All");
   const [tag, setTag] = useState<string>("All");
-  // Minimum realized return % a trade must clear to show. RETURN_MIN = off.
+  // Realized return-% window a trade must fall within to show. minReturn at
+  // RETURN_MIN = no lower bound; maxReturn at Infinity = no upper bound
+  // (clamped to the slider ceiling in the UI).
   const [minReturn, setMinReturn] = useState<number>(RETURN_MIN);
+  const [maxReturn, setMaxReturn] = useState<number>(
+    Number.POSITIVE_INFINITY,
+  );
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -569,9 +574,26 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
   // Reset back to page 1 whenever any filter changes. Without this,
   // narrowing a list while on page 17 leaves you stranded past the end
   // of the new results and the table looks empty.
+  // Upper bound for the return-% slider: the best realized return in the
+  // journal, rounded up to a tidy step (min 100%) so the thumb has room.
+  const returnMax =
+    Math.ceil(
+      Math.max(100, ...(trades ?? []).map((t) => tradeReturnPct(t) ?? 0)) / 50,
+    ) * 50;
+
   useEffect(() => {
     setCurrentPage(1);
-  }, [filter, strategy, symbol, option, tag, minReturn, startDate, endDate]);
+  }, [
+    filter,
+    strategy,
+    symbol,
+    option,
+    tag,
+    minReturn,
+    maxReturn,
+    startDate,
+    endDate,
+  ]);
 
   // Memoised so scroll-driven re-renders (the floating header) don't
   // recompute the whole filter/sort each frame.
@@ -585,12 +607,14 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
         if (option !== "All" && trade.option !== option) return false;
         if (tag !== "All" && !(trade.tags ?? []).includes(tag)) return false;
 
-        // Return-% filter: only active above the slider's "off" floor. Trades
-        // with no realized return (open, or unknown cost) are excluded once
-        // the filter is engaged.
-        if (minReturn > RETURN_MIN) {
+        // Return-% window: each bound is only active when moved off its
+        // extreme. Trades with no realized return (open, or unknown cost) are
+        // excluded once either bound is engaged.
+        if (minReturn > RETURN_MIN || maxReturn < returnMax) {
           const r = tradeReturnPct(trade);
-          if (r == null || r < minReturn) return false;
+          if (r == null) return false;
+          if (minReturn > RETURN_MIN && r < minReturn) return false;
+          if (maxReturn < returnMax && r > maxReturn) return false;
         }
 
         // Date range matches on the trade's EXIT date for closed trades
@@ -606,7 +630,19 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
         if (to && tradeDate > to) return false;
         return true;
       }),
-    [trades, filter, strategy, symbol, option, tag, minReturn, startDate, endDate],
+    [
+      trades,
+      filter,
+      strategy,
+      symbol,
+      option,
+      tag,
+      minReturn,
+      maxReturn,
+      returnMax,
+      startDate,
+      endDate,
+    ],
   );
 
   const sortedTrades = useMemo(() => {
@@ -681,16 +717,6 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
       new Set((trades ?? []).flatMap((t) => t.tags ?? [])),
     ).sort((a, b) => a.localeCompare(b)),
   ];
-
-  // Upper bound for the return-% slider: the best realized return in the
-  // journal, rounded up to a tidy step (min 100%) so the thumb has room.
-  const returnMax =
-    Math.ceil(
-      Math.max(
-        100,
-        ...(trades ?? []).map((t) => tradeReturnPct(t) ?? 0),
-      ) / 50,
-    ) * 50;
 
   const calcChange = (newPrice: number, oldPrice: number) => {
     return (((newPrice - oldPrice) / oldPrice) * 100).toFixed(0);
@@ -873,6 +899,8 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
               tags={tags}
               minReturn={minReturn}
               setMinReturn={setMinReturn}
+              maxReturn={maxReturn}
+              setMaxReturn={setMaxReturn}
               returnMin={RETURN_MIN}
               returnMax={returnMax}
               startDate={startDate}
