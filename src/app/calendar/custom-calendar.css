@@ -198,9 +198,11 @@
   grid-template-columns: repeat(4, 1fr) !important;
   /* Fixed row height so every tile is the same height regardless of whether
      the month has trades — otherwise empty (e.g. future) months collapse
-     shorter than the filled ones and the grid looks ragged. */
-  grid-auto-rows: 92px !important;
-  gap: 8px;
+     shorter than the filled ones and the grid looks ragged. Tall enough to
+     seat the month name, P/L, its % on its own line, and the trade count
+     without crowding. */
+  grid-auto-rows: 116px !important;
+  gap: 10px;
 }
 .react-calendar.custom-calendar_full-view
   .react-calendar__year-view__months__month,
@@ -220,8 +222,8 @@
   background: rgb(var(--fg-rgb) / 0.02);
   color: rgb(var(--fg-rgb));
   border: 1px solid rgb(var(--fg-rgb) / 0.08);
-  border-radius: 10px;
-  padding: 6px 4px;
+  border-radius: 12px;
+  padding: 8px 6px;
   font-size: 14px;
   font-weight: 500;
   overflow: hidden;

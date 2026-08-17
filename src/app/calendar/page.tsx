@@ -565,21 +565,27 @@ function Page() {
       const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
       const pct = monthPctByKey.get(key);
       return (
-        <div className="mt-1 flex flex-col items-center gap-0.5 text-[10px] md:text-xs">
+        <div className="mt-1 flex flex-col items-center gap-0.5 text-[10px] md:text-xs leading-tight">
           {closedCount > 0 ? (
-            <div
-              className={`font-normal ${
-                netPL >= 0 ? "text-green-500" : "text-red-500"
-              }`}
-            >
-              {fmtMoneySignedCompact(netPL)}
+            <>
+              <div
+                className={`font-normal tabular-nums whitespace-nowrap ${
+                  netPL >= 0 ? "text-green-500" : "text-red-500"
+                }`}
+              >
+                {fmtMoneySignedCompact(netPL)}
+              </div>
               {pct != null && (
-                <span className="ml-1 text-[9px] md:text-[10px] opacity-70">
-                  ({pct >= 0 ? "+" : ""}
-                  {pct.toFixed(1)}%)
-                </span>
+                <div
+                  className={`text-[9px] md:text-[10px] tabular-nums whitespace-nowrap opacity-70 ${
+                    netPL >= 0 ? "text-green-500" : "text-red-500"
+                  }`}
+                >
+                  {pct >= 0 ? "+" : ""}
+                  {pct.toFixed(1)}%
+                </div>
               )}
-            </div>
+            </>
           ) : (
             <div className="font-semibold text-orange-400">Open</div>
           )}
