@@ -1100,18 +1100,27 @@ function Page() {
             <div className="flex items-center justify-between gap-2 px-3 md:px-0 mb-3 md:mb-4">
               {(() => {
                 const isWeek = view === "week";
+                // In the drill-up grids (calView "year" = months, "decade" =
+                // years) the header must total the whole year, not just the
+                // one month in `displayedMonth` — otherwise it showed only
+                // January's P/L instead of the year's sum.
+                const isYearView = !isWeek && calView !== "month";
                 const summary = isWeek
                   ? getWeekSummary(displayedWeekStart)
-                  : getMonthSummary(displayedMonth);
+                  : isYearView
+                    ? getYearSummary(displayedMonth)
+                    : getMonthSummary(displayedMonth);
                 const label = isWeek
                   ? `${format(displayedWeekStart, "MMM d")} – ${format(
                       addDays(displayedWeekStart, 4),
                       "MMM d",
                     )}`
-                  : `${displayedMonth.toLocaleDateString("en-US", {
-                      month: "short",
-                      year: "numeric",
-                    })}`;
+                  : isYearView
+                    ? `${displayedMonth.getFullYear()}`
+                    : `${displayedMonth.toLocaleDateString("en-US", {
+                        month: "short",
+                        year: "numeric",
+                      })}`;
                 const positive = summary.netPL >= 0;
                 // Month-view only: this month's return %, on the same basis as
                 // the year-view tiles.
@@ -1119,7 +1128,7 @@ function Page() {
                   displayedMonth.getMonth() + 1,
                 ).padStart(2, "0")}`;
                 const pct =
-                  !isWeek && summary.closedCount > 0
+                  !isWeek && !isYearView && summary.closedCount > 0
                     ? monthPctByKey.get(monthKey)
                     : undefined;
                 return (
