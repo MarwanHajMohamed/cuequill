@@ -90,7 +90,13 @@ function TradeDetailPage() {
   const { data: userStrategies = [] } = useStrategies();
   const strategies = useMemo<string[]>(() => {
     const names = userStrategies
-      .filter((s) => !form?.option || s.direction === form.option)
+      // "BOTH" strategies apply to either side, so they match any option.
+      .filter(
+        (s) =>
+          !form?.option ||
+          s.direction === form.option ||
+          s.direction === "BOTH",
+      )
       .map((s) => s.name);
     // Keep the trade's saved strategy in the list even if it has since
     // been renamed/deleted, so the field doesn't silently flip.
