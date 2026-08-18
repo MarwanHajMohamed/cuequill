@@ -20,7 +20,9 @@ export { FREE_STRATEGY_LIMIT, SEED_STRATEGIES } from "@/lib/strategyConstants";
 export interface IStrategy extends Document {
   userId: mongoose.Types.ObjectId;
   name: string;
-  direction: "CALL" | "PUT";
+  // "BOTH" = the setup applies to both CALL and PUT trades; it shows in both
+  // direction columns and is selectable on trades of either side.
+  direction: "CALL" | "PUT" | "BOTH";
   timeframes: string[];
   // Rich-text HTML (RichNotesEditor format) — prose, lists, and inline
   // images describing the setup.
@@ -92,7 +94,7 @@ const StrategySchema = new Schema<IStrategy>(
       index: true,
     },
     name: { type: String, required: true, trim: true },
-    direction: { type: String, enum: ["CALL", "PUT"], required: true },
+    direction: { type: String, enum: ["CALL", "PUT", "BOTH"], required: true },
     timeframes: { type: [String], default: [] },
     description: { type: String, default: "" },
     tags: { type: [String], default: [] },

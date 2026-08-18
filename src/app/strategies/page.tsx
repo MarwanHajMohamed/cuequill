@@ -41,12 +41,17 @@ function Page() {
   const [importing, setImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // "BOTH" strategies apply to either side, so they surface in both columns.
   const calls = useMemo(
-    () => strategies.filter((s) => s.direction === "CALL"),
+    () =>
+      strategies.filter(
+        (s) => s.direction === "CALL" || s.direction === "BOTH",
+      ),
     [strategies],
   );
   const puts = useMemo(
-    () => strategies.filter((s) => s.direction === "PUT"),
+    () =>
+      strategies.filter((s) => s.direction === "PUT" || s.direction === "BOTH"),
     [strategies],
   );
 
@@ -326,8 +331,16 @@ function StrategyCard({
             <i className={`fa-solid ${style.icon} text-[13px]`} />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-[14px] md:text-[15px] font-medium tracking-tight truncate">
-              {strategy.name}
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="text-[14px] md:text-[15px] font-medium tracking-tight truncate">
+                {strategy.name}
+              </div>
+              {strategy.direction === "BOTH" && (
+                <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-semibold tracking-[0.06em] bg-white/[0.06] border border-white/15 text-white/60">
+                  <i className="fa-solid fa-arrows-left-right text-[8px]" />
+                  BOTH
+                </span>
+              )}
             </div>
             <div className="text-[11px] text-white/45 mt-0.5 truncate">
               {tfLine || "No timeframe"}

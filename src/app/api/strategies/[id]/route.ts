@@ -64,7 +64,11 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     }
     patch.name = n;
   }
-  if (body.direction === "CALL" || body.direction === "PUT") {
+  if (
+    body.direction === "CALL" ||
+    body.direction === "PUT" ||
+    body.direction === "BOTH"
+  ) {
     patch.direction = body.direction;
   }
   if (Array.isArray(body.timeframes)) {

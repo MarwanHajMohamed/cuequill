@@ -14,7 +14,7 @@ export const STRATEGY_BUNDLE_VERSION = 1;
 // One strategy, stripped to its portable fields.
 export type ExportedStrategy = {
   name: string;
-  direction: "CALL" | "PUT";
+  direction: "CALL" | "PUT" | "BOTH";
   timeframes: string[];
   description: string;
   tags: string[];
@@ -112,7 +112,8 @@ function sanitizeExamples(v: unknown): StrategyExample[] {
 export function toExportedStrategy(s: StrategyLike): ExportedStrategy {
   return {
     name: String(s.name ?? "").trim() || "Untitled strategy",
-    direction: s.direction === "PUT" ? "PUT" : "CALL",
+    direction:
+      s.direction === "PUT" ? "PUT" : s.direction === "BOTH" ? "BOTH" : "CALL",
     timeframes: asStringArray(s.timeframes),
     description: typeof s.description === "string" ? s.description : "",
     tags: asStringArray(s.tags),

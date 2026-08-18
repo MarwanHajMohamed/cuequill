@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { SchematicElement } from "@/lib/strategyConstants";
 import type { StrategyExample } from "@/lib/strategySeed";
 
-export type StrategyDirection = "CALL" | "PUT";
+export type StrategyDirection = "CALL" | "PUT" | "BOTH";
 
 export type Schematic = {
   width: number;

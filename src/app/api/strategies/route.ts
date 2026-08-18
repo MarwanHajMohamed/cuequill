@@ -102,7 +102,12 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json().catch(() => ({}));
   const name = String(body.name ?? "").trim();
-  const direction = body.direction === "PUT" ? "PUT" : "CALL";
+  const direction =
+    body.direction === "PUT"
+      ? "PUT"
+      : body.direction === "BOTH"
+        ? "BOTH"
+        : "CALL";
   if (!name) {
     return NextResponse.json({ error: "Name is required" }, { status: 400 });
   }

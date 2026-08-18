@@ -20,7 +20,7 @@ import StrategyStats from "./StrategyStats";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useScrollLock } from "@/hooks/useScrollLock";
 
-type Direction = "CALL" | "PUT";
+type Direction = "CALL" | "PUT" | "BOTH";
 type Mode = "view" | "edit";
 
 // Generate a client-side id for newly uploaded examples. crypto.randomUUID
@@ -775,7 +775,9 @@ function DirectionBadge({ direction }: { direction: Direction }) {
   const tone =
     direction === "CALL"
       ? "bg-green-500/20 text-green-300 border-green-500/30"
-      : "bg-red-500/20 text-red-300 border-red-500/30";
+      : direction === "PUT"
+        ? "bg-red-500/20 text-red-300 border-red-500/30"
+        : "bg-white/[0.06] text-white/70 border-white/20";
   return (
     <span
       className={`shrink-0 px-3 py-1 rounded-full text-[11px] font-semibold tracking-[0.08em] border ${tone}`}
@@ -794,12 +796,14 @@ function DirectionToggle({
 }) {
   return (
     <div className="inline-flex rounded-full border border-white/10 bg-white/[0.03] p-1 gap-1 shrink-0">
-      {(["CALL", "PUT"] as Direction[]).map((d) => {
+      {(["CALL", "PUT", "BOTH"] as Direction[]).map((d) => {
         const active = d === value;
         const tone =
           d === "CALL"
             ? "bg-green-500/20 text-green-300 border-green-500/30"
-            : "bg-red-500/20 text-red-300 border-red-500/30";
+            : d === "PUT"
+              ? "bg-red-500/20 text-red-300 border-red-500/30"
+              : "bg-white/[0.10] text-white/80 border-white/25";
         return (
           <button
             key={d}

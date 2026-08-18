@@ -168,11 +168,12 @@ export default function EditTradeModal({
   // currently selected direction. Until a direction is picked, show
   // every strategy so the dropdown isn't empty.
   const { data: userStrategies = [] } = useStrategies();
+  // "BOTH" strategies apply to either side, so they appear in both lists.
   const callStrategies = userStrategies
-    .filter((s) => s.direction === "CALL")
+    .filter((s) => s.direction === "CALL" || s.direction === "BOTH")
     .map((s) => s.name);
   const putStrategies = userStrategies
-    .filter((s) => s.direction === "PUT")
+    .filter((s) => s.direction === "PUT" || s.direction === "BOTH")
     .map((s) => s.name);
   const strategies: string[] =
     selectedOption === "CALL"

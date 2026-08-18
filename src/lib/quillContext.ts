@@ -46,7 +46,7 @@ export type LeanRulesBoard = {
 };
 export type LeanStrategy = {
   name?: string;
-  direction?: "CALL" | "PUT";
+  direction?: "CALL" | "PUT" | "BOTH";
   timeframes?: string[];
   description?: string;
   tags?: string[];
