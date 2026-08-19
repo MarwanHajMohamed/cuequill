@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useScrollLock } from "@/hooks/useScrollLock";
 
 type ImportedTrade = {
@@ -12,11 +12,31 @@ type ImportedTrade = {
   qty: number;
   dateBought: string;
   dateClosed?: string | null;
+  expiryDate?: string | null;
   profitLoss?: number | null;
   fees?: number | null;
   status: "WIN" | "LOSS" | "OPEN";
+  simulated?: boolean;
   hasDuplicate?: boolean;
 };
+
+// Contract-identity key for auto-merge: legs share a symbol, side, strike,
+// expiry day, open/closed class, and sim flag — the same rules the merge
+// endpoint enforces. Two+ imported legs on one key are partial fills of the
+// same order and can be collapsed into a single row.
+const dayOf = (iso: string | null | undefined) =>
+  iso ? new Date(iso).toISOString().split("T")[0] : "";
+function mergeKey(t: ImportedTrade): string {
+  const statusClass = t.status === "OPEN" ? "OPEN" : "CLOSED";
+  return [
+    t.symbol,
+    t.option,
+    t.strike,
+    dayOf(t.expiryDate),
+    statusClass,
+    t.simulated ? "sim" : "real",
+  ].join("|");
+}
 
 // Lists the trades inserted by the most recent IBKR sync, flags rows that
 // look like duplicates of existing trades, and lets the user delete any of
@@ -31,23 +51,73 @@ export default function ImportedTradesModal({
   const [trades, setTrades] = useState<ImportedTrade[] | null>(null);
   const [error, setError] = useState("");
   const [deleting, setDeleting] = useState<Record<string, boolean>>({});
+  const [merging, setMerging] = useState(false);
 
   useScrollLock();
 
+  const load = async () => {
+    try {
+      const r = await fetch("/api/ibkr/last-imported");
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error ?? "Failed to load");
+      setTrades(d.trades ?? []);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load");
+      setTrades([]);
+    }
+  };
+
   useEffect(() => {
-    const load = async () => {
-      try {
-        const r = await fetch("/api/ibkr/last-imported");
-        const d = await r.json();
-        if (!r.ok) throw new Error(d.error ?? "Failed to load");
-        setTrades(d.trades ?? []);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to load");
-        setTrades([]);
-      }
-    };
     load();
   }, []);
+
+  // Group the imported legs by contract identity; groups of 2+ are the
+  // auto-mergeable partial fills.
+  const mergeGroups = useMemo(() => {
+    const map = new Map<string, ImportedTrade[]>();
+    for (const t of trades ?? []) {
+      const k = mergeKey(t);
+      const arr = map.get(k);
+      if (arr) arr.push(t);
+      else map.set(k, [t]);
+    }
+    return Array.from(map.values()).filter((g) => g.length >= 2);
+  }, [trades]);
+
+  // ids that belong to some auto-merge group (for the outline + ordering).
+  const groupedIds = useMemo(
+    () => new Set(mergeGroups.flat().map((t) => t._id)),
+    [mergeGroups],
+  );
+
+  const mergeableCount = mergeGroups.reduce((s, g) => s + g.length, 0);
+
+  const handleAutoMerge = async () => {
+    if (mergeGroups.length === 0 || merging) return;
+    setMerging(true);
+    setError("");
+    try {
+      for (const group of mergeGroups) {
+        const ids = group.map((t) => t._id);
+        const r = await fetch("/api/trades/merge", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ids }),
+        });
+        if (!r.ok) {
+          const d = await r.json().catch(() => ({}));
+          throw new Error(d.error ?? "Merge failed");
+        }
+      }
+      // Reload what's left of the import and refresh the parent's table.
+      await load();
+      onDeleted?.("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Auto-merge failed");
+    } finally {
+      setMerging(false);
+    }
+  };
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -155,18 +225,67 @@ export default function ImportedTradesModal({
                 Nothing from the last sync remains.
               </div>
             ) : (
-              <div className="flex flex-col gap-1">
-                {trades.map((t) => (
-                  <ImportedRow
-                    key={t._id}
-                    trade={t}
-                    deleting={!!deleting[t._id]}
-                    onDelete={() => handleDelete(t._id)}
-                  />
+              <div className="flex flex-col gap-1.5">
+                {/* Auto-mergeable groups — outlined together so the partial
+                    fills that will collapse into one row are obvious. */}
+                {mergeGroups.map((group, gi) => (
+                  <div
+                    key={`grp-${gi}`}
+                    className="rounded-xl border border-teal-500/40 bg-teal-500/[0.05] p-1"
+                  >
+                    <div className="flex items-center gap-1.5 px-2 pt-1 pb-0.5 text-[10.5px] font-medium text-teal-300/90">
+                      <i className="fa-solid fa-object-group text-[10px]" />
+                      {group.length} fills · same contract
+                    </div>
+                    {group.map((t) => (
+                      <ImportedRow
+                        key={t._id}
+                        trade={t}
+                        deleting={!!deleting[t._id]}
+                        onDelete={() => handleDelete(t._id)}
+                      />
+                    ))}
+                  </div>
                 ))}
+
+                {/* Everything else */}
+                {trades
+                  .filter((t) => !groupedIds.has(t._id))
+                  .map((t) => (
+                    <ImportedRow
+                      key={t._id}
+                      trade={t}
+                      deleting={!!deleting[t._id]}
+                      onDelete={() => handleDelete(t._id)}
+                    />
+                  ))}
               </div>
             )}
           </div>
+
+          {/* Footer — auto-merge action, shown only when there are partial
+              fills to collapse. */}
+          {mergeGroups.length > 0 && (
+            <div className="px-4 py-3 border-t border-white/10 shrink-0 flex items-center justify-between gap-3">
+              <span className="text-[11.5px] text-white/50">
+                {mergeGroups.length} mergeable group
+                {mergeGroups.length === 1 ? "" : "s"} · {mergeableCount} fills
+              </span>
+              <button
+                type="button"
+                onClick={handleAutoMerge}
+                disabled={merging}
+                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[12px] font-semibold bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                <i
+                  className={`fa-solid ${
+                    merging ? "fa-circle-notch animate-spin" : "fa-object-group"
+                  } text-[11px]`}
+                />
+                {merging ? "Merging…" : "Auto-merge"}
+              </button>
+            </div>
+          )}
         </motion.div>
       </motion.div>
     </AnimatePresence>
