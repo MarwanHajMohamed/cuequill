@@ -19,6 +19,8 @@ import RichNotesEditor from "@/components/RichNotesEditor";
 import { Skeleton } from "@/components/Loaders";
 import TradeShareModal from "@/components/TradeShareModal";
 import { useScrollLock } from "@/hooks/useScrollLock";
+import { tradeNetPL } from "@/lib/helpers/tradeNet";
+import { fmtMoneyFull } from "@/lib/helpers/fmt";
 
 // Full-page trade editor. Trade fields live on the left, the rich
 // notes editor lives on the right. Replaces the row-click → modal
@@ -64,6 +66,10 @@ function TradeDetailPage() {
   const [saving, setSaving] = useState(false);
   const [delConfirm, setDelConfirm] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  // The page opens as a read-only summary; the Edit button reveals the
+  // editable fields (and the notes editor). Deep-link ?edit=1 opens straight
+  // into edit mode (used right after creating a trade).
+  const [editing, setEditing] = useState(false);
 
   // Share modal locks scroll itself (via ShareImageModal); cover the
   // delete-confirmation dialog here.
@@ -75,6 +81,26 @@ function TradeDetailPage() {
       setNotes(trade.notes ?? "");
     }
   }, [trade]);
+
+  // Open directly in edit mode when arrived via ?edit=1 (e.g. straight after
+  // creating a trade), then clear the flag so a refresh reopens read-only.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const sp = new URLSearchParams(window.location.search);
+    if (sp.get("edit") === "1") {
+      setEditing(true);
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
+
+  // Discard edits and return to the read-only summary.
+  const handleCancel = () => {
+    if (trade) {
+      setForm(trade);
+      setNotes(trade.notes ?? "");
+    }
+    setEditing(false);
+  };
 
   const dirty = useMemo(() => {
     if (!form || !trade) return false;
@@ -154,6 +180,7 @@ function TradeDetailPage() {
         queryClient.invalidateQueries({ queryKey: ["trades", userId] }),
       ]);
       toast(`Trade ${form.symbol} saved`);
+      setEditing(false);
     } catch {
       toast("Save failed");
     } finally {
@@ -221,7 +248,8 @@ function TradeDetailPage() {
        <div className="flex-1 min-h-0 grid grid-cols-1 gap-5 md:gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,1.7fr)] xl:grid-cols-[440px_minmax(0,1fr)]">
         {/* LEFT — Trade fields, no container */}
         <div className="md:overflow-y-auto thin-scroll md:py-1 md:pr-1 flex flex-col gap-4">
-          {/* Top row — back chevron + symbol input */}
+          {/* Top row — back chevron + (symbol input while editing / Edit
+              button while viewing) */}
           <div className="flex items-center gap-2.5">
             <Link
               href={`/trades/${userId}`}
@@ -230,18 +258,38 @@ function TradeDetailPage() {
             >
               <i className="fa-solid fa-chevron-left text-[13px]" />
             </Link>
-            <input
-              type="text"
-              value={form.symbol}
-              onChange={(e) => setField("symbol", e.target.value.toUpperCase())}
-              placeholder="e.g. SPY"
-              autoCapitalize="characters"
-              autoCorrect="off"
-              spellCheck={false}
-              className="flex-1 min-w-0 px-2.5 py-1.5 text-[15px] font-semibold text-white bg-white/[0.03] rounded-lg border border-white/10 focus:border-white/25 focus:outline-none transition uppercase placeholder:normal-case placeholder:font-normal placeholder:text-white/30"
-            />
+            {editing ? (
+              <input
+                type="text"
+                value={form.symbol}
+                onChange={(e) =>
+                  setField("symbol", e.target.value.toUpperCase())
+                }
+                placeholder="e.g. SPY"
+                autoCapitalize="characters"
+                autoCorrect="off"
+                spellCheck={false}
+                className="flex-1 min-w-0 px-2.5 py-1.5 text-[15px] font-semibold text-white bg-white/[0.03] rounded-lg border border-white/10 focus:border-white/25 focus:outline-none transition uppercase placeholder:normal-case placeholder:font-normal placeholder:text-white/30"
+              />
+            ) : (
+              <>
+                <div className="flex-1" />
+                <button
+                  type="button"
+                  onClick={() => setEditing(true)}
+                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-white/12 bg-white/[0.03] text-white/80 hover:bg-white/[0.06] hover:text-white transition text-[12.5px] font-medium cursor-pointer"
+                >
+                  <i className="fa-solid fa-pen text-[10px]" />
+                  Edit
+                </button>
+              </>
+            )}
           </div>
 
+          {!editing && <TradeSummary trade={form} />}
+
+          {editing && (
+          <>
           {/* Direction */}
           <div className="flex flex-col gap-3">
             <div className="flex flex-col gap-1.5">
@@ -428,41 +476,61 @@ function TradeDetailPage() {
               Mark as simulated
             </span>
           </label>
+          </>
+          )}
 
         </div>
 
-        {/* RIGHT — Notes editor fills the panel */}
+        {/* RIGHT — Notes: editable while editing, read-only otherwise */}
         <div className="flex flex-col min-h-0">
-          <RichNotesEditor
-            value={notes}
-            onChange={setNotes}
-            className="flex-1 min-h-[55vh] md:min-h-0 h-full w-full"
-          />
+          {editing ? (
+            <RichNotesEditor
+              value={notes}
+              onChange={setNotes}
+              className="flex-1 min-h-[55vh] md:min-h-0 h-full w-full"
+            />
+          ) : (
+            <ReadOnlyNotes html={notes} />
+          )}
         </div>
        </div>
 
         {/* Actions — full-width row pinned to the bottom */}
         <div className="shrink-0 pt-3 mt-1 flex items-center justify-between gap-2 border-t border-white/10">
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={!dirty || saving}
-              className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border transition text-[12.5px] font-medium ${
-                dirty && !saving
-                  ? "bg-teal-500/15 text-teal-300 border-teal-500/30 hover:bg-teal-500/25 cursor-pointer"
-                  : "bg-white/[0.02] text-white/30 border-white/10 cursor-not-allowed"
-              }`}
-            >
-              <i className="fa-solid fa-check text-[11px]" />
-              {saving ? "Saving…" : dirty ? "Save changes" : "Saved"}
-            </button>
-            <Link
-              href={`/trades/${userId}`}
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[12.5px] font-medium cursor-pointer"
-            >
-              Cancel
-            </Link>
+            {editing ? (
+              <>
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={!dirty || saving}
+                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border transition text-[12.5px] font-medium ${
+                    dirty && !saving
+                      ? "bg-teal-500/15 text-teal-300 border-teal-500/30 hover:bg-teal-500/25 cursor-pointer"
+                      : "bg-white/[0.02] text-white/30 border-white/10 cursor-not-allowed"
+                  }`}
+                >
+                  <i className="fa-solid fa-check text-[11px]" />
+                  {saving ? "Saving…" : dirty ? "Save changes" : "Saved"}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[12.5px] font-medium cursor-pointer"
+                >
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setEditing(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-teal-500/30 bg-teal-500/15 text-teal-300 hover:bg-teal-500/25 transition text-[12.5px] font-medium cursor-pointer"
+              >
+                <i className="fa-solid fa-pen text-[11px]" />
+                Edit trade
+              </button>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -530,6 +598,216 @@ function TradeDetailPage() {
 }
 
 export default withAuth(TradeDetailPage);
+
+// ─── Read-only summary ─────────────────────────────────────────────
+
+// The default (non-editing) left panel: identity, a Net P/L hero with
+// return% and R-multiple, and a grid of the trade's stats.
+function TradeSummary({ trade }: { trade: Trade }) {
+  const isClosed = trade.status === "WIN" || trade.status === "LOSS";
+  const net = tradeNetPL(trade);
+  const cost = (trade.contractPrice ?? 0) * (trade.qty ?? 0) * 100;
+  const hasCost = Number.isFinite(cost) && cost > 0;
+  const returnPct = isClosed && hasCost ? (net / cost) * 100 : null;
+  const rMultiple = isClosed && hasCost ? net / cost : null;
+  const change =
+    isClosed &&
+    trade.contractPrice &&
+    trade.closingContractPrice != null
+      ? ((trade.closingContractPrice - trade.contractPrice) /
+          trade.contractPrice) *
+        100
+      : null;
+  const heldDays =
+    isClosed && trade.dateClosed
+      ? Math.max(
+          0,
+          Math.round(
+            (new Date(trade.dateClosed).getTime() -
+              new Date(trade.dateBought).getTime()) /
+              86_400_000,
+          ),
+        )
+      : null;
+
+  const isCall = trade.option === "CALL";
+  const dateStr = (v?: string | null) =>
+    v ? new Date(v).toLocaleDateString("en-GB") : "—";
+  const signed = (n: number, suffix = "", digits = 2) =>
+    `${n >= 0 ? "" : "−"}${Math.abs(n).toFixed(digits)}${suffix}`;
+
+  const optionChip = isCall
+    ? "bg-green-500/15 text-green-400 border-green-500/30"
+    : "bg-red-500/15 text-red-400 border-red-500/30";
+  const statusChip =
+    trade.status === "OPEN"
+      ? "bg-blue-500/15 text-blue-300 border-blue-500/30"
+      : trade.status === "WIN"
+        ? "bg-green-500/15 text-green-400 border-green-500/30"
+        : "bg-red-500/15 text-red-400 border-red-500/30";
+  const plColor = !isClosed
+    ? "text-white/50"
+    : net >= 0
+      ? "text-green-400"
+      : "text-red-400";
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Identity */}
+      <div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-2xl font-bold tracking-tight">
+            {trade.symbol}
+          </span>
+          <span
+            className={`px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide border ${optionChip}`}
+          >
+            {trade.option}
+          </span>
+          <span
+            className={`px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide border ${statusChip}`}
+          >
+            {trade.status}
+          </span>
+          {trade.simulated && (
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide border bg-orange-500/10 text-orange-300 border-orange-500/30">
+              SIM
+            </span>
+          )}
+        </div>
+        <div className="mt-1.5 text-[12px] text-white/45 tabular-nums">
+          ${trade.strike} strike · {trade.qty} contract
+          {trade.qty === 1 ? "" : "s"}
+        </div>
+      </div>
+
+      {/* Net P/L hero */}
+      <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
+        <div className="text-[10px] tracking-[0.12em] text-white/40 uppercase">
+          Net P/L
+        </div>
+        <div
+          className={`mt-1 text-[26px] font-semibold tabular-nums ${plColor}`}
+        >
+          {isClosed ? fmtMoneyFull(net) : "Open"}
+        </div>
+        {isClosed && (returnPct != null || rMultiple != null) && (
+          <div className="mt-1.5 flex items-center gap-3 text-[12.5px] tabular-nums">
+            {returnPct != null && (
+              <span
+                className={returnPct >= 0 ? "text-green-400" : "text-red-400"}
+              >
+                {signed(returnPct, "%", 1)} return
+              </span>
+            )}
+            {rMultiple != null && (
+              <span
+                className={rMultiple >= 0 ? "text-green-400" : "text-red-400"}
+              >
+                {signed(rMultiple, "R")}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Stat grid */}
+      <div className="grid grid-cols-2 gap-2.5">
+        <StatTile
+          label="Entry price"
+          value={trade.contractPrice != null ? `$${trade.contractPrice}` : "—"}
+        />
+        <StatTile
+          label="Exit price"
+          value={
+            isClosed && trade.closingContractPrice != null
+              ? `$${trade.closingContractPrice}`
+              : "—"
+          }
+        />
+        <StatTile
+          label="Change"
+          value={change != null ? signed(change, "%", 0) : "—"}
+          tone={change == null ? undefined : change >= 0 ? "up" : "down"}
+        />
+        <StatTile label="Cost basis" value={hasCost ? fmtMoneyFull(cost) : "—"} />
+        <StatTile
+          label="Fees"
+          value={trade.fees != null ? fmtMoneyFull(trade.fees) : "—"}
+        />
+        <StatTile label="Held" value={heldDays != null ? `${heldDays}d` : "—"} />
+        <StatTile label="Bought" value={dateStr(trade.dateBought)} />
+        <StatTile label="Closed" value={dateStr(trade.dateClosed)} />
+        <StatTile label="Expiry" value={dateStr(trade.expiryDate)} />
+        <StatTile label="Strategy" value={trade.strategy || "—"} />
+      </div>
+
+      {/* Tags */}
+      {(trade.tags?.length ?? 0) > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {trade.tags!.map((t) => (
+            <span
+              key={t}
+              className="px-2 py-0.5 rounded-full text-[11px] border border-white/15 bg-white/[0.05] text-white/70"
+            >
+              {t}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StatTile({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: React.ReactNode;
+  tone?: "up" | "down";
+}) {
+  const color =
+    tone === "up"
+      ? "text-green-400"
+      : tone === "down"
+        ? "text-red-400"
+        : "text-white/85";
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2.5 min-w-0">
+      <div className="text-[10px] tracking-[0.1em] text-white/40 uppercase">
+        {label}
+      </div>
+      <div
+        className={`mt-0.5 text-[13.5px] font-medium tabular-nums truncate ${color}`}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
+
+// Read-only render of the stored notes HTML (shown when not editing). The
+// notes are the user's own content, displayed back to them.
+function ReadOnlyNotes({ html }: { html: string }) {
+  const hasContent = !!html && html.replace(/<[^>]*>/g, "").trim().length > 0;
+  return (
+    <div className="flex flex-col min-h-0 h-full">
+      <div className="text-[11px] text-white/45 mb-2">Notes</div>
+      {hasContent ? (
+        <div
+          className="flex-1 min-h-[40vh] md:min-h-0 overflow-y-auto thin-scroll rounded-2xl border border-white/10 bg-white/[0.02] p-4 text-[14px] leading-relaxed text-white/85 break-words [&_img]:max-w-full [&_img]:rounded-lg [&_a]:text-teal-300 [&_a]:underline [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
+      ) : (
+        <div className="flex-1 min-h-[40vh] md:min-h-0 rounded-2xl border border-dashed border-white/10 bg-white/[0.01] flex items-center justify-center text-[13px] text-white/35">
+          No notes yet
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ─── Form primitives ───────────────────────────────────────────────
 
