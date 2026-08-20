@@ -31,6 +31,7 @@ type TradeColumnKey =
   | "option"
   | "status"
   | "netpl"
+  | "rmultiple"
   | "change"
   | "contractPrice"
   | "qty"
@@ -47,6 +48,7 @@ const DEFAULT_COLUMN_ORDER: TradeColumnKey[] = [
   "option",
   "status",
   "netpl",
+  "rmultiple",
   "change",
   "contractPrice",
   "qty",
@@ -64,6 +66,7 @@ const COLUMN_LABELS: Record<TradeColumnKey, string> = {
   option: "PUT/CALL",
   status: "Status",
   netpl: "Net P/L",
+  rmultiple: "R",
   change: "Change %",
   contractPrice: "Entry price",
   qty: "Qty",
@@ -80,6 +83,7 @@ const COLUMN_LABELS: Record<TradeColumnKey, string> = {
 // and sorted numerically.
 const NUMERIC_COLUMNS = new Set<TradeColumnKey>([
   "netpl",
+  "rmultiple",
   "change",
   "contractPrice",
   "qty",
@@ -104,6 +108,18 @@ function tradeReturnPct(t: Trade): number | null {
   const cost = (t.contractPrice ?? 0) * (t.qty ?? 0) * 100;
   if (!Number.isFinite(cost) || cost <= 0) return null;
   return (tradeNetPL(t) / cost) * 100;
+}
+
+// R-multiple: net P/L expressed in units of risk. For a long option the
+// premium paid is the most that can be lost, so risk = entry premium ×
+// contracts × 100. +1R means the trade made back what was risked; −1R is a
+// full loss. Null for open trades or an unknown cost basis.
+function tradeRMultiple(t: Trade): number | null {
+  const closed = t.status === "WIN" || t.status === "LOSS";
+  if (!closed) return null;
+  const risk = (t.contractPrice ?? 0) * (t.qty ?? 0) * 100;
+  if (!Number.isFinite(risk) || risk <= 0) return null;
+  return tradeNetPL(t) / risk;
 }
 
 // Comparable value for a column when sorting. Returns `{ missing }` so
@@ -131,6 +147,10 @@ function sortValue(key: TradeColumnKey, t: Trade): SortValue {
       return present(t.strategy ?? "");
     case "netpl":
       return closed ? present(tradeNetPL(t)) : missing;
+    case "rmultiple": {
+      const r = tradeRMultiple(t);
+      return r == null ? missing : present(r);
+    }
     case "change":
       return closed && t.contractPrice && t.closingContractPrice != null
         ? present(
@@ -767,6 +787,16 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
             {fmtMoneyCompact(tradeNetPL(trade))}
           </span>
         );
+      case "rmultiple": {
+        const r = tradeRMultiple(trade);
+        if (r == null) return "-";
+        return (
+          <span className={r >= 0 ? "text-green-500" : "text-red-500"}>
+            {r >= 0 ? "+" : "−"}
+            {Math.abs(r).toFixed(2)}R
+          </span>
+        );
+      }
       case "change": {
         if (!isClosed) return "-";
         const pct = Number(
