@@ -709,6 +709,9 @@ function TradeSummary({ trade }: { trade: Trade }) {
         )}
       </div>
 
+      {/* Payoff diagram */}
+      <PayoffDiagram trade={trade} />
+
       {/* Stat grid */}
       <div className="grid grid-cols-2 gap-x-6 gap-y-4">
         <StatTile
@@ -780,6 +783,239 @@ function StatTile({
       >
         {value}
       </div>
+    </div>
+  );
+}
+
+// Option payoff-at-expiry diagram for a single long option. Plots P/L (net
+// of the premium paid + fees) against the underlying price at expiry: the
+// classic flat-then-sloped "hockey stick", with the strike, breakeven, zero
+// line, and — for a closed trade — the realized net P/L marked. Uses only
+// stored trade fields, so it needs no price feed.
+function PayoffDiagram({ trade }: { trade: Trade }) {
+  const qty = trade.qty ?? 0;
+  const K = trade.strike ?? 0;
+  const entry = trade.contractPrice ?? 0;
+  // Needs a real long-option contract to draw a meaningful shape.
+  if (!(qty > 0) || !(K > 0) || !(entry > 0)) return null;
+
+  const isCall = trade.option === "CALL";
+  const MULT = 100;
+  const fees = Number.isFinite(trade.fees ?? 0) ? trade.fees ?? 0 : 0;
+  const costBasis = entry * qty * MULT + fees; // total at risk
+  const premPerShare = costBasis / (qty * MULT); // strike → breakeven distance
+  const breakeven = isCall ? K + premPerShare : K - premPerShare;
+  const maxLoss = -costBasis;
+
+  // Price window: show the flat max-loss region, the slope, and profit past
+  // breakeven, centred so the kink and breakeven both sit comfortably inside.
+  let lo = isCall ? K - 2 * premPerShare : breakeven - 2 * premPerShare;
+  let hi = isCall ? breakeven + 2 * premPerShare : K + 2 * premPerShare;
+  lo = Math.max(0, lo);
+  if (hi <= lo) hi = lo + 1;
+
+  const payoff = (s: number) => {
+    const intrinsic = isCall ? Math.max(s - K, 0) : Math.max(K - s, 0);
+    return intrinsic * qty * MULT - costBasis;
+  };
+
+  // Vertices of the piecewise-linear payoff, ascending in price.
+  const verts: [number, number][] = isCall
+    ? [
+        [lo, maxLoss],
+        [K, maxLoss],
+        [hi, payoff(hi)],
+      ]
+    : [
+        [lo, payoff(lo)],
+        [K, maxLoss],
+        [hi, maxLoss],
+      ];
+
+  const isClosed = trade.status === "WIN" || trade.status === "LOSS";
+  const net = tradeNetPL(trade);
+
+  const yTop = Math.max(payoff(hi), payoff(lo), 0);
+  const yBot = Math.min(maxLoss, isClosed ? net : 0, 0);
+  const yPad = (yTop - yBot) * 0.1 || 1;
+  const yMax = yTop + yPad;
+  const yMin = yBot - yPad;
+
+  const W = 360;
+  const H = 208;
+  const padL = 8;
+  const padR = 58;
+  const padT = 12;
+  const padB = 26;
+  const plotW = W - padL - padR;
+  const plotH = H - padT - padB;
+  const xPx = (s: number) => padL + ((s - lo) / (hi - lo)) * plotW;
+  const yPx = (pl: number) => padT + ((yMax - pl) / (yMax - yMin)) * plotH;
+  const f = (n: number) => n.toFixed(1);
+
+  const linePath = verts
+    .map(([s, pl], i) => `${i ? "L" : "M"} ${f(xPx(s))} ${f(yPx(pl))}`)
+    .join(" ");
+  // Area between the curve and the zero line, filled twice and clipped to
+  // above/below zero for the green/red two-tone.
+  const zeroY = yPx(0);
+  const areaPath = `${linePath} L ${f(xPx(verts[verts.length - 1][0]))} ${f(
+    zeroY,
+  )} L ${f(xPx(verts[0][0]))} ${f(zeroY)} Z`;
+
+  const price = (p: number) => `$${p.toFixed(p < 50 ? 2 : 0)}`;
+  const uid = String(trade._id ?? "t");
+  const clipTop = `pay-top-${uid}`;
+  const clipBot = `pay-bot-${uid}`;
+
+  return (
+    <div>
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] text-white/40">Payoff at expiry</span>
+        <span className="text-[10.5px] text-white/35 tabular-nums">
+          Breakeven {price(breakeven)}
+        </span>
+      </div>
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        className="mt-1.5 w-full h-auto text-white"
+        role="img"
+        aria-label="Option payoff at expiry"
+      >
+        <defs>
+          <clipPath id={clipTop}>
+            <rect x={0} y={0} width={W} height={Math.max(0, zeroY)} />
+          </clipPath>
+          <clipPath id={clipBot}>
+            <rect x={0} y={zeroY} width={W} height={Math.max(0, H - zeroY)} />
+          </clipPath>
+        </defs>
+
+        {/* Profit / loss shading */}
+        <path
+          d={areaPath}
+          fill="#22c55e"
+          fillOpacity={0.16}
+          clipPath={`url(#${clipTop})`}
+        />
+        <path
+          d={areaPath}
+          fill="#ef4444"
+          fillOpacity={0.16}
+          clipPath={`url(#${clipBot})`}
+        />
+
+        {/* Zero line */}
+        <line
+          x1={padL}
+          y1={zeroY}
+          x2={W - padR}
+          y2={zeroY}
+          stroke="currentColor"
+          strokeOpacity={0.25}
+          strokeDasharray="3 3"
+        />
+        {/* Strike marker */}
+        <line
+          x1={xPx(K)}
+          y1={padT}
+          x2={xPx(K)}
+          y2={H - padB}
+          stroke="currentColor"
+          strokeOpacity={0.18}
+          strokeDasharray="2 3"
+        />
+        {/* Breakeven marker on the zero line */}
+        <circle cx={xPx(breakeven)} cy={zeroY} r={2.6} fill="currentColor" />
+
+        {/* Realized P/L (closed trades) */}
+        {isClosed && (
+          <line
+            x1={padL}
+            y1={yPx(net)}
+            x2={W - padR}
+            y2={yPx(net)}
+            stroke={net >= 0 ? "#4ade80" : "#f87171"}
+            strokeOpacity={0.9}
+            strokeDasharray="4 3"
+          />
+        )}
+
+        {/* Payoff line */}
+        <path
+          d={linePath}
+          fill="none"
+          stroke="currentColor"
+          strokeOpacity={0.85}
+          strokeWidth={2}
+          strokeLinejoin="round"
+        />
+
+        {/* Right-edge value labels */}
+        <text
+          x={W - padR + 6}
+          y={zeroY + 3}
+          fontSize={8.5}
+          fill="currentColor"
+          fillOpacity={0.5}
+        >
+          $0
+        </text>
+        <text
+          x={W - padR + 6}
+          y={Math.min(H - 2, yPx(maxLoss) + 3)}
+          fontSize={8.5}
+          fill="#f87171"
+          fillOpacity={0.85}
+        >
+          {fmtMoneyFull(maxLoss)}
+        </text>
+        {isClosed && (
+          <text
+            x={W - padR + 6}
+            y={yPx(net) - 3}
+            fontSize={8.5}
+            fill={net >= 0 ? "#4ade80" : "#f87171"}
+          >
+            {fmtMoneyFull(net)}
+          </text>
+        )}
+
+        {/* X labels */}
+        <text
+          x={xPx(K)}
+          y={H - padB + 12}
+          fontSize={8.5}
+          textAnchor="middle"
+          fill="currentColor"
+          fillOpacity={0.5}
+        >
+          {price(K)}
+        </text>
+        <text
+          x={padL}
+          y={H - padB + 12}
+          fontSize={8}
+          fill="currentColor"
+          fillOpacity={0.35}
+        >
+          {price(lo)}
+        </text>
+        <text
+          x={W - padR}
+          y={H - padB + 12}
+          fontSize={8}
+          textAnchor="end"
+          fill="currentColor"
+          fillOpacity={0.35}
+        >
+          {price(hi)}
+        </text>
+      </svg>
+      <p className="mt-0.5 text-[10px] text-white/35 leading-snug">
+        P/L if held to expiry vs the underlying price. Vertical line = strike
+        {isClosed ? "; dashed line = your realized P/L." : "."}
+      </p>
     </div>
   );
 }
