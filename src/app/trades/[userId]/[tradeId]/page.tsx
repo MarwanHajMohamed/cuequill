@@ -682,10 +682,8 @@ function TradeSummary({ trade }: { trade: Trade }) {
       </div>
 
       {/* Net P/L hero */}
-      <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
-        <div className="text-[10px] tracking-[0.12em] text-white/40 uppercase">
-          Net P/L
-        </div>
+      <div>
+        <div className="text-[11px] text-white/40">Net P/L</div>
         <div
           className={`mt-1 text-[26px] font-semibold tabular-nums ${plColor}`}
         >
@@ -712,13 +710,13 @@ function TradeSummary({ trade }: { trade: Trade }) {
       </div>
 
       {/* Stat grid */}
-      <div className="grid grid-cols-2 gap-2.5">
+      <div className="grid grid-cols-2 gap-x-6 gap-y-4">
         <StatTile
-          label="Entry price"
+          label="Entry Price"
           value={trade.contractPrice != null ? `$${trade.contractPrice}` : "—"}
         />
         <StatTile
-          label="Exit price"
+          label="Exit Price"
           value={
             isClosed && trade.closingContractPrice != null
               ? `$${trade.closingContractPrice}`
@@ -730,7 +728,7 @@ function TradeSummary({ trade }: { trade: Trade }) {
           value={change != null ? signed(change, "%", 0) : "—"}
           tone={change == null ? undefined : change >= 0 ? "up" : "down"}
         />
-        <StatTile label="Cost basis" value={hasCost ? fmtMoneyFull(cost) : "—"} />
+        <StatTile label="Cost Basis" value={hasCost ? fmtMoneyFull(cost) : "—"} />
         <StatTile
           label="Fees"
           value={trade.fees != null ? fmtMoneyFull(trade.fees) : "—"}
@@ -775,12 +773,10 @@ function StatTile({
         ? "text-red-400"
         : "text-white/85";
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2.5 min-w-0">
-      <div className="text-[10px] tracking-[0.1em] text-white/40 uppercase">
-        {label}
-      </div>
+    <div className="min-w-0">
+      <div className="text-[11px] text-white/40">{label}</div>
       <div
-        className={`mt-0.5 text-[13.5px] font-medium tabular-nums truncate ${color}`}
+        className={`mt-0.5 text-[14px] font-medium tabular-nums truncate ${color}`}
       >
         {value}
       </div>
