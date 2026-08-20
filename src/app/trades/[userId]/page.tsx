@@ -792,7 +792,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
         if (r == null) return "-";
         return (
           <span className={r >= 0 ? "text-green-500" : "text-red-500"}>
-            {r >= 0 ? "+" : "−"}
+            {r < 0 ? "−" : ""}
             {Math.abs(r).toFixed(2)}R
           </span>
         );
