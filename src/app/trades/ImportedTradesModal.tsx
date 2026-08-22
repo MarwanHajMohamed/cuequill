@@ -51,7 +51,11 @@ export default function ImportedTradesModal({
   const [trades, setTrades] = useState<ImportedTrade[] | null>(null);
   const [error, setError] = useState("");
   const [deleting, setDeleting] = useState<Record<string, boolean>>({});
-  const [merging, setMerging] = useState(false);
+  // True while merging every group at once; a group's key while merging just
+  // that one — so each group's own button can show its spinner independently.
+  const [mergingAll, setMergingAll] = useState(false);
+  const [mergingKey, setMergingKey] = useState<string | null>(null);
+  const busy = mergingAll || mergingKey !== null;
 
   useScrollLock();
 
@@ -92,30 +96,51 @@ export default function ImportedTradesModal({
 
   const mergeableCount = mergeGroups.reduce((s, g) => s + g.length, 0);
 
-  const handleAutoMerge = async () => {
-    if (mergeGroups.length === 0 || merging) return;
-    setMerging(true);
+  // Merge one set of ids on the server (collapses partial fills into one row).
+  const mergeIds = async (ids: string[]) => {
+    const r = await fetch("/api/trades/merge", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids }),
+    });
+    if (!r.ok) {
+      const d = await r.json().catch(() => ({}));
+      throw new Error(d.error ?? "Merge failed");
+    }
+  };
+
+  // Merge a single group on demand, so multiple detected groups can be
+  // collapsed one at a time (and reviewed) rather than all at once.
+  const handleMergeGroup = async (group: ImportedTrade[]) => {
+    if (busy) return;
+    setMergingKey(mergeKey(group[0]));
     setError("");
     try {
-      for (const group of mergeGroups) {
-        const ids = group.map((t) => t._id);
-        const r = await fetch("/api/trades/merge", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ids }),
-        });
-        if (!r.ok) {
-          const d = await r.json().catch(() => ({}));
-          throw new Error(d.error ?? "Merge failed");
-        }
-      }
-      // Reload what's left of the import and refresh the parent's table.
+      await mergeIds(group.map((t) => t._id));
       await load();
       onDeleted?.("");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Auto-merge failed");
+      setError(e instanceof Error ? e.message : "Merge failed");
     } finally {
-      setMerging(false);
+      setMergingKey(null);
+    }
+  };
+
+  // Merge every detected group in one go.
+  const handleMergeAll = async () => {
+    if (mergeGroups.length === 0 || busy) return;
+    setMergingAll(true);
+    setError("");
+    try {
+      for (const group of mergeGroups) {
+        await mergeIds(group.map((t) => t._id));
+      }
+      await load();
+      onDeleted?.("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Merge failed");
+    } finally {
+      setMergingAll(false);
     }
   };
 
@@ -228,14 +253,34 @@ export default function ImportedTradesModal({
               <div className="flex flex-col gap-1.5">
                 {/* Auto-mergeable groups — outlined together so the partial
                     fills that will collapse into one row are obvious. */}
-                {mergeGroups.map((group, gi) => (
+                {mergeGroups.map((group, gi) => {
+                  const key = mergeKey(group[0]);
+                  const thisMerging = mergingKey === key;
+                  return (
                   <div
                     key={`grp-${gi}`}
                     className="rounded-xl border border-teal-500/40 bg-teal-500/[0.05] p-1"
                   >
-                    <div className="flex items-center gap-1.5 px-2 pt-1 pb-0.5 text-[10.5px] font-medium text-teal-300/90">
-                      <i className="fa-solid fa-object-group text-[10px]" />
-                      {group.length} fills · same contract
+                    <div className="flex items-center justify-between gap-2 px-2 pt-1 pb-0.5">
+                      <span className="flex items-center gap-1.5 text-[10.5px] font-medium text-teal-300/90">
+                        <i className="fa-solid fa-object-group text-[10px]" />
+                        {group.length} fills · same contract
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleMergeGroup(group)}
+                        disabled={busy}
+                        className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
+                        <i
+                          className={`fa-solid ${
+                            thisMerging
+                              ? "fa-circle-notch animate-spin"
+                              : "fa-object-group"
+                          } text-[10px]`}
+                        />
+                        {thisMerging ? "Merging…" : "Merge"}
+                      </button>
                     </div>
                     {group.map((t) => (
                       <ImportedRow
@@ -246,7 +291,8 @@ export default function ImportedTradesModal({
                       />
                     ))}
                   </div>
-                ))}
+                  );
+                })}
 
                 {/* Everything else */}
                 {trades
@@ -263,26 +309,28 @@ export default function ImportedTradesModal({
             )}
           </div>
 
-          {/* Footer — auto-merge action, shown only when there are partial
-              fills to collapse. */}
-          {mergeGroups.length > 0 && (
+          {/* Footer — merge every group at once. Individual groups can also
+              be merged one at a time from their own Merge button above. Only
+              shown when 2+ groups make a bulk action worthwhile. */}
+          {mergeGroups.length > 1 && (
             <div className="px-4 py-3 border-t border-white/10 shrink-0 flex items-center justify-between gap-3">
               <span className="text-[11.5px] text-white/50">
-                {mergeGroups.length} mergeable group
-                {mergeGroups.length === 1 ? "" : "s"} · {mergeableCount} fills
+                {mergeGroups.length} mergeable groups · {mergeableCount} fills
               </span>
               <button
                 type="button"
-                onClick={handleAutoMerge}
-                disabled={merging}
+                onClick={handleMergeAll}
+                disabled={busy}
                 className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[12px] font-semibold bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <i
                   className={`fa-solid ${
-                    merging ? "fa-circle-notch animate-spin" : "fa-object-group"
+                    mergingAll
+                      ? "fa-circle-notch animate-spin"
+                      : "fa-object-group"
                   } text-[11px]`}
                 />
-                {merging ? "Merging…" : "Auto-merge"}
+                {mergingAll ? "Merging…" : "Merge all"}
               </button>
             </div>
           )}
