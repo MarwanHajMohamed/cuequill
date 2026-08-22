@@ -117,8 +117,8 @@ async function fetchIbkrCsv(token: string, queryId: string): Promise<string> {
       const stillGenerating = errorCode === "1001" || errorCode === "1004";
       const err = new Error(
         stillGenerating
-          ? "IBKR allows about one sync per day. It'll retry on the next daily run — try again tomorrow."
-          : "IBKR is rate-limiting this query. Syncs are limited to about once a day — try again later.",
+          ? "IBKR allows about one sync per day. It'll retry on the next daily run. Try again tomorrow."
+          : "IBKR is rate-limiting this query. Syncs are limited to about once a day. Try again later.",
       );
       (err as Error & { code?: string }).code = "RATE_LIMITED";
       throw err;
