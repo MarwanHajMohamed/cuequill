@@ -255,8 +255,8 @@ export default function PricingPage() {
           <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-teal-400/40 bg-teal-500/15 px-4 py-2 text-[13px] text-teal-200 backdrop-blur-md shadow-lg">
             <i className="fa-solid fa-circle-check" />
             {isPro
-              ? "You're on Pro — welcome aboard."
-              : "Payment received — activating Pro…"}
+              ? "You're on Pro. Welcome aboard."
+              : "Payment received. Activating Pro…"}
           </div>
         </div>
       )}

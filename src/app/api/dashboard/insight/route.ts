@@ -140,7 +140,7 @@ export async function GET(req: NextRequest) {
       });
     }
     return NextResponse.json(
-      { error: "AI usage limit reached — check back tomorrow." },
+      { error: "AI usage limit reached. Check back tomorrow." },
       { status: 429 },
     );
   }

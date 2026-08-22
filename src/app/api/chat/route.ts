@@ -110,7 +110,7 @@ export async function POST(req: Request) {
   const overDailyLimit = usedToday >= DAILY_MESSAGE_LIMIT;
   if (overDailyLimit && bonusMessages <= 0) {
     return new Response(
-      `You've reached today's Quill AI limit of ${DAILY_MESSAGE_LIMIT} messages. It resets at midnight UTC — check back then.`,
+      `You've reached today's Quill AI limit of ${DAILY_MESSAGE_LIMIT} messages. It resets at midnight UTC. Check back then.`,
       { status: 429 },
     );
   }

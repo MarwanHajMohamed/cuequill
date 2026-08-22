@@ -504,7 +504,7 @@ const Account = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl">
           <Field
             label="Display currency"
-            hint="Symbol only — amounts aren't converted."
+            hint="Symbol only, amounts aren't converted."
           >
             <select
               className={`${inputClass} cursor-pointer`}

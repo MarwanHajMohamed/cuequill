@@ -19,7 +19,7 @@ export async function syncForUser(
   const adapter = getBrokerAdapter(brokerId);
   if (!adapter.fetchFills) {
     throw new Error(
-      `${adapter.label} doesn't support automatic sync — upload an export file instead.`,
+      `${adapter.label} doesn't support automatic sync. Upload an export file instead.`,
     );
   }
   const fills = await adapter.fetchFills(userId);

@@ -155,7 +155,7 @@ function Page() {
       }
       const delta = Math.round((amt - base) * 100) / 100;
       if (Math.abs(delta) < 0.005) {
-        setStatus("Balance already matches — nothing to reconcile.");
+        setStatus("Balance already matches. Nothing to reconcile.");
         return;
       }
       setSaving(true);

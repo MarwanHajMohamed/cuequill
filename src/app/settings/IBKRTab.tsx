@@ -144,7 +144,7 @@ export default function IBKRTab() {
           ? `Filled fees on ${data.updated} trade${data.updated === 1 ? "" : "s"}.`
           : data.scanned === 0
             ? "No trades are missing fees."
-            : "No matching fills found — widen the query period and try again.",
+            : "No matching fills found. Widen the query period and try again.",
       );
     } catch (e) {
       setBackfillStatus(

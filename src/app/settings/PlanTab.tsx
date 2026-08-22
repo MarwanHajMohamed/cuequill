@@ -180,7 +180,7 @@ export default function PlanTab() {
   const subline = (() => {
     if (!isPro) return "90 days of history and the core journal.";
     if (scheduledCancel && periodEnd) {
-      return `Pro until ${periodEnd} — won't renew after that.`;
+      return `Pro until ${periodEnd}. Won't renew after that.`;
     }
     if (plan?.hasSubscription && periodEnd) {
       const cyc = plan.cycle ? `${plan.cycle} · ` : "";
