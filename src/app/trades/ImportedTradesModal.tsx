@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import React, { useEffect, useMemo, useState } from "react";
 import { useScrollLock } from "@/hooks/useScrollLock";
+import { hapticNotify } from "@/lib/haptics";
 
 type ImportedTrade = {
   _id: string;
@@ -117,6 +118,7 @@ export default function ImportedTradesModal({
     setError("");
     try {
       await mergeIds(group.map((t) => t._id));
+      hapticNotify("success");
       await load();
       onDeleted?.("");
     } catch (e) {
@@ -135,6 +137,7 @@ export default function ImportedTradesModal({
       for (const group of mergeGroups) {
         await mergeIds(group.map((t) => t._id));
       }
+      hapticNotify("success");
       await load();
       onDeleted?.("");
     } catch (e) {

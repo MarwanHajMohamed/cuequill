@@ -29,6 +29,7 @@ import TimezoneDisplay from "@/helpers/TimezoneDisplay";
 import ProTag from "@/components/ProTag";
 import { isMarketOpenAt } from "@/lib/marketHolidays";
 import { useSidebar } from "./SidebarContext";
+import { hapticTap } from "@/lib/haptics";
 
 // Small chevron button that collapses / expands the desktop sidebar.
 function CollapseToggle({
@@ -210,6 +211,9 @@ export default function Navbar() {
 
   const navigate = (slug: string) => {
     const href = hrefFor(slug);
+    // A light tap on navigation gives the native shell a real app feel
+    // (no-op on web).
+    hapticTap("light");
     // Update the optimistic active path synchronously so the pill
     // animates the moment the click registers.
     setPendingPath(href);

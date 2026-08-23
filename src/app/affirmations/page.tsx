@@ -11,6 +11,7 @@ import {
   effectiveCurrent,
   nextStreakMilestone,
 } from "@/lib/affirmationStreak";
+import { hapticTap } from "@/lib/haptics";
 
 function AffirmationsPage() {
   const today = format(new Date(), "yyyy-MM-dd");
@@ -44,6 +45,7 @@ function AffirmationsPage() {
     const next = new Set(read);
     if (next.has(text)) next.delete(text);
     else next.add(text);
+    hapticTap("light");
     commitRead(next);
   };
 

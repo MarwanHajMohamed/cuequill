@@ -21,6 +21,7 @@ import TradeShareModal from "@/components/TradeShareModal";
 import { useScrollLock } from "@/hooks/useScrollLock";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
 import { fmtMoneyFull } from "@/lib/helpers/fmt";
+import { hapticNotify } from "@/lib/haptics";
 
 // Full-page trade editor. Trade fields live on the left, the rich
 // notes editor lives on the right. Replaces the row-click → modal
@@ -180,6 +181,7 @@ function TradeDetailPage() {
         queryClient.invalidateQueries({ queryKey: ["trades", userId] }),
       ]);
       toast(`Trade ${form.symbol} saved`);
+      hapticNotify("success");
       setEditing(false);
     } catch {
       toast("Save failed");
