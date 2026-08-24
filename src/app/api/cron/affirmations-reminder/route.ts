@@ -60,6 +60,22 @@ function localHour(now: Date, tz: string): number {
   }
 }
 
+// Whether it's Saturday or Sunday in the user's timezone. The market is
+// shut on weekends, so the reminder copy drops the "before the open"
+// framing then.
+function isWeekend(now: Date, tz: string): boolean {
+  try {
+    const day = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz,
+      weekday: "short",
+    }).format(now);
+    return day === "Sat" || day === "Sun";
+  } catch {
+    const d = now.getUTCDay();
+    return d === 0 || d === 6;
+  }
+}
+
 // Local calendar date (yyyy-MM-dd) in the user's timezone. Used as
 // the dedupe key for "already emailed / already read today".
 function localDate(now: Date, tz: string): string {
@@ -76,14 +92,29 @@ function localDate(now: Date, tz: string): string {
   }
 }
 
+// Subject line, weekend-aware (no "before the open" when markets are shut).
+function subjectFor(weekend: boolean): string {
+  return weekend
+    ? "Read today's affirmations"
+    : "Read your affirmations before the open";
+}
+
 function renderEmail({
   firstname,
   affirmationsUrl,
+  weekend,
 }: {
   firstname: string;
   affirmationsUrl: string;
+  weekend: boolean;
 }) {
   const greeting = firstname ? `Good morning, ${firstname}` : "Good morning";
+  const headline = weekend
+    ? `${greeting} — read today's affirmations.`
+    : `${greeting} — read your affirmations before the open.`;
+  const body = weekend
+    ? "You haven't checked off today's affirmations yet. Take two minutes to keep the streak going and reset your mindset."
+    : "You haven't checked off today's affirmations yet. Take two minutes to reset your mindset before the market opens.";
   return `<!doctype html>
 <html>
   <body style="margin:0;padding:0;background:#0e0e10;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#f4f4f5;">
@@ -92,9 +123,9 @@ function renderEmail({
         <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="max-width:480px;background:#15141a;border:1px solid rgba(255,255,255,0.08);border-radius:16px;overflow:hidden;">
           <tr><td style="padding:28px 28px 20px 28px;">
             <div style="font-size:11px;letter-spacing:0.12em;color:#5eead4;font-weight:600;">CUEQUILL</div>
-            <div style="margin-top:10px;font-size:22px;font-weight:600;line-height:1.25;">${greeting} — read your affirmations before the open.</div>
+            <div style="margin-top:10px;font-size:22px;font-weight:600;line-height:1.25;">${headline}</div>
             <div style="margin-top:12px;font-size:14px;line-height:1.55;color:rgba(244,244,245,0.65);">
-              You haven't checked off today's affirmations yet. Take two minutes to reset your mindset before the market opens.
+              ${body}
             </div>
             <div style="margin-top:24px;">
               <a href="${affirmationsUrl}" style="display:inline-block;background:rgba(20,184,166,0.2);border:1px solid rgba(20,184,166,0.45);color:#5eead4;text-decoration:none;padding:11px 20px;border-radius:999px;font-size:14px;font-weight:600;">
@@ -119,14 +150,22 @@ function renderEmail({
 function renderText({
   firstname,
   affirmationsUrl,
+  weekend,
 }: {
   firstname: string;
   affirmationsUrl: string;
+  weekend: boolean;
 }) {
   const greeting = firstname ? `Good morning, ${firstname}` : "Good morning";
-  return `${greeting} — read your affirmations before the open.
+  const headline = weekend
+    ? `${greeting} — read today's affirmations.`
+    : `${greeting} — read your affirmations before the open.`;
+  const body = weekend
+    ? "You haven't checked off today's affirmations yet. Take two minutes to keep the streak going and reset your mindset."
+    : "You haven't checked off today's affirmations yet. Take two minutes to reset your mindset before the market opens.";
+  return `${headline}
 
-You haven't checked off today's affirmations yet. Take two minutes to reset your mindset before the market opens.
+${body}
 
 Open your affirmations: ${affirmationsUrl}
 
@@ -176,16 +215,22 @@ export async function GET(req: Request) {
   // above, so only the cron secret holder can trigger it.
   const testEmail = new URL(req.url).searchParams.get("email");
   if (testEmail) {
+    const testWeekend = isWeekend(now, "UTC");
     const { data, error } = await resend.emails.send({
       from: FROM,
       to: testEmail,
       ...(REPLY_TO ? { replyTo: REPLY_TO } : {}),
-      subject: "Read your affirmations before the open",
+      subject: subjectFor(testWeekend),
       html: renderEmail({
         firstname: "",
         affirmationsUrl: `${APP_URL}/affirmations`,
+        weekend: testWeekend,
       }),
-      text: renderText({ firstname: "", affirmationsUrl: `${APP_URL}/affirmations` }),
+      text: renderText({
+        firstname: "",
+        affirmationsUrl: `${APP_URL}/affirmations`,
+        weekend: testWeekend,
+      }),
       headers: { "List-Unsubscribe": LIST_UNSUBSCRIBE },
     });
     return NextResponse.json(
@@ -250,18 +295,21 @@ export async function GET(req: Request) {
       // rate limit, …). Inspect `error` explicitly — otherwise a
       // rejected send would look successful and we'd wrongly stamp the
       // dedupe date, so nothing sends today AND it never retries.
+      const weekend = isWeekend(now, tz);
       const { data, error } = await resend.emails.send({
         from: FROM,
         to: u.email,
         ...(REPLY_TO ? { replyTo: REPLY_TO } : {}),
-        subject: "Read your affirmations before the open",
+        subject: subjectFor(weekend),
         html: renderEmail({
           firstname: u.firstname ?? "",
           affirmationsUrl: `${APP_URL}/affirmations`,
+          weekend,
         }),
         text: renderText({
           firstname: u.firstname ?? "",
           affirmationsUrl: `${APP_URL}/affirmations`,
+          weekend,
         }),
         headers: { "List-Unsubscribe": LIST_UNSUBSCRIBE },
       });
