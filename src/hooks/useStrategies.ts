@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import type { SchematicElement } from "@/lib/strategyConstants";
-import type { StrategyExample } from "@/lib/strategySeed";
+import type { StrategyExample, StrategyVideo } from "@/lib/strategySeed";
 
 export type StrategyDirection = "CALL" | "PUT" | "BOTH";
 
@@ -22,6 +22,7 @@ export type StrategyDoc = {
   tags: string[];
   schematic: Schematic;
   examples?: StrategyExample[];
+  videos?: StrategyVideo[];
   createdAt: string;
   updatedAt: string;
 };
