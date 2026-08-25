@@ -714,11 +714,11 @@ function TradeSummary({ trade }: { trade: Trade }) {
       {/* Stat grid */}
       <div className="grid grid-cols-2 gap-x-6 gap-y-4">
         <StatTile
-          label="Entry Price"
+          label="Entry price"
           value={trade.contractPrice != null ? `$${trade.contractPrice}` : "—"}
         />
         <StatTile
-          label="Exit Price"
+          label="Exit price"
           value={
             isClosed && trade.closingContractPrice != null
               ? `$${trade.closingContractPrice}`
@@ -730,7 +730,7 @@ function TradeSummary({ trade }: { trade: Trade }) {
           value={change != null ? signed(change, "%", 0) : "—"}
           tone={change == null ? undefined : change >= 0 ? "up" : "down"}
         />
-        <StatTile label="Cost Basis" value={hasCost ? fmtMoneyFull(cost) : "—"} />
+        <StatTile label="Cost basis" value={hasCost ? fmtMoneyFull(cost) : "—"} />
         <StatTile
           label="Fees"
           value={trade.fees != null ? fmtMoneyFull(trade.fees) : "—"}

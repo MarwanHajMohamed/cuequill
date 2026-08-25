@@ -986,7 +986,7 @@ function StrategyVideos({
     <div className="flex flex-col gap-2.5">
       <div className="flex items-center justify-between gap-2 px-1">
         <span className="text-[10.5px] tracking-[0.12em] text-white/45">
-          VIDEOS{videos.length > 0 ? ` · ${videos.length}` : ""}
+          Videos{videos.length > 0 ? ` · ${videos.length}` : ""}
         </span>
         <button
           type="button"
