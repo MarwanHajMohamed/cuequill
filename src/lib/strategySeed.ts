@@ -15,17 +15,6 @@ export type StrategyExample = {
   caption?: string;
 };
 
-// A user-uploaded video attached to a strategy (its own "folder"). Only
-// metadata lives in Mongo — the bytes are in Vercel Blob at `url`.
-export type StrategyVideo = {
-  id: string;
-  url: string;
-  name: string;
-  size?: number;
-  contentType?: string;
-  uploadedAt: string;
-};
-
 export type StrategySeedContent = {
   description: string;
   examples: StrategyExample[];

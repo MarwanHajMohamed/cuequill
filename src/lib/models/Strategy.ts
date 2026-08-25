@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document } from "mongoose";
 import type { Schematic, SchematicElement } from "@/lib/strategyConstants";
-import type { StrategyExample, StrategyVideo } from "@/lib/strategySeed";
+import type { StrategyExample } from "@/lib/strategySeed";
 
 // A user-owned custom strategy. The schematic is a small SVG-ish
 // scene the user composes by dragging candles, lines, arrows, zones,
@@ -33,9 +33,6 @@ export interface IStrategy extends Document {
   // stored inline as data URLs (or /public paths for seeded content),
   // mirroring how trade-note images are persisted.
   examples: StrategyExample[];
-  // User-uploaded videos (a per-strategy "folder"). Bytes live in Vercel
-  // Blob; only metadata is stored here.
-  videos: StrategyVideo[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -88,18 +85,6 @@ const ExampleSchema = new Schema<StrategyExample>(
   { _id: false },
 );
 
-const VideoSchema = new Schema<StrategyVideo>(
-  {
-    id: { type: String, required: true },
-    url: { type: String, required: true },
-    name: { type: String, required: true },
-    size: { type: Number },
-    contentType: { type: String },
-    uploadedAt: { type: String, required: true },
-  },
-  { _id: false },
-);
-
 const StrategySchema = new Schema<IStrategy>(
   {
     userId: {
@@ -118,7 +103,6 @@ const StrategySchema = new Schema<IStrategy>(
       default: () => ({ width: 800, height: 480, elements: [] }),
     },
     examples: { type: [ExampleSchema], default: [] },
-    videos: { type: [VideoSchema], default: [] },
   },
   { timestamps: true },
 );
