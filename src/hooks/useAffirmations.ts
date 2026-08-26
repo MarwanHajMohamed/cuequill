@@ -94,11 +94,14 @@ export function useAffirmations(onStreakXp?: (xp: number) => void) {
       qc.setQueryData<AffirmationsData>(KEY, (old) =>
         old ? { ...old, read, streak } : old,
       );
+      // Reading affirmations moves the streak (and can complete an
+      // affirmation-linked challenge), so refresh the challenges view live —
+      // no page refresh needed.
+      qc.invalidateQueries({ queryKey: ["challenges"] });
       // Streak XP changes the account level/title — refresh anything that
-      // reads it (navbar level, challenges, nameplate) and notify the page.
+      // reads it (navbar level, nameplate) and notify the page.
       if (xpGained > 0) {
         qc.invalidateQueries({ queryKey: ["profile"] });
-        qc.invalidateQueries({ queryKey: ["challenges"] });
         onStreakXp?.(xpGained);
       }
     },

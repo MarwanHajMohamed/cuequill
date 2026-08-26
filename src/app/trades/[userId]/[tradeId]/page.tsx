@@ -180,6 +180,8 @@ function TradeDetailPage() {
         queryClient.invalidateQueries({ queryKey: ["trade", tradeId] }),
         queryClient.invalidateQueries({ queryKey: ["trades", userId] }),
       ]);
+      // Refresh trade-based challenge progress live.
+      queryClient.invalidateQueries({ queryKey: ["challenges"] });
       toast(`Trade ${form.symbol} saved`);
       hapticNotify("success");
       setEditing(false);
@@ -196,6 +198,7 @@ function TradeDetailPage() {
     try {
       await fetch(`/api/trades/${tradeId}`, { method: "DELETE" });
       await queryClient.invalidateQueries({ queryKey: ["trades", userId] });
+      queryClient.invalidateQueries({ queryKey: ["challenges"] });
       toast("Trade deleted");
       router.replace(`/trades/${userId}`);
     } catch {

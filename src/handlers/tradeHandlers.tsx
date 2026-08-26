@@ -30,6 +30,8 @@ export const handleSaveTrade = async (
     if (!res.ok) return false;
 
     await queryClient.invalidateQueries({ queryKey: ["trades", userId] });
+    // Trade-based challenges progress with every save — refresh them live.
+    queryClient.invalidateQueries({ queryKey: ["challenges"] });
     setIsModalOpen(false);
     if (setEditingTrade) setEditingTrade(null);
     return true;
@@ -51,6 +53,7 @@ export const handleDeleteTrade = async (
     });
 
     await queryClient.invalidateQueries({ queryKey: ["trades", userId] });
+    queryClient.invalidateQueries({ queryKey: ["challenges"] });
 
     setIsModalOpen(false);
     setEditingTrade(null);
@@ -85,6 +88,7 @@ export const handleDeleteAllTrades = async (
 
     toast(result.message);
     queryClient.invalidateQueries({ queryKey: ["trades", userId] });
+    queryClient.invalidateQueries({ queryKey: ["challenges"] });
   } catch (err) {
     console.error("Error deleting trades:", err);
   }
@@ -103,6 +107,8 @@ export const handleSaveNotes = async (
   });
 
   await queryClient.invalidateQueries({ queryKey: ["trades", userId] });
+  // Note-based challenges (journalling) update as notes are added.
+  queryClient.invalidateQueries({ queryKey: ["challenges"] });
 };
 
 export const handleFavourite = async (

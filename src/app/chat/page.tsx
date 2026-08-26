@@ -679,6 +679,7 @@ function Page() {
         }
         if (tradesTouched && userId) {
           queryClient.invalidateQueries({ queryKey: ["trades", userId] });
+          queryClient.invalidateQueries({ queryKey: ["challenges"] });
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Network error";
