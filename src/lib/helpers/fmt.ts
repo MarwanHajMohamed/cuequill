@@ -72,6 +72,22 @@ export function fmtMoneySignedCompact(value: number): string {
   return sign + currencySymbol + compact(Math.abs(value));
 }
 
+// Signed money with NO decimals and k/M/B abbreviations, for very tight
+// containers (e.g. the calendar week's per-day total) where "+$1,234.56"
+// would overflow and wrap. e.g. +$107, -$1k, +$12k, -$250k, +$1M.
+export function fmtMoneySignedShort(value: number): string {
+  if (!Number.isFinite(value)) return "+" + currencySymbol + "0";
+  const sign = value >= 0 ? "+" : "-";
+  return sign + currencySymbol + compactShort(Math.abs(value));
+}
+
+function compactShort(abs: number): string {
+  if (abs < 1_000) return String(Math.round(abs));
+  if (abs < 1_000_000) return Math.round(abs / 1_000) + "k";
+  if (abs < 1_000_000_000) return Math.round(abs / 1_000_000) + "M";
+  return Math.round(abs / 1_000_000_000) + "B";
+}
+
 // Full, un-abbreviated money — thousands separators and two decimals
 // (e.g. "$12,345.67"). Used where the exact figure matters more than
 // saving space, like the calendar's monthly P/L headline.
