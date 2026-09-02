@@ -174,7 +174,7 @@ const GROUPS: FeatureGroup[] = [
     items: [
       {
         title: "Strategy playbook",
-        body: "Eleven ready-made options setups with charts and rules.",
+        body: "Build your own playbook of setups with charts and rules.",
         tiers: ["Free", "Pro"],
       },
       {
