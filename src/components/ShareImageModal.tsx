@@ -177,11 +177,11 @@ export default function ShareImageModal({
                     onSkinChange?.(s.id);
                   }}
                   title={
-                    locked ? `${s.label} — unlocks at level ${s.minLevel}` : s.label
+                    locked ? `${s.label} - unlocks at level ${s.minLevel}` : s.label
                   }
                   aria-label={
                     locked
-                      ? `${s.label} — unlocks at level ${s.minLevel}`
+                      ? `${s.label} - unlocks at level ${s.minLevel}`
                       : s.label
                   }
                   className={`relative w-8 h-8 rounded-full border transition ${

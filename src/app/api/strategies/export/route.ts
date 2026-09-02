@@ -8,7 +8,7 @@ import { buildBundle, bundleFilename } from "@/lib/strategyTransfer";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// GET /api/strategies/export — the caller's entire strategy library as a
+// GET /api/strategies/export - the caller's entire strategy library as a
 // portable JSON bundle (drawings, descriptions, examples + outcomes, tags).
 // Served as an attachment so the browser downloads it directly.
 export async function GET() {

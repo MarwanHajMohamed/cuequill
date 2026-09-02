@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document } from "mongoose";
 
-// Pre-launch waitlist entries. Not a real user record — no password,
+// Pre-launch waitlist entries. Not a real user record - no password,
 // no auth. When the app opens up, entries are converted (manually or
 // by an admin script) into real User docs and emailed an invite.
 

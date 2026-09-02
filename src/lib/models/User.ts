@@ -62,7 +62,7 @@ export interface IUser extends Document {
   // High-water mark: the best streak length (days) for which streak XP
   // milestones have already been awarded, so each milestone pays out once.
   affirmationStreakXp?: number;
-  // Pro membership flag — the effective, computed access gate. Gates
+  // Pro membership flag - the effective, computed access gate. Gates
   // Quill AI, IBKR auto-sync, the rules board / affirmations,
   // per-strategy + per-symbol stats, and unlimited trade history. Free
   // users see blurred previews behind an upgrade prompt.
@@ -72,7 +72,7 @@ export interface IUser extends Document {
   // no subscription, and flips false when a subscription lapses.
   isPro: boolean;
   // Admin comp: when true, the account is Pro regardless of billing. The
-  // Stripe webhook never clears this — it only ORs it into isPro — so a
+  // Stripe webhook never clears this - it only ORs it into isPro - so a
   // manually-granted account can't be revoked by a subscription event.
   proManualOverride?: boolean;
   // Stripe billing linkage. stripeCustomerId is the lookup key the
@@ -85,7 +85,7 @@ export interface IUser extends Document {
   stripeSubscriptionStatus?: string;
   stripePriceId?: string;
   stripeCurrentPeriodEnd?: Date;
-  // True once the user has cancelled but the paid term hasn't elapsed —
+  // True once the user has cancelled but the paid term hasn't elapsed -
   // access continues until stripeCurrentPeriodEnd, then the subscription
   // ends. Lets the UI show "cancels on <date>" instead of a bare "Pro".
   stripeCancelAtPeriodEnd?: boolean;
@@ -139,7 +139,7 @@ export interface IUser extends Document {
   // have been claimed (each awards its XP exactly once).
   xp?: number;
   challengeClaims?: { id: string; claimedAt: Date }[];
-  // Bonus Quill AI messages earned from level-up rewards — a finite pool
+  // Bonus Quill AI messages earned from level-up rewards - a finite pool
   // consumed once the daily message limit is hit.
   bonusChatMessages?: number;
   // Customisable Quill AI starter-prompt shortcuts shown on the empty
@@ -165,7 +165,7 @@ export interface IUser extends Document {
   // Leaderboard participation. Off by default (opt-in): only when true does
   // the user appear on the public leaderboards, shown as first name + last
   // initial. Ranking metrics (level/XP, trades, streak) are all process /
-  // discipline based — never P/L.
+  // discipline based - never P/L.
   leaderboardOptIn?: boolean;
 }
 

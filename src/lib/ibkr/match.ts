@@ -68,7 +68,7 @@ function commissionPerContract(fill: NormalizedFill): number {
 }
 
 // Format a fill's execution instant as an "HH:mm" 24h string in market
-// (Eastern) time — the same wall-clock the flex report reported — so it
+// (Eastern) time - the same wall-clock the flex report reported - so it
 // matches the manually-entered timeEntered/timeExited convention.
 function etTime(d: Date): string {
   return new Intl.DateTimeFormat("en-US", {
@@ -81,7 +81,7 @@ function etTime(d: Date): string {
     .replace(/^24:/, "00:");
 }
 
-// Fees are stored to 2dp — brokers quote commissions in cents, so
+// Fees are stored to 2dp - brokers quote commissions in cents, so
 // trailing sub-cent noise from per-contract division is pure display
 // clutter. Consistent with how manual entries are recorded.
 function round2(n: number): number {
@@ -141,7 +141,7 @@ export function matchFills(fills: NormalizedFill[]): TradeDraft[] {
           // app's canonical convention everywhere else (manual entry, the edit
           // modal, and merge all use (close - open) * 100 * qty). We do NOT use
           // the broker's FifoPnlRealized here: IBKR reports it NET of
-          // commissions, and we store commissions separately as `fees` — so
+          // commissions, and we store commissions separately as `fees` - so
           // net P/L (profitLoss - fees) would double-count commissions if
           // profitLoss were already net. Gross here keeps the maths consistent
           // and matches what re-saving a trade in the modal produces.

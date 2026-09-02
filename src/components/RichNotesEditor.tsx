@@ -50,7 +50,7 @@ export default function RichNotesEditor({
     try {
       document.execCommand("styleWithCSS", false, "true");
     } catch {
-      /* older engines don't ack styleWithCSS — fine, fallback still runs */
+      /* older engines don't ack styleWithCSS - fine, fallback still runs */
     }
     document.execCommand(cmd, false, arg);
     onChange(editorRef.current?.innerHTML ?? "");
@@ -67,7 +67,7 @@ export default function RichNotesEditor({
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
     const range = sel.getRangeAt(0);
-    // Only wrap if the selection actually lives inside the editor —
+    // Only wrap if the selection actually lives inside the editor -
     // otherwise the user picked a size with focus elsewhere.
     if (!el.contains(range.commonAncestorContainer)) return;
     const span = document.createElement("span");
@@ -193,7 +193,7 @@ export default function RichNotesEditor({
     <div className="flex flex-col min-h-0 h-full rounded-xl border border-white/10 focus-within:border-white/20 overflow-hidden transition">
       {!hideToolbar && (
         <div className="px-2 md:px-3 py-1.5 border-b border-white/[0.06] flex items-center gap-1 flex-wrap bg-white/[0.02]">
-          {/* Font size — direct pixel values. Wraps the selection in
+          {/* Font size - direct pixel values. Wraps the selection in
               a `<span style="font-size: Xpx">` so the number the user
               picks matches what's stored and rendered. */}
           <select
@@ -240,7 +240,7 @@ export default function RichNotesEditor({
             label="Strikethrough"
             onClick={() => exec("strikeThrough")}
           />
-          {/* Text colour — hidden input triggered by the paint-roller
+          {/* Text colour - hidden input triggered by the paint-roller
               icon. `input type="color"` gives a native swatch picker
               on every platform. */}
           <label

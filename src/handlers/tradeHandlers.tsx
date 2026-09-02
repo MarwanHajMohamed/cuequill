@@ -3,7 +3,7 @@ import { QueryClient } from "@tanstack/react-query";
 
 // Persist a new or edited trade. Returns true only when the request actually
 // succeeds, so the caller can toast success/failure based on the real result.
-// The modal is closed (and edit state cleared) only on success — a failed save
+// The modal is closed (and edit state cleared) only on success - a failed save
 // keeps the form open so the user can retry.
 export const handleSaveTrade = async (
   trade: Trade,
@@ -30,7 +30,7 @@ export const handleSaveTrade = async (
     if (!res.ok) return false;
 
     await queryClient.invalidateQueries({ queryKey: ["trades", userId] });
-    // Trade-based challenges progress with every save — refresh them live.
+    // Trade-based challenges progress with every save - refresh them live.
     queryClient.invalidateQueries({ queryKey: ["challenges"] });
     setIsModalOpen(false);
     if (setEditingTrade) setEditingTrade(null);

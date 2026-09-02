@@ -105,7 +105,7 @@ function sanitizeOrder(raw: unknown, allowed: string[]): string[] {
 
 // Lightweight drag-reorder. CSS `order` positions the items, so on each
 // pointer move we read the live rects (in visual order) and recompute
-// where the dragged item should sit — a pure function of pointer position,
+// where the dragged item should sit - a pure function of pointer position,
 // so it can't oscillate. Order state is derived from the DOM each move, so
 // a stale closure can't fight it. Persists via setOrder (localStorage).
 function beginReorder(
@@ -184,7 +184,7 @@ function moveByArrow(
   setOrder(next);
 }
 
-// A small arrow button to nudge an item one step earlier/later — the
+// A small arrow button to nudge an item one step earlier/later - the
 // touch-friendly alternative to dragging.
 function MoveBtn({
   icon,
@@ -392,7 +392,7 @@ const MiniDonut = ({
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
       <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
-        {/* Red segment — the complement, drawn where the green arc ends. */}
+        {/* Red segment - the complement, drawn where the green arc ends. */}
         {redLen > 0.01 && (
           <circle
             cx={size / 2}
@@ -578,7 +578,7 @@ const SummaryTile = ({
     // Only track layout while reordering in Customize mode. Otherwise an
     // incidental page shift (e.g. a modal opening and locking scroll) makes
     // framer-motion animate every tile from its shifted position back into
-    // place — the "stats jump from the top" glitch.
+    // place - the "stats jump from the top" glitch.
     layout={reorder ? "position" : false}
     transition={{ type: "spring", stiffness: 500, damping: 40 }}
     data-tile-id={dataId}
@@ -778,7 +778,7 @@ function MetricTile({
 
 // Eased tween towards `target`. Starts from the previously-rendered
 // value (or straight at `target` on first mount), so the first paint
-// never shows the wrong sign — the old `useState(0)` would flash
+// never shows the wrong sign - the old `useState(0)` would flash
 // "+$0.00" for one frame on a negative target, then invert to red.
 function useCountUp(target: number, durationMs = 900) {
   const [v, setV] = useState(target);
@@ -1155,7 +1155,7 @@ export default function Statistics({
       .sort((a, b) => b.count - a.count);
   }, [data]);
 
-  // Performance by strategy — net P/L, win rate, expectancy and profit factor
+  // Performance by strategy - net P/L, win rate, expectancy and profit factor
   // per strategy across all closed trades (like the tag breakdown, but grouped
   // by the strategy each trade is tagged with).
   type StrategyStatRow = {
@@ -1779,7 +1779,7 @@ export default function Statistics({
                 const r = c.row!;
                 const positive = r.netPL >= 0;
                 // Colour by actual outcome, not by which slot the
-                // card lives in — a "worst" that's still net-positive
+                // card lives in - a "worst" that's still net-positive
                 // shouldn't wear red.
                 const numberClass = positive
                   ? "text-green-400"
@@ -2206,7 +2206,7 @@ export default function Statistics({
           {sectionControls("breakdown", "Statistics summaries")}
           <SectionHeader
             title="Statistics summaries"
-            info="A bird's-eye view of your edge across your whole history — direction (CALL vs PUT), streaks, drawdown, and best/worst day."
+            info="A bird's-eye view of your edge across your whole history - direction (CALL vs PUT), streaks, drawdown, and best/worst day."
           />
 
           {/* CALL vs PUT */}
@@ -2443,7 +2443,7 @@ export default function Statistics({
           // Month-over-month: realized net for the previous month (closed
           // trades attributed to their exit month), and the delta vs it.
           // Compare the stored ISO date STRING's yyyy-MM prefix rather
-          // than `new Date(str).getMonth()` — date-only strings ("2025-08-01")
+          // than `new Date(str).getMonth()` - date-only strings ("2025-08-01")
           // parse as UTC midnight, so `.getMonth()` shifts an August-1 trade
           // into July for anyone west of UTC. The string prefix reflects the
           // date the user actually saw when they entered / imported the trade.
@@ -2573,7 +2573,7 @@ export default function Statistics({
                       </div>
                     ) : (
                       <>
-                        {/* Net P/L — sits directly on the background. */}
+                        {/* Net P/L - sits directly on the background. */}
                         <div className="min-w-0 px-1">
                           <div className="text-[10px] md:text-[11px] tracking-[0.1em] text-white/45 font-medium flex items-center gap-1.5">
                             Net P/L
@@ -2613,14 +2613,14 @@ export default function Statistics({
                             (fills the rest) side by side. */}
                         {tradedDays > 0 && (
                           <div className="flex flex-col md:flex-row gap-4 md:gap-5">
-                            {/* Calendar heatmap — each day tinted by P/L.
+                            {/* Calendar heatmap - each day tinted by P/L.
                                 Full-width card on mobile (grid centred), hugs
                                 its grid beside the strip on desktop. */}
                             <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5 md:w-fit md:shrink-0">
                               <div className="flex items-center justify-between gap-4 mb-3">
                                 <div className="text-[10px] md:text-[11px] tracking-[0.1em] text-white/45 font-medium flex items-center gap-1.5">
                                   Heatmap
-                                  <InfoTooltip text="Each cell is a day, tinted by its net P/L — deeper green is a bigger up day, deeper red a bigger down day." />
+                                  <InfoTooltip text="Each cell is a day, tinted by its net P/L - deeper green is a bigger up day, deeper red a bigger down day." />
                                 </div>
                                 <div className="flex items-center gap-1 text-[10px] text-white/40">
                                   <span className="inline-block w-3 h-3 rounded-sm bg-red-500/70" />
@@ -2698,7 +2698,7 @@ export default function Statistics({
                               </div>
                             </div>
 
-                            {/* Daily P/L strip — desktop only; on phones the
+                            {/* Daily P/L strip - desktop only; on phones the
                                 heatmap already covers per-day and the strip
                                 just adds an empty box. */}
                             <div className="hidden md:flex rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5 flex-1 min-w-0 flex-col">
@@ -2781,7 +2781,7 @@ export default function Statistics({
                               </div>
                             </div>
 
-                            {/* Days traded — donut in its own card. */}
+                            {/* Days traded - donut in its own card. */}
                             <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5 flex flex-col gap-3 md:w-52 md:shrink-0">
                               <div className="text-[10px] md:text-[11px] tracking-[0.1em] text-white/45 font-medium">
                                 Days traded

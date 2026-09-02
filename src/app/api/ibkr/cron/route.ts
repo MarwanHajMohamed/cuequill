@@ -40,7 +40,7 @@ function checkAuth(req: Request): { ok: boolean; reason: string } {
 async function runSync() {
   await connectDb();
   // Auto-sync is Pro-only. Free users with IBKR creds saved still get
-  // the manual import button in settings — they're just not in the
+  // the manual import button in settings - they're just not in the
   // morning job.
   const users = await User.find({
     ibkrToken: { $exists: true, $ne: "" },
@@ -78,7 +78,7 @@ async function runSync() {
       results.push({
         userId: user._id.toString(),
         // Throttling (IBKR busy / too-frequent) is transient and clears on
-        // its own once syncs are spaced out — flag it apart from real errors.
+        // its own once syncs are spaced out - flag it apart from real errors.
         status: code === "RATE_LIMITED" ? "throttled" : "error",
         error: err instanceof Error ? err.message : "Unknown error",
       });
@@ -94,7 +94,7 @@ export async function GET(req: Request) {
   const auth = checkAuth(req);
   if (!auth.ok) {
     // Log shapes only (never the secret) so you can spot a length/prefix
-    // mismatch — e.g. a trailing newline pasted into Vercel or QStash.
+    // mismatch - e.g. a trailing newline pasted into Vercel or QStash.
     const header = req.headers.get("authorization");
     console.warn("[cron/ibkr] 401:", auth.reason, {
       hasSecret: !!process.env.CRON_SECRET,

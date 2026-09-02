@@ -1,7 +1,7 @@
 import React, { forwardRef } from "react";
 import { type CardSkin, skinById } from "@/lib/cardSkins";
 
-// A self-contained, always-dark share card for a month's performance —
+// A self-contained, always-dark share card for a month's performance -
 // same visual language as TradeShareCard (brand top-left, hero Net P/L on
 // the right, stat tiles beneath) so trade and month shares feel like one
 // family. Every colour is hard-coded because the app remaps theme vars in
@@ -35,7 +35,7 @@ export type MonthlyShareStats = {
   // not just a month. All default to the month presentation.
   title?: string; // big headline (defaults to monthName)
   periodLabel?: string; // header-right label (defaults to `${monthName} ${year}`)
-  periodNoun?: string; // "month" | "week" | "year" — used in "N trades this ___"
+  periodNoun?: string; // "month" | "week" | "year" - used in "N trades this ___"
 };
 
 const MonthlyShareCard = forwardRef<
@@ -155,7 +155,7 @@ const MonthlyShareCard = forwardRef<
                 color: accent,
               }}
             >
-              {hasClosed ? fmtMoneySigned(stats.netPL) : "—"}
+              {hasClosed ? fmtMoneySigned(stats.netPL) : "-"}
             </div>
             {stats.winRate != null && (
               <div

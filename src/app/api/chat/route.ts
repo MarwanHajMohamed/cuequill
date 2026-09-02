@@ -42,7 +42,7 @@ export const maxDuration = 60;
 // POST /api/chat
 // Body: { messages: [{ role, text, images? }, ...] }
 // The last message may carry image data URLs (screenshots the user
-// attached — e.g. a broker fill to log). Streams Gemini's response as
+// attached - e.g. a broker fill to log). Streams Gemini's response as
 // text/plain chunks (the client just appends them).
 //
 // Free-tier setup:
@@ -174,7 +174,7 @@ export async function POST(req: Request) {
   const userTz = session.user.timezone || "America/New_York";
   const dateBlock = buildDateContext(userTz);
 
-  // Valid trade ids for this user — used to strip any trade:// card the model
+  // Valid trade ids for this user - used to strip any trade:// card the model
   // emits for an id that isn't actually in the snapshot (hallucination guard).
   const validTradeIds = new Set(trades.map((t) => String(t._id)));
 
@@ -203,7 +203,7 @@ export async function POST(req: Request) {
   });
 
   // Convert our message history into Gemini's format. The last message
-  // is the new prompt; earlier ones become chat history (text only —
+  // is the new prompt; earlier ones become chat history (text only -
   // attached images aren't persisted, so history stays lightweight).
   const last = messages[messages.length - 1];
   const history = messages.slice(0, -1).map((m) => ({
@@ -381,7 +381,7 @@ export async function POST(req: Request) {
               chatMonth: month,
               chatMonthTokens: usedMonthTokens + totalTokens,
             },
-            // This turn ran on the bonus pool — spend one.
+            // This turn ran on the bonus pool - spend one.
             ...(overDailyLimit ? { $inc: { bonusChatMessages: -1 } } : {}),
           });
         } catch {
@@ -614,7 +614,7 @@ const EDIT_TRADE_TOOL: FunctionDeclaration = {
         type: SchemaType.ARRAY,
         items: { type: SchemaType.STRING },
         description:
-          "Tags to ADD to the trade (appended to any it already has, deduped). Use this for tagging — e.g. add 'A+ Setup'. Preferred over `tags` because it won't wipe existing tags.",
+          "Tags to ADD to the trade (appended to any it already has, deduped). Use this for tagging - e.g. add 'A+ Setup'. Preferred over `tags` because it won't wipe existing tags.",
       },
       removeTags: {
         type: SchemaType.ARRAY,
@@ -848,7 +848,7 @@ const DELETE_TRADE_TOOL: FunctionDeclaration = {
       id: {
         type: SchemaType.STRING,
         description:
-          "The 24-char Mongo ObjectId of the trade to delete — copy it from the [id:…] tag in the TRADER SNAPSHOT.",
+          "The 24-char Mongo ObjectId of the trade to delete - copy it from the [id:…] tag in the TRADER SNAPSHOT.",
       },
     },
     required: ["id"],
@@ -860,7 +860,7 @@ const DELETE_TRADE_TOOL: FunctionDeclaration = {
 const QUERY_STATS_TOOL: FunctionDeclaration = {
   name: "query_stats",
   description:
-    "Compute EXACT performance stats for a slice of the user's trades (win rate, net P/L, expectancy, profit factor, payoff, avg win/loss, best/worst, max drawdown). ALWAYS prefer this over counting or adding up rows yourself when the user asks for a specific number — e.g. 'win rate on NVDA', 'net P/L in July', 'how do my Monday trades do'. All filters are optional and combined with AND. Omit a filter to include everything on that dimension. Returns numbers you can quote directly.",
+    "Compute EXACT performance stats for a slice of the user's trades (win rate, net P/L, expectancy, profit factor, payoff, avg win/loss, best/worst, max drawdown). ALWAYS prefer this over counting or adding up rows yourself when the user asks for a specific number - e.g. 'win rate on NVDA', 'net P/L in July', 'how do my Monday trades do'. All filters are optional and combined with AND. Omit a filter to include everything on that dimension. Returns numbers you can quote directly.",
   parameters: {
     type: SchemaType.OBJECT,
     properties: {
@@ -988,7 +988,7 @@ If the user asks for a review of their week/month (or says "review my
 week"), give a short, structured debrief: headline P/L and record for the
 period, what went well, the biggest mistake or leak you can see in the
 data, any rule they broke, and where they stand on their goals. Finish with
-one concrete thing to focus on next. Keep it tight and specific — cite real
+one concrete thing to focus on next. Keep it tight and specific - cite real
 trades (as cards) where useful.
 
 SCREENSHOTS & IMAGES
@@ -1007,13 +1007,13 @@ trade card by emitting a Markdown link of the form:
 
 on its own line. The chat UI replaces this link with a styled card
 that shows the ticker, option (CALL/PUT), status, strike × qty,
-entry → exit dates, net P/L, and strategy — all pulled from the
+entry → exit dates, net P/L, and strategy - all pulled from the
 authoritative trade data. You do NOT need to write any of those
 details in prose; the card renders them. Just emit the card link,
 one per trade you're showing.
 
 The "[id:…]" tag in the snapshot is the source for <id>. The id must
-appear ONLY inside a trade:// link's href — NEVER as plain text. The
+appear ONLY inside a trade:// link's href - NEVER as plain text. The
 visible link text MUST be the literal word "trade-card" (the UI
 ignores it, but Markdown requires non-empty link text).
 
@@ -1023,14 +1023,14 @@ Format rules:
 - Do NOT wrap the cards in a Markdown list (no leading "-" or "*").
   The cards stand on their own.
 - Do NOT write the trade's ticker, option, status, P/L, strike,
-  dates, or strategy as prose next to the card — the card already
+  dates, or strategy as prose next to the card - the card already
   shows all of that.
 - A short intro sentence BEFORE the cards and a short takeaway sentence
   or two AFTER the cards is welcome when the user asked an analytical
   question. Keep prose minimal between cards.
 - When you mention a ticker INLINE in flowing prose (not as a card),
   just write the symbol as plain text. Do not use a trade:// link
-  for inline references — those would render as a card mid-sentence.
+  for inline references - those would render as a card mid-sentence.
 
 Example:
 
@@ -1042,7 +1042,7 @@ Your last 3 NVDA losses:
 
 [trade-card](trade://507f1f77bcf86cd799439013)
 
-All three were on First Red Opening Candle — might be worth backing off
+All three were on First Red Opening Candle - might be worth backing off
 that setup until you see two greens in a row.
 
 If you genuinely don't have an id for a trade you're describing (rare),
@@ -1055,7 +1055,7 @@ STYLE & ANALYSIS
   oversized losses, strategies underperforming.
 - Stay concise. Bullet points and short paragraphs over prose walls.
 - Never make up trades, P/L, or stats. If the snapshot doesn't show it, say so.
-- The KEY METRICS block and any query_stats result are pre-computed and exact —
+- The KEY METRICS block and any query_stats result are pre-computed and exact -
   quote them as-is. Don't re-derive expectancy, profit factor, win rate, etc.
   by hand from the row list; use those numbers or call query_stats.
 - This is journaling and analysis only - do NOT give personalized investment
@@ -1063,19 +1063,19 @@ STYLE & ANALYSIS
 
 TAGS & GROUP-LEVEL REQUESTS
 Every trade row ends with "tags:…" showing the labels currently on that
-trade ("-" means none). You CAN tag and untag trades — use edit_trade with
+trade ("-" means none). You CAN tag and untag trades - use edit_trade with
 addTags / removeTags.
 
 Win rate, expectancy, profit factor, payoff, drawdown, etc. are GROUP
 metrics: they describe a SET of trades (a strategy, a symbol, a tag, a
 weekday, a date range), never a single trade. One closed trade on its own
-is simply a win or a loss — it has no "win rate". So when a request phrases
+is simply a win or a loss - it has no "win rate". So when a request phrases
 a per-trade action in terms of a group metric, translate it into "find the
 qualifying GROUPS, then act on every trade in them". Do NOT refuse it and
-do NOT ask the user for trade ids — you already have every id in the
+do NOT ask the user for trade ids - you already have every id in the
 snapshot.
 
-Example — "tag every trade with a 90%+ win rate as 'A+ Setup'":
+Example - "tag every trade with a 90%+ win rate as 'A+ Setup'":
   1. Decide the grouping. Default to STRATEGY (the usual meaning of a
      "setup"). If it's genuinely unclear whether they mean by strategy,
      symbol, or an existing tag, ask one short clarifying question first.
@@ -1096,7 +1096,7 @@ You have four tools available:
   symbol, strategy, tag, option, status, date range, or weekday). ALWAYS use
   this when the user asks for a specific number ("what's my win rate on NVDA",
   "net P/L in July", "how do Mondays do") instead of counting or summing the
-  rows yourself — your mental arithmetic over the row list is error-prone, the
+  rows yourself - your mental arithmetic over the row list is error-prone, the
   tool is exact. It's read-only and instant; call it freely, even several times
   to compare slices. Quote the numbers it returns directly.
 

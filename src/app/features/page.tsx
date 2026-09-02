@@ -37,11 +37,11 @@ const GROUPS: FeatureGroup[] = [
         <span className="italic text-teal-300">Keep it forever.</span>
       </>
     ),
-    lede: "Two ways in — by hand or from your broker. Both end up in the same journal, deduped, with commissions and taxes already counted.",
+    lede: "Two ways in - by hand or from your broker. Both end up in the same journal, deduped, with commissions and taxes already counted.",
     items: [
       {
         title: "Manual entry",
-        body: "Log a trade by hand in seconds — every detail, entry and exit times included.",
+        body: "Log a trade by hand in seconds - every detail, entry and exit times included.",
         detail: "Full trade detail · with entry/exit times",
         tiers: ["Free", "Pro"],
       },
@@ -102,7 +102,7 @@ const GROUPS: FeatureGroup[] = [
       },
       {
         title: "Statistics page",
-        body: "Your win rate, expectancy and more — filterable by strategy and symbol.",
+        body: "Your win rate, expectancy and more - filterable by strategy and symbol.",
         detail: "Core free · monthly heatmap & trend on Pro",
         tiers: ["Free", "Pro"],
       },
@@ -141,7 +141,7 @@ const GROUPS: FeatureGroup[] = [
         <span className="italic text-teal-300">read your journal.</span>
       </>
     ),
-    lede: "Plain-English questions against your own trades — analysis, comparisons, mistake-spotting, fresh fills.",
+    lede: "Plain-English questions against your own trades - analysis, comparisons, mistake-spotting, fresh fills.",
     items: [
       {
         title: "Ask anything",
@@ -190,7 +190,7 @@ const GROUPS: FeatureGroup[] = [
         <span className="italic text-teal-300">stop forgetting.</span>
       </>
     ),
-    lede: "Strategy schematics, a rules board, and a daily affirmation page — the bits of trading discipline you keep meaning to write down.",
+    lede: "Strategy schematics, a rules board, and a daily affirmation page - the bits of trading discipline you keep meaning to write down.",
     items: [
       {
         title: "Strategy playbook",
@@ -249,7 +249,7 @@ const GROUPS: FeatureGroup[] = [
       },
       {
         title: "Private by default",
-        body: "Your data stays yours — encrypted and never shared.",
+        body: "Your data stays yours - encrypted and never shared.",
         detail: "Bank-grade encryption",
         tiers: ["Free", "Pro"],
       },
@@ -311,7 +311,7 @@ function FeaturesHero() {
           transition={{ duration: 0.55, delay: 0.1, ease: "easeOut" }}
           className="mt-8 max-w-xl text-[14px] text-white/65 leading-relaxed"
         >
-          Everything Cuequill does, grouped and labelled by plan — what&apos;s
+          Everything Cuequill does, grouped and labelled by plan - what&apos;s
           free, what&apos;s Pro, and what you can ask Quill AI to do in plain
           English.
         </motion.p>

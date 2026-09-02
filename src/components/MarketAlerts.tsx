@@ -9,8 +9,8 @@ import { useWatchlist } from "@/hooks/useWatchlist";
 import { useEarnings } from "@/hooks/useEarnings";
 
 // Top-of-page alerts a trader wants to see the moment they open the app:
-//   • "Earnings today" — a watchlist ticker reports today.
-//   • "FOMC this week" — an FOMC meeting falls in the current Mon–Sun week.
+//   • "Earnings today" - a watchlist ticker reports today.
+//   • "FOMC this week" - an FOMC meeting falls in the current Mon–Sun week.
 // Each is dismissible and, once dismissed, stays hidden for the day / week
 // (localStorage-keyed) so it doesn't nag on every navigation.
 

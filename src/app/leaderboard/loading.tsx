@@ -1,7 +1,7 @@
 import React from "react";
 import { Skeleton } from "@/components/Loaders";
 
-// Suspense fallback for /leaderboard — mirrors the page shell (header, tab
+// Suspense fallback for /leaderboard - mirrors the page shell (header, tab
 // row, podium, ranked list) so there's no blank flash before the bundle /
 // data resolves.
 export default function Loading() {

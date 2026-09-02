@@ -54,7 +54,7 @@
   color: rgb(var(--fg-rgb) / 0.6);
   min-width: 32px;
 }
-/* Highlight the nav arrows on hover and keyboard focus only — not on the
+/* Highlight the nav arrows on hover and keyboard focus only - not on the
    sticky :focus a mouse click leaves behind, which otherwise kept the
    background lit until the button blurred (user clicked elsewhere). */
 .react-calendar.custom-calendar_full-view
@@ -152,7 +152,7 @@
 .react-calendar.custom-calendar_full-view .react-calendar__month-view__days {
   display: grid !important;
   grid-template-columns: repeat(5, 1fr) !important;
-  /* Fixed row height so every week is the same height — minmax(…,1fr) let a
+  /* Fixed row height so every week is the same height - minmax(…,1fr) let a
      busier week grow taller than the others and made the grid uneven. */
   grid-auto-rows: 116px !important;
   gap: 4px;
@@ -197,7 +197,7 @@
   display: grid !important;
   grid-template-columns: repeat(4, 1fr) !important;
   /* Fixed row height so every tile is the same height regardless of whether
-     the month has trades — otherwise empty (e.g. future) months collapse
+     the month has trades - otherwise empty (e.g. future) months collapse
      shorter than the filled ones and the grid looks ragged. Tall enough to
      seat the month name, P/L, its % on its own line, and the trade count
      without crowding. */
@@ -248,7 +248,7 @@
   font-weight: 500;
 }
 
-/* Current month / year highlight when zoomed out — same blue as the
+/* Current month / year highlight when zoomed out - same blue as the
    day-grid "today". Needs higher specificity than the month/year tile
    rule above (which sets border: transparent) or it gets clobbered. */
 .react-calendar.custom-calendar_full-view

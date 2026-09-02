@@ -19,7 +19,7 @@ import { CPI_RELEASE_DATES } from "@/lib/cpiDates";
 import { PPI_RELEASE_DATES } from "@/lib/ppiDates";
 import { PCE_RELEASE_DATES } from "@/lib/pceDates";
 
-// Refresh at most once a day — release schedules change rarely.
+// Refresh at most once a day - release schedules change rarely.
 export const revalidate = 86400;
 
 const FRED_URL = "https://api.stlouisfed.org/fred/release/dates";

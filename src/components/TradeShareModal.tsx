@@ -24,7 +24,7 @@ export default function TradeShareModal({
       cardH={CARD_H}
       fileName={fileName}
       shareTitle={`${trade.symbol} trade`}
-      shareText={`My ${trade.symbol} ${trade.option} trade — Cuequill`}
+      shareText={`My ${trade.symbol} ${trade.option} trade - Cuequill`}
       renderCard={(ref, skin) => (
         <TradeShareCard ref={ref} trade={trade} skin={skin} />
       )}

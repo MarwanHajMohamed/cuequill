@@ -1,4 +1,4 @@
-// Level rewards — what each level unlocks, aggregated from the cosmetic
+// Level rewards - what each level unlocks, aggregated from the cosmetic
 // registries plus a per-level Quill AI chat bonus and the level title.
 // Pure + client-safe (drives the rewards timeline UI); the actual chat
 // granting happens server-side in the challenge-claim route using LEVEL_CHAT.
@@ -19,12 +19,12 @@ import { CARD_SKINS } from "@/lib/cardSkins";
 // I/II/III numeral within a band.
 export { titleForLevel, titleLabel };
 
-// How many levels the rewards ladder shows — enough for every title to span
+// How many levels the rewards ladder shows - enough for every title to span
 // its full band of levels.
 export const MAX_LEVEL = TITLES.length * LEVELS_PER_TITLE;
 
 // Bonus Quill AI messages granted the first time a level is reached. Not
-// every level — 5 free messages every 5 levels (kept modest since every
+// every level - 5 free messages every 5 levels (kept modest since every
 // message has a real cost).
 export const LEVEL_CHAT: Record<number, number> = Object.fromEntries(
   Array.from({ length: MAX_LEVEL }, (_, i) => i + 1)
@@ -53,7 +53,7 @@ export function rewardsForLevel(level: number): LevelReward[] {
   const out: LevelReward[] = [];
 
   // Cosmetics with minLevel 1 are the default set everyone starts with, not
-  // unlocks — so level 1 has no cosmetic rewards to list.
+  // unlocks - so level 1 has no cosmetic rewards to list.
   if (level > 1) {
     for (const c of AVATAR_COLORS.filter((x) => x.minLevel === level)) {
       out.push({

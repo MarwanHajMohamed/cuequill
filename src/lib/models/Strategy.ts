@@ -24,7 +24,7 @@ export interface IStrategy extends Document {
   // direction columns and is selectable on trades of either side.
   direction: "CALL" | "PUT" | "BOTH";
   timeframes: string[];
-  // Rich-text HTML (RichNotesEditor format) — prose, lists, and inline
+  // Rich-text HTML (RichNotesEditor format) - prose, lists, and inline
   // images describing the setup.
   description: string;
   tags: string[];
@@ -116,7 +116,7 @@ StrategySchema.index(
 
 // In dev, Next.js hot-reload keeps the previously-compiled model (with
 // its old schema) registered on the global mongoose singleton, so schema
-// edits silently stop persisting — strict mode strips paths the stale
+// edits silently stop persisting - strict mode strips paths the stale
 // schema doesn't know about (e.g. a newly added `examples`). Drop the
 // cached model so it recompiles with the current schema. In production
 // the module is evaluated once, so this is a no-op.

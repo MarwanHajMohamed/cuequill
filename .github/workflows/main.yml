@@ -4,7 +4,7 @@ on:
   schedule:
     # 06:00 UK local. GitHub cron is fixed-UTC with no DST handling, so this
     # is 05:00 UTC to hit 6am while the UK is on BST (UTC+1). In winter (GMT)
-    # this fires at 05:00 UK — bump to "0 6 * * *" if you want 6am year-round.
+    # this fires at 05:00 UK - bump to "0 6 * * *" if you want 6am year-round.
     - cron: "0 5 * * *"
   workflow_dispatch:   # lets you manually fire it from the Actions tab
 jobs:

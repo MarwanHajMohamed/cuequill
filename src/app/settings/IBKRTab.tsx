@@ -174,7 +174,7 @@ export default function IBKRTab() {
 
   // Fetch the live imported-trades list once we know a sync has ever
   // inserted rows. This is what makes the pill count and the
-  // expander agree — using the historical ibkrLastSyncInserted alone
+  // expander agree - using the historical ibkrLastSyncInserted alone
   // would show a count for docs that have since been deleted or
   // merged.
   useEffect(() => {
@@ -393,13 +393,13 @@ export default function IBKRTab() {
           )}
         </div>
 
-        {/* Backfill fees — fill commissions/taxes on trades that are
+        {/* Backfill fees - fill commissions/taxes on trades that are
             missing them, by re-reading fills. Needs the Flex query to
             include IBCommission/Taxes and to cover those trades' dates. */}
         <div className="mt-1 flex flex-col gap-2">
           <div className="text-[11.5px] text-white/40 max-w-md leading-relaxed">
             Older trades imported before you added the commission columns may
-            have no fees. This re-reads your fills and fills them in — make sure
+            have no fees. This re-reads your fills and fills them in - make sure
             the query includes <span className="text-white/70">IBCommission</span>{" "}
             and <span className="text-white/70">Taxes</span> and covers those
             dates.
@@ -429,7 +429,7 @@ export default function IBKRTab() {
             use its length for the pill count; before that we fall
             back to the historical ibkrLastSyncInserted so the button
             still appears while the fetch is in flight. Hidden
-            entirely once we've confirmed nothing remains — either
+            entirely once we've confirmed nothing remains - either
             the sync was empty, or the user deleted / merged the
             imports away since. */}
         {(() => {
@@ -545,7 +545,7 @@ function ImportedRow({
   const net =
     (trade.profitLoss ?? 0) - (trade.fees ?? 0);
   const day = (iso: string | null | undefined) =>
-    iso ? new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "—";
+    iso ? new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "-";
 
   return (
     <div
@@ -601,7 +601,7 @@ function ImportedRow({
           }`}
         >
           {trade.status === "OPEN"
-            ? "—"
+            ? "-"
             : `${net >= 0 ? "+" : "−"}$${Math.abs(net).toFixed(2)}`}
         </div>
         {trade.fees ? (

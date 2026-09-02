@@ -6,7 +6,7 @@ import { syncSubscriptionToUser } from "@/lib/stripeSync";
 
 // Stripe calls this endpoint directly (no user session). Authenticity is
 // established by verifying the signature against STRIPE_WEBHOOK_SECRET, so
-// the raw request body is required — never parse it as JSON first.
+// the raw request body is required - never parse it as JSON first.
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 

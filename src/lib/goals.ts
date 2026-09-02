@@ -53,7 +53,7 @@ function localYmd(now: Date, tz: string): string {
 
 // A key identifying the current period for a recurrence. A task is "done"
 // when its stored completedPeriod equals this key; when the period rolls
-// over the key changes and the task resets automatically — no cron needed.
+// over the key changes and the task resets automatically - no cron needed.
 export function taskPeriodKey(
   rec: TaskRecurrence,
   now: Date = new Date(),
@@ -177,7 +177,7 @@ function inWindow(dateStr: string | null | undefined, start: Date | null): boole
 
 // Current value of a metric over the trades in the timeframe window.
 // Returns null when it can't be computed (no qualifying trades / no
-// losses for profit factor), so the UI can show "—" rather than a
+// losses for profit factor), so the UI can show "-" rather than a
 // misleading 0.
 export function computeMetric(
   metric: GoalMetric,

@@ -399,7 +399,7 @@ export default function DashboardStats({ userId }: { userId: string }) {
     );
     const allTime = summarize(closed);
 
-    // Current streak — newest first.
+    // Current streak - newest first.
     const closedSorted = [...closed].sort(
       (a, b) => exitDate(b).getTime() - exitDate(a).getTime(),
     );

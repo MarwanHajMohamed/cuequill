@@ -52,7 +52,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   await connectDb();
   const body = await req.json().catch(() => ({}));
 
-  // Sparse $set — only known fields the client sent.
+  // Sparse $set - only known fields the client sent.
   const patch: Record<string, unknown> = {};
   if (typeof body.name === "string") {
     const n = body.name.trim();

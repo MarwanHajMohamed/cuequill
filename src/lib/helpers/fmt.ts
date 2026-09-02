@@ -10,10 +10,10 @@
 //   ...etc
 //
 // The unsigned variant prefixes the currency symbol only. The signed
-// variant prefixes "+" or "-" so positive vs negative reads at a glance —
+// variant prefixes "+" or "-" so positive vs negative reads at a glance -
 // this is what the calendar tiles, day modal, and stats tiles use.
 
-// Display currency symbol (symbol-only — no FX conversion). Defaults to
+// Display currency symbol (symbol-only - no FX conversion). Defaults to
 // "$"; the user's account preference sets it app-wide via
 // setDisplayCurrency (see CurrencySync). We cache it in localStorage and
 // read it synchronously on the client so the first paint is already right.
@@ -88,7 +88,7 @@ function compactShort(abs: number): string {
   return Math.round(abs / 1_000_000_000) + "B";
 }
 
-// Full, un-abbreviated money — thousands separators and two decimals
+// Full, un-abbreviated money - thousands separators and two decimals
 // (e.g. "$12,345.67"). Used where the exact figure matters more than
 // saving space, like the calendar's monthly P/L headline.
 export function fmtMoneyFull(value: number): string {

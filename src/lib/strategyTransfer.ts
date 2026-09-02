@@ -2,7 +2,7 @@
 // portable JSON bundle. A bundle carries everything needed to recreate a
 // strategy on another account: the drawing (schematic), the rich-text
 // description, the labelled examples (with their inline images), plus the
-// direction / timeframes / tags. No ids, ownership, or timestamps travel —
+// direction / timeframes / tags. No ids, ownership, or timestamps travel -
 // import always mints fresh documents.
 
 import type { Schematic, SchematicElement } from "@/lib/strategyConstants";

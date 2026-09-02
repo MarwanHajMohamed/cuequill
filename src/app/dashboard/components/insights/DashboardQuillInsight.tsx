@@ -83,7 +83,7 @@ export default function DashboardQuillInsight() {
             <Link
               href={`/chat?draft=${encodeURIComponent(
                 data?.insight
-                  ? `About today's insight: "${data.insight}" — can you expand on this and suggest what I should do about it?`
+                  ? `About today's insight: "${data.insight}" - can you expand on this and suggest what I should do about it?`
                   : "",
               )}`}
               className="text-[12px] font-medium text-teal-300 hover:text-teal-200 transition"

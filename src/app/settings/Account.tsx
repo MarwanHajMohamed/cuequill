@@ -118,7 +118,7 @@ const Account = () => {
         const data = await res.json().catch(() => ({}));
         throw new Error(data?.error ?? "Deletion failed. Please try again.");
       }
-      // Account is gone — clear the accent so the marketing site is neutral,
+      // Account is gone - clear the accent so the marketing site is neutral,
       // then sign out and return to it.
       clearAccent();
       await signOut({ callbackUrl: "/" });

@@ -15,7 +15,7 @@ import { User } from "@/lib/models/User";
 // The cache is keyed to the user and a hash of the instruction, stored on the
 // user doc so it survives across (stateless) serverless invocations and is
 // reused until it expires or the snapshot changes. Caching is a pure
-// optimisation — any failure falls back to an ordinary, uncached model so chat
+// optimisation - any failure falls back to an ordinary, uncached model so chat
 // never breaks because of it.
 
 const MODEL_ID = "gemini-2.5-flash";
@@ -69,7 +69,7 @@ export async function getQuillModel(opts: {
       new Date(user.chatCacheExpiresAt).getTime() > now + 30_000;
 
     if (live) {
-      // Reuse by reference — getGenerativeModelFromCachedContent only needs
+      // Reuse by reference - getGenerativeModelFromCachedContent only needs
       // the cache's name + model, so no extra fetch is required.
       return genAI.getGenerativeModelFromCachedContent({
         name: user!.chatCacheName!,

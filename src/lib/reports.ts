@@ -83,7 +83,7 @@ function holdDays(t: Trade): number | null {
 
 // ---- reports -------------------------------------------------------------
 
-// Every trade, every field — the "give me all my data" export.
+// Every trade, every field - the "give me all my data" export.
 export function allTradesTable(trades: Trade[]): ReportTable {
   const columns = [
     "Symbol", "Type", "Status", "Qty", "Strike",
@@ -221,7 +221,7 @@ export function strategyPerformanceTable(trades: Trade[]): ReportTable {
 
 // Per underlying symbol, richest-first by net P/L.
 export function symbolPerformanceTable(trades: Trade[]): ReportTable {
-  const m = aggBy(trades, (t) => t.symbol || "—");
+  const m = aggBy(trades, (t) => t.symbol || "-");
   const rows = Array.from(m.entries())
     .map(([sym, a]) => ({ sym, a, net: a.gross - a.fees }))
     .sort((x, y) => y.net - x.net)
@@ -230,7 +230,7 @@ export function symbolPerformanceTable(trades: Trade[]): ReportTable {
 }
 
 // Per tag, richest-first by net P/L. A trade carries several tags, so it
-// contributes to each of them — the per-tag trade counts can therefore
+// contributes to each of them - the per-tag trade counts can therefore
 // sum to more than the number of closed trades. Untagged trades fall into
 // their own bucket.
 export function tagPerformanceTable(trades: Trade[]): ReportTable {
@@ -300,7 +300,7 @@ export function hourPerformanceTable(trades: Trade[]): ReportTable {
   return { columns: ["Hour", ...AGG_TAIL], rows };
 }
 
-// Full raw backup — round-trips back into the app / another tool.
+// Full raw backup - round-trips back into the app / another tool.
 export function backupJson(trades: Trade[]): string {
   return JSON.stringify(
     { exportedAt: new Date().toISOString(), count: trades.length, trades },

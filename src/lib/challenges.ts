@@ -1,4 +1,4 @@
-// Challenges & rewards — a curated set of process-focused goals evaluated
+// Challenges & rewards - a curated set of process-focused goals evaluated
 // from the user's real (non-simulated) trades. Kept pure and dependency-
 // free so the same definitions run on the server (evaluate + verify a
 // claim) and the client (render progress). Rewards are XP, which drives a
@@ -23,7 +23,7 @@ export type EvalTrade = {
 };
 
 // A reward granted on top of XP when a challenge is claimed. Currently
-// just bonus Quill AI messages — a small, finite pool (kept small on
+// just bonus Quill AI messages - a small, finite pool (kept small on
 // purpose since each message has a real cost).
 export type ChallengeReward = { kind: "chat"; amount: number; label: string };
 
@@ -59,7 +59,7 @@ const weekKey = (d?: string | Date | null) => {
   return monday.toISOString().slice(0, 10);
 };
 
-// Closed trades ordered by exit day — used by streak/sequence checks.
+// Closed trades ordered by exit day - used by streak/sequence checks.
 function closedByExit(trades: EvalTrade[]): EvalTrade[] {
   return trades
     .filter(isClosed)
@@ -334,7 +334,7 @@ export const CHALLENGES: ChallengeDef[] = [
   {
     id: "honest-book",
     title: "Honest book",
-    description: "Log 25 losing trades — journal the bad ones too.",
+    description: "Log 25 losing trades - journal the bad ones too.",
     icon: "fa-solid fa-scale-unbalanced",
     category: "discipline",
     target: 25,

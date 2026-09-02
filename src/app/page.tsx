@@ -104,7 +104,7 @@ export default function Home() {
               <span className="italic text-teal-300">synced every morning.</span>
             </>
           }
-          body="Drop a Flex Web Service token in settings. Cuequill imports every fill each morning — commissions and taxes included. Manual entry still works."
+          body="Drop a Flex Web Service token in settings. Cuequill imports every fill each morning - commissions and taxes included. Manual entry still works."
           stats={[
             ["Runs", "Every morning"],
             ["Commissions", "Imported"],
@@ -183,7 +183,7 @@ function Hero() {
 }
 
 // A self-contained, on-brand hero visual: a miniature month calendar with
-// each day tinted by its P/L (green wins, red losses) — a preview of the
+// each day tinted by its P/L (green wins, red losses) - a preview of the
 // product's signature "calendar tinted by your P/L". Pure JSX/CSS, no
 // external asset. Data is a fixed, believable mostly-green month.
 type HeroCell = { pl?: number; tone: "win" | "loss" | "flat" };
@@ -330,7 +330,7 @@ function HeroCalendar() {
         </div>
       </div>
 
-      {/* Floating Quill AI hint chip — gently bobs. */}
+      {/* Floating Quill AI hint chip - gently bobs. */}
       <motion.div
         className="absolute -bottom-3 -right-2 md:-right-4 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-[var(--surface-2)] border border-teal-500/25 text-teal-300 shadow-lg text-[11px] font-medium"
         animate={{ y: [0, -5, 0] }}
@@ -419,11 +419,11 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "Do I need Interactive Brokers?",
-    a: "No. Manual entry works fully on its own. IBKR sync is a convenience — drop in a Flex Web Service token and Cuequill imports every fill each morning, commissions and taxes included.",
+    a: "No. Manual entry works fully on its own. IBKR sync is a convenience - drop in a Flex Web Service token and Cuequill imports every fill each morning, commissions and taxes included.",
   },
   {
     q: "Is it free to try?",
-    a: "Yes. The Starter plan — manual logging, calendar, core stats and rules — is free forever. You only pay when you want IBKR sync and the full Quill AI.",
+    a: "Yes. The Starter plan - manual logging, calendar, core stats and rules - is free forever. You only pay when you want IBKR sync and the full Quill AI.",
   },
   {
     q: "Does Quill AI use my trades to train models?",
@@ -1085,7 +1085,7 @@ function QuillAIPreview() {
     {
       kind: "ai-answer",
       text:
-        "Hard Floor — 10 closed this month, 40% win rate, expectancy −$18.40/trade. Want to see them?",
+        "Hard Floor - 10 closed this month, 40% win rate, expectancy −$18.40/trade. Want to see them?",
       durMs: 2200,
     },
     {
@@ -1119,7 +1119,7 @@ function QuillAIPreview() {
     {
       kind: "ai-answer",
       text:
-        "Partly — FROC is 58% before 11am and 47% after, but it stays net-positive in both windows (+$12 vs +$4/trade).",
+        "Partly - FROC is 58% before 11am and 47% after, but it stays net-positive in both windows (+$12 vs +$4/trade).",
       durMs: 2800,
     },
     {
@@ -1503,10 +1503,10 @@ function IBKRPreview() {
         {[
           {
             k: "Imported",
-            v: phase === "done" ? Math.round(imported).toString() : "—",
+            v: phase === "done" ? Math.round(imported).toString() : "-",
             tone: "good" as const,
           },
-          { k: "Skipped", v: phase === "done" ? "0" : "—", tone: "neutral" as const },
+          { k: "Skipped", v: phase === "done" ? "0" : "-", tone: "neutral" as const },
           { k: "Next run", v: "22:00 ET", tone: "neutral" as const },
         ].map((s) => (
           <div key={s.k} className="flex flex-col gap-0.5">

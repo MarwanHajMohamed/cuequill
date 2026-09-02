@@ -1,7 +1,7 @@
 name: IBKR morning sync
 
 # The morning schedule is owned by Upstash QStash, which delivers on
-# time and retries on failure — GitHub Actions' `schedule:` trigger runs
+# time and retries on failure - GitHub Actions' `schedule:` trigger runs
 # best-effort and silently drops runs under load, which is why syncs were
 # missed. QStash hits https://www.cuequill.com/api/ibkr/cron directly.
 #
@@ -27,13 +27,13 @@ jobs:
           fi
           # -f fails on non-2xx so a bad response marks the job red.
           # -sS keeps the log quiet on success but shows errors.
-          # -L follows 3xx redirects — without it, Vercel's apex →
+          # -L follows 3xx redirects - without it, Vercel's apex →
           # www (or http → https) redirect returns "Redirecting..."
           # and the actual endpoint is never hit.
           # Hit the canonical host directly (www) rather than the
           # apex. Vercel redirects cuequill.com → www.cuequill.com,
           # and curl strips Authorization on cross-host redirects
-          # as a safety measure — which then 401s at the endpoint.
+          # as a safety measure - which then 401s at the endpoint.
           curl -fLsS -X GET \
             -H "Authorization: Bearer ${CRON_SECRET}" \
             https://www.cuequill.com/api/ibkr/cron

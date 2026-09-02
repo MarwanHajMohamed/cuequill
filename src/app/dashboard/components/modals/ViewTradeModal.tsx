@@ -17,7 +17,7 @@ type TradeModalProps = {
   /** Hide the Delete button if not provided. Called with the trade _id. */
   onDelete?: (_id: string) => void;
   /** When set, renders a top-left chevron that goes back instead of
-   *  closing outright — used when this modal was opened from a
+   *  closing outright - used when this modal was opened from a
    *  parent modal (e.g. the day list) and we want to preserve that
    *  parent underneath. */
   onBack?: () => void;

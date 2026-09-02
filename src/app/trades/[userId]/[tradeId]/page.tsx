@@ -38,8 +38,8 @@ function fetchTrade(id: string): Promise<Trade> {
 // Coerce a stored date into the `yyyy-MM-dd` a <DateField> expects.
 // Stored values arrive as ISO timestamps (local midnight persisted as
 // UTC), so slicing on "T" would read the UTC day and drift back one day
-// in zones ahead of UTC. Convert through the local zone instead — the
-// same thing the trades table does with toLocaleDateString — while
+// in zones ahead of UTC. Convert through the local zone instead - the
+// same thing the trades table does with toLocaleDateString - while
 // passing through values the user has already edited to plain dates.
 function toDateInput(value?: string): string {
   if (!value) return "";
@@ -243,7 +243,7 @@ function TradeDetailPage() {
 
   return (
     <div className="w-full px-4 md:px-8 pt-24 md:pt-8 pb-6 flex flex-col gap-4 md:h-[100dvh]">
-      {/* One container — trade fields on the left, the wider notes
+      {/* One container - trade fields on the left, the wider notes
           editor on the right, filling the viewport height. A
           full-width action row pins to the bottom of the card. */}
       <div className="md:flex-1 md:min-h-0 flex flex-col">
@@ -251,9 +251,9 @@ function TradeDetailPage() {
            take all the extra width. The left fields sit bare on the page;
            only the notes editor keeps its own card. */}
        <div className="flex-1 min-h-0 grid grid-cols-1 gap-5 md:gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,1.7fr)] xl:grid-cols-[440px_minmax(0,1fr)]">
-        {/* LEFT — Trade fields, no container */}
+        {/* LEFT - Trade fields, no container */}
         <div className="md:overflow-y-auto thin-scroll md:py-1 md:pr-1 flex flex-col gap-4">
-          {/* Top row — back chevron + (symbol input while editing / Edit
+          {/* Top row - back chevron + (symbol input while editing / Edit
               button while viewing) */}
           <div className="flex items-center gap-2.5">
             <Link
@@ -327,7 +327,7 @@ function TradeDetailPage() {
               </div>
             </div>
 
-            {/* Status — on its own line below Direction */}
+            {/* Status - on its own line below Direction */}
             <div className="flex flex-col gap-1.5">
               <Label>Status</Label>
               <div className="grid grid-cols-3 gap-1.5">
@@ -486,7 +486,7 @@ function TradeDetailPage() {
 
         </div>
 
-        {/* RIGHT — Notes: editable while editing, read-only otherwise */}
+        {/* RIGHT - Notes: editable while editing, read-only otherwise */}
         <div className="flex flex-col min-h-0">
           {editing ? (
             <RichNotesEditor
@@ -500,7 +500,7 @@ function TradeDetailPage() {
         </div>
        </div>
 
-        {/* Actions — full-width row pinned to the bottom */}
+        {/* Actions - full-width row pinned to the bottom */}
         <div className="shrink-0 pt-3 mt-1 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             {editing && (
@@ -628,7 +628,7 @@ function TradeSummary({ trade }: { trade: Trade }) {
 
   const isCall = trade.option === "CALL";
   const dateStr = (v?: string | null) =>
-    v ? new Date(v).toLocaleDateString("en-GB") : "—";
+    v ? new Date(v).toLocaleDateString("en-GB") : "-";
   const signed = (n: number, suffix = "", digits = 2) =>
     `${n >= 0 ? "" : "−"}${Math.abs(n).toFixed(digits)}${suffix}`;
 
@@ -709,31 +709,31 @@ function TradeSummary({ trade }: { trade: Trade }) {
       <div className="grid grid-cols-2 gap-x-6 gap-y-4">
         <StatTile
           label="Entry price"
-          value={trade.contractPrice != null ? `$${trade.contractPrice}` : "—"}
+          value={trade.contractPrice != null ? `$${trade.contractPrice}` : "-"}
         />
         <StatTile
           label="Exit price"
           value={
             isClosed && trade.closingContractPrice != null
               ? `$${trade.closingContractPrice}`
-              : "—"
+              : "-"
           }
         />
         <StatTile
           label="Change"
-          value={change != null ? signed(change, "%", 0) : "—"}
+          value={change != null ? signed(change, "%", 0) : "-"}
           tone={change == null ? undefined : change >= 0 ? "up" : "down"}
         />
-        <StatTile label="Cost basis" value={hasCost ? fmtMoneyFull(cost) : "—"} />
+        <StatTile label="Cost basis" value={hasCost ? fmtMoneyFull(cost) : "-"} />
         <StatTile
           label="Fees"
-          value={trade.fees != null ? fmtMoneyFull(trade.fees) : "—"}
+          value={trade.fees != null ? fmtMoneyFull(trade.fees) : "-"}
         />
-        <StatTile label="Held" value={heldDays != null ? `${heldDays}d` : "—"} />
+        <StatTile label="Held" value={heldDays != null ? `${heldDays}d` : "-"} />
         <StatTile label="Bought" value={dateStr(trade.dateBought)} />
         <StatTile label="Closed" value={dateStr(trade.dateClosed)} />
         <StatTile label="Expiry" value={dateStr(trade.expiryDate)} />
-        <StatTile label="Strategy" value={trade.strategy || "—"} />
+        <StatTile label="Strategy" value={trade.strategy || "-"} />
       </div>
 
       {/* Tags */}

@@ -1,4 +1,4 @@
-// US PCE (Personal Consumption Expenditures) price index release dates —
+// US PCE (Personal Consumption Expenditures) price index release dates -
 // the "Personal Income and Outlays" report from the BEA, which contains the
 // PCE price index, the Fed's preferred inflation gauge. Released at 8:30am ET.
 // There's no clean free API for the schedule, so it's hard-coded from the
@@ -6,7 +6,7 @@
 //   https://www.bea.gov/news/schedule
 //
 // Each entry is the RELEASE day (yyyy-MM-dd), not the reference month.
-// Verify against the BEA schedule before relying on any single date —
+// Verify against the BEA schedule before relying on any single date -
 // individual dates occasionally shift.
 export const PCE_RELEASE_DATES: string[] = [
   // 2025

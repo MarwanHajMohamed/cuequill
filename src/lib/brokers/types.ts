@@ -10,16 +10,16 @@ export type BrokerId =
   | "firstrade";
 
 // How a broker's trades get into the app:
-//   "pull" — fetched from the broker's API using stored credentials
+//   "pull" - fetched from the broker's API using stored credentials
 //            (supports automatic/scheduled sync, e.g. IBKR Flex).
-//   "file" — the user exports a statement and uploads it (no creds, no
+//   "file" - the user exports a statement and uploads it (no creds, no
 //            scheduled sync), e.g. a Tastytrade transaction CSV.
 export type BrokerMode = "pull" | "file";
 
 // A broker adapter is the *only* broker-specific part of the import
 // pipeline. Its job is to turn the user's executions into
-// `NormalizedFill[]`. Everything downstream — FIFO matching into
-// round-trip trades, dedupe, insert, sync status — is shared and
+// `NormalizedFill[]`. Everything downstream - FIFO matching into
+// round-trip trades, dedupe, insert, sync status - is shared and
 // broker-agnostic (see lib/ibkrSync).
 //
 // Pull adapters implement `fetchFills`; file adapters implement

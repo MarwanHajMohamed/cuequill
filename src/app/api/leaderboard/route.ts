@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 // client can re-sort per tab without another round trip.
 export type LeaderboardEntry = {
   id: string;
-  name: string; // "First L." — last initial only
+  name: string; // "First L." - last initial only
   avatarColor: string;
   avatarFrame: string;
   title: string; // equipped title, else the level title
@@ -41,7 +41,7 @@ function liveStreak(
   return Math.abs(diffDays) <= 1 ? current : 0;
 }
 
-// GET /api/leaderboard — the ranked entries for every user who has opted in,
+// GET /api/leaderboard - the ranked entries for every user who has opted in,
 // each carrying all three ranking metrics, plus whether the caller is opted
 // in so the page can show a "join" prompt.
 export async function GET() {
@@ -140,7 +140,7 @@ export async function GET() {
   return NextResponse.json({ entries, optedIn });
 }
 
-// PATCH /api/leaderboard — join or leave the leaderboard.
+// PATCH /api/leaderboard - join or leave the leaderboard.
 export async function PATCH(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {

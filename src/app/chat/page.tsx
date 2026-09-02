@@ -68,7 +68,7 @@ const TradeChatContext = createContext<TradeChatCtx | null>(null);
 // react-markdown sanitizes link URLs by default and drops any scheme
 // that isn't in its safe-list (http/https/mailto/tel/etc.). Without
 // this transform, `trade://<id>` would be stripped entirely and the
-// link would render as plain text — the <a> component override would
+// link would render as plain text - the <a> component override would
 // never see the href and the trade cards / click handlers would
 // silently break. Allow trade:// through; mirror the safe-list for
 // everything else.
@@ -88,7 +88,7 @@ const LEGACY_LOCAL_KEY = "cuequill:chat:v1";
 
 // A one-tap starter prompt shown on the empty state. `title` is the label
 // on the card; `prompt` is the full text sent to Quill when tapped. Users
-// can edit, add, remove, and reorder these — the customised set is saved
+// can edit, add, remove, and reorder these - the customised set is saved
 // per-user (see cuequill:chatPrompts below).
 type Suggestion = {
   id: string;
@@ -237,12 +237,12 @@ function Page() {
 
   // Pull the user's full trade list once (React Query caches it across
   // the app) so the trade cards rendered inside chat replies can read
-  // their data straight from memory — no N+1 fetches per card.
+  // their data straight from memory - no N+1 fetches per card.
   const { data: trades } = useTrades(userId, false);
 
   // Look up a trade by id from the cached list. Returns undefined when
-  // the id isn't known (rare — Gemini only sees ids that exist in this
-  // same list — but possible for simulated trades or a stale cache).
+  // the id isn't known (rare - Gemini only sees ids that exist in this
+  // same list - but possible for simulated trades or a stale cache).
   const findTrade = useCallback(
     (id: string): Trade | undefined =>
       trades?.find((t) => String(t._id) === id),
@@ -416,7 +416,7 @@ function Page() {
             const c = (await cRes.json()) as ConversationMeta;
             id = c.id;
             list = [c];
-            ok = true; // fresh empty thread — safe to persist to
+            ok = true; // fresh empty thread - safe to persist to
           }
         }
         if (!cancelled && id) {
@@ -515,7 +515,7 @@ function Page() {
     const inner = scrollRef.current;
     if (!inner) return;
     // Instant, scoped-to-the-container scroll only. The previous version
-    // combined this with a smooth scrollIntoView on every streamed token —
+    // combined this with a smooth scrollIntoView on every streamed token -
     // the two fought each other (and scrollIntoView could nudge the whole
     // page), which read as glitchy jitter while Quill AI typed. Only stick
     // to the bottom when the user is already near it, so scrolling up to
@@ -651,7 +651,7 @@ function Page() {
         for (;;) {
           const { value, done } = await reader.read();
           if (done) break;
-          // User switched away from this thread — stop appending here.
+          // User switched away from this thread - stop appending here.
           if (convIdRef.current !== activeConv) {
             await reader.cancel().catch(() => {});
             break;
@@ -694,7 +694,7 @@ function Page() {
       } finally {
         networkOpenRef.current = false;
         setStreaming(false);
-        // Refresh the usage meter — this turn consumed a message + tokens.
+        // Refresh the usage meter - this turn consumed a message + tokens.
         queryClient.invalidateQueries({ queryKey: ["chatUsage"] });
         // Refresh the thread list so a new thread's derived title and the
         // most-recent ordering show up.
@@ -760,7 +760,7 @@ function Page() {
   const hasContent = input.trim().length > 0 || pendingImages.length > 0;
 
   // Tap-to-talk: dictate into the input, and auto-send the phrase once the
-  // user stops speaking — so a position can be closed hands-free
+  // user stops speaking - so a position can be closed hands-free
   // ("close my 5 SPY 600 calls at $2.30").
   const speech = useSpeechRecognition({
     onResult: (t) => setLiveTranscript(t),
@@ -1171,7 +1171,7 @@ function Page() {
 // The starter-prompt shortcuts on the empty state. In normal mode each is a
 // one-tap button that sends its prompt; a Customise toggle flips the grid
 // into an editor where labels and prompts can be edited, added, removed, or
-// reset — saved via onSave (persisted per-user by the parent).
+// reset - saved via onSave (persisted per-user by the parent).
 function PromptShortcuts({
   suggestions,
   onSend,
@@ -1458,7 +1458,7 @@ function TradeCard({ id }: { id: string }) {
   const trade = ctx?.findTrade(id);
   const onClick = () => ctx?.openTrade(id);
 
-  // Cache miss: still clickable — openTrade() falls back to a single
+  // Cache miss: still clickable - openTrade() falls back to a single
   // /api/trades/<id> fetch, so the user can always view the modal.
   if (!trade) {
     return (
@@ -1485,7 +1485,7 @@ function TradeCard({ id }: { id: string }) {
   const exitDate = fmtDate(trade.dateClosed);
 
   // Border/background tint follows the trade outcome. Keep it subtle
-  // so a column of cards stays scannable — the chip + amount carry
+  // so a column of cards stays scannable - the chip + amount carry
   // the strong color.
   const tone = isWin
     ? "border-green-500/20 bg-green-500/[0.04] hover:bg-green-500/[0.08] hover:border-green-500/30"
@@ -1610,7 +1610,7 @@ function MarkdownText({ text }: { text: string }) {
           a: ({ href, children }) => {
             // `trade://<id>` links are emitted by Gemini for every
             // trade it mentions (see SYSTEM_PROMPT). They aren't real
-            // URLs — replace them with a full TradeCard rendered from
+            // URLs - replace them with a full TradeCard rendered from
             // the user's cached trade data. The link's inner text
             // (always the literal "trade-card") is discarded.
             if (href && href.startsWith("trade://")) {

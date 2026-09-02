@@ -15,7 +15,7 @@ export type {
   TaskRecurrence,
 } from "@/lib/goals";
 
-// A single user goal — either a metric target auto-tracked against the
+// A single user goal - either a metric target auto-tracked against the
 // user's trades, or a free-form manual goal they tick off themselves.
 export interface IGoal extends Document {
   userId: mongoose.Types.ObjectId;

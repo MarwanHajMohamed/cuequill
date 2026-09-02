@@ -23,7 +23,7 @@ async function haptics() {
   }
 }
 
-// A short impact — use for taps on primary controls (nav, toggles, sends).
+// A short impact - use for taps on primary controls (nav, toggles, sends).
 export async function hapticTap(
   strength: "light" | "medium" | "heavy" = "light",
 ): Promise<void> {
@@ -42,7 +42,7 @@ export async function hapticTap(
   }
 }
 
-// A notification buzz — use for outcomes (saved, merged, error).
+// A notification buzz - use for outcomes (saved, merged, error).
 export async function hapticNotify(
   type: "success" | "warning" | "error" = "success",
 ): Promise<void> {

@@ -62,7 +62,7 @@ export async function GET() {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
   await connectDb();
-  // Note: accounts start with an empty library — no default strategies
+  // Note: accounts start with an empty library - no default strategies
   // are seeded. Existing seeded strategies still get their ported
   // content backfilled below.
   await backfillSeedContent(auth.userId);

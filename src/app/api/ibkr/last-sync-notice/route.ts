@@ -6,7 +6,7 @@ import { User } from "@/lib/models/User";
 
 // Powers the login-time "new trades imported automatically" pop-up.
 //
-// GET  → { notify, insertedCount, syncedAt } — notify=true when the
+// GET  → { notify, insertedCount, syncedAt } - notify=true when the
 //        cron (or an earlier session's manual sync) inserted rows
 //        since the user last acknowledged the notice.
 // POST → marks the current sync as seen. Idempotent.

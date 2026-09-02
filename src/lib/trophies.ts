@@ -1,4 +1,4 @@
-// Milestone trophies & earned titles — status rewards (no XP, no claim)
+// Milestone trophies & earned titles - status rewards (no XP, no claim)
 // that sit alongside the claimable challenges. A trophy is auto-earned the
 // moment its condition is met; some trophies also unlock a title the user
 // can equip as a nameplate next to their name.

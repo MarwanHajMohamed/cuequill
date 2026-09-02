@@ -7,7 +7,7 @@ import React from "react";
 // title (with optional right-aligned `action`, e.g. a "Manage" link) to
 // get the standard header row, or omit both for a bare card.
 //
-// CARD_CLASS_BASE is the look with no scroll behaviour — use it when the
+// CARD_CLASS_BASE is the look with no scroll behaviour - use it when the
 // widget fills its own height (charts) or scrolls an inner region itself.
 // CARD_CLASS adds whole-card scroll for widgets whose content should scroll
 // when it's taller than the rows it's been given.

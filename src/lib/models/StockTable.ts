@@ -7,7 +7,7 @@ export { DEFAULT_STOCKS } from "@/lib/stocksSeed";
 // One document per user holds their entire Stocks/ETFs reference table.
 // The table is a short, hand-curated list the user edits inline, so a
 // single doc with an embedded rows array is a better fit than per-row
-// documents — the whole thing is read and saved as a unit.
+// documents - the whole thing is read and saved as a unit.
 export interface IStockTable extends Document {
   userId: mongoose.Types.ObjectId;
   rows: StockRow[];

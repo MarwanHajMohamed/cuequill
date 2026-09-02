@@ -195,7 +195,7 @@ export function SiteFooter() {
           <p className="text-[11px] leading-relaxed text-white/40 max-w-[80ch]">
             Cuequill is a trading journal and analytics tool for your own record
             keeping. It is not a broker or financial adviser, and nothing in the
-            app — including any AI-generated observations — is financial,
+            app - including any AI-generated observations - is financial,
             investment, tax, or legal advice. Trading options involves
             substantial risk of loss. You are solely responsible for your
             trading decisions.

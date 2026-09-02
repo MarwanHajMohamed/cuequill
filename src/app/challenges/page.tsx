@@ -163,7 +163,7 @@ function Page() {
           <ChallengesSkeleton />
         ) : (
           <>
-            {/* Level summary — kept quiet. */}
+            {/* Level summary - kept quiet. */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -209,7 +209,7 @@ function Page() {
                 </div>
               </div>
 
-              {/* Share the level — below the ring, aligned right. */}
+              {/* Share the level - below the ring, aligned right. */}
               <div className="flex justify-end">
                 <button
                   type="button"
@@ -229,7 +229,7 @@ function Page() {
               </div>
             </motion.div>
 
-            {/* Affirmation streak — an auto-awarded XP challenge that advances
+            {/* Affirmation streak - an auto-awarded XP challenge that advances
                 to the next milestone once reached. */}
             <StreakChallengeSection streak={data.streak} today={today} />
 
@@ -278,7 +278,7 @@ function Page() {
               );
             })}
 
-            {/* Rewards timeline — the level ladder with a modal per level. */}
+            {/* Rewards timeline - the level ladder with a modal per level. */}
             <RewardsTimeline
               level={data.level}
               into={data.into}
@@ -302,8 +302,8 @@ function Page() {
           }
           shareTitle={
             shareAch.kind === "level"
-              ? `Level ${shareAch.level} — Cuequill`
-              : `${shareAch.title} — Cuequill`
+              ? `Level ${shareAch.level} - Cuequill`
+              : `${shareAch.title} - Cuequill`
           }
           shareText={
             shareAch.kind === "level"

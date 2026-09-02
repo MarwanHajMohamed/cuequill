@@ -1,7 +1,7 @@
 name: Affirmations reminder
 
 # The hourly schedule is owned by Upstash QStash, which delivers on time
-# and retries on failure — GitHub Actions' `schedule:` trigger runs
+# and retries on failure - GitHub Actions' `schedule:` trigger runs
 # best-effort and silently drops runs under load. QStash hits
 # https://www.cuequill.com/api/cron/affirmations-reminder every hour; the
 # endpoint filters to users whose local time is in the 8am hour, so one
@@ -20,7 +20,7 @@ jobs:
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
-          # Fail fast if the secret isn't configured — otherwise the
+          # Fail fast if the secret isn't configured - otherwise the
           # route just returns 401 and the failure mode looks like a
           # server bug.
           if [ -z "${CRON_SECRET}" ]; then
@@ -32,11 +32,11 @@ jobs:
           # painting green on a redirect response.
           # Hit the canonical host directly (www). Vercel redirects
           # apex → www, and curl drops Authorization on cross-host
-          # redirects as a safety measure — which 401s the endpoint.
+          # redirects as a safety measure - which 401s the endpoint.
           #
           # Capture the status + body (instead of curl -f, which hides
           # the response) so a non-2xx prints WHY it failed in the log
-          # — e.g. "RESEND_API_KEY is not configured." — rather than an
+          # - e.g. "RESEND_API_KEY is not configured." - rather than an
           # opaque exit code.
           resp=$(curl -sS -L -w $'\n%{http_code}' \
             -H "Authorization: Bearer ${CRON_SECRET}" \

@@ -5,7 +5,7 @@ import { User } from "@/lib/models/User";
 
 // Runs hourly via GitHub Actions. For each user whose local time is
 // currently in the 8am hour (i.e. 08:00–08:59 in their configured
-// timezone), sends a "read your affirmations" nudge — unless they've
+// timezone), sends a "read your affirmations" nudge - unless they've
 // already been emailed today or already ticked off all their
 // affirmations for the day. Idempotent per local calendar day via
 // `emailAffirmationsLastSentDate`.
@@ -110,8 +110,8 @@ function renderEmail({
 }) {
   const greeting = firstname ? `Good morning, ${firstname}` : "Good morning";
   const headline = weekend
-    ? `${greeting} — read today's affirmations.`
-    : `${greeting} — read your affirmations before the open.`;
+    ? `${greeting} - read today's affirmations.`
+    : `${greeting} - read your affirmations before the open.`;
   const body = weekend
     ? "You haven't checked off today's affirmations yet. Take two minutes to keep the streak going and reset your mindset."
     : "You haven't checked off today's affirmations yet. Take two minutes to reset your mindset before the market opens.";
@@ -158,8 +158,8 @@ function renderText({
 }) {
   const greeting = firstname ? `Good morning, ${firstname}` : "Good morning";
   const headline = weekend
-    ? `${greeting} — read today's affirmations.`
-    : `${greeting} — read your affirmations before the open.`;
+    ? `${greeting} - read today's affirmations.`
+    : `${greeting} - read your affirmations before the open.`;
   const body = weekend
     ? "You haven't checked off today's affirmations yet. Take two minutes to keep the streak going and reset your mindset."
     : "You haven't checked off today's affirmations yet. Take two minutes to reset your mindset before the market opens.";
@@ -292,7 +292,7 @@ export async function GET(req: Request) {
     try {
       // Resend's SDK resolves with { data, error } and does NOT throw
       // on API-level failures (unverified domain, invalid recipient,
-      // rate limit, …). Inspect `error` explicitly — otherwise a
+      // rate limit, …). Inspect `error` explicitly - otherwise a
       // rejected send would look successful and we'd wrongly stamp the
       // dedupe date, so nothing sends today AND it never retries.
       const weekend = isWeekend(now, tz);

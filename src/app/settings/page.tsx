@@ -56,7 +56,7 @@ function Page() {
         </header>
 
         <div className="mt-6 flex flex-col md:flex-row gap-6 md:gap-8">
-          {/* Nav rail — sticky on desktop, a horizontal scroller on mobile */}
+          {/* Nav rail - sticky on desktop, a horizontal scroller on mobile */}
           <nav className="md:w-56 md:shrink-0 flex md:flex-col gap-1 overflow-x-auto md:overflow-visible md:sticky md:top-12 md:self-start">
             {settingsTabs.map((tab) => {
               const active = selectedSetting === tab.title;
@@ -88,7 +88,7 @@ function Page() {
             style={{ height: "calc(100dvh - 6rem)" }}
           />
 
-          {/* Content — sits on the page (no card). On mobile a top border
+          {/* Content - sits on the page (no card). On mobile a top border
               divides it from the tab rail; on desktop the sticky divider does. */}
           <div className="flex-1 min-w-0 min-h-[520px] border-t md:border-t-0 border-white/10">
             {settingsTabs.map((tab) =>

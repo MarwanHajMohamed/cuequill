@@ -16,7 +16,7 @@ import { TROPHIES, availableTitles, type TrophyStats } from "@/lib/trophies";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// GET /api/challenges — every challenge with the user's current progress
+// GET /api/challenges - every challenge with the user's current progress
 // and claim state, plus their XP / level. Progress is computed from real
 // (non-simulated) trades only, so simulated trades can't farm rewards.
 export async function GET() {
@@ -80,7 +80,7 @@ export async function GET() {
     };
   });
 
-  // Trophy stats — auto-earned status rewards derived from the same trades.
+  // Trophy stats - auto-earned status rewards derived from the same trades.
   const all = trades ?? [];
   const closed = all.filter((t) => t.status === "WIN" || t.status === "LOSS");
   const monthSet = new Set<string>();

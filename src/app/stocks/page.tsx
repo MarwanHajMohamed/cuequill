@@ -199,7 +199,7 @@ export default function Page() {
                         onChange={(e) =>
                           updateCell(item.id, "cost", e.target.value)
                         }
-                        placeholder="—"
+                        placeholder="-"
                         className={CELL_INPUT}
                       />
                     </td>
@@ -209,7 +209,7 @@ export default function Page() {
                         onChange={(e) =>
                           updateCell(item.id, "volume", e.target.value)
                         }
-                        placeholder="—"
+                        placeholder="-"
                         className={CELL_INPUT}
                       />
                     </td>
@@ -219,7 +219,7 @@ export default function Page() {
                         onChange={(e) =>
                           updateCell(item.id, "distance", e.target.value)
                         }
-                        placeholder="—"
+                        placeholder="-"
                         className={CELL_INPUT}
                       />
                     </td>

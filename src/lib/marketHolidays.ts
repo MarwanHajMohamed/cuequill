@@ -2,7 +2,7 @@
 //
 // Unlike FOMC meetings (scraped live via /api/fed), NYSE holidays are
 // fixed by rule years in advance, so we compute them locally. That's
-// more reliable and works offline — the calendar surfaces them with the
+// more reliable and works offline - the calendar surfaces them with the
 // same badge treatment as Fed days.
 //
 // Covers full-day closures only (not the early-close half days before
@@ -27,7 +27,7 @@ function lastWeekday(year: number, month: number, weekday: number): Date {
   return new Date(Date.UTC(year, month - 1, day));
 }
 
-// Easter Sunday (Gregorian) — Meeus/Jones/Butcher algorithm.
+// Easter Sunday (Gregorian) - Meeus/Jones/Butcher algorithm.
 function easterSunday(year: number): Date {
   const a = year % 19;
   const b = Math.floor(year / 100);
@@ -76,7 +76,7 @@ export function getYearMarketDays(year: number): Map<string, MarketDay> {
 
   // ── Full-day closures ──────────────────────────────────────────────
   // New Year's Day. NYSE does NOT close the preceding Friday when Jan 1
-  // falls on a Saturday — only shift forward off a Sunday.
+  // falls on a Saturday - only shift forward off a Sunday.
   const newYear = new Date(Date.UTC(year, 0, 1));
   if (newYear.getUTCDay() !== 6) addFull(observed(newYear), "New Year's Day");
 
@@ -85,7 +85,7 @@ export function getYearMarketDays(year: number): Map<string, MarketDay> {
   addFull(addDays(easterSunday(year), -2), "Good Friday");
   addFull(lastWeekday(year, 5, 1), "Memorial Day"); // last Mon May
 
-  // Juneteenth — NYSE holiday from 2022 onward.
+  // Juneteenth - NYSE holiday from 2022 onward.
   if (year >= 2022) {
     addFull(observed(new Date(Date.UTC(year, 5, 19))), "Juneteenth");
   }
@@ -101,7 +101,7 @@ export function getYearMarketDays(year: number): Map<string, MarketDay> {
   // adjacent holiday is observed on this very day).
   const addEarly = (d: Date, name: string) => {
     const dow = d.getUTCDay();
-    if (dow === 0 || dow === 6) return; // weekend — market shut anyway
+    if (dow === 0 || dow === 6) return; // weekend - market shut anyway
     const key = isoOf(d);
     if (out.has(key)) return; // already a full closure
     out.set(key, { name, early: true });

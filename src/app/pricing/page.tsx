@@ -175,7 +175,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "What do I need for IBKR sync?",
-    a: "A Flex Web Service token from Interactive Brokers. Drop it into settings and Cuequill imports every fill each morning — commissions and taxes included.",
+    a: "A Flex Web Service token from Interactive Brokers. Drop it into settings and Cuequill imports every fill each morning - commissions and taxes included.",
   },
   {
     q: "Can I switch between monthly and yearly?",
@@ -191,7 +191,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "Does my trade data train the AI?",
-    a: "No. Quill AI reads your trades to answer your questions in the moment. Your journal is yours — it isn't used to train models.",
+    a: "No. Quill AI reads your trades to answer your questions in the moment. Your journal is yours - it isn't used to train models.",
   },
   {
     q: "Do you offer refunds?",
@@ -203,7 +203,7 @@ const FAQS: { q: string; a: string }[] = [
 
 export default function PricingPage() {
   const [cycle, setCycle] = useState<Cycle>("annual");
-  // When signed in, the global app navbar already renders — so skip the
+  // When signed in, the global app navbar already renders - so skip the
   // marketing header to avoid two stacked navbars.
   const { data: session, status, update } = useSession();
   const signedIn = status === "authenticated";
@@ -212,7 +212,7 @@ export default function PricingPage() {
   // Returning from Stripe Checkout. Read the flag off the URL (rather
   // than useSearchParams, which would force a Suspense boundary). On
   // success, poll a DB-backed endpoint until the webhook has flipped
-  // isPro, THEN refresh the session exactly once — polling the session
+  // isPro, THEN refresh the session exactly once - polling the session
   // itself (repeated update() calls) churns next-auth and flickers the
   // navbar. The `{ isPro: true }` arg makes the jwt callback re-check the
   // DB (the DB value, not the client's, is authoritative).
@@ -236,7 +236,7 @@ export default function PricingPage() {
           return;
         }
       } catch {
-        // transient — fall through and retry
+        // transient - fall through and retry
       }
       if (!cancelled && tries < 10) setTimeout(poll, 2000);
     };
@@ -264,7 +264,7 @@ export default function PricingPage() {
         <div className="fixed top-4 inset-x-0 z-[60] flex justify-center px-4 pointer-events-none">
           <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-4 py-2 text-[13px] text-white/80 backdrop-blur-md shadow-lg">
             <i className="fa-solid fa-circle-info text-white/50" />
-            Checkout cancelled — no charge was made.
+            Checkout cancelled - no charge was made.
           </div>
         </div>
       )}
@@ -280,8 +280,8 @@ export default function PricingPage() {
       />
       {/* Only render the marketing header once we KNOW the visitor is
           logged out. During the brief "loading" state signedIn is also
-          false, which — paired with the app navbar appearing only when
-          authenticated — made the two headers flicker back and forth on
+          false, which - paired with the app navbar appearing only when
+          authenticated - made the two headers flicker back and forth on
           session revalidation. */}
       {status === "unauthenticated" && <SiteHeader />}
 
@@ -478,7 +478,7 @@ function PlanCTA({
     setLoading(false);
   };
 
-  // Starter (free) tier — a link into the app / sign-up.
+  // Starter (free) tier - a link into the app / sign-up.
   if (!plan.featured) {
     return (
       <Link href={signedIn ? "/dashboard" : plan.href} className={base}>
@@ -488,7 +488,7 @@ function PlanCTA({
     );
   }
 
-  // Pro tier, signed out — send to login (they can subscribe after).
+  // Pro tier, signed out - send to login (they can subscribe after).
   if (!signedIn) {
     return (
       <Link href="/login" className={base}>
@@ -498,7 +498,7 @@ function PlanCTA({
     );
   }
 
-  // Pro tier, already subscribed — manage billing.
+  // Pro tier, already subscribed - manage billing.
   if (isPro) {
     return (
       <button
@@ -513,7 +513,7 @@ function PlanCTA({
     );
   }
 
-  // Pro tier, signed in but free — start checkout for the chosen cycle.
+  // Pro tier, signed in but free - start checkout for the chosen cycle.
   return (
     <button
       type="button"
@@ -758,7 +758,7 @@ function CompareCell({ value, accent }: { value: Cell; accent?: boolean }) {
         />
       ) : value === false ? (
         <span className="text-white/20" aria-label="Not included">
-          —
+          -
         </span>
       ) : (
         <span
@@ -783,7 +783,7 @@ function FaqSection() {
             Frequently <span className="italic text-teal-300">asked.</span>
           </h2>
           <p className="mt-5 max-w-xs text-[13px] text-white/55 leading-relaxed">
-            Or write to me directly — I usually reply same day.
+            Or write to me directly - I usually reply same day.
           </p>
           <a
             href="mailto:info@cuequill.com"

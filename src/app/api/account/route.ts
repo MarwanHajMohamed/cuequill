@@ -49,7 +49,7 @@ export async function DELETE(req: NextRequest) {
   }
 
   // Cancel any live Stripe subscription immediately so billing stops. Don't
-  // let a Stripe hiccup block the erasure — log and continue.
+  // let a Stripe hiccup block the erasure - log and continue.
   if (user.stripeSubscriptionId) {
     try {
       await getStripe().subscriptions.cancel(user.stripeSubscriptionId);

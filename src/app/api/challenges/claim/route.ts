@@ -16,7 +16,7 @@ import { chatBetween } from "@/lib/levelRewards";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// POST /api/challenges/claim { id } — award a completed challenge's XP,
+// POST /api/challenges/claim { id } - award a completed challenge's XP,
 // once. Re-verifies completion server-side from real trades so a claim
 // can't be forged, and guards against double-claim.
 export async function POST(req: Request) {
@@ -79,7 +79,7 @@ export async function POST(req: Request) {
 
   // Grant level-up chat rewards. The watermark tracks the highest level
   // already paid out; a value of 0 means "not initialised" (existing
-  // account) — seed it to the pre-claim level so we never retro-pay for
+  // account) - seed it to the pre-claim level so we never retro-pay for
   // levels reached before this system existed, only ones crossed from here.
   const newLevel = levelInfo(user.xp + act).level;
   let watermark = user.chatRewardLevel ?? 0;

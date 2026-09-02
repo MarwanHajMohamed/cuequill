@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://cuequill.com";
 
 // Opens the Stripe Billing Portal so the user can update card details,
-// switch plans, or cancel — Stripe hosts the whole flow.
+// switch plans, or cancel - Stripe hosts the whole flow.
 export async function POST() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {

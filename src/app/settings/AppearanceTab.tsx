@@ -11,7 +11,7 @@ import { AVATAR_FRAMES } from "@/lib/avatarFrames";
 import { ACCENTS } from "@/lib/accents";
 
 // Appearance preferences: theme (device-local) plus the cosmetic pickers
-// (avatar colour/frame, accent pack). Each cosmetic saves immediately —
+// (avatar colour/frame, accent pack). Each cosmetic saves immediately -
 // optimistically to the profile cache, then through the profile API.
 export default function AppearanceTab() {
   const { theme, setTheme } = useTheme();
@@ -86,7 +86,7 @@ export default function AppearanceTab() {
                 onClick={() => !locked && persist({ avatarColor: c.id })}
                 title={locked ? `Unlocks at level ${c.minLevel}` : c.label}
                 aria-label={
-                  locked ? `${c.label} — unlocks at level ${c.minLevel}` : c.label
+                  locked ? `${c.label} - unlocks at level ${c.minLevel}` : c.label
                 }
                 className={`relative w-9 h-9 rounded-full bg-gradient-to-br ${c.gradient} border transition ${
                   locked
@@ -132,7 +132,7 @@ export default function AppearanceTab() {
                 onClick={() => !locked && persist({ avatarFrame: f.id })}
                 title={locked ? `Unlocks at level ${f.minLevel}` : f.label}
                 aria-label={
-                  locked ? `${f.label} — unlocks at level ${f.minLevel}` : f.label
+                  locked ? `${f.label} - unlocks at level ${f.minLevel}` : f.label
                 }
                 className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition ${
                   locked
@@ -160,7 +160,7 @@ export default function AppearanceTab() {
         </div>
       </div>
 
-      {/* Accent pack — recolours the whole app; applies live on click. */}
+      {/* Accent pack - recolours the whole app; applies live on click. */}
       <div className="flex flex-col gap-2">
         <span className="text-[11px] tracking-[0.08em] text-white/45 font-medium">
           Accent colour
@@ -181,7 +181,7 @@ export default function AppearanceTab() {
                 }}
                 title={locked ? `Unlocks at level ${a.minLevel}` : a.label}
                 aria-label={
-                  locked ? `${a.label} — unlocks at level ${a.minLevel}` : a.label
+                  locked ? `${a.label} - unlocks at level ${a.minLevel}` : a.label
                 }
                 className={`relative w-9 h-9 rounded-full bg-gradient-to-br ${a.swatch} border transition ${
                   locked

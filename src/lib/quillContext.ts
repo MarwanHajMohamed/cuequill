@@ -395,13 +395,13 @@ export function buildTradeContext(trades: LeanTrade[]): string {
         } in a row`
       : "none";
   const keyMetrics = [
-    "KEY METRICS (pre-computed over the closed trades in this snapshot —",
+    "KEY METRICS (pre-computed over the closed trades in this snapshot -",
     "treat as authoritative; do NOT recompute these from the row list):",
     `  - Expectancy: ${fmtMoney(core.expectancy)}/trade`,
     `  - Profit factor: ${core.profitFactor == null ? "n/a" : core.profitFactor.toFixed(2)} · Payoff ratio: ${core.payoff == null ? "n/a" : core.payoff.toFixed(2) + "x"}`,
     `  - Best trade: ${fmtMoney(core.best)} · Worst trade: ${fmtMoney(core.worst)}`,
     `  - Max drawdown (closed equity): -$${core.maxDrawdown.toFixed(2)}`,
-    `  - Avg hold: winners ${core.avgHoldWin == null ? "—" : core.avgHoldWin.toFixed(1) + "d"} vs losers ${core.avgHoldLoss == null ? "—" : core.avgHoldLoss.toFixed(1) + "d"}`,
+    `  - Avg hold: winners ${core.avgHoldWin == null ? "-" : core.avgHoldWin.toFixed(1) + "d"} vs losers ${core.avgHoldLoss == null ? "-" : core.avgHoldLoss.toFixed(1) + "d"}`,
     `  - Streaks: current ${streakStr}; longest win ${core.longestWin}, longest loss ${core.longestLoss}`,
   ].join("\n");
 
@@ -445,7 +445,7 @@ export function buildTradeContext(trades: LeanTrade[]): string {
 // trades, so Quill can look up a precise number (e.g. "win rate on NVDA PUTs
 // in July") instead of eyeballing the row list. All fields are optional and
 // AND-combined. Dates match a trade's "bucket day" (exit day for closed,
-// entry day for open) — the same attribution the snapshot uses.
+// entry day for open) - the same attribution the snapshot uses.
 export type QueryStatsFilter = {
   symbol?: string;
   strategy?: string;
@@ -532,13 +532,13 @@ export function buildRulesContext(board: LeanRulesBoard | null): string {
     if (rules.length === 0) continue;
     lines.push(`${sec.title || "Rules"}:`);
     for (const r of rules) {
-      const body = r.body ? ` — ${stripHtml(r.body, 160)}` : "";
+      const body = r.body ? ` - ${stripHtml(r.body, 160)}` : "";
       lines.push(`  - ${r.title || "(untitled)"}${body}`);
     }
   }
   if (lines.length === 0) return "";
   return [
-    "TRADING RULES (the user's own written rules — hold them to these):",
+    "TRADING RULES (the user's own written rules - hold them to these):",
     ...lines,
   ].join("\n");
 }
@@ -563,7 +563,7 @@ export function buildStrategiesContext(
   });
   return [
     "THE USER'S STRATEGIES (documented setups + how they've actually",
-    "performed — reference by name; use the performance line to pinpoint",
+    "performed - reference by name; use the performance line to pinpoint",
     "what's working and where each setup leaks):",
     ...rows,
   ].join("\n");
@@ -586,7 +586,7 @@ export function buildGoalsContext(
   }));
 
   const fmt = (v: number | null, m: GoalMetric): string => {
-    if (v == null) return "—";
+    if (v == null) return "-";
     const unit = metricUnit(m);
     if (unit === "currency")
       return `${v >= 0 ? "+" : "-"}$${Math.abs(v).toFixed(2)}`;
@@ -612,7 +612,7 @@ export function buildGoalsContext(
     })`;
   });
   return [
-    "GOALS (the user's targets — track progress and call out where they stand):",
+    "GOALS (the user's targets - track progress and call out where they stand):",
     ...rows,
   ].join("\n");
 }

@@ -31,7 +31,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 // GET /api/dashboard/insight[?refresh=1]
-// Returns the user's "Insight of the day" for the dashboard Quill widget —
+// Returns the user's "Insight of the day" for the dashboard Quill widget -
 // a short, specific AI observation from their own trades/rules/goals.
 // Generated once per LOCAL day and cached on the user doc; ?refresh=1
 // forces a fresh one (counted against the same Quill fair-use budget).
@@ -52,7 +52,7 @@ You are QuillAI, the trading-journal assistant. Write ONE short "insight of
 the day" for the trader's dashboard, drawn strictly from the snapshot below.
 
 Rules:
-- 1–2 sentences, under ~45 words. Plain text only — no markdown, no lists,
+- 1–2 sentences, under ~45 words. Plain text only - no markdown, no lists,
   no headings, no preamble like "Here's your insight".
 - Be specific and grounded: cite a real number, symbol, strategy, streak,
   rule, or goal from the data. Never invent trades or stats.
@@ -60,7 +60,7 @@ Rules:
   a strategy or symbol that's over/under-performing, a rule they broke, or
   progress toward a goal. Prefer something actionable.
 - Encouraging but honest. If they're doing well, say what's working.
-- This is journaling insight, NOT financial advice — no predictions or
+- This is journaling insight, NOT financial advice - no predictions or
   trade recommendations.
 - If there aren't enough trades yet to say anything meaningful, give a brief
   friendly nudge to log more trades so you can spot patterns.
@@ -174,7 +174,7 @@ export async function GET(req: NextRequest) {
   // so the model steers clear of the same angle two days running.
   const recent = (user.dashInsightRecent ?? []).slice(0, 14);
   const recentBlock = recent.length
-    ? `\n\nRecent insights you've given this trader — do NOT repeat these or ` +
+    ? `\n\nRecent insights you've given this trader - do NOT repeat these or ` +
       `say anything close in meaning (pick a different angle):\n` +
       recent.map((r, i) => `${i + 1}. ${r}`).join("\n")
     : "";
@@ -233,7 +233,7 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch {
-    /* best-effort persistence — still return the fresh insight */
+    /* best-effort persistence - still return the fresh insight */
   }
 
   return NextResponse.json({ insight, generatedAt: now, cached: false });

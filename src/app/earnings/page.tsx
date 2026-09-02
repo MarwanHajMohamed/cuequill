@@ -178,7 +178,7 @@ function EarningsPage() {
         </div>
 
         <div className="grid lg:grid-cols-[1.6fr_1fr] gap-6 items-start">
-          {/* Calendar — reuses AnimatedCalendar so it gets the same swipe
+          {/* Calendar - reuses AnimatedCalendar so it gets the same swipe
               gestures and month-change animation as the trade calendar. */}
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-5">
             <AnimatedCalendar
@@ -258,7 +258,7 @@ function EarningsPage() {
                         <div className="text-[13px] tabular-nums text-white/75">
                           {e.epsEstimate != null
                             ? `$${e.epsEstimate.toFixed(2)}`
-                            : "—"}
+                            : "-"}
                         </div>
                       </div>
                     </motion.div>

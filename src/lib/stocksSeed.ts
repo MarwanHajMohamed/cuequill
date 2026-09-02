@@ -1,7 +1,7 @@
 // Shared types + default seed for the per-user Stocks/ETFs reference
 // table. Lives in lib (not the Mongoose model) so client code can import
 // the type and the seed without dragging Mongoose into the browser
-// bundle — same split as strategyConstants.
+// bundle - same split as strategyConstants.
 
 export type StockRow = {
   // Stable client/server id so rows keep their identity across edits

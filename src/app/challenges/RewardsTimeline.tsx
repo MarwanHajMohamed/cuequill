@@ -10,7 +10,7 @@ import {
 } from "@/lib/levelRewards";
 import { useScrollLock } from "@/hooks/useScrollLock";
 
-const ROW_H = 118; // px per level — equal so the spine fill lines up with nodes
+const ROW_H = 118; // px per level - equal so the spine fill lines up with nodes
 
 // The rewards ladder as a vertical timeline: a progress-bar spine down the
 // middle (filled to the user's current level), alternating cards left/right,
@@ -50,7 +50,7 @@ export default function RewardsTimeline({
         className="relative"
         style={{ height: levels.length * ROW_H }}
       >
-        {/* Spine track — from the first node centre to the last. */}
+        {/* Spine track - from the first node centre to the last. */}
         <div
           className="absolute left-6 md:left-1/2 -translate-x-1/2 w-[3px] rounded-full bg-white/10"
           style={{ top: spineTop, height: spineHeight }}
@@ -256,7 +256,7 @@ function RewardsModal({
         <div className="p-3 flex flex-col gap-1">
           {rewards.length === 0 ? (
             <div className="px-2 py-6 text-center text-[12.5px] text-white/45">
-              Your starting level — no unlocks here.
+              Your starting level - no unlocks here.
             </div>
           ) : (
             rewards.map((r, i) => (

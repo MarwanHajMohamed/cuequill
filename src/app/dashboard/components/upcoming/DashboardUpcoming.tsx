@@ -8,7 +8,7 @@ import { useWatchlist } from "@/hooks/useWatchlist";
 import { useEarnings } from "@/hooks/useEarnings";
 import { CARD_CLASS_BASE } from "../DashboardCard";
 
-// "Upcoming events" — the next market dates a discretionary options
+// "Upcoming events" - the next market dates a discretionary options
 // trader wants on their radar: FOMC (Fed) days and earnings reports for
 // the tickers on their watchlist. Purely forward-looking; sorted by how
 // soon each one lands and capped to the closest handful.
@@ -135,7 +135,7 @@ export default function DashboardUpcoming() {
 
       {/* List bleeds to the card's left/right edges (negative x-margins
           cancel the card padding) with a divider under the title, keeping
-          the card's bottom padding. Never scrolls — rows that don't fit are
+          the card's bottom padding. Never scrolls - rows that don't fit are
           hidden whole by the layout effect above; overflow-hidden is just a
           safety clip. */}
       <div

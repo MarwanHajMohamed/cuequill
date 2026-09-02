@@ -179,7 +179,7 @@ export default function Filters({
         </div>
       </div>
 
-      {/* TAG — only shown once the user has tagged at least one trade. */}
+      {/* TAG - only shown once the user has tagged at least one trade. */}
       {tags.length > 1 && (
         <>
           <div className="h-[1px] bg-white/10" />
@@ -204,7 +204,7 @@ export default function Filters({
 
       <div className="h-[1px] bg-white/10" />
 
-      {/* RETURN % — realized-return window (net P/L as a % of premium),
+      {/* RETURN % - realized-return window (net P/L as a % of premium),
           a two-thumb range slider. Covers losers (negative) and winners;
           each bound reads "Any" until moved off its extreme. */}
       {(() => {
@@ -242,7 +242,7 @@ export default function Filters({
                 className="absolute top-1/2 -translate-y-1/2 h-1 rounded-full bg-teal-400/70"
                 style={{ left: `${loPct}%`, right: `${100 - hiPct}%` }}
               />
-              {/* Min thumb — raised above the max input when it's in the
+              {/* Min thumb - raised above the max input when it's in the
                   right half so overlapping thumbs stay grabbable. */}
               <input
                 type="range"

@@ -7,7 +7,7 @@ import { User } from "@/lib/models/User";
 export const runtime = "nodejs";
 
 // Sensible starting watchlist for first-time visitors (single-name stocks
-// that actually report earnings — no ETFs). Returned but not persisted
+// that actually report earnings - no ETFs). Returned but not persisted
 // until the user saves an edit.
 const DEFAULT_WATCHLIST = [
   "AAPL",

@@ -1,7 +1,7 @@
 import React from "react";
 import { Skeleton } from "@/components/Loaders";
 
-// Suspense fallback for /challenges — mirrors the page shell (header, level
+// Suspense fallback for /challenges - mirrors the page shell (header, level
 // summary, then category sections of glass cards) so there's no blank flash
 // before the bundle/data resolves.
 export default function Loading() {

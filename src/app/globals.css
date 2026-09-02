@@ -86,7 +86,7 @@
    The whole UI is painted with teal-* utilities (+ emerald-* as the
    companion in gradients), which Tailwind compiles to var(--color-teal-*)
    / var(--color-emerald-*). Selecting an accent sets data-accent on <html>
-   and we remap those variables to the pack's hue — recolouring buttons,
+   and we remap those variables to the pack's hue - recolouring buttons,
    links, active states, rings and chips app-wide with no per-callsite work.
 
    Two contexts per pack, mirroring the light theme's own teal overrides:
@@ -96,10 +96,10 @@
      at their saturated dark-mode values exactly as the default does.
    Each pack also tints the surfaces: --background (and the matching
    --bg-rgb used by the chat fades) plus the solid --surface / --surface-2
-   (modals, dropdowns, sheets, cards) are nudged toward the accent hue —
-   subtly in dark and as a pale wash in light — so panels carry the tint too,
+   (modals, dropdowns, sheets, cards) are nudged toward the accent hue -
+   subtly in dark and as a pale wash in light - so panels carry the tint too,
    not just the translucent cards layered over the background. `teal` is the
-   default and needs no block — it keeps the neutral base surfaces. */
+   default and needs no block - it keeps the neutral base surfaces. */
 
 /* Violet */
 :root[data-accent="violet"] {
@@ -373,10 +373,10 @@
    behind it. Three layers stacked:
    - the element itself: a faint translucent fill + backdrop blur/saturate
      (the "frost"), a top specular inset highlight, and a soft drop shadow;
-   - ::before — a 1px gradient border RING (masked so only the edge shows)
+   - ::before - a 1px gradient border RING (masked so only the edge shows)
      that runs bright→clear→cool-glint from top-left to bottom-right, reading
      as light bending around the rim (the refraction);
-   - ::after — a broad diagonal glare across the surface, like the sheen on
+   - ::after - a broad diagonal glare across the surface, like the sheen on
      curved glass.
    Colours are literal (not the white token that the light theme flips) with a
    dedicated light-theme variant below. */
@@ -704,7 +704,7 @@ body {
 
 /* Chat message list: a thin, theme-aware custom scrollbar. On WebKit the
    track is inset from the bottom (margin-bottom) so the thumb stops above
-   the translucent fade that blends the conversation into the composer —
+   the translucent fade that blends the conversation into the composer -
    it never bleeds into the blend. Colours use --fg-rgb so the thumb is
    visible in both light and dark themes. */
 /* .thin-scroll is the shared slim scrollbar look; .chat-scroll is the same
@@ -785,7 +785,7 @@ body {
 }
 
 /* Let the main content containers fill the width right up to the edge on
-   desktop, so only the left offset changes with the sidebar — collapsing
+   desktop, so only the left offset changes with the sidebar - collapsing
    or expanding it never re-caps the content and pulls the right edge in.
    Targets the shared 1500px content cap used across pages (trades, chat,
    strategies, rules, stocks, affirmations, calendar, …). Unlayered so it

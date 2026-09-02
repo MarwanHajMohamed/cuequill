@@ -16,7 +16,7 @@ import { availableTitles, type TrophyStats } from "@/lib/trophies";
 import { normalizeAccent } from "@/lib/accents";
 import { normalizeCardSkin } from "@/lib/cardSkins";
 
-// GET /api/user/profile — display preferences + read-only account info.
+// GET /api/user/profile - display preferences + read-only account info.
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
@@ -54,7 +54,7 @@ export async function GET() {
     proManualOverride: !!user.proManualOverride,
     stripeCurrentPeriodEnd: user.stripeCurrentPeriodEnd ?? null,
     stripeCancelAtPeriodEnd: !!user.stripeCancelAtPeriodEnd,
-    // Derive "member since" from the ObjectId — no schema change needed.
+    // Derive "member since" from the ObjectId - no schema change needed.
     memberSince: new mongoose.Types.ObjectId(session.user.id)
       .getTimestamp()
       .toISOString(),
@@ -153,7 +153,7 @@ export async function PATCH(req: Request) {
       );
     }
     // Cost factor 12 matches OWASP's 2023 guidance for bcrypt on
-    // modern hardware — meaningfully harder to brute-force offline
+    // modern hardware - meaningfully harder to brute-force offline
     // than the old default of 10.
     user.password = await bcrypt.hash(body.newPassword, 12);
   }

@@ -82,7 +82,7 @@ function SignupInner() {
 
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center px-5">
-      {/* Aurora — same treatment as the login card. */}
+      {/* Aurora - same treatment as the login card. */}
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0 -z-10"

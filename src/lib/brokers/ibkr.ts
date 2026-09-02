@@ -107,7 +107,7 @@ async function fetchIbkrCsv(token: string, queryId: string): Promise<string> {
     // per IBKR Flex docs:
     //   1001               - statement can't be generated right now
     //                        (IBKR busy OR the query was requested too
-    //                        recently — Flex throttles frequent syncs)
+    //                        recently - Flex throttles frequent syncs)
     //   1004               - statement still incomplete on IBKR's side
     //   1018 / 1019 / 1020 - statement throttled, retry after delay
     //   1003 / 1011        - invalid or expired token

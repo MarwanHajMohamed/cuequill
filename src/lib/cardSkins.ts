@@ -1,4 +1,4 @@
-// Share-card skins — the palette a share image (trade / month / achievement)
+// Share-card skins - the palette a share image (trade / month / achievement)
 // is painted with. Cards are captured to PNG, so every value here is a
 // literal colour (never a Tailwind theme var) and the exported image looks
 // identical regardless of the viewer's app theme.

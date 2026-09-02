@@ -233,7 +233,7 @@ function AffirmationsPage() {
               No affirmations yet
             </div>
             <p className="mt-1.5 text-[13px] text-white/45 max-w-xs mx-auto leading-relaxed">
-              Add the lines you want to read before you trade — rules,
+              Add the lines you want to read before you trade - rules,
               reminders, or mantras that keep you disciplined.
             </p>
           </div>

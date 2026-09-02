@@ -33,7 +33,7 @@ export default function TradeModal({
   // First mount uses the default (slide-up) entrance so the View
   // card feels like it's arriving from wherever the user clicked.
   // After a return trip from Edit, the entrance switches to
-  // slide-from-top so it reads as "going back one step" — same
+  // slide-from-top so it reads as "going back one step" - same
   // metaphor as a nav stack pop.
   const [viewEnterFrom, setViewEnterFrom] = useState<"bottom" | "top">(
     "bottom",

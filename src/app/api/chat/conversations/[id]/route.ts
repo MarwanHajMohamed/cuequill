@@ -76,7 +76,7 @@ export async function PUT(
   await connectDb();
   // Keep the title in sync: once there's a real first message, name the
   // thread after it (unless the user set a custom title we don't clobber
-  // — we only auto-title while it's still the default "New chat").
+  // - we only auto-title while it's still the default "New chat").
   const existing = await Conversation.findOne({
     _id: id,
     userId: scope.userId,

@@ -288,10 +288,10 @@ function MetricGoalCard({ g }: { g: Goal }) {
           <span className="text-white/70 tabular-nums">
             {g.metric && g.current != null
               ? formatValue(g.metric, g.current)
-              : "—"}
+              : "-"}
             <span className="text-white/35">
               {" "}
-              / {g.metric && g.target != null ? formatValue(g.metric, g.target) : "—"}
+              / {g.metric && g.target != null ? formatValue(g.metric, g.target) : "-"}
             </span>
           </span>
           <span className="text-white/45 tabular-nums">{pct}%</span>

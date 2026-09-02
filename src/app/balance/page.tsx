@@ -111,13 +111,13 @@ function Page() {
   const seriesLabel = mode === "adjusted" ? "Trading P/L" : "Balance";
   const hasFlows = flows.length > 0;
 
-  // The point under the cursor, if any — drives the headline balance and the
+  // The point under the cursor, if any - drives the headline balance and the
   // "not reached yet" dimming of everything after it.
   const hoverPoint =
     hoverIndex != null ? (filtered[hoverIndex] ?? null) : null;
 
   // Split the active series into "past" (up to the cursor, full strength) and
-  // "future" (after the cursor, dimmed — "not reached yet"). They share the
+  // "future" (after the cursor, dimmed - "not reached yet"). They share the
   // hovered point so the line stays continuous. With no hover, everything is
   // "past" and the chart looks normal.
   const chartData = useMemo(
@@ -170,7 +170,7 @@ function Page() {
         if (!res.ok) throw new Error(data.error ?? "Failed to save");
         setAmount("");
         setStatus(
-          `Reconciled — ${delta >= 0 ? "+" : "−"}${fmtMoneyFull(
+          `Reconciled - ${delta >= 0 ? "+" : "−"}${fmtMoneyFull(
             Math.abs(delta),
           )} adjustment recorded.`,
         );
@@ -372,7 +372,7 @@ function Page() {
                 <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.02] p-4 md:p-5 h-[280px] md:h-[340px]">
                   {filtered.length < 2 ? (
                     <div className="h-full flex items-center justify-center text-[13px] text-white/40 text-center">
-                      Not enough activity in this range yet — log a deposit or
+                      Not enough activity in this range yet - log a deposit or
                       close a trade, or widen the range.
                     </div>
                   ) : (
@@ -460,7 +460,7 @@ function Page() {
                           domain={["auto", "auto"]}
                           tickFormatter={(v: number) => fmtMoneySignedCompact(v)}
                         />
-                        {/* Reached so far — full strength. */}
+                        {/* Reached so far - full strength. */}
                         <Area
                           type="monotone"
                           dataKey="past"
@@ -470,7 +470,7 @@ function Page() {
                           connectNulls={false}
                           isAnimationActive={false}
                         />
-                        {/* Not reached yet — dimmed. */}
+                        {/* Not reached yet - dimmed. */}
                         <Area
                           type="monotone"
                           dataKey="future"
@@ -563,7 +563,7 @@ function Page() {
               </>
             )}
 
-            {/* Log deposit / withdrawal — always available */}
+            {/* Log deposit / withdrawal - always available */}
             <div className="mt-8">
               <h2 className="text-[12px] font-medium text-white/40 mb-3">
                 {txType === "ADJUST"
@@ -651,7 +651,7 @@ function Page() {
                 <p className="mt-2.5 text-[11.5px] text-white/45 leading-relaxed max-w-lg">
                   Enter the balance your broker shows as of that date. We&apos;ll
                   record the difference vs. your tracked balance as an adjustment
-                  — covering fees, interest, or anything the journal missed.
+                  - covering fees, interest, or anything the journal missed.
                 </p>
               )}
             </div>

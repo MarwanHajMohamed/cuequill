@@ -9,10 +9,10 @@ import { useIsPro } from "@/hooks/useIsPro";
 // see a flash of the lock. For free users we render the same children
 // behind a blur with a centered upgrade card linking to /pricing.
 //
-//   variant="overlay" (default) — children remain mounted, blurred and
+//   variant="overlay" (default) - children remain mounted, blurred and
 //     pointer-events-none. Use when the surface is mostly self-contained
 //     and looks fine frozen behind the prompt (chat page, rules, stats).
-//   variant="inline" — same overlay but as a relatively-positioned
+//   variant="inline" - same overlay but as a relatively-positioned
 //     block instead of absolute. For dropping into a normal flow row
 //     such as a settings section.
 //

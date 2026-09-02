@@ -164,7 +164,7 @@ export default function DayTradesModal({
               </div>
             ) : opens > 0 ? (
               <div className="mt-3 text-[13px] text-white/55">
-                {opens} open {opens === 1 ? "position" : "positions"} — no closes
+                {opens} open {opens === 1 ? "position" : "positions"} - no closes
                 yet
               </div>
             ) : null}

@@ -16,7 +16,7 @@ export const EMPTY_STREAK: AffirmationStreak = {
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-// Progressive XP milestones for streak length — the longer the streak, the
+// Progressive XP milestones for streak length - the longer the streak, the
 // bigger the payout. Awarded once each, keyed off the best-ever streak (see
 // streakXpBetween), so they can't be farmed by breaking and rebuilding.
 export const STREAK_XP: { days: number; xp: number }[] = [

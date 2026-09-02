@@ -135,7 +135,7 @@ const AnimatedCalendar = forwardRef<
   };
 
   // Drill zoom: when the view changes (month↔year↔decade), the new grid
-  // eases in from a scale — out (bigger → settle) when zooming to a
+  // eases in from a scale - out (bigger → settle) when zooming to a
   // broader view, in (smaller → settle) when drilling down. useLayoutEffect
   // hides it before paint so there's no flash.
   useLayoutEffect(() => {

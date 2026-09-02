@@ -18,12 +18,12 @@ const isoDay = (d: string | Date) =>
 // The account balance as a derived running total: manual deposits (+) and
 // withdrawals (−), plus realized net P/L from every closed (real) trade,
 // accumulated in date order. Because it recomputes from all events each
-// time, a back-dated deposit correctly shifts every later day — including
-// today's balance — without touching the trades.
+// time, a back-dated deposit correctly shifts every later day - including
+// today's balance - without touching the trades.
 export function useBalanceTimeline() {
   const { data: session } = useSession();
   const userId = session?.user?.id;
-  // Real money only — simulated trades never affect the account balance.
+  // Real money only - simulated trades never affect the account balance.
   const { data: trades = [], isLoading: loadingTrades } = useTrades(
     userId,
     false,
@@ -39,7 +39,7 @@ export function useBalanceTimeline() {
     for (const t of transactions) {
       const day = isoDay(t.date);
       // DEPOSIT adds, WITHDRAW subtracts, ADJUST (reconciliation) is already a
-      // signed correction — apply it as-is.
+      // signed correction - apply it as-is.
       const signed =
         t.type === "DEPOSIT"
           ? t.amount
@@ -50,7 +50,7 @@ export function useBalanceTimeline() {
     }
 
     for (const tr of trades) {
-      if (tr.status === "OPEN") continue; // unrealized — not in balance yet
+      if (tr.status === "OPEN") continue; // unrealized - not in balance yet
       const day = isoDay(tr.dateClosed ?? tr.expiryDate ?? tr.dateBought);
       tradeByDay.set(day, (tradeByDay.get(day) ?? 0) + tradeNetPL(tr));
     }

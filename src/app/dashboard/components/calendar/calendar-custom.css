@@ -38,7 +38,7 @@
   color: rgb(var(--fg-rgb) / 0.6);
   min-width: 32px;
 }
-/* Highlight nav arrows on hover / keyboard focus only — not the sticky
+/* Highlight nav arrows on hover / keyboard focus only - not the sticky
    :focus a mouse click leaves behind (which kept the background lit until
    the button blurred). */
 .react-calendar .react-calendar__navigation button:enabled:hover,
@@ -47,7 +47,7 @@
   color: rgb(var(--fg-rgb));
 }
 /* Cancel react-calendar's default light (#e6e6e6) focus background left on
-   the arrow after a mouse click — but only for mouse focus, so keyboard
+   the arrow after a mouse click - but only for mouse focus, so keyboard
    focus-visible keeps its highlight above. */
 .react-calendar .react-calendar__navigation button:focus:not(:focus-visible) {
   background-color: transparent !important;
@@ -75,7 +75,7 @@
   position: relative;
   background: transparent;
   color: rgb(var(--fg-rgb));
-  /* min-height (not a fixed height) so a cell can grow to fit its content —
+  /* min-height (not a fixed height) so a cell can grow to fit its content -
      e.g. a day that has both trades and an event pill (Fed / holiday). The
      grid row stretches to the tallest cell, keeping the week aligned. */
   min-height: 96px;
@@ -170,7 +170,7 @@
   min-height: 66px;
   padding: 12px 0;
 }
-/* Current month / year — same blue ring as the day-grid "today". High
+/* Current month / year - same blue ring as the day-grid "today". High
    specificity so the P/L tints (which only set background) don't drop the
    blue border. */
 .react-calendar.custom-calendar

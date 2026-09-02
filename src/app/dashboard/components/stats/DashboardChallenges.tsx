@@ -7,12 +7,12 @@ import { CARD_CLASS_BASE } from "../DashboardCard";
 
 // Compact challenges/rewards summary: level + XP progress, claimable count,
 // and the challenges nearest to completion. The list fills whatever height
-// the widget has — grow it to see more challenges, shrink it to see fewer —
+// the widget has - grow it to see more challenges, shrink it to see fewer -
 // never scrolling and never showing a partial row. Links to /challenges.
 export default function DashboardChallenges() {
   const { data, isLoading } = useChallenges();
 
-  // Closest unclaimed, unlocked, not-yet-complete challenges — the "next up"
+  // Closest unclaimed, unlocked, not-yet-complete challenges - the "next up"
   // list, sorted by how close each is. We render the whole list and hide the
   // rows that don't fit below (see the layout effect), so the widget always
   // uses all its space without scrolling.

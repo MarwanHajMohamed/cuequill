@@ -1,7 +1,7 @@
 // Preset accent colours for the account avatar. Keyed by a short id we
 // persist on the user; the gradient classes are shared between the nav
 // avatar and the settings picker so they always match. Some presets are
-// rewards — locked until the account reaches `minLevel` (earned via
+// rewards - locked until the account reaches `minLevel` (earned via
 // challenge XP).
 //
 // The teal/emerald-based presets (teal, aurora) use literal-hex Tailwind
@@ -20,7 +20,7 @@ export const AVATAR_COLORS: {
   { id: "rose", label: "Rose", gradient: "from-rose-500/80 to-pink-600/80", minLevel: 1 },
   { id: "amber", label: "Amber", gradient: "from-amber-500/80 to-orange-600/80", minLevel: 1 },
   { id: "slate", label: "Slate", gradient: "from-slate-500/80 to-slate-700/80", minLevel: 1 },
-  // Rewards — unlock levels spread across the ladder (one reward per level).
+  // Rewards - unlock levels spread across the ladder (one reward per level).
   { id: "gold", label: "Gold", gradient: "from-amber-300/90 to-yellow-600/90", minLevel: 2 },
   { id: "crimson", label: "Crimson", gradient: "from-red-500/85 to-rose-700/85", minLevel: 7 },
   { id: "aurora", label: "Aurora", gradient: "from-[#34d399]/80 via-[#2dd4bf]/80 to-indigo-500/80", minLevel: 13 },

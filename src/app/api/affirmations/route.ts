@@ -11,7 +11,7 @@ const MAX_LEN = 280;
 
 // Normalize an incoming list: trim, drop empties, cap length, dedupe
 // (case-insensitive), and cap the count. Affirmations are free text, so
-// no character-set restriction — just guardrails.
+// no character-set restriction - just guardrails.
 function clean(items: unknown): string[] {
   if (!Array.isArray(items)) return [];
   const seen = new Set<string>();
@@ -46,7 +46,7 @@ export async function GET() {
         lastDate: string;
       };
     }>();
-  // Empty by default — new accounts start with no affirmations.
+  // Empty by default - new accounts start with no affirmations.
   return NextResponse.json({
     affirmations: user?.affirmations ?? [],
     read: user?.affirmationsRead ?? { date: "", texts: [] },

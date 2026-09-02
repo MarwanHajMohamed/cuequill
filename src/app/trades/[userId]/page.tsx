@@ -79,7 +79,7 @@ const COLUMN_LABELS: Record<TradeColumnKey, string> = {
   notes: "Notes",
 };
 
-// Columns whose values are numbers — right-aligned with tabular figures,
+// Columns whose values are numbers - right-aligned with tabular figures,
 // and sorted numerically.
 const NUMERIC_COLUMNS = new Set<TradeColumnKey>([
   "netpl",
@@ -124,7 +124,7 @@ function tradeRMultiple(t: Trade): number | null {
 
 // Comparable value for a column when sorting. Returns `{ missing }` so
 // the comparator can push nullish rows to the end regardless of sort
-// direction — using a sentinel like `-Infinity` only stays at the
+// direction - using a sentinel like `-Infinity` only stays at the
 // bottom when the column is desc, so ascending clicks were surfacing
 // every open trade at the top.
 type SortValue = { missing: boolean; value: number | string };
@@ -274,7 +274,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
   // Selection mode: shows a checkbox column and turns row clicks into
   // toggles instead of navigation. Rows can only be merged if they
   // share the same contract (symbol/side/strike/expiry-day), the same
-  // open/closed bucket, and the same simulated flag — that's the same
+  // open/closed bucket, and the same simulated flag - that's the same
   // validation the server enforces.
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -406,7 +406,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
 
     // Burst particles around the merged row, then swap the cache CLIENT-SIDE:
     // remove the originals and drop in a locally-computed merged row. No
-    // waiting on the network — the server merge runs in the background below.
+    // waiting on the network - the server merge runs in the background below.
     if (burst) setParticleBurst({ ...burst, key: Date.now() });
     const optimistic = computeMergedTrade(selectedTrades);
     // Keep the merged row where the merge happened: drop the extra selected
@@ -451,7 +451,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
         }
         // Swap the optimistic temp row for the real merged doc IN PLACE, so
         // the row keeps its position instead of jumping when a refetch would
-        // reorder it. No invalidate — the optimistic row already mirrors the
+        // reorder it. No invalidate - the optimistic row already mirrors the
         // server's math, so only the id/timestamps change.
         if (realRow?._id) {
           queryClient.setQueryData<Trade[]>(key, (prev) =>
@@ -826,7 +826,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
       case "expiryDate":
         return new Date(trade.expiryDate).toLocaleDateString("en-GB");
       case "dateClosed":
-        // Open trades have no close date — ignore any stale value on the row.
+        // Open trades have no close date - ignore any stale value on the row.
         return isClosed && trade.dateClosed
           ? new Date(trade.dateClosed).toLocaleDateString("en-GB")
           : "-";
@@ -1110,7 +1110,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                   <table className="border-collapse table-auto min-w-full">
                     <thead>
                       <tr>
-                        {/* Fixed quick-edit column — sits outside the
+                        {/* Fixed quick-edit column - sits outside the
                             user-customisable column set so it can't be
                             reordered or hidden. */}
                         <th
@@ -1166,7 +1166,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                                 dragKey.current = null;
                                 setDragOverKey(null);
                                 setDraggingKey(null);
-                                // A drag just fired — swallow the click that
+                                // A drag just fired - swallow the click that
                                 // some browsers dispatch right after.
                                 suppressSortClick.current = true;
                                 setTimeout(() => {
@@ -1300,7 +1300,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                                 router.push(`/trades/${userId}/${trade._id}`);
                               }}
                             >
-                              {/* Pencil icon — quick-edit modal. Stops
+                              {/* Pencil icon - quick-edit modal. Stops
                                 propagation so the row's row-click
                                 navigation doesn't fire. */}
                               <td className="pl-2 md:pl-3 pr-0 py-1 w-7 align-middle">
@@ -1355,7 +1355,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                                   {renderCell(key, trade)}
                                 </td>
                               ))}
-                              {/* Hover actions — favourite + delete (with an
+                              {/* Hover actions - favourite + delete (with an
                                   inline confirm). Hidden until the row is
                                   hovered; stops propagation so the row-click
                                   navigation doesn't fire. */}

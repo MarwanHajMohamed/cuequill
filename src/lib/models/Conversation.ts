@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document } from "mongoose";
 
 // A single Quill AI conversation thread. Unlike the earlier one-doc-per-
-// user ChatConversation, a user can have many of these — the chat page
+// user ChatConversation, a user can have many of these - the chat page
 // lists them as history and lets the user switch / start new ones.
 export type ChatRole = "user" | "model";
 
@@ -28,7 +28,7 @@ const MessageSchema = new Schema<StoredChatMessage>(
 
 const ConversationSchema = new Schema<IConversation>(
   {
-    // Indexed (NOT unique) — many conversations per user, listed newest
+    // Indexed (NOT unique) - many conversations per user, listed newest
     // first by updatedAt.
     userId: {
       type: Schema.Types.ObjectId,

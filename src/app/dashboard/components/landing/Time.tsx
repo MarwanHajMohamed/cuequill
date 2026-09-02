@@ -207,7 +207,7 @@ export default function Time() {
           transition={{ duration: 0.4, delay: 0.06, ease: "easeOut" }}
           className="flex flex-col gap-1 md:items-end"
         >
-          {/* Big clock — user's own timezone, labelled with their
+          {/* Big clock - user's own timezone, labelled with their
               tz's short name (BST / PDT / GMT+1 / …). */}
           <div className="flex items-baseline gap-2">
             <div className="text-2xl md:text-3xl font-light tracking-tight tabular-nums text-white">

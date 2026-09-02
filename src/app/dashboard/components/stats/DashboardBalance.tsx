@@ -14,7 +14,7 @@ import {
 
 // Account-balance summary: the running total (deposits/withdrawals +
 // realized trade P/L), its change over the tracked window, and a
-// sparkline — linking through to the full /balance page.
+// sparkline - linking through to the full /balance page.
 export default function DashboardBalance() {
   const { points, loading, hasData } = useBalanceTimeline();
   // Index of the point under the cursor (null = not hovering).
@@ -31,7 +31,7 @@ export default function DashboardBalance() {
   }, [points]);
 
   // Split into "past" (up to the cursor, full) and "future" (after it,
-  // dimmed — "not reached yet"); they share the hovered point so the line
+  // dimmed - "not reached yet"); they share the hovered point so the line
   // stays continuous. No hover → everything is "past".
   const chartData = useMemo(
     () =>
@@ -147,7 +147,7 @@ export default function DashboardBalance() {
                   <stop offset="100%" stopColor={chartColor} stopOpacity={0} />
                 </linearGradient>
               </defs>
-              {/* Reached so far — full strength. */}
+              {/* Reached so far - full strength. */}
               <Area
                 type="monotone"
                 dataKey="past"
@@ -157,7 +157,7 @@ export default function DashboardBalance() {
                 connectNulls={false}
                 isAnimationActive={false}
               />
-              {/* Not reached yet — dimmed. */}
+              {/* Not reached yet - dimmed. */}
               <Area
                 type="monotone"
                 dataKey="future"

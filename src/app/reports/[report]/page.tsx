@@ -61,7 +61,7 @@ function Page() {
   const { data: session } = useSession();
   const userId = session?.user?.id;
   // Reports follow the app's global simulated toggle: in simulated mode
-  // they cover simulated trades, otherwise real trades — never mixed.
+  // they cover simulated trades, otherwise real trades - never mixed.
   const [simulated, setSimulated] = useState(false);
   useEffect(() => {
     setSimulated(localStorage.getItem("simulated") === "true");
@@ -138,7 +138,7 @@ function Page() {
 
   return (
     <div className="w-full flex justify-center">
-      {/* Natural page flow — the window scrolls. The heading and filters
+      {/* Natural page flow - the window scrolls. The heading and filters
           scroll away; only the table's column header pins to the top.
           Bottom padding clears the mobile tab bar. */}
       <div className="w-full px-5 md:px-8 pt-24 md:pt-8 pb-24 md:pb-16">
@@ -170,7 +170,7 @@ function Page() {
           </button>
         </div>
 
-        {/* Filters — a sticky bar that pins to the top on scroll. Collapsing
+        {/* Filters - a sticky bar that pins to the top on scroll. Collapsing
             animates the inactive ranges away toward the selected one; the
             chevron on the right points left to close, right to open. */}
         <div
@@ -278,7 +278,7 @@ function Page() {
           </span>
         </div>
 
-        {/* Report body — flows below; the window scrolls. Horizontal scroll
+        {/* Report body - flows below; the window scrolls. Horizontal scroll
             stays inside the table, and a JS-synced floating clone keeps the
             column header pinned beneath the sticky filters. */}
         {isLoading ? (
@@ -324,13 +324,13 @@ function fmtUsd(n: number): string {
 // Display string for a cell, adding $ / % where the column calls for it.
 // The underlying data (and the CSV export) stay raw numbers.
 function displayCell(col: string, cell: string | number): string {
-  if (typeof cell !== "number") return cell === "" ? "—" : cell;
+  if (typeof cell !== "number") return cell === "" ? "-" : cell;
   if (col === "Win rate") return `${cell.toFixed(2)}%`;
   if (CURRENCY_COLS.has(col)) return fmtUsd(cell);
   return String(cell);
 }
 
-// Header cells for a report table — shared by the real header and the
+// Header cells for a report table - shared by the real header and the
 // floating clone so they render identically.
 function HeaderRow({
   columns,
@@ -591,7 +591,7 @@ function ReportChart({ table }: { table: ReportTable }) {
               color: "var(--foreground)",
             }}
             // Recharts colours the item/label text inline (black by default),
-            // overriding contentStyle — set them explicitly so the text stays
+            // overriding contentStyle - set them explicitly so the text stays
             // legible in dark mode.
             itemStyle={{ color: "var(--foreground)" }}
             labelStyle={{ color: "var(--foreground)" }}

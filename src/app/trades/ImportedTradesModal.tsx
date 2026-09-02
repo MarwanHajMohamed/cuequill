@@ -22,7 +22,7 @@ type ImportedTrade = {
 };
 
 // Contract-identity key for auto-merge: legs share a symbol, side, strike,
-// expiry day, open/closed class, and sim flag — the same rules the merge
+// expiry day, open/closed class, and sim flag - the same rules the merge
 // endpoint enforces. Two+ imported legs on one key are partial fills of the
 // same order and can be collapsed into a single row.
 const dayOf = (iso: string | null | undefined) =>
@@ -53,7 +53,7 @@ export default function ImportedTradesModal({
   const [error, setError] = useState("");
   const [deleting, setDeleting] = useState<Record<string, boolean>>({});
   // True while merging every group at once; a group's key while merging just
-  // that one — so each group's own button can show its spinner independently.
+  // that one - so each group's own button can show its spinner independently.
   const [mergingAll, setMergingAll] = useState(false);
   const [mergingKey, setMergingKey] = useState<string | null>(null);
   const busy = mergingAll || mergingKey !== null;
@@ -203,7 +203,7 @@ export default function ImportedTradesModal({
                   Imported trades
                 </h2>
                 {/* Hover-only tooltip. `group` on the wrapper + `group-hover`
-                    on the popover keeps this stateless — one-liner
+                    on the popover keeps this stateless - one-liner
                     explanation, no click target, no accessibility trap. */}
                 <span className="relative group inline-flex">
                   <i
@@ -254,7 +254,7 @@ export default function ImportedTradesModal({
               </div>
             ) : (
               <div className="flex flex-col gap-1.5">
-                {/* Auto-mergeable groups — outlined together so the partial
+                {/* Auto-mergeable groups - outlined together so the partial
                     fills that will collapse into one row are obvious. */}
                 {mergeGroups.map((group, gi) => {
                   const key = mergeKey(group[0]);
@@ -312,7 +312,7 @@ export default function ImportedTradesModal({
             )}
           </div>
 
-          {/* Footer — merge every group at once. Individual groups can also
+          {/* Footer - merge every group at once. Individual groups can also
               be merged one at a time from their own Merge button above. Only
               shown when 2+ groups make a bulk action worthwhile. */}
           {mergeGroups.length > 1 && (
@@ -361,7 +361,7 @@ function ImportedRow({
           month: "short",
           day: "numeric",
         })
-      : "—";
+      : "-";
 
   return (
     <div className="group flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/[0.04] transition">
@@ -399,7 +399,7 @@ function ImportedRow({
           isOpen ? "text-white/40" : net >= 0 ? "text-green-300" : "text-red-300"
         }`}
       >
-        {isOpen ? "—" : `${net >= 0 ? "+" : "−"}$${Math.abs(net).toFixed(2)}`}
+        {isOpen ? "-" : `${net >= 0 ? "+" : "−"}$${Math.abs(net).toFixed(2)}`}
       </div>
 
       <button

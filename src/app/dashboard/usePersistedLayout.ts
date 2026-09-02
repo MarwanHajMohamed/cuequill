@@ -11,9 +11,9 @@ const ENDPOINT = "/api/user/dashboard-layout";
 // copy is the source of truth and reconciles once fetched. Every mutation
 // writes both.
 //
-//   field    — which key on the /api/user/dashboard-layout document this
+//   field    - which key on the /api/user/dashboard-layout document this
 //              value maps to.
-//   sanitize — validates/normalises the raw stored or fetched value so a
+//   sanitize - validates/normalises the raw stored or fetched value so a
 //              removed id / bad shape can't break the render. MUST be a
 //              stable (module-level) function.
 export function usePersistedField<T>(

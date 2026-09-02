@@ -131,7 +131,7 @@ export default function Navbar() {
   const { data: profile } = useProfile();
   const avatarGrad = avatarGradient(profile?.avatarColor);
   const avatarRing = avatarFrameRing(profile?.avatarFrame);
-  // Unclaimed challenge rewards — surfaced as a badge on the Challenges nav
+  // Unclaimed challenge rewards - surfaced as a badge on the Challenges nav
   // item (and, on mobile where Challenges lives inside "More", on the More
   // tab too) so it's visible from anywhere in the app.
   const { data: challengeData } = useChallenges();
@@ -160,7 +160,7 @@ export default function Navbar() {
   // Flips true after the first commit. The bar DOM only exists once
   // currentTime is set (the component returns null before that), so the
   // measurement effects below key off `mounted` to re-run against the
-  // real DOM — otherwise the active pill never measures on a fresh load
+  // real DOM - otherwise the active pill never measures on a fresh load
   // (activeKey doesn't change, so the effect wouldn't re-fire) and stays
   // invisible until you navigate elsewhere.
   const [mounted, setMounted] = useState(false);
@@ -178,7 +178,7 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   // Mobile "More" bottom sheet replaces the old slide-in side drawer.
   const [openMore, setOpenMore] = useState(false);
-  // Drag-to-dismiss for the More sheet — only the handle/header starts a
+  // Drag-to-dismiss for the More sheet - only the handle/header starts a
   // drag (via dragControls) so the scrollable body still scrolls freely.
   const moreDragControls = useDragControls();
   const [simulated, setSimulated] = useState<boolean>(() => {
@@ -633,7 +633,7 @@ export default function Navbar() {
               </span>
               <span>{marketOpen ? "Open" : "Closed"}</span>
             </div>
-            {/* Account avatar — taps through to settings on mobile. */}
+            {/* Account avatar - taps through to settings on mobile. */}
             <Link
               href="/settings"
               prefetch
@@ -1171,7 +1171,7 @@ export default function Navbar() {
               })}
             </div>
 
-            {/* Compact toggles — side by side to save vertical space. */}
+            {/* Compact toggles - side by side to save vertical space. */}
             <div className="mx-4 mb-3 grid grid-cols-2 gap-2">
               <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-between gap-2">
                 <span className="text-[12.5px] text-white/85 font-medium">

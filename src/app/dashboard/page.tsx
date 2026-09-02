@@ -19,7 +19,7 @@ function Page() {
       <div className="w-full flex flex-col gap-8 md:gap-12 py-8 md:py-12">
         <TradeCalendar userId={userId} />
         {/* Everything below the calendar is a customisable 2-up grid of
-            widget cards — drag to reorder, remove, or add via the
+            widget cards - drag to reorder, remove, or add via the
             Customize toolbar. Layout persists per browser. */}
         <DashboardGrid userId={userId} />
       </div>

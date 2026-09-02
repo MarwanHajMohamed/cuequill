@@ -1,4 +1,4 @@
-// US PPI (Producer Price Index) release dates — the wholesale/producer-side
+// US PPI (Producer Price Index) release dates - the wholesale/producer-side
 // inflation report, published by the BLS at 8:30am ET, usually a day before
 // or after the CPI release. There's no clean free API for the schedule, so
 // it's hard-coded from the official BLS release calendar and needs updating
@@ -6,7 +6,7 @@
 //   https://www.bls.gov/schedule/news_release/ppi.htm
 //
 // Each entry is the RELEASE day (yyyy-MM-dd), not the reference month.
-// Verify against the BLS calendar before relying on any single date —
+// Verify against the BLS calendar before relying on any single date -
 // individual dates occasionally shift.
 export const PPI_RELEASE_DATES: string[] = [
   // 2025

@@ -33,7 +33,7 @@ const validate = (
   if (contractPrice === null || Number.isNaN(contractPrice))
     invalid.add("contractPrice");
   if (qty === null || Number.isNaN(qty)) invalid.add("qty");
-  // Strike is optional — some instruments (futures spreads, complex
+  // Strike is optional - some instruments (futures spreads, complex
   // multi-leg orders) don't have a single meaningful strike.
   if (dateBought === "") invalid.add("dateBought");
   if (expiryDate === "") invalid.add("expiryDate");
@@ -49,7 +49,7 @@ const validate = (
 // Validate the form and, when valid, build the Trade payload. Returns the
 // built trade, or null when validation fails (invalid fields are highlighted
 // via setInvalidFields). Persistence + the success/failure toast are handled
-// by the caller once the network request actually resolves — this function no
+// by the caller once the network request actually resolves - this function no
 // longer fires a toast, so "saved" can never be shown before the save lands.
 export const handleSave = (
   setInvalidFields: React.Dispatch<React.SetStateAction<Set<InvalidField>>>,

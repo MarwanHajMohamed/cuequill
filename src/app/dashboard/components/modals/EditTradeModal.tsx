@@ -26,7 +26,7 @@ type TradeModalProps = {
   initialTrade?: Partial<Trade>;
   onDelete?: (_id: string) => void;
   // Optional back-out handler. When set, Cancel / X / Escape / backdrop
-  // clicks fire this instead of `onClose` — used by TradeModal to send
+  // clicks fire this instead of `onClose` - used by TradeModal to send
   // the user back to the View card rather than onCloseing the whole
   // stack when they were originally viewing an existing trade.
   onCancel?: () => void;
@@ -142,7 +142,7 @@ export default function EditTradeModal({
       initialTrade!,
       fees,
     );
-    if (!tradeData) return; // validation failed — fields already highlighted
+    if (!tradeData) return; // validation failed - fields already highlighted
 
     setSaving(true);
     try {
@@ -206,8 +206,8 @@ export default function EditTradeModal({
 
   // A native <select> can't represent an empty value when no <option> has
   // value="": it visually falls back to the first option while React state
-  // stays "". So a brand-new trade — or one opened before the async
-  // strategy list arrived — silently saves an empty strategy unless the
+  // stays "". So a brand-new trade - or one opened before the async
+  // strategy list arrived - silently saves an empty strategy unless the
   // user happens to touch the dropdown. Keep the committed value in sync
   // with what's actually shown: whenever the option set changes, snap
   // `strategy` to a real option if it isn't already one.

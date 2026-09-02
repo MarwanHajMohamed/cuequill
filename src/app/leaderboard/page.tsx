@@ -12,8 +12,8 @@ import { avatarGradient } from "@/lib/avatarColors";
 import { avatarFrameRing } from "@/lib/avatarFrames";
 import { Skeleton } from "@/components/Loaders";
 
-// The three ranking boards. Every metric is process / discipline based —
-// consistency of journaling, never P/L — so climbing rewards good habits.
+// The three ranking boards. Every metric is process / discipline based -
+// consistency of journaling, never P/L - so climbing rewards good habits.
 type BoardId = "level" | "trades" | "streak";
 
 const BOARDS: {
@@ -280,7 +280,7 @@ function PodiumCard({
         tall ? "" : "pt-6 md:pt-9"
       }`}
     >
-      {/* Avatar on its pedestal — no card, just a medal-tinted shelf line
+      {/* Avatar on its pedestal - no card, just a medal-tinted shelf line
           beneath, mirroring the trophy medallions. */}
       <div className="relative flex flex-col items-center">
         <i

@@ -3,7 +3,7 @@
 // Keyed by strategy name. Prose, bullet lists, and illustrative charts
 // are folded into the rich-text `description` (HTML, same format the
 // RichNotesEditor produces). The labelled Successful/Unsuccessful chart
-// sets become `examples`. Side-effect-free and client-safe — image
+// sets become `examples`. Side-effect-free and client-safe - image
 // paths point at /public, no Mongoose, no webpack image imports.
 
 export type ExampleOutcome = "Successful" | "Unsuccessful";

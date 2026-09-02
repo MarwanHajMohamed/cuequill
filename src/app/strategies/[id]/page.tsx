@@ -287,7 +287,7 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
         )}
       </div>
 
-      {/* Schematic — editable canvas in edit mode, static preview in view.
+      {/* Schematic - editable canvas in edit mode, static preview in view.
           In view mode it can be retracted to a small square thumbnail. */}
       {editing ? (
         <SchematicEditor value={schematic} onChange={setSchematic} />
@@ -350,7 +350,7 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
             </Field>
           </div>
 
-          {/* Description — rich-text editor */}
+          {/* Description - rich-text editor */}
           <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 md:p-5 flex flex-col gap-2.5">
             <span className="text-[10.5px] tracking-[0.12em] text-white/45">
               Description
@@ -363,21 +363,21 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
             />
           </div>
 
-          {/* Examples — upload + manage */}
+          {/* Examples - upload + manage */}
           <ExamplesEditor value={examples} onChange={setExamples} />
         </>
       ) : (
         <>
-          {/* Performance — trades tagged with this strategy, geared to
+          {/* Performance - trades tagged with this strategy, geared to
               surfacing where the setup leaks. */}
           <StrategyStats strategyName={data.name} />
 
-          {/* Description — read-only */}
+          {/* Description - read-only */}
           {data.description ? (
             <DescriptionDisplay html={data.description} />
           ) : null}
 
-          {/* Examples — read-only gallery */}
+          {/* Examples - read-only gallery */}
           <ExamplesGallery examples={data.examples ?? []} />
 
           {/* Nudge when the strategy has no content yet. */}

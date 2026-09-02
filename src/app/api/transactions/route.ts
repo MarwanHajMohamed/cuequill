@@ -5,7 +5,7 @@ import connectDb from "@/lib/db";
 import mongoose from "mongoose";
 import { Transaction } from "@/lib/models/Transaction";
 
-// Authenticated-user scoped — both handlers ignore any client-supplied
+// Authenticated-user scoped - both handlers ignore any client-supplied
 // userId and use session.user.id instead.
 
 type TxLean = {
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
     // No cash-only "insufficient balance" gate: the running balance now
     // includes realized trade P/L, so trading gains can fund a withdrawal
     // and the timeline is recomputed chronologically on the client anyway.
-    // ADJUST (reconciliation) keeps its sign — it's the +/- correction that
+    // ADJUST (reconciliation) keeps its sign - it's the +/- correction that
     // snaps the balance to the actual figure; deposits/withdrawals are stored
     // as a positive magnitude.
     const transaction = await Transaction.create({

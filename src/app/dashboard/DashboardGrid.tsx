@@ -35,7 +35,7 @@ const SIZES_KEY = "cuequill:dashboard-widget-sizes-v1";
 const ROWS_KEY = "cuequill:dashboard-widget-rows-v1";
 
 // Fixed row unit (px) so every row position is the same height regardless
-// of a neighbour's content — a widget can be exactly 1 row tall anywhere.
+// of a neighbour's content - a widget can be exactly 1 row tall anywhere.
 // Height of an N-row widget = N*ROW_UNIT + (N-1)*ROW_GAP.
 const MAX_ROWS = 3;
 
@@ -400,7 +400,7 @@ function SortableWidget({
           <span className="text-[12px] font-medium">{def.title}</span>
         </button>
         <div className="flex items-center gap-1">
-          {/* Width toggle — accessible alternative to dragging the edge. */}
+          {/* Width toggle - accessible alternative to dragging the edge. */}
           <button
             onClick={() => onResize(id, span === 2 ? 1 : 2)}
             className="hidden lg:flex w-6 h-6 items-center justify-center rounded-md text-white/40 hover:text-white hover:bg-white/10 transition cursor-pointer"
@@ -413,12 +413,12 @@ function SortableWidget({
               } text-[11px]`}
             />
           </button>
-          {/* Height toggle — cycles 1 → 2 → 3 → 1 rows. */}
+          {/* Height toggle - cycles 1 → 2 → 3 → 1 rows. */}
           <button
             onClick={() => onResizeRow(id, cycleRow())}
             className="hidden lg:flex items-center gap-0.5 h-6 px-1.5 rounded-md text-white/40 hover:text-white hover:bg-white/10 transition cursor-pointer"
             aria-label="Change height"
-            title={`Height: ${rowSpan} row${rowSpan === 1 ? "" : "s"} — click to cycle`}
+            title={`Height: ${rowSpan} row${rowSpan === 1 ? "" : "s"} - click to cycle`}
           >
             <i className="fa-solid fa-up-down text-[11px]" />
             <span className="text-[10px] tabular-nums">{rowSpan}</span>
@@ -437,7 +437,7 @@ function SortableWidget({
         {def.render(userId, shownRow, shownCol)}
       </div>
 
-      {/* Right-edge (width) drag-to-resize handle — desktop only. */}
+      {/* Right-edge (width) drag-to-resize handle - desktop only. */}
       <div
         onPointerDown={startResize("x")}
         className="hidden lg:flex absolute top-1/2 -translate-y-1/2 right-0 h-16 w-3 items-center justify-center cursor-ew-resize touch-none group"
@@ -446,7 +446,7 @@ function SortableWidget({
         <div className="w-1 h-10 rounded-full bg-white/20 group-hover:bg-teal-400/70 transition" />
       </div>
 
-      {/* Bottom-edge (height) drag-to-resize handle — desktop only. */}
+      {/* Bottom-edge (height) drag-to-resize handle - desktop only. */}
       <div
         onPointerDown={startResize("y")}
         className="hidden lg:flex absolute left-1/2 -translate-x-1/2 bottom-0 w-16 h-3 items-center justify-center cursor-ns-resize touch-none group"

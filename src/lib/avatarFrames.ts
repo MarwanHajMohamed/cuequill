@@ -1,4 +1,4 @@
-// Avatar frames — a second cosmetic reward tier beyond colours. A frame
+// Avatar frames - a second cosmetic reward tier beyond colours. A frame
 // is a ring/glow drawn around the account avatar, unlocked by reaching a
 // level. `ring` is a Tailwind class string (box-shadow based, so no
 // ring-offset colour juggling) shared by the nav avatar and the settings

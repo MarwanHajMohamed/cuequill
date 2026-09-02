@@ -24,7 +24,7 @@ type PlanInfo = {
   cancelAtPeriodEnd: boolean;
 };
 
-// What each tier ships with — shown as a "your plan includes" list, with
+// What each tier ships with - shown as a "your plan includes" list, with
 // the Pro-only rows presented as an upsell to free users.
 const INCLUDED_FREE = [
   "Unlimited manual trade logging",
@@ -116,7 +116,7 @@ export default function PlanTab() {
       const r = await fetch("/api/user/plan", { cache: "no-store" });
       if (r.ok) setPlan((await r.json()) as PlanInfo);
     } catch {
-      // Non-fatal — the session flag still drives the basic Pro/Free UI.
+      // Non-fatal - the session flag still drives the basic Pro/Free UI.
     }
   }, []);
 
@@ -141,7 +141,7 @@ export default function PlanTab() {
       }
       setConfirming(false);
       if (d.immediate) {
-        // Comped/legacy account — access ended now.
+        // Comped/legacy account - access ended now.
         await update({ isPro: false });
         setJustCancelled(true);
       }
@@ -249,7 +249,7 @@ export default function PlanTab() {
                 Upgrade to Pro
               </Link>
             ) : scheduledCancel ? (
-              // Already scheduled to cancel — offer resume/card management
+              // Already scheduled to cancel - offer resume/card management
               // via the Stripe portal instead of another cancel button.
               <button
                 onClick={openPortal}
@@ -309,7 +309,7 @@ export default function PlanTab() {
           <i className="fa-solid fa-circle-info text-[12px] mt-0.5" />
           <span>
             Your Pro plan is set to end on {periodEnd}. You keep full access
-            until then — reactivate any time from “Manage billing”.
+            until then - reactivate any time from “Manage billing”.
           </span>
         </div>
       )}
@@ -328,7 +328,7 @@ export default function PlanTab() {
         </div>
       )}
 
-      {/* Quill AI usage — the fair-use counters, Pro-only. */}
+      {/* Quill AI usage - the fair-use counters, Pro-only. */}
       {isPro && usage && (
         <div>
           <div className="text-[11px] tracking-[0.08em] text-white/45 font-medium mb-3">
@@ -350,7 +350,7 @@ export default function PlanTab() {
               <div className="inline-flex items-center gap-1.5 text-[12px] text-violet-300 bg-violet-500/10 border border-violet-500/25 rounded-full px-3 py-1 w-fit">
                 <i className="fa-solid fa-gift text-[10px]" />
                 {usage.bonusMessages} bonus message
-                {usage.bonusMessages === 1 ? "" : "s"} from challenges — used
+                {usage.bonusMessages === 1 ? "" : "s"} from challenges - used
                 once you hit the daily cap.
               </div>
             )}
@@ -363,7 +363,7 @@ export default function PlanTab() {
         </div>
       )}
 
-      {/* Billing details — only meaningful with a real Stripe subscription. */}
+      {/* Billing details - only meaningful with a real Stripe subscription. */}
       {plan?.hasSubscription && (
         <div>
           <div className="text-[11px] tracking-[0.08em] text-white/45 font-medium mb-3">
@@ -377,15 +377,15 @@ export default function PlanTab() {
                   ? plan.cycle === "annual"
                     ? "Annual"
                     : "Monthly"
-                  : "—",
+                  : "-",
               ],
               [
                 "Status",
                 plan.status
                   ? plan.status.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase())
-                  : "—",
+                  : "-",
               ],
-              [scheduledCancel ? "Ends on" : "Next renewal", periodEnd || "—"],
+              [scheduledCancel ? "Ends on" : "Next renewal", periodEnd || "-"],
             ].map(([label, value]) => (
               <div
                 key={label}
@@ -410,7 +410,7 @@ export default function PlanTab() {
             <div className="text-[12.5px] text-teal-100 flex items-start gap-2">
               <i className="fa-solid fa-piggy-bank text-[12px] mt-0.5" />
               <span>
-                You&apos;re on monthly billing — switch to annual and save 20%.
+                You&apos;re on monthly billing - switch to annual and save 20%.
               </span>
             </div>
             <button
@@ -424,7 +424,7 @@ export default function PlanTab() {
         )}
       </div>
 
-      {/* Separator — a horizontal rule on mobile, a full-height rule on
+      {/* Separator - a horizontal rule on mobile, a full-height rule on
           desktop between the two columns. */}
       <div className="h-px w-full md:h-auto md:w-px bg-white/10 shrink-0" />
 

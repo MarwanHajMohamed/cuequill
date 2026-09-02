@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // No Stripe subscription — a comped/legacy Pro. There's nothing to
+  // No Stripe subscription - a comped/legacy Pro. There's nothing to
   // cancel in Stripe, so just drop the local grant immediately.
   if (!user.stripeSubscriptionId) {
     user.isPro = false;

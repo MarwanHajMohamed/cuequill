@@ -105,14 +105,14 @@ function Page() {
               </div>
             </motion.div>
 
-            {/* Trophy grid — each in its own display cabinet. */}
+            {/* Trophy grid - each in its own display cabinet. */}
             <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
               {data.trophies.map((t, i) => (
                 <TrophyCard key={t.id} t={t} index={i} />
               ))}
             </div>
 
-            {/* Nameplate — equip an earned title next to your name. */}
+            {/* Nameplate - equip an earned title next to your name. */}
             <section className="mt-12">
               <h2 className="text-[13px] font-semibold text-white/80 mb-1.5 flex items-center gap-2">
                 <i className="fa-solid fa-id-badge text-amber-300/80 text-[12px]" />

@@ -25,7 +25,7 @@ function reId(s: ExportedStrategy): ExportedStrategy {
 }
 
 // Ensure a name is unique for this user (the model enforces a case-insensitive
-// unique index). `taken` is the lowercased set of names already in use — both
+// unique index). `taken` is the lowercased set of names already in use - both
 // pre-existing and ones claimed earlier in this same batch.
 function uniqueName(name: string, taken: Set<string>): string {
   const base = name.trim() || "Imported strategy";
@@ -42,7 +42,7 @@ function uniqueName(name: string, taken: Set<string>): string {
   return candidate;
 }
 
-// POST /api/strategies/import — create new strategies from an uploaded bundle.
+// POST /api/strategies/import - create new strategies from an uploaded bundle.
 // Accepts a full bundle, a bare array, or a single strategy object.
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);

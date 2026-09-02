@@ -17,7 +17,7 @@ import { useEffect } from "react";
  * list modal is still animating out under AnimatePresence while the trade
  * modal mounts on top). A naive per-instance save/restore lets the second
  * modal capture the ALREADY-LOCKED styles as its "previous" and then restore
- * them on close — leaving the whole page stuck unscrollable. By saving the
+ * them on close - leaving the whole page stuck unscrollable. By saving the
  * original page state only on the 0→1 transition and restoring only on 1→0,
  * any amount of overlap is safe.
  */

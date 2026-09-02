@@ -8,10 +8,10 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // Per-account dashboard customisation:
-//   • layout       — ordered enabled widget ids for the widget grid
-//   • glanceTiles  — ordered enabled stat-tile ids inside "At a glance"
-//   • widgetSizes  — { [widgetId]: 1 | 2 } column span per widget
-//   • widgetRows   — { [widgetId]: 1 | 2 } row span per widget
+//   • layout       - ordered enabled widget ids for the widget grid
+//   • glanceTiles  - ordered enabled stat-tile ids inside "At a glance"
+//   • widgetSizes  - { [widgetId]: 1 | 2 } column span per widget
+//   • widgetRows   - { [widgetId]: 1 | 2 } row span per widget
 //
 //   GET → { layout, glanceTiles, widgetSizes, widgetRows }
 //   PUT { layout?, glanceTiles?, widgetSizes?, widgetRows? } → persists
@@ -68,7 +68,7 @@ export async function GET() {
 
   // One-time migration: drop the "Insight of the day" widget into an
   // existing PRO user's saved layout (right after "At a glance"). Only runs
-  // once — the flag means we never re-add it if they later remove it. Users
+  // once - the flag means we never re-add it if they later remove it. Users
   // with no custom layout already get it from the client default.
   if (user.isPro && !user.dashInsightMigrated) {
     if (
@@ -84,13 +84,13 @@ export async function GET() {
     }
     user.dashInsightMigrated = true;
     await user.save().catch(() => {
-      /* best-effort — still return the migrated layout in-memory */
+      /* best-effort - still return the migrated layout in-memory */
     });
   }
 
   // One-time migration: add the "Balance" widget to an existing saved
-  // layout (after "equity", or "glance"). Runs once for every user — it's
-  // not Pro-gated — and the flag stops us re-adding it after a removal.
+  // layout (after "equity", or "glance"). Runs once for every user - it's
+  // not Pro-gated - and the flag stops us re-adding it after a removal.
   // Users with no custom layout already get it from the client default.
   if (!user.dashBalanceMigrated) {
     if (
@@ -107,7 +107,7 @@ export async function GET() {
     }
     user.dashBalanceMigrated = true;
     await user.save().catch(() => {
-      /* best-effort — still return the migrated layout in-memory */
+      /* best-effort - still return the migrated layout in-memory */
     });
   }
 
@@ -127,7 +127,7 @@ export async function GET() {
     }
     user.dashChallengesMigrated = true;
     await user.save().catch(() => {
-      /* best-effort — still return the migrated layout in-memory */
+      /* best-effort - still return the migrated layout in-memory */
     });
   }
 

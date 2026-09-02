@@ -147,7 +147,7 @@ function Page() {
   const { data: profile } = useProfile();
   const startingBalance = profile?.startingBalance ?? 0;
   // Running account balance (starting balance + deposits/withdrawals + realised
-  // P/L), in date order — the basis for each month's return %.
+  // P/L), in date order - the basis for each month's return %.
   const { points: balancePoints } = useBalanceTimeline();
   const fedDates = useFedDates();
   const cpiDates = useCpiDates();
@@ -155,7 +155,7 @@ function Page() {
   const ppiDates = usePpiDates();
   const holidays = useMarketHolidays();
 
-  // Extended mode — overlays watchlist earnings dates and open-trade
+  // Extended mode - overlays watchlist earnings dates and open-trade
   // expiries on the month grid. Persisted so the preference sticks.
   const [detailed, setDetailed] = useLocalStorage<boolean>(
     "calendar:detailed",
@@ -371,7 +371,7 @@ function Page() {
         : monthShareStats();
 
   // Economic events + watchlist earnings landing on a day, for the day-detail
-  // modal — mirrors the dashboard calendar's getDayEvents.
+  // modal - mirrors the dashboard calendar's getDayEvents.
   const getDayEvents = (date: Date): DayEvent[] => {
     const s = format(date, "yyyy-MM-dd");
     const evs: DayEvent[] = [];
@@ -621,7 +621,7 @@ function Page() {
     }
 
     // Day badges (Fed / market-closed / today) only belong on the month
-    // grid — never on the year/decade tiles (where Jan 1 would otherwise
+    // grid - never on the year/decade tiles (where Jan 1 would otherwise
     // tag every cell as a holiday "Closed").
     if (view !== "month") return null;
 
@@ -671,7 +671,7 @@ function Page() {
       <>
         {isFed && (
           <span
-            title="FOMC meeting — high volatility, avoid trading"
+            title="FOMC meeting - high volatility, avoid trading"
             className={NO_TRADE_PILL}
           >
             <span className="w-1 h-1 rounded-full bg-red-200" aria-hidden />
@@ -686,7 +686,7 @@ function Page() {
         )}
         {isCpi && (
           <span
-            title="CPI inflation report — 8:30am ET — avoid trading"
+            title="CPI inflation report - 8:30am ET - avoid trading"
             className={NO_TRADE_PILL}
           >
             <i className="fa-solid fa-percent text-[7px]" aria-hidden />
@@ -695,7 +695,7 @@ function Page() {
         )}
         {isPpi && (
           <span
-            title="PPI producer inflation report — 8:30am ET — avoid trading"
+            title="PPI producer inflation report - 8:30am ET - avoid trading"
             className={NO_TRADE_PILL}
           >
             <i className="fa-solid fa-industry text-[7px]" aria-hidden />
@@ -704,7 +704,7 @@ function Page() {
         )}
         {isPce && (
           <span
-            title="PCE — Fed's preferred inflation gauge — 8:30am ET — avoid trading"
+            title="PCE - Fed's preferred inflation gauge - 8:30am ET - avoid trading"
             className={NO_TRADE_PILL}
           >
             <i className="fa-solid fa-landmark text-[7px]" aria-hidden />
@@ -713,7 +713,7 @@ function Page() {
         )}
         {marketDay && marketDay.early && (
           <span
-            title={`Early close 1:00pm ET — ${marketDay.name}`}
+            title={`Early close 1:00pm ET - ${marketDay.name}`}
             className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-500/35 text-sky-100 border border-sky-400/60 shadow-[0_0_8px_rgba(56,189,248,0.35)] text-[9px] md:text-[10px] font-bold tracking-wide leading-none"
           >
             <i className="fa-solid fa-clock text-[8px]" aria-hidden />
@@ -725,7 +725,7 @@ function Page() {
 
     return (
       <>
-        {/* All day badges live in one right-aligned column, top-right —
+        {/* All day badges live in one right-aligned column, top-right -
             earnings and expiry pills (extended mode only) above the econ
             pills. Right-aligned so the stack stays clear of the P/L readout
             pinned bottom-left, without having to grow the tile. */}
@@ -776,7 +776,7 @@ function Page() {
           </div>
         )}
         {/* Full-day closure: mute the whole tile and mark it with a lock
-            (kept separate — the overlay is inset, the lock stays pinned). */}
+            (kept separate - the overlay is inset, the lock stays pinned). */}
         {marketDay && !marketDay.early && (
           <>
             <span
@@ -784,7 +784,7 @@ function Page() {
               className="absolute inset-0 rounded-[inherit] bg-neutral-500/15 pointer-events-none"
             />
             <span
-              title={`Market closed — ${marketDay.name}`}
+              title={`Market closed - ${marketDay.name}`}
               className="absolute top-1 right-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-500/30 text-amber-300 border border-amber-500/50 shadow-[0_0_8px_rgba(245,158,11,0.35)]"
             >
               <i className="fa-solid fa-lock text-[9px]" aria-hidden />
@@ -1108,7 +1108,7 @@ function Page() {
                 const isWeek = view === "week";
                 // In the drill-up grids (calView "year" = months, "decade" =
                 // years) the header must total the whole year, not just the
-                // one month in `displayedMonth` — otherwise it showed only
+                // one month in `displayedMonth` - otherwise it showed only
                 // January's P/L instead of the year's sum.
                 const isYearView = !isWeek && calView !== "month";
                 const summary = isWeek
@@ -1209,7 +1209,7 @@ function Page() {
               {viewToggle()}
             </div>
 
-            {/* Extended-mode legend — explains the overlay chips. */}
+            {/* Extended-mode legend - explains the overlay chips. */}
             {detailed && (
               <div className="flex items-center flex-wrap gap-x-4 gap-y-1 px-3 md:px-0 mb-2 text-[10.5px] text-white/50">
                 <span className="inline-flex items-center gap-1.5">
@@ -1222,7 +1222,7 @@ function Page() {
                 </span>
                 {watchlist.length === 0 && (
                   <span className="text-white/35 italic">
-                    Your watchlist is empty — add tickers on the Earnings page
+                    Your watchlist is empty - add tickers on the Earnings page
                     to see report dates here.
                   </span>
                 )}
@@ -1338,7 +1338,7 @@ function Page() {
                 ? new Date(editingTrade.dateBought)
                 : selectedDate
             }
-            // Close the whole stack — trade view AND the day-list
+            // Close the whole stack - trade view AND the day-list
             // parent (if it was open). Back chevron below returns to
             // the day list instead.
             onClose={() => {
@@ -1371,8 +1371,8 @@ function Page() {
               cardW={MONTH_CARD_W}
               cardH={MONTH_CARD_H}
               fileName={`cuequill-${slug}.png`}
-              shareTitle={`${label} — Cuequill`}
-              shareText={`My ${label} trading recap — Cuequill`}
+              shareTitle={`${label} - Cuequill`}
+              shareText={`My ${label} trading recap - Cuequill`}
               renderCard={(ref, skin) => (
                 <MonthlyShareCard ref={ref} stats={s} skin={skin} />
               )}

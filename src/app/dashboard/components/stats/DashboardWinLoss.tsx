@@ -8,7 +8,7 @@ import { Trade } from "@/app/types/Trades";
 import { CARD_CLASS } from "../DashboardCard";
 
 // Win / loss breakdown for closed trades: the win-rate split bar plus the
-// three numbers that actually describe an edge — average winner, average
+// three numbers that actually describe an edge - average winner, average
 // loser, and profit factor (gross profit ÷ gross loss). Hidden until
 // there's at least one closed trade to summarise.
 
@@ -61,7 +61,7 @@ export default function DashboardWinLoss({ userId }: { userId: string }) {
     const winRate = (wins.length / closed.length) * 100;
     const avgWin = wins.length > 0 ? grossProfit / wins.length : 0;
     const avgLoss = losses.length > 0 ? grossLoss / losses.length : 0;
-    // Profit factor is undefined with no losses — show it as "∞" then.
+    // Profit factor is undefined with no losses - show it as "∞" then.
     const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : null;
 
     return {
@@ -93,7 +93,7 @@ export default function DashboardWinLoss({ userId }: { userId: string }) {
     stats.profitFactor === null
       ? stats.winCount > 0
         ? "∞"
-        : "—"
+        : "-"
       : stats.profitFactor.toFixed(2);
   const pfTone =
     stats.profitFactor === null
@@ -144,7 +144,7 @@ export default function DashboardWinLoss({ userId }: { userId: string }) {
         />
         <Stat
           label="Avg loss"
-          value={stats.lossCount > 0 ? `−$${stats.avgLoss.toFixed(0)}` : "—"}
+          value={stats.lossCount > 0 ? `−$${stats.avgLoss.toFixed(0)}` : "-"}
           tone={stats.lossCount > 0 ? "bad" : "neutral"}
         />
         <Stat label="Profit factor" value={pfLabel} tone={pfTone} />

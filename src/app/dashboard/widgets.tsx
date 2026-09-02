@@ -18,7 +18,7 @@ import DashboardQuillInsight from "./components/insights/DashboardQuillInsight";
 // A dashboard widget is a self-contained card that fetches its own data.
 // `render` receives the current user id (widgets that don't need it just
 // ignore it). The registry is the single source of truth for which
-// widgets exist, their display name, and their default ordering — the
+// widgets exist, their display name, and their default ordering - the
 // customisable grid reads layout as an ordered list of these ids.
 export type WidgetId =
   | "glance"
@@ -120,10 +120,10 @@ export const WIDGET_MAP: Record<WidgetId, WidgetDef> = Object.fromEntries(
   WIDGETS.map((w) => [w.id, w]),
 ) as Record<WidgetId, WidgetDef>;
 
-// Default layout — the order the dashboard ships with before any
+// Default layout - the order the dashboard ships with before any
 // customisation. All widgets enabled. Ordered so the default row heights
-// pair up cleanly (the two short one-row widgets — risk budget and
-// win/loss — sit together at the end) rather than brick-laying.
+// pair up cleanly (the two short one-row widgets - risk budget and
+// win/loss - sit together at the end) rather than brick-laying.
 export const DEFAULT_LAYOUT: WidgetId[] = [
   "glance",
   "quillInsight",

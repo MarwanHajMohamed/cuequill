@@ -74,7 +74,7 @@ export async function POST(req: Request) {
 
   const formData = await req.formData();
   const file = formData.get("file") as File;
-  // Ignore any userId field on the form — always use the session id.
+  // Ignore any userId field on the form - always use the session id.
   const userObjectId = new mongoose.Types.ObjectId(session.user.id);
 
   if (!file) {

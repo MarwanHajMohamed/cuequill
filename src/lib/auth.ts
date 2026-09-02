@@ -63,7 +63,7 @@ const LOCKOUT_MS = 15 * 60 * 1000;
 // `bcrypt.compare` against this takes roughly the same time as a
 // real comparison, so an attacker can't distinguish "no such user"
 // from "user exists, wrong password" via response timing. The value
-// itself is public — it just needs to be a syntactically-valid
+// itself is public - it just needs to be a syntactically-valid
 // bcrypt hash so the compare doesn't short-circuit.
 const DUMMY_HASH =
   "$2b$12$abcdefghijklmnopqrstuu4Xr4rBQY7HGGN4kZbFXOAcgc1eZ.GXG";
@@ -75,7 +75,7 @@ const EMAIL_COLLATION = { locale: "en", strength: 2 } as const;
 
 // Providers are built at module load and filtered so Google/Apple
 // only appear when their credentials are configured. That way you
-// can ship Apple later without a code change — just drop the env
+// can ship Apple later without a code change - just drop the env
 // vars in.
 const providers: Provider[] = [];
 
@@ -130,7 +130,7 @@ providers.push(
       }
 
       // OAuth-only account (signed up with Google, no password set). Burn a
-      // compare cycle for timing parity and reject — they must use Google.
+      // compare cycle for timing parity and reject - they must use Google.
       if (!user.password) {
         await bcrypt.compare(password, DUMMY_HASH);
         return null;
@@ -161,7 +161,7 @@ providers.push(
         } catch (e) {
           if (e instanceof Error && e.message === "ACCOUNT_LOCKED") throw e;
           // Failing to record a bad attempt shouldn't turn into a
-          // login-side error — worst case, one attempt isn't
+          // login-side error - worst case, one attempt isn't
           // counted.
         }
         return null;
@@ -206,7 +206,7 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     // OAuth sign-in / sign-up gate. Existing users sign in. New Google
     // users can create an account only if their email has been invited off
-    // the waitlist (invitedAt set) — the app stays invite-only, but invited
+    // the waitlist (invitedAt set) - the app stays invite-only, but invited
     // users can self-serve with Google instead of a set-password flow.
     // Everyone else is bounced to /signup with a reason param.
     async signIn({ user, account }) {
@@ -220,7 +220,7 @@ export const authOptions: NextAuthOptions = {
         .select("_id");
       if (existing) return true;
 
-      // Not a user yet — allow account creation only for an invited
+      // Not a user yet - allow account creation only for an invited
       // waitlist entry.
       const invited = await Waitlist.findOne({ email })
         .collation(EMAIL_COLLATION)
@@ -254,7 +254,7 @@ export const authOptions: NextAuthOptions = {
       }
       // OAuth sign-in: the provider hands us profile data keyed on
       // *their* id. Re-hydrate from the DB user (guaranteed to exist
-      // — the signIn callback rejected the flow otherwise) so
+      // - the signIn callback rejected the flow otherwise) so
       // token.id matches the credentials path and downstream code
       // can rely on session.user.id being a Mongo ObjectId string.
       if (user && account && account.provider !== "credentials") {
@@ -281,7 +281,7 @@ export const authOptions: NextAuthOptions = {
         }
       }
       // Profile updates from /api/user/profile flow back through
-      // session.update({ ... }) — propagate them onto the JWT so
+      // session.update({ ... }) - propagate them onto the JWT so
       // future useSession() reads see the new values.
       if (trigger === "update" && session) {
         if (session.timezone !== undefined) token.timezone = session.timezone;

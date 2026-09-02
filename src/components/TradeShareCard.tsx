@@ -17,7 +17,7 @@ const shareFont = DM_Mono({
 //
 // Every colour is hard-coded (not Tailwind `white`/opacity utilities or
 // theme vars) because the app remaps --color-white and the surface vars
-// in light mode — the exported image must look identical in any theme.
+// in light mode - the exported image must look identical in any theme.
 
 export const CARD_W = 600;
 export const CARD_H = 220;
@@ -156,7 +156,7 @@ const TradeShareCard = forwardRef<
                 lineHeight: 1,
               }}
             >
-              {trade.symbol || "—"}
+              {trade.symbol || "-"}
             </div>
           </div>
 

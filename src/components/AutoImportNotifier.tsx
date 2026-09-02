@@ -25,7 +25,7 @@ export default function AutoImportNotifier() {
   useScrollLock(showNotice);
 
   useEffect(() => {
-    // Wait until NextAuth resolves the session — status starts as
+    // Wait until NextAuth resolves the session - status starts as
     // "loading". Bail out entirely for unauthenticated visitors so we
     // don't hit an auth-gated endpoint from the marketing page.
     if (status !== "authenticated" || checked) return;
@@ -41,7 +41,7 @@ export default function AutoImportNotifier() {
           setShowNotice(true);
         }
       } catch {
-        // Silent failure — no notice is fine. Better to skip the
+        // Silent failure - no notice is fine. Better to skip the
         // notice than to spam the user with an error toast.
       } finally {
         if (!cancelled) setChecked(true);
@@ -57,7 +57,7 @@ export default function AutoImportNotifier() {
     try {
       await fetch("/api/ibkr/last-sync-notice", { method: "POST" });
     } catch {
-      // Non-fatal — worst case the notice reappears next login.
+      // Non-fatal - worst case the notice reappears next login.
     }
   };
 

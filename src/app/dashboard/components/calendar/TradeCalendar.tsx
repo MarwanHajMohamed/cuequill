@@ -482,7 +482,7 @@ export default function TradeCalendar({ userId }: { userId: string }) {
           </span>
         ) : marketDay!.early ? (
           <span
-            title={`early close 1:00pm ET — ${marketDay!.name}`}
+            title={`early close 1:00pm ET - ${marketDay!.name}`}
             className={`${pos} inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-500/35 text-sky-100 border border-sky-400/60 shadow-[0_0_8px_rgba(56,189,248,0.35)] text-[9px] md:text-[10px] font-bold tracking-wide leading-none`}
           >
             <i className="fa-solid fa-clock text-[8px]" aria-hidden />
@@ -490,7 +490,7 @@ export default function TradeCalendar({ userId }: { userId: string }) {
           </span>
         ) : (
           <span
-            title={`market closed — ${marketDay!.name}`}
+            title={`market closed - ${marketDay!.name}`}
             className={`${pos} inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/35 text-amber-100 border border-amber-400/60 shadow-[0_0_8px_rgba(245,158,11,0.4)] text-[9px] md:text-[10px] font-bold tracking-wide leading-none`}
           >
             <i className="fa-solid fa-lock text-[8px]" aria-hidden />
@@ -655,7 +655,7 @@ export default function TradeCalendar({ userId }: { userId: string }) {
                 ? new Date(editingTrade.dateBought)
                 : selectedDate
             }
-            // Close the whole stack — trade view AND the day-list
+            // Close the whole stack - trade view AND the day-list
             // parent. Back chevron below returns to the day list
             // instead.
             onClose={() => {
