@@ -293,18 +293,6 @@ function FeaturesHero() {
   return (
     <section className="px-6 md:px-10">
       <div className="max-w-[1200px] mx-auto py-20 md:py-28 flex flex-col">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.4 }}
-          className="mb-8"
-        >
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[10.5px] tracking-[0.1em] text-white/55">
-            <span className="w-1.5 h-1.5 rounded-full bg-teal-400" />
-            Features
-          </span>
-        </motion.div>
-
         <motion.h1
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
