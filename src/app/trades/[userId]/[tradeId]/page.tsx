@@ -501,9 +501,9 @@ function TradeDetailPage() {
        </div>
 
         {/* Actions — full-width row pinned to the bottom */}
-        <div className="shrink-0 pt-3 mt-1 flex items-center justify-between gap-2 border-t border-white/10">
+        <div className="shrink-0 pt-3 mt-1 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            {editing ? (
+            {editing && (
               <>
                 <button
                   type="button"
@@ -526,15 +526,6 @@ function TradeDetailPage() {
                   Cancel
                 </button>
               </>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setEditing(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-teal-500/30 bg-teal-500/15 text-teal-300 hover:bg-teal-500/25 transition text-[12.5px] font-medium cursor-pointer"
-              >
-                <i className="fa-solid fa-pen text-[11px]" />
-                Edit trade
-              </button>
             )}
           </div>
           <div className="flex items-center gap-2">
