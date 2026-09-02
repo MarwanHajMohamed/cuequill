@@ -194,39 +194,6 @@ const GROUPS: FeatureGroup[] = [
       },
     ],
   },
-  {
-    n: "V",
-    label: "Surface",
-    heading: (
-      <>
-        Feels right{" "}
-        <span className="italic text-teal-300">where you trade.</span>
-      </>
-    ),
-    lede: "Native-feeling on mobile, theme-aware, and built to stay out of the way when you're at the screen.",
-    items: [
-      {
-        title: "Light & dark themes",
-        body: "Switch between light and dark whenever you like.",
-        tiers: ["Free", "Pro"],
-      },
-      {
-        title: "Installable PWA",
-        body: "Install it like a real app on iOS or Android.",
-        tiers: ["Free", "Pro"],
-      },
-      {
-        title: "Collapsible sidebar",
-        body: "Hide the sidebar to give charts and tables more room.",
-        tiers: ["Free", "Pro"],
-      },
-      {
-        title: "Private by default",
-        body: "Your data stays yours - encrypted and never shared.",
-        tiers: ["Free", "Pro"],
-      },
-    ],
-  },
 ];
 
 // ─── Page ────────────────────────────────────────────────────────────
