@@ -137,30 +137,30 @@ const TradeShareCard = forwardRef<
           )}
         </div>
 
-        {/* Middle: symbol + Net P/L, centered */}
+        {/* Middle: symbol left / Net P/L + % right */}
         <div
           style={{
             flex: 1,
             display: "flex",
-            flexDirection: "column",
             alignItems: "center",
-            justifyContent: "center",
-            textAlign: "center",
-            gap: 18,
+            justifyContent: "space-between",
+            gap: 20,
           }}
         >
-          <div
-            style={{
-              fontSize: 52,
-              fontWeight: 700,
-              letterSpacing: "-0.02em",
-              lineHeight: 1,
-            }}
-          >
-            {trade.symbol || "—"}
+          <div style={{ minWidth: 0, maxWidth: 320 }}>
+            <div
+              style={{
+                fontSize: 44,
+                fontWeight: 700,
+                letterSpacing: "-0.02em",
+                lineHeight: 1,
+              }}
+            >
+              {trade.symbol || "—"}
+            </div>
           </div>
 
-          <div>
+          <div style={{ textAlign: "right", flexShrink: 0 }}>
             <div
               style={{
                 fontSize: 12,
@@ -174,7 +174,7 @@ const TradeShareCard = forwardRef<
             <div
               style={{
                 marginTop: 4,
-                fontSize: 46,
+                fontSize: 44,
                 fontWeight: 700,
                 letterSpacing: "-0.02em",
                 lineHeight: 1,
