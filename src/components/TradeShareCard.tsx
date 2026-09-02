@@ -20,7 +20,7 @@ const shareFont = DM_Mono({
 // in light mode — the exported image must look identical in any theme.
 
 export const CARD_W = 600;
-export const CARD_H = 300;
+export const CARD_H = 220;
 
 const fmtMoneySigned = (n: number) => {
   const sign = n >= 0 ? "+" : "-";
@@ -36,14 +36,6 @@ const fmtMoneySigned = (n: number) => {
         });
   return `${sign}$${body}`;
 };
-
-const fmtPrice = (n?: number | null) =>
-  n == null
-    ? "—"
-    : `$${n.toLocaleString(undefined, {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      })}`;
 
 const parseDate = (v?: string | null): Date | null => {
   if (!v) return null;
@@ -114,7 +106,6 @@ const TradeShareCard = forwardRef<
           position: "relative",
           display: "flex",
           flexDirection: "column",
-          justifyContent: "space-between",
           padding: "26px 30px",
         }}
       >
@@ -146,29 +137,30 @@ const TradeShareCard = forwardRef<
           )}
         </div>
 
-        {/* Middle: symbol + hold window / Net P/L + % */}
+        {/* Middle: symbol + Net P/L, centered */}
         <div
           style={{
+            flex: 1,
             display: "flex",
-            alignItems: "flex-start",
-            justifyContent: "space-between",
-            gap: 20,
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            textAlign: "center",
+            gap: 18,
           }}
         >
-          <div style={{ minWidth: 0, maxWidth: 320 }}>
-            <div
-              style={{
-                fontSize: 44,
-                fontWeight: 700,
-                letterSpacing: "-0.02em",
-                lineHeight: 1,
-              }}
-            >
-              {trade.symbol || "—"}
-            </div>
+          <div
+            style={{
+              fontSize: 52,
+              fontWeight: 700,
+              letterSpacing: "-0.02em",
+              lineHeight: 1,
+            }}
+          >
+            {trade.symbol || "—"}
           </div>
 
-          <div style={{ textAlign: "right", flexShrink: 0 }}>
+          <div>
             <div
               style={{
                 fontSize: 12,
@@ -182,7 +174,7 @@ const TradeShareCard = forwardRef<
             <div
               style={{
                 marginTop: 4,
-                fontSize: 44,
+                fontSize: 46,
                 fontWeight: 700,
                 letterSpacing: "-0.02em",
                 lineHeight: 1,
@@ -206,67 +198,12 @@ const TradeShareCard = forwardRef<
             )}
           </div>
         </div>
-
-        {/* Stat tiles */}
-        <div style={{ display: "flex", gap: 12 }}>
-          <Stat label="Entry" value={fmtPrice(trade.contractPrice)} skin={skin} />
-          <Stat
-            label="Exit"
-            value={isClosed ? fmtPrice(trade.closingContractPrice) : "—"}
-            skin={skin}
-          />
-          <Stat
-            label="Qty"
-            value={trade.qty != null ? `${trade.qty}` : "—"}
-            skin={skin}
-          />
-        </div>
       </div>
     );
   },
 );
 
 export default TradeShareCard;
-
-function Stat({
-  label,
-  value,
-  skin,
-}: {
-  label: string;
-  value: string;
-  skin: CardSkin;
-}) {
-  return (
-    <div
-      style={{
-        flex: 1,
-        minWidth: 0,
-        background: skin.tile,
-        border: `1px solid ${skin.hair}`,
-        borderRadius: 14,
-        padding: "12px 10px 13px",
-        textAlign: "center",
-      }}
-    >
-      <div style={{ fontSize: 12, color: skin.muted, marginBottom: 5 }}>
-        {label}
-      </div>
-      <div
-        style={{
-          fontSize: 18,
-          fontWeight: 600,
-          color: skin.ink,
-          whiteSpace: "nowrap",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-        }}
-      >
-        {value}
-      </div>
-    </div>
-  );
-}
 
 // The actual Cuequill quill mark (from the marketing logo), inlined so
 // the capture doesn't depend on an external asset or icon font. The
