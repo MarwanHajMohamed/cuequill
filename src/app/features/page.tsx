@@ -53,8 +53,8 @@ const GROUPS: FeatureGroup[] = [
       },
       {
         title: "IBKR Flex auto-sync",
-        body: "Drop your Flex Web Service token in settings. Cuequill imports every fill weeknight after close — entry and exit times pulled from the fills, commissions and taxes folded in, duplicates flagged before they're saved.",
-        detail: "Nightly · times included · ~3 min setup",
+        body: "Drop your Flex Web Service token in settings. Cuequill imports every fill each morning — entry and exit times pulled from the fills, commissions and taxes folded in, duplicates flagged before they're saved.",
+        detail: "Every morning · times included · ~3 min setup",
         tiers: ["Pro"],
       },
       {

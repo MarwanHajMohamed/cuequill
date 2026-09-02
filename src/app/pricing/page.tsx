@@ -63,7 +63,7 @@ const PLANS: Plan[] = [
   },
   {
     name: "Pro",
-    tagline: "The whole thing, working for you nightly.",
+    tagline: "The whole thing, working for you every morning.",
     monthly: 39,
     annual: 31,
     cta: "Go pro",
@@ -72,7 +72,7 @@ const PLANS: Plan[] = [
     leadIn: "Everything in Starter, plus",
     included: [
       "Quill AI over your own trades",
-      "Auto IBKR sync after close",
+      "Auto IBKR sync every morning",
       "Unlimited strategies",
       "Per-strategy & per-symbol stats",
       "Monthly heatmap & trends",
@@ -125,7 +125,7 @@ const COMPARE: CompareGroup[] = [
       { feature: "Manual IBKR import", starter: true, pro: true },
       {
         feature: "IBKR auto-sync",
-        note: "Every weeknight after close",
+        note: "Every morning",
         starter: false,
         pro: true,
       },
@@ -175,7 +175,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "What do I need for IBKR sync?",
-    a: "A Flex Web Service token from Interactive Brokers. Drop it into settings and Cuequill imports every fill weeknight after close — commissions and taxes included.",
+    a: "A Flex Web Service token from Interactive Brokers. Drop it into settings and Cuequill imports every fill each morning — commissions and taxes included.",
   },
   {
     q: "Can I switch between monthly and yearly?",

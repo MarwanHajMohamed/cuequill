@@ -8,7 +8,7 @@ import ImportedTradesModal from "@/app/trades/ImportedTradesModal";
 import { useScrollLock } from "@/hooks/useScrollLock";
 
 // Shows a small welcome pop-up on the first authenticated page load
-// after the nightly IBKR sync (or any earlier session's manual sync)
+// after the morning IBKR sync (or any earlier session's manual sync)
 // inserted rows the user hasn't acknowledged yet. Dismissing or
 // opening the imported-list stamps the "seen" marker server-side so
 // the notice doesn't reappear on the next navigation.

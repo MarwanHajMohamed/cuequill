@@ -101,12 +101,12 @@ export default function Home() {
             <>
               Every IBKR fill,
               <br />
-              <span className="italic text-teal-300">synced nightly.</span>
+              <span className="italic text-teal-300">synced every morning.</span>
             </>
           }
-          body="Drop a Flex Web Service token in settings. Cuequill imports every fill weeknight after close — commissions and taxes included. Manual entry still works."
+          body="Drop a Flex Web Service token in settings. Cuequill imports every fill each morning — commissions and taxes included. Manual entry still works."
           stats={[
-            ["Runs", "After close"],
+            ["Runs", "Every morning"],
             ["Commissions", "Imported"],
             ["Setup", "≈3 min"],
           ]}
@@ -419,7 +419,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "Do I need Interactive Brokers?",
-    a: "No. Manual entry works fully on its own. IBKR sync is a convenience — drop in a Flex Web Service token and Cuequill imports every fill weeknight after close, commissions and taxes included.",
+    a: "No. Manual entry works fully on its own. IBKR sync is a convenience — drop in a Flex Web Service token and Cuequill imports every fill each morning, commissions and taxes included.",
   },
   {
     q: "Is it free to try?",

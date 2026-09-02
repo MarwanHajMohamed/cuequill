@@ -1,5 +1,5 @@
 # .github/workflows/ibkr-cron.yml
-name: IBKR nightly sync
+name: IBKR morning sync
 on:
   schedule:
     # 06:00 UK local. GitHub cron is fixed-UTC with no DST handling, so this

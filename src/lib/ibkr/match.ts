@@ -1,4 +1,4 @@
-// Pure FIFO fill-matcher shared by the nightly Flex sync today and the
+// Pure FIFO fill-matcher shared by the morning Flex sync today and the
 // real-time worker later (see docs/realtime-ibkr-sync.md). It knows
 // nothing about CSV, HTTP, Mongo, or users - it takes normalized fills
 // and returns trade drafts. Keeping it pure means both ingestion paths

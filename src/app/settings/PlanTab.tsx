@@ -35,7 +35,7 @@ const INCLUDED_FREE = [
 ];
 const PRO_ADDS = [
   "Quill AI over your own trades",
-  "Automatic IBKR nightly sync",
+  "Automatic IBKR morning sync",
   "Unlimited strategies & history",
   "Per-strategy & per-symbol stats",
   "Rules board & affirmations",

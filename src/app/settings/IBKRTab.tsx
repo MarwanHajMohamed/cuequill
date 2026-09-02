@@ -232,7 +232,7 @@ export default function IBKRTab() {
           </p>
         ) : (
           <p className="text-[13px] md:text-[14px] text-white/70 leading-relaxed">
-            Nightly auto-sync is a Pro feature. You can still import manually
+            Morning auto-sync is a Pro feature. You can still import manually
             below as often as you like.{" "}
             <Link
               href="/pricing"

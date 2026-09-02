@@ -41,7 +41,7 @@ async function runSync() {
   await connectDb();
   // Auto-sync is Pro-only. Free users with IBKR creds saved still get
   // the manual import button in settings — they're just not in the
-  // nightly job.
+  // morning job.
   const users = await User.find({
     ibkrToken: { $exists: true, $ne: "" },
     ibkrQueryId: { $exists: true, $ne: "" },
@@ -111,8 +111,8 @@ export async function GET(req: Request) {
 
   // Opt-in market-hours guard for the intraday schedule (?intraday=1).
   // When set, skip cheaply outside RTH so the every-15-min poll doesn't
-  // hammer IBKR's Flex service (and hit its rate limits) overnight or on
-  // holidays. The nightly run omits the param and always executes.
+  // hammer IBKR's Flex service (and hit its rate limits) outside market hours or on
+  // holidays. The morning run omits the param and always executes.
   const intraday = new URL(req.url).searchParams.get("intraday") === "1";
   if (intraday) {
     const nyNow = new Date(
