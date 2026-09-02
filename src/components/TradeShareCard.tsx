@@ -1,7 +1,14 @@
 import React, { forwardRef } from "react";
+import { DM_Mono } from "next/font/google";
 import { Trade } from "@/app/types/Trades";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
 import { type CardSkin, skinById } from "@/lib/cardSkins";
+
+// The app-wide typeface (DM Mono), so the exported card matches the site.
+const shareFont = DM_Mono({
+  subsets: ["latin"],
+  weight: ["300", "400", "500"],
+});
 
 // A self-contained, always-dark share card for a single trade. Brand +
 // date on top, symbol and hold window on the left, Net P/L and return %
@@ -43,9 +50,6 @@ const parseDate = (v?: string | null): Date | null => {
   const d = new Date(v);
   return Number.isNaN(d.getTime()) ? null : d;
 };
-
-const fmtShort = (d: Date) =>
-  d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
 const fmtLong = (d: Date) =>
   d.toLocaleDateString("en-US", {
@@ -90,30 +94,7 @@ const TradeShareCard = forwardRef<
 
     const bought = parseDate(trade.dateBought);
     const closed = parseDate(trade.dateClosed);
-    const dateCorner = closed ?? bought;
-    const heldDays =
-      bought && closed
-        ? Math.max(
-            0,
-            Math.round(
-              (closed.getTime() - bought.getTime()) / 86_400_000,
-            ),
-          )
-        : null;
-
-    const subtitle = isClosed
-      ? bought && closed
-        ? `${fmtShort(bought)} → ${fmtShort(closed)}${
-            heldDays != null
-              ? ` · ${heldDays} ${heldDays === 1 ? "day" : "days"} held`
-              : ""
-          }`
-        : bought
-          ? `Closed ${fmtShort(bought)}`
-          : ""
-      : bought
-        ? `Opened ${fmtShort(bought)}`
-        : "";
+    const dateCorner = isClosed ? (closed ?? bought) : bought;
 
     return (
       <div
@@ -122,8 +103,7 @@ const TradeShareCard = forwardRef<
           width: CARD_W,
           height: CARD_H,
           boxSizing: "border-box",
-          fontFamily:
-            "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+          fontFamily: shareFont.style.fontFamily,
           // Skin-defined base + glow. Captured to PNG so it's always a
           // literal colour (identical in any app theme).
           background: skin.bg,
@@ -186,18 +166,6 @@ const TradeShareCard = forwardRef<
             >
               {trade.symbol || "—"}
             </div>
-            {subtitle && (
-              <div
-                style={{
-                  marginTop: 12,
-                  fontSize: 15,
-                  color: MUTED,
-                  lineHeight: 1.35,
-                }}
-              >
-                {subtitle}
-              </div>
-            )}
           </div>
 
           <div style={{ textAlign: "right", flexShrink: 0 }}>
