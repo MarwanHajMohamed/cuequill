@@ -165,15 +165,15 @@ function sortValue(key: TradeColumnKey, t: Trade): SortValue {
     case "strike":
       return t.strike == null || t.strike === 0 ? missing : present(t.strike);
     case "closingContractPrice":
-      return t.closingContractPrice == null
-        ? missing
-        : present(t.closingContractPrice);
+      return closed && t.closingContractPrice != null
+        ? present(t.closingContractPrice)
+        : missing;
     case "dateBought":
       return present(new Date(t.dateBought).getTime());
     case "expiryDate":
       return present(new Date(t.expiryDate).getTime());
     case "dateClosed":
-      return t.dateClosed
+      return closed && t.dateClosed
         ? present(new Date(t.dateClosed).getTime())
         : missing;
     case "notes":
@@ -826,13 +826,14 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
       case "expiryDate":
         return new Date(trade.expiryDate).toLocaleDateString("en-GB");
       case "dateClosed":
-        return trade.dateClosed
+        // Open trades have no close date — ignore any stale value on the row.
+        return isClosed && trade.dateClosed
           ? new Date(trade.dateClosed).toLocaleDateString("en-GB")
           : "-";
       case "closingContractPrice":
-        return trade.closingContractPrice === null
-          ? "-"
-          : trade.closingContractPrice;
+        return isClosed && trade.closingContractPrice != null
+          ? trade.closingContractPrice
+          : "-";
       case "strategy":
         return trade.strategy;
       case "notes":
