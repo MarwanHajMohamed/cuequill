@@ -16,7 +16,6 @@ type Feature = {
   title: string;
   body: string;
   tiers: Tier[]; // Plans this feature ships on
-  detail?: string; // Optional short tabular-data subtitle
 };
 
 type FeatureGroup = {
@@ -42,37 +41,31 @@ const GROUPS: FeatureGroup[] = [
       {
         title: "Manual entry",
         body: "Log a trade by hand in seconds - every detail, entry and exit times included.",
-        detail: "Full trade detail · with entry/exit times",
         tiers: ["Free", "Pro"],
       },
       {
         title: "Plain-English logging",
         body: "Just tell Quill AI what you traded and it logs it for you.",
-        detail: "Via Quill AI · Pro",
         tiers: ["Pro"],
       },
       {
         title: "IBKR Flex auto-sync",
         body: "Connect IBKR once and your fills import automatically each morning.",
-        detail: "Every morning · times included · ~3 min setup",
         tiers: ["Pro"],
       },
       {
         title: "Tags",
         body: "Tag trades with what you did right or wrong to spot patterns.",
-        detail: "Mistake / good · per trade",
         tiers: ["Free", "Pro"],
       },
       {
         title: "Trade notes",
         body: "Rich notes on any trade, saved as you write.",
-        detail: "Rich text · autosave-aware",
         tiers: ["Free", "Pro"],
       },
       {
         title: "Simulated mode",
         body: "Test setups with paper trades that stay out of your real stats.",
-        detail: "Per-trade switch",
         tiers: ["Free", "Pro"],
       },
     ],
@@ -91,43 +84,36 @@ const GROUPS: FeatureGroup[] = [
       {
         title: "P/L calendar",
         body: "See each day's profit and loss at a glance, colour-coded.",
-        detail: "Mon–Fri grid · economic pills · net of fees",
         tiers: ["Free", "Pro"],
       },
       {
         title: "Day modal",
         body: "Tap a day to see every trade you took on it.",
-        detail: "Click any day",
         tiers: ["Free", "Pro"],
       },
       {
         title: "Statistics page",
         body: "Your win rate, expectancy and more - filterable by strategy and symbol.",
-        detail: "Core free · monthly heatmap & trend on Pro",
         tiers: ["Free", "Pro"],
       },
       {
         title: "Trades table",
         body: "Every trade in one sortable, filterable table.",
-        detail: "Sortable · sticky header · URL-stateful",
         tiers: ["Free", "Pro"],
       },
       {
         title: "Downloadable reports",
         body: "Export performance, tax and activity reports to CSV.",
-        detail: "CSV export · date-scoped · Pro",
         tiers: ["Pro"],
       },
       {
         title: "Dashboard insights",
         body: "Quick tiles showing your edge and your costliest mistakes.",
-        detail: "Lives on the dashboard",
         tiers: ["Pro"],
       },
       {
         title: "Equity curve",
         body: "Watch your account grow over time in one chart.",
-        detail: "All-time · in £/$",
         tiers: ["Pro"],
       },
     ],
@@ -146,37 +132,31 @@ const GROUPS: FeatureGroup[] = [
       {
         title: "Ask anything",
         body: "Ask questions about your trading in plain English.",
-        detail: "Pro only",
         tiers: ["Pro"],
       },
       {
         title: "Reads imported fills",
         body: "Quill sees your IBKR fills and manual trades together.",
-        detail: "Pro only",
         tiers: ["Pro"],
       },
       {
         title: "Performance analysis",
         body: "Break your results down by strategy, symbol, day or time.",
-        detail: "Pro only",
         tiers: ["Pro"],
       },
       {
         title: "Pattern & mistake spotting",
         body: "Quill finds what your losing trades have in common.",
-        detail: "Pro only",
         tiers: ["Pro"],
       },
       {
         title: "Rule-adherence checks",
         body: "Ask whether your trades followed your own rules.",
-        detail: "Reads your rules",
         tiers: ["Pro"],
       },
       {
         title: "Threads & history",
         body: "Your chats are saved, so you can pick up where you left off.",
-        detail: "Pro only",
         tiers: ["Pro"],
       },
     ],
@@ -195,25 +175,21 @@ const GROUPS: FeatureGroup[] = [
       {
         title: "Strategy playbook",
         body: "Eleven ready-made options setups with charts and rules.",
-        detail: "11 setups · CALL & PUT",
         tiers: ["Free", "Pro"],
       },
       {
         title: "Rules board",
         body: "Keep your trading rules in one place, organised your way.",
-        detail: "Sections · inline editor · Pro",
         tiers: ["Pro"],
       },
       {
         title: "Affirmations",
         body: "A quick daily checklist to keep your rules front of mind.",
-        detail: "Daily ritual · Pro",
         tiers: ["Pro"],
       },
       {
         title: "Goals",
         body: "Set P/L targets and track your progress.",
-        detail: "Monthly + daily",
         tiers: ["Free", "Pro"],
       },
     ],
@@ -232,25 +208,21 @@ const GROUPS: FeatureGroup[] = [
       {
         title: "Light & dark themes",
         body: "Switch between light and dark whenever you like.",
-        detail: "One-click switch",
         tiers: ["Free", "Pro"],
       },
       {
         title: "Installable PWA",
         body: "Install it like a real app on iOS or Android.",
-        detail: "iOS · Android",
         tiers: ["Free", "Pro"],
       },
       {
         title: "Collapsible sidebar",
         body: "Hide the sidebar to give charts and tables more room.",
-        detail: "Persists across pages",
         tiers: ["Free", "Pro"],
       },
       {
         title: "Private by default",
         body: "Your data stays yours - encrypted and never shared.",
-        detail: "Bank-grade encryption",
         tiers: ["Free", "Pro"],
       },
     ],
@@ -395,11 +367,6 @@ function FeatureRow({ feature, index }: { feature: Feature; index: number }) {
         <p className="mt-2 text-[13px] text-white/60 leading-relaxed max-w-xl">
           {feature.body}
         </p>
-        {feature.detail && (
-          <p className="mt-3 text-[10.5px] tracking-[0.1em] text-white/35 tabular-nums">
-            {feature.detail}
-          </p>
-        )}
       </div>
 
       {/* Tier badges */}
