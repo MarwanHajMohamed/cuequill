@@ -214,6 +214,13 @@ export default function Navbar() {
     // A light tap on navigation gives the native shell a real app feel
     // (no-op on web).
     hapticTap("light");
+    // Pressing Quill AI always opens a fresh chat. When already on /chat,
+    // router.push to the same path is a no-op and wouldn't remount the
+    // page, so signal it to reset instead.
+    if (href === "/chat" && pathname === "/chat") {
+      window.dispatchEvent(new Event("cuequill:new-chat"));
+      return;
+    }
     // Update the optimistic active path synchronously so the pill
     // animates the moment the click registers.
     setPendingPath(href);
