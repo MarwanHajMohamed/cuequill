@@ -11,6 +11,7 @@ import { ToastProvider } from "@/hooks/useToast";
 import PWARegister from "./PWARegister";
 import NativeBridge from "./NativeBridge";
 import CookieConsent from "./CookieConsent";
+import DocumentTitle from "./DocumentTitle";
 
 // Single typeface for the whole app - headings inherit this via
 // globals.css, so there's no separate display/serif font.
@@ -117,6 +118,7 @@ export default function RootLayout({
               <NavbarWrapper />
               <ContentShell>{children}</ContentShell>
             </SidebarProvider>
+            <DocumentTitle />
             <PWARegister />
             <NativeBridge />
             <CookieConsent />
