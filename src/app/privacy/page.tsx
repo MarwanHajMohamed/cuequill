@@ -9,8 +9,8 @@ import { LegalDoc, type LegalSection } from "../_marketing/Chrome";
 // edit them.
 const COMPANY = {
   name: "Cuequill Ltd",
-  number: "[company number]",
-  address: "[registered office address]",
+  number: "17435221",
+  address: "1 Kelly Road, High Wycombe, England, HP11 1BW",
   email: "info@cuequill.com",
 };
 
