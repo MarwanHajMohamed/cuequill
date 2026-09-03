@@ -379,8 +379,12 @@ function Page() {
     }
   }, []);
 
-  // Initial load: fetch the thread list, open the most recent (or create
-  // the first one), and load its messages. Re-runs on account switch.
+  // Initial load: fetch the thread list (for the history sidebar) but
+  // always open on a FRESH, empty chat rather than reopening the most
+  // recent thread. The server-side conversation is created lazily on the
+  // first message (see `send`), so simply visiting the tab never litters
+  // history with empty threads. Re-runs on account switch. Past
+  // conversations remain one tap away in the sidebar / history menu.
   useEffect(() => {
     if (!userId) return;
     // Purge any leftover localStorage copies from the old client approach.
@@ -394,43 +398,20 @@ function Page() {
     loadedOkRef.current = false;
     setHydrated(false);
     (async () => {
+      let list: ConversationMeta[] = [];
       try {
-        let list = await fetchConversationList();
-        let id: string | null = null;
-        let msgs: Msg[] = [];
-        let ok = false;
-        if (list.length > 0) {
-          id = list[0].id;
-          const mRes = await fetch(`/api/chat/conversations/${id}`, {
-            cache: "no-store",
-          });
-          if (mRes.ok) {
-            msgs = ((await mRes.json()).messages ?? []) as Msg[];
-            ok = true;
-          }
-        } else {
-          const cRes = await fetch("/api/chat/conversations", {
-            method: "POST",
-          });
-          if (cRes.ok) {
-            const c = (await cRes.json()) as ConversationMeta;
-            id = c.id;
-            list = [c];
-            ok = true; // fresh empty thread - safe to persist to
-          }
-        }
-        if (!cancelled && id) {
-          setConversations(list);
-          setConv(id);
-          setMessages(msgs);
-          // Only enable auto-save if we actually loaded the thread, so a
-          // failed message fetch can't overwrite stored history with [].
-          loadedOkRef.current = ok;
-        }
+        list = await fetchConversationList();
       } catch {
-        /* leave empty; loadedOk stays false so we don't overwrite */
-      } finally {
-        if (!cancelled) setHydrated(true);
+        /* keep the empty list */
+      }
+      if (!cancelled) {
+        setConversations(list);
+        // Start blank: no active thread, no messages. loadedOk is true so
+        // the (no-op, id-less) auto-save guard is satisfied.
+        setConv(null);
+        setMessages([]);
+        loadedOkRef.current = true;
+        setHydrated(true);
       }
     })();
     return () => {
@@ -448,22 +429,26 @@ function Page() {
     return () => clearTimeout(id);
   }, [messages, hydrated, conversationId, streaming, persist]);
 
-  // Start a fresh conversation.
-  const newChat = useCallback(async () => {
+  // Start a fresh conversation. Just resets to the blank state - the
+  // server-side thread is created lazily on the first message (see
+  // `send`), so opening a new chat and leaving it empty never creates a
+  // stray thread.
+  const newChat = useCallback(() => {
     resetTicker();
-    try {
-      const res = await fetch("/api/chat/conversations", { method: "POST" });
-      if (!res.ok) return;
-      const c = (await res.json()) as ConversationMeta;
-      loadedOkRef.current = true;
-      setConversations((prev) => [c, ...prev]);
-      setConv(c.id);
-      setMessages([]);
-      setInput("");
-    } catch {
-      /* ignore */
-    }
+    loadedOkRef.current = true;
+    setConv(null);
+    setMessages([]);
+    setInput("");
   }, [resetTicker, setConv]);
+
+  // Pressing the Quill AI tab while already on the chat page can't remount
+  // the route (router.push to the same path is a no-op), so the navbar
+  // dispatches this event instead. Reset to a fresh chat when it fires.
+  useEffect(() => {
+    const onNewChat = () => newChat();
+    window.addEventListener("cuequill:new-chat", onNewChat);
+    return () => window.removeEventListener("cuequill:new-chat", onNewChat);
+  }, [newChat]);
 
   // Switch to an existing conversation.
   const switchConversation = useCallback(
@@ -589,10 +574,6 @@ function Page() {
     async (text: string, images: string[] = []) => {
       const trimmed = text.trim();
       if ((!trimmed && images.length === 0) || streaming) return;
-      // The thread this turn belongs to. If the user switches conversations
-      // mid-stream, we stop feeding tokens so they don't land in the wrong
-      // thread.
-      const activeConv = convIdRef.current;
       const next: Msg[] = [
         ...messages,
         { role: "user", text: trimmed, images: images.length ? images : undefined },
@@ -604,6 +585,28 @@ function Page() {
       setStreaming(true);
       networkOpenRef.current = true;
       renderQueueRef.current = [];
+
+      // The thread this turn belongs to. If the user switches conversations
+      // mid-stream, we stop feeding tokens so they don't land in the wrong
+      // thread. On a fresh chat there's no thread yet, so create it now -
+      // the first message is what turns a blank chat into a saved one.
+      let activeConv = convIdRef.current;
+      if (!activeConv) {
+        try {
+          const cRes = await fetch("/api/chat/conversations", {
+            method: "POST",
+          });
+          if (cRes.ok) {
+            const c = (await cRes.json()) as ConversationMeta;
+            activeConv = c.id;
+            loadedOkRef.current = true;
+            setConv(c.id);
+            setConversations((prev) => [c, ...prev]);
+          }
+        } catch {
+          /* no thread - the reply still streams, it just won't persist */
+        }
+      }
 
       try {
         const outbound = next.filter((m) => !m.pending);
@@ -701,7 +704,15 @@ function Page() {
         refreshConversations();
       }
     },
-    [messages, streaming, enqueueChunk, queryClient, userId, refreshConversations],
+    [
+      messages,
+      streaming,
+      enqueueChunk,
+      queryClient,
+      userId,
+      refreshConversations,
+      setConv,
+    ],
   );
 
   // Deep-links, handled once the thread is ready, then the URL is cleared
