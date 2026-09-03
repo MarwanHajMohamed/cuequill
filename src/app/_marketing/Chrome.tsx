@@ -152,7 +152,7 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-white/10">
       <div className="max-w-[1200px] mx-auto px-6 md:px-10 py-12 grid grid-cols-2 md:grid-cols-12 gap-y-8 gap-x-6">
-        <div className="md:col-span-5 flex flex-col gap-3">
+        <div className="md:col-span-4 flex flex-col gap-3">
           <Link href="/" className="flex items-center gap-2.5">
             <CuequillLogo className="h-5 w-auto" />
             <span className="font-semibold tracking-tight text-[13.5px]">
@@ -182,6 +182,13 @@ export function SiteFooter() {
             { label: "Quill AI", href: "/#quill" },
             { label: "Numbers", href: "/#numbers" },
             { label: "IBKR sync", href: "/#ibkr" },
+          ]}
+        />
+        <FooterCol
+          title="Legal"
+          links={[
+            { label: "Privacy policy", href: "/privacy" },
+            { label: "Terms of service", href: "/terms" },
           ]}
         />
         <FooterCol
@@ -237,6 +244,144 @@ function FooterCol({
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+// ─── Legal document shell ─────────────────────────────────────────────
+// Shared layout for the Privacy Policy and Terms pages. Data-driven so
+// each page just supplies its metadata and a list of sections. Renders
+// the marketing header/footer, a title block with the effective date, a
+// jump-links table of contents and the numbered sections themselves.
+
+export type LegalBlock =
+  | { type: "p"; text: string }
+  | { type: "list"; items: string[] };
+
+export type LegalSection = {
+  id: string;
+  heading: string;
+  blocks: LegalBlock[];
+};
+
+export function LegalDoc({
+  title,
+  tagline,
+  updated,
+  effective,
+  intro,
+  sections,
+}: {
+  title: string;
+  tagline: string;
+  updated: string;
+  effective: string;
+  intro: string[];
+  sections: LegalSection[];
+}) {
+  return (
+    <div className="min-h-screen flex flex-col">
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 -z-10"
+        style={{
+          background:
+            "radial-gradient(45% 40% at 50% 0%, rgba(20,184,166,0.10) 0%, rgba(20,184,166,0) 70%)",
+        }}
+      />
+      <SiteHeader />
+
+      <main className="flex-1 pt-28 md:pt-36 px-6 md:px-10">
+        <div className="max-w-[760px] mx-auto pb-24">
+          {/* Title block */}
+          <SectionMark label="Legal" />
+          <h1 className="mt-6 text-[36px] md:text-[52px] leading-[1.02] font-medium tracking-[-0.025em]">
+            {title}
+          </h1>
+          <p className="mt-5 max-w-xl text-[14px] text-white/60 leading-relaxed">
+            {tagline}
+          </p>
+          <div className="mt-6 flex flex-wrap gap-x-6 gap-y-1 text-[11px] tracking-[0.08em] text-white/40">
+            <span>Effective {effective}</span>
+            <span>Last updated {updated}</span>
+          </div>
+
+          {/* Intro */}
+          <div className="mt-10 flex flex-col gap-4">
+            {intro.map((t, i) => (
+              <p
+                key={i}
+                className="text-[14px] text-white/70 leading-relaxed"
+              >
+                {t}
+              </p>
+            ))}
+          </div>
+
+          {/* Contents */}
+          <nav className="mt-10 rounded-2xl border border-white/10 bg-white/[0.02] p-5">
+            <h2 className="text-[10.5px] tracking-[0.1em] text-white/40 mb-3 font-medium">
+              Contents
+            </h2>
+            <ol className="flex flex-col gap-1.5 text-[13px]">
+              {sections.map((s, i) => (
+                <li key={s.id} className="flex gap-2.5">
+                  <span className="tabular-nums text-white/35">{i + 1}.</span>
+                  <a
+                    href={`#${s.id}`}
+                    className="text-white/65 hover:text-white transition"
+                  >
+                    {s.heading}
+                  </a>
+                </li>
+              ))}
+            </ol>
+          </nav>
+
+          {/* Sections */}
+          <div className="mt-14 flex flex-col gap-12">
+            {sections.map((s, i) => (
+              <section key={s.id} id={s.id} className="scroll-mt-28">
+                <h2 className="text-[19px] md:text-[21px] font-medium tracking-[-0.01em]">
+                  <span className="text-white/35 tabular-nums mr-2">
+                    {i + 1}.
+                  </span>
+                  {s.heading}
+                </h2>
+                <div className="mt-4 flex flex-col gap-4">
+                  {s.blocks.map((b, j) =>
+                    b.type === "p" ? (
+                      <p
+                        key={j}
+                        className="text-[14px] text-white/70 leading-relaxed"
+                      >
+                        {b.text}
+                      </p>
+                    ) : (
+                      <ul
+                        key={j}
+                        className="flex flex-col gap-2 pl-1"
+                      >
+                        {b.items.map((it, k) => (
+                          <li
+                            key={k}
+                            className="flex items-start gap-2.5 text-[14px] text-white/70 leading-relaxed"
+                          >
+                            <span className="shrink-0 mt-[9px] w-1.5 h-1.5 rounded-full bg-teal-400/70" />
+                            <span>{it}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ),
+                  )}
+                </div>
+              </section>
+            ))}
+          </div>
+        </div>
+      </main>
+
+      <SiteFooter />
     </div>
   );
 }

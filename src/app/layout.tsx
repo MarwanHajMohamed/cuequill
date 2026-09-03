@@ -21,12 +21,34 @@ const dmMono = DM_Mono({
   display: "swap",
 });
 
+const SITE_URL = "https://cuequill.com";
+const SITE_DESCRIPTION =
+  "A trading journal that remembers for you. Log trades, sync IBKR, and ask Quill AI about your own options trading.";
+
 export const metadata: Metadata = {
-  title: "Cuequill",
-  description:
-    "Discretionary US-options trading journal - strategies, calendar, and stats.",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "Cuequill - a trading journal that remembers for you",
+    template: "%s · Cuequill",
+  },
+  description: SITE_DESCRIPTION,
   applicationName: "Cuequill",
   manifest: "/manifest.webmanifest",
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    siteName: "Cuequill",
+    url: SITE_URL,
+    title: "Cuequill - a trading journal that remembers for you",
+    description: SITE_DESCRIPTION,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Cuequill - a trading journal that remembers for you",
+    description: SITE_DESCRIPTION,
+  },
   appleWebApp: {
     capable: true,
     title: "Cuequill",
