@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import connectDb from "@/lib/db";
 import { User } from "@/lib/models/User";
 import { getStripe } from "@/lib/stripe";
+import { getProStatus } from "@/lib/pro";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -36,12 +37,15 @@ function cycleForPrice(priceId?: string): "monthly" | "annual" | null {
 }
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  // getProStatus self-heals a missed webhook (reconciles live from Stripe
+  // when the user has paid but the DB isn't Pro), so opening the plan panel
+  // recovers a stuck subscription. It also gives us the authenticated id.
+  const { userId } = await getProStatus();
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   await connectDb();
-  const user = await User.findById(session.user.id)
+  const user = await User.findById(userId)
     .select(
       "isPro proManualOverride stripeSubscriptionId stripeSubscriptionStatus stripePriceId stripeCurrentPeriodEnd stripeCancelAtPeriodEnd",
     )
