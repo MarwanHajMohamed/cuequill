@@ -124,19 +124,20 @@ export default function PlanTab() {
     loadPlan();
   }, [loadPlan]);
 
-  // The plan GET reconciles a missed webhook server-side. If the DB now
-  // says Pro but the session flag is still stale (the badge and gates read
-  // it), refresh the session once so the UI catches up without waiting for
-  // the periodic re-check. One-shot ref guard so we don't re-trigger as the
-  // session revalidates.
+  // The plan GET reconciles against Stripe server-side (both directions). If
+  // the reconciled DB value disagrees with the session flag (which drives the
+  // badge and gates), refresh the session once so the UI catches up without
+  // waiting for the periodic re-check. One-shot ref guard so we don't
+  // re-trigger as the session revalidates.
   const refreshedRef = useRef(false);
   useEffect(() => {
-    if (refreshedRef.current) return;
-    if (plan?.isPro && !session?.user?.isPro) {
+    if (refreshedRef.current || !plan) return;
+    const sessionPro = !!session?.user?.isPro;
+    if (plan.isPro !== sessionPro) {
       refreshedRef.current = true;
-      update({ isPro: true });
+      update({ isPro: plan.isPro });
     }
-  }, [plan?.isPro, session?.user?.isPro, update]);
+  }, [plan, session?.user?.isPro, update]);
 
   const handleCancel = async () => {
     if (cancelling) return;
