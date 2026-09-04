@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useToast } from "@/hooks/useToast";
 import { FaqRow, SiteFooter, SiteHeader } from "../_marketing/Chrome";
 
@@ -210,11 +210,28 @@ export default function PricingPage() {
   // itself (repeated update() calls) churns next-auth and flickers the
   // navbar. The `{ isPro: true }` arg makes the jwt callback re-check the
   // DB (the DB value, not the client's, is authoritative).
+  //
+  // Runs EXACTLY ONCE (ref guard + empty deps). `update` must NOT be a
+  // dependency: calling update() re-renders this component with a fresh
+  // `update` identity, which would re-run the effect, poll again, call
+  // update() again... an infinite loop that flips isPro on and off every
+  // couple of seconds. We also strip the `checkout` param from the URL so
+  // a refresh doesn't restart the whole flow.
   const [checkoutResult, setCheckoutResult] = useState<string | null>(null);
+  const handledCheckoutRef = useRef(false);
   useEffect(() => {
-    const c = new URLSearchParams(window.location.search).get("checkout");
+    if (handledCheckoutRef.current) return;
+    const params = new URLSearchParams(window.location.search);
+    const c = params.get("checkout");
     if (!c) return;
+    handledCheckoutRef.current = true;
     setCheckoutResult(c);
+
+    // Drop ?checkout=… so a page refresh doesn't re-enter this flow.
+    params.delete("checkout");
+    const qs = params.toString();
+    window.history.replaceState({}, "", `/pricing${qs ? `?${qs}` : ""}`);
+
     if (c !== "success") return;
 
     let cancelled = false;
@@ -240,7 +257,10 @@ export default function PricingPage() {
       cancelled = true;
       clearTimeout(first);
     };
-  }, [update]);
+    // Intentionally run once on mount only - see the note above on why
+    // `update` must be excluded from the dependency array.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col">
