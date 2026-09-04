@@ -163,7 +163,12 @@ export async function POST(req: NextRequest) {
     if (item.price?.id !== priceId) {
       const updated = await stripe.subscriptions.update(subId, {
         items: [{ id: item.id, price: priceId }],
-        proration_behavior: "create_prorations",
+        // always_invoice bills the changeover NOW (annual price, minus a
+        // credit for the unused part of the month) rather than deferring the
+        // difference to a future invoice. The month→year interval change
+        // resets the billing anchor to today, so the new annual term starts
+        // now and renews in a year.
+        proration_behavior: "always_invoice",
         // Switching to a new cycle implies keeping the subscription.
         cancel_at_period_end: false,
       });
