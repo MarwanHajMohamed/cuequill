@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
     action?: unknown;
     cycle?: unknown;
   };
-  if (body.action !== "cancel" && body.action !== "switch") {
+  if (body.action !== "cancel" && body.action !== "finalize-switch") {
     return NextResponse.json({ error: "Unknown action." }, { status: 400 });
   }
 
@@ -88,6 +88,61 @@ export async function POST(req: NextRequest) {
   if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
+
+  const stripe = getStripe();
+
+  // Finalize a cycle switch. The user returned from a Checkout that created
+  // a new (annual) subscription; keep that one and cancel any other active
+  // subscription (the old monthly) so they're never billed on two plans.
+  // Runs on return from Checkout; the webhook does the same when it's wired,
+  // so whichever fires first cleans up. Does NOT require isPro - the DB may
+  // not have caught up to the just-paid subscription yet.
+  if (body.action === "finalize-switch") {
+    if (user.stripeCustomerId) {
+      try {
+        const list = await stripe.subscriptions.list({
+          customer: user.stripeCustomerId,
+          status: "all",
+          limit: 20,
+        });
+        const ACTIVE = new Set(["active", "trialing", "past_due"]);
+        const activeSubs = list.data
+          .filter((s) => ACTIVE.has(s.status))
+          .sort((a, b) => (b.created ?? 0) - (a.created ?? 0));
+        // Keep the annual subscription (newest, since Checkout just made
+        // it); fall back to the newest active if the price doesn't match.
+        const annualPrice = priceIdForCycle("annual");
+        const keep =
+          activeSubs.find(
+            (s) => s.items?.data?.[0]?.price?.id === annualPrice,
+          ) ??
+          activeSubs[0] ??
+          null;
+        for (const s of activeSubs) {
+          if (keep && s.id !== keep.id) {
+            try {
+              await stripe.subscriptions.cancel(s.id);
+            } catch (e) {
+              console.error("[plan/finalize-switch] cancel old failed", s.id, e);
+            }
+          }
+        }
+        if (keep) await syncSubscriptionToUser(keep);
+      } catch (err) {
+        console.error("[plan/finalize-switch] failed", err);
+      }
+    }
+    const fresh = await User.findById(user._id)
+      .select("isPro stripePriceId")
+      .lean<{ isPro?: boolean; stripePriceId?: string }>();
+    return NextResponse.json({
+      ok: true,
+      isPro: !!fresh?.isPro,
+      cycle: cycleForPrice(fresh?.stripePriceId),
+    });
+  }
+
+  // ── action === "cancel" ─────────────────────────────────────────────
   if (!user.isPro) {
     return NextResponse.json(
       { error: "You're not on the Pro plan." },
@@ -95,12 +150,10 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const stripe = getStripe();
-
-  // Find the subscription. Prefer the stored id, but if the webhook never
-  // landed it (so stripeSubscriptionId is empty) fall back to looking it up
-  // from the customer - otherwise, on cancel, we'd drop access locally while
-  // Stripe quietly renews and charges the card again.
+  // Find the subscription to cancel. Prefer the stored id, but if the
+  // webhook never landed it (so stripeSubscriptionId is empty) fall back to
+  // looking it up from the customer - otherwise we'd drop access locally
+  // while Stripe quietly renews and charges the card again.
   let subId: string | undefined = user.stripeSubscriptionId;
   if (!subId && user.stripeCustomerId) {
     try {
@@ -124,62 +177,6 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Switch billing cycle (e.g. monthly → annual). Swaps the subscription's
-  // price in place with proration, so the change is immediate and the
-  // renewal moves to the new cycle - no Stripe portal round-trip.
-  if (body.action === "switch") {
-    const targetCycle = body.cycle === "monthly" ? "monthly" : "annual";
-    const priceId = priceIdForCycle(targetCycle);
-    if (!priceId) {
-      return NextResponse.json(
-        { error: "Billing is not configured for that plan." },
-        { status: 500 },
-      );
-    }
-    if (!subId) {
-      return NextResponse.json(
-        { error: "No active subscription to switch." },
-        { status: 400 },
-      );
-    }
-    let current;
-    try {
-      current = await stripe.subscriptions.retrieve(subId);
-    } catch (err) {
-      console.error("[plan/switch] retrieve failed", err);
-      return NextResponse.json(
-        { error: "Couldn't load your subscription. Try again?" },
-        { status: 502 },
-      );
-    }
-    const item = current.items?.data?.[0];
-    if (!item?.id) {
-      return NextResponse.json(
-        { error: "Couldn't read your subscription. Try again?" },
-        { status: 502 },
-      );
-    }
-    // Already on the requested cycle - just re-sync and report success.
-    if (item.price?.id !== priceId) {
-      const updated = await stripe.subscriptions.update(subId, {
-        items: [{ id: item.id, price: priceId }],
-        // always_invoice bills the changeover NOW (annual price, minus a
-        // credit for the unused part of the month) rather than deferring the
-        // difference to a future invoice. The month→year interval change
-        // resets the billing anchor to today, so the new annual term starts
-        // now and renews in a year.
-        proration_behavior: "always_invoice",
-        // Switching to a new cycle implies keeping the subscription.
-        cancel_at_period_end: false,
-      });
-      await syncSubscriptionToUser(updated);
-    } else {
-      await syncSubscriptionToUser(current);
-    }
-    return NextResponse.json({ ok: true, cycle: targetCycle });
-  }
-
-  // ── From here: action === "cancel" ──────────────────────────────────
   // Genuinely no Stripe subscription (comped / legacy Pro): nothing to
   // cancel in Stripe, so just drop the local grant.
   if (!subId) {

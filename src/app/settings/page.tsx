@@ -1,6 +1,6 @@
 "use client";
 import { withAuth } from "@/lib/withAuth";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import TradesTab from "./TradesTab";
 import Account from "./Account";
 import IBKRTab from "./IBKRTab";
@@ -10,6 +10,14 @@ import AppearanceTab from "./AppearanceTab";
 
 function Page() {
   const [selectedSetting, setSelectedSetting] = useState<string>("Account");
+
+  // Land on the Plan tab when returning from a billing Checkout (the switch
+  // flow returns to /settings?switch=…), so PlanTab mounts and can finalize.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).has("switch")) {
+      setSelectedSetting("Plan");
+    }
+  }, []);
 
   const settingsTabs = [
     { title: "Account", icon: "fa-solid fa-user", content: <Account /> },

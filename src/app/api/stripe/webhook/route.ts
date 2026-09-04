@@ -54,6 +54,19 @@ export async function POST(req: NextRequest) {
               : s.subscription.id;
           const sub = await stripe.subscriptions.retrieve(subId);
           await syncSubscriptionToUser(sub);
+
+          // Cycle switch: this checkout created a new subscription to
+          // replace an old one (see /api/stripe/switch-checkout). Cancel
+          // the old subscription now that the new one is paid, so the
+          // customer isn't billed on two plans.
+          const switchFrom = s.metadata?.switchFrom;
+          if (switchFrom && switchFrom !== subId) {
+            try {
+              await stripe.subscriptions.cancel(switchFrom);
+            } catch (err) {
+              console.error("[stripe/webhook] cancel old sub failed", err);
+            }
+          }
         }
         break;
       }
