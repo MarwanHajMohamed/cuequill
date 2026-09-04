@@ -33,6 +33,16 @@ function limitFor(pathname: string, method: string): number | null {
   ) {
     return 10;
   }
+  // Account-mutating auth endpoints: keep tight so they can't be used to
+  // spam-create accounts or email-bomb someone via password resets.
+  if (
+    method === "POST" &&
+    (pathname.startsWith("/api/auth/register") ||
+      pathname.startsWith("/api/auth/forgot-password") ||
+      pathname.startsWith("/api/auth/reset-password"))
+  ) {
+    return 8;
+  }
   if (pathname.startsWith("/api/waitlist")) return 8;
   return 120;
 }
@@ -57,9 +67,13 @@ export default function middleware(
     // exhaust another's budget.
     const group = pathname.startsWith("/api/auth/callback/credentials")
       ? "auth"
-      : pathname.startsWith("/api/waitlist")
-        ? "waitlist"
-        : "general";
+      : pathname.startsWith("/api/auth/register") ||
+          pathname.startsWith("/api/auth/forgot-password") ||
+          pathname.startsWith("/api/auth/reset-password")
+        ? "authmut"
+        : pathname.startsWith("/api/waitlist")
+          ? "waitlist"
+          : "general";
     const { ok, retryAfter } = rateLimit(
       `${clientIp(req)}:${group}`,
       limit,

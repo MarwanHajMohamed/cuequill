@@ -224,8 +224,16 @@ function Login() {
 
           {/* Password */}
           <label className="flex flex-col gap-1.5">
-            <span className="text-[11px] tracking-[0.08em] text-white/45 font-medium">
-              Password
+            <span className="flex items-center justify-between">
+              <span className="text-[11px] tracking-[0.08em] text-white/45 font-medium">
+                Password
+              </span>
+              <Link
+                href="/forgot-password"
+                className="text-[11px] text-white/45 hover:text-white transition"
+              >
+                Forgot?
+              </Link>
             </span>
             <div className="relative">
               <i className="fa-solid fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-[12px] text-white/35" />
@@ -294,7 +302,7 @@ function Login() {
             href="/signup"
             className="text-white/70 hover:text-white underline decoration-white/20 underline-offset-2 hover:decoration-teal-400 transition"
           >
-            Join the waitlist
+            Sign up
           </Link>
           .
         </div>

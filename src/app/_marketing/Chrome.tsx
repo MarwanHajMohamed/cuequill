@@ -82,7 +82,7 @@ export function SiteHeader() {
             href="/signup"
             className="hidden sm:inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[12.5px] font-medium"
           >
-            Join waitlist
+            Sign up
           </Link>
           <button
             type="button"
@@ -136,7 +136,7 @@ export function SiteHeader() {
                 onClick={() => setMenuOpen(false)}
                 className="px-5 py-3.5 text-[14px] font-medium text-teal-300 hover:bg-teal-500/[0.08] transition inline-flex items-center justify-between"
               >
-                Join waitlist
+                Sign up
                 <i className="fa-solid fa-chevron-right text-[11px]" />
               </Link>
             </div>
@@ -171,7 +171,7 @@ export function SiteFooter() {
             { label: "Overview", href: "/" },
             { label: "Features", href: "/features" },
             { label: "Pricing", href: "/pricing" },
-            { label: "Join waitlist", href: "/signup" },
+            { label: "Sign up", href: "/signup" },
             { label: "Sign in", href: "/login" },
           ]}
         />
@@ -210,7 +210,6 @@ export function SiteFooter() {
           <div className="flex items-center justify-between text-[10.5px] tracking-[0.1em] text-white/35">
             <span>© {new Date().getFullYear()} Cuequill</span>
             <div className="flex items-center gap-4">
-              <span>Invite-only</span>
               <ThemeToggle />
             </div>
           </div>
