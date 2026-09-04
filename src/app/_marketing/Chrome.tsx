@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import Link from "next/link";
 import { useState } from "react";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -35,6 +35,68 @@ export const CuequillLogo = ({ className = "" }: { className?: string }) => (
   </svg>
 );
 
+// Launch announcement stripe - a full-bleed bar above the nav pill that
+// scrolls the launch date + promo code right-to-left. Rendered by
+// SiteHeader, so every marketing surface picks it up. Honours reduced-
+// motion by showing the message statically instead of scrolling.
+const PROMO_ITEMS = [
+  "Cuequill launches 25 September 2026",
+  "Use code LAUNCH26 for 50% off your first 6 months",
+];
+
+// One run of the promo items with dot separators. aria-hidden because the
+// bar exposes a single readable sr-only copy for assistive tech; the
+// visible marquee is decorative and duplicated for a seamless loop.
+function PromoSequence() {
+  return (
+    <div className="flex items-center shrink-0" aria-hidden>
+      {[0, 1, 2].map((rep) =>
+        PROMO_ITEMS.map((item, i) => (
+          <span key={`${rep}-${i}`} className="flex items-center">
+            <span className="px-6 text-[11.5px] font-medium tracking-[0.02em] text-teal-50 whitespace-nowrap">
+              {item}
+            </span>
+            <span className="w-1 h-1 rounded-full bg-teal-200/70" />
+          </span>
+        )),
+      )}
+    </div>
+  );
+}
+
+export function AnnouncementBar() {
+  const reduce = useReducedMotion();
+  return (
+    <div className="pointer-events-auto w-full overflow-hidden border-b border-teal-400/20 bg-gradient-to-r from-teal-600/30 via-teal-500/20 to-emerald-500/30 backdrop-blur-md">
+      {/* Single readable copy for screen readers; the marquee is decorative. */}
+      <span className="sr-only">
+        Cuequill launches 25 September 2026. Use code LAUNCH26 for 50% off your
+        first 6 months.
+      </span>
+      <div className="relative flex h-9 items-center">
+        {reduce ? (
+          <div className="flex w-full items-center justify-center">
+            <span className="px-6 text-[11.5px] font-medium text-teal-50 text-center">
+              Cuequill launches 25 September 2026 · Use code LAUNCH26 for 50% off
+              your first 6 months
+            </span>
+          </div>
+        ) : (
+          <motion.div
+            className="flex w-max flex-nowrap"
+            animate={{ x: ["0%", "-50%"] }}
+            transition={{ ease: "linear", duration: 26, repeat: Infinity }}
+          >
+            {/* Two identical runs; shifting by exactly -50% loops seamlessly. */}
+            <PromoSequence />
+            <PromoSequence />
+          </motion.div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // Pill navbar - preserved from the previous landing page per the brief.
 // Glass-pill structure, fixed at top, centered up to a max width. On
 // phones the Features / Pricing links and Sign in pill collapse behind
@@ -45,9 +107,11 @@ export function SiteHeader() {
 
   return (
     <header
-      className="fixed top-0 left-0 right-0 z-50 flex flex-col items-center pointer-events-none px-3 md:px-10"
+      className="fixed top-0 left-0 right-0 z-50 flex flex-col items-center pointer-events-none"
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
+      <AnnouncementBar />
+      <div className="w-full flex flex-col items-center px-3 md:px-10">
       <div className="pointer-events-auto flex justify-between items-center w-full max-w-[1200px] mt-3 md:mt-5 py-2 pl-3 pr-2 bg-white/[0.03] backdrop-blur-md rounded-full border border-white/10 shadow-[0_2px_24px_var(--shadow-soft)]">
         <Link
           href="/"
@@ -106,7 +170,7 @@ export function SiteHeader() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.18, ease: "easeOut" }}
-            className="sm:hidden pointer-events-auto w-full max-w-[1200px] mt-2 px-3"
+            className="sm:hidden pointer-events-auto w-full max-w-[1200px] mt-2"
           >
             <div className="flex flex-col rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md shadow-[0_2px_24px_var(--shadow-soft)] overflow-hidden">
               <Link
@@ -143,6 +207,7 @@ export function SiteHeader() {
           </motion.div>
         )}
       </AnimatePresence>
+      </div>
     </header>
   );
 }
