@@ -31,15 +31,24 @@ async function reconcileFromStripe(user: {
     const stripe = getStripe();
     let sub = null;
     try {
-      if (user.stripeSubscriptionId) {
-        sub = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
-      } else if (user.stripeCustomerId) {
+      if (user.stripeCustomerId) {
+        // Choose the customer's CURRENT subscription, not the stored id -
+        // that id can be stale (e.g. after a monthly→annual switch it still
+        // points at the cancelled monthly sub, which would read as "not
+        // Pro" even though an annual sub is active). Prefer an
+        // access-granting sub, newest first; fall back to the most recent.
         const list = await stripe.subscriptions.list({
           customer: user.stripeCustomerId,
           status: "all",
-          limit: 1,
+          limit: 20,
         });
-        sub = list.data[0] ?? null;
+        const GRANTS = new Set(["active", "trialing", "past_due"]);
+        const byNewest = [...list.data].sort(
+          (a, b) => (b.created ?? 0) - (a.created ?? 0),
+        );
+        sub = byNewest.find((s) => GRANTS.has(s.status)) ?? byNewest[0] ?? null;
+      } else if (user.stripeSubscriptionId) {
+        sub = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
       }
     } catch (err) {
       if (!isMissing(err)) throw err;
