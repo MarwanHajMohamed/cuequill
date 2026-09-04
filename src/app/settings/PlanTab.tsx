@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useChatUsage } from "@/hooks/useChatUsage";
 
 // Current plan + upgrade/cancel controls, backed by Stripe.
@@ -123,6 +123,20 @@ export default function PlanTab() {
   useEffect(() => {
     loadPlan();
   }, [loadPlan]);
+
+  // The plan GET reconciles a missed webhook server-side. If the DB now
+  // says Pro but the session flag is still stale (the badge and gates read
+  // it), refresh the session once so the UI catches up without waiting for
+  // the periodic re-check. One-shot ref guard so we don't re-trigger as the
+  // session revalidates.
+  const refreshedRef = useRef(false);
+  useEffect(() => {
+    if (refreshedRef.current) return;
+    if (plan?.isPro && !session?.user?.isPro) {
+      refreshedRef.current = true;
+      update({ isPro: true });
+    }
+  }, [plan?.isPro, session?.user?.isPro, update]);
 
   const handleCancel = async () => {
     if (cancelling) return;

@@ -90,6 +90,10 @@ export interface IUser extends Document {
   stripeSubscriptionStatus?: string;
   stripePriceId?: string;
   stripeCurrentPeriodEnd?: Date;
+  // Last time we reconciled this user's Pro status live from Stripe (used
+  // to self-heal a missed webhook). Throttles the reconcile so a genuinely
+  // non-Pro account with a Stripe customer id isn't re-checked every call.
+  proSyncedAt?: Date;
   // True once the user has cancelled but the paid term hasn't elapsed -
   // access continues until stripeCurrentPeriodEnd, then the subscription
   // ends. Lets the UI show "cancels on <date>" instead of a bare "Pro".
@@ -244,6 +248,7 @@ const UserSchema = new Schema<IUser>({
   stripeSubscriptionStatus: { type: String },
   stripePriceId: { type: String },
   stripeCurrentPeriodEnd: { type: Date },
+  proSyncedAt: { type: Date },
   stripeCancelAtPeriodEnd: { type: Boolean, default: false },
   chatDailyDate: { type: String, default: "" },
   chatDailyCount: { type: Number, default: 0 },
