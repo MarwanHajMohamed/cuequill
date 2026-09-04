@@ -115,3 +115,33 @@ ${opts.resetUrl}
 If you didn't ask to reset your password, you can safely ignore this email - your password won't change.`;
   return { subject, html, text };
 }
+
+// Launch-day "we're open" email, sent to the waitlist once launch passes.
+// `url` is where the button points (the sign-in page).
+export function renderLaunchEmail(opts: {
+  firstname?: string;
+  url: string;
+}): { subject: string; html: string; text: string } {
+  const hi = opts.firstname ? `Hi ${opts.firstname},` : "Hi,";
+  const subject = "Cuequill is open";
+  const html = shell(`
+    <p style="margin:0 0 16px 0;font-size:14px;line-height:1.6;color:rgba(255,255,255,0.75);">${hi}</p>
+    <p style="margin:0 0 20px 0;font-size:14px;line-height:1.6;color:rgba(255,255,255,0.75);">
+      Cuequill is now open. Sign in to the account you reserved - or, if you
+      haven't set one up yet, it only takes a minute to create one.
+    </p>
+    <p style="margin:0 0 24px 0;">${BTN(opts.url, "Open Cuequill")}</p>
+    <p style="margin:0 0 8px 0;font-size:12.5px;line-height:1.6;color:rgba(255,255,255,0.45);">
+      If the button doesn't work, paste this link into your browser:
+    </p>
+    <p style="margin:0;font-size:12.5px;line-height:1.6;word-break:break-all;">
+      <a href="${opts.url}" style="color:#5eead4;">${opts.url}</a>
+    </p>
+  `);
+  const text = `${hi}
+
+Cuequill is now open. Sign in to the account you reserved - or, if you haven't set one up yet, it only takes a minute to create one.
+
+${opts.url}`;
+  return { subject, html, text };
+}

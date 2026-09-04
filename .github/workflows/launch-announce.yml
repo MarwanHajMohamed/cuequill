@@ -1,0 +1,38 @@
+name: Launch announcement
+
+# Emails the waitlist that Cuequill is open. The endpoint is a no-op until
+# launch (25 Sep 2026), so this can run harmlessly on a schedule beforehand
+# and will start sending on the first run on/after launch. It sends in
+# batches and dedupes per person, so repeated runs simply drain the list
+# and then go quiet. GitHub's schedule is best-effort; running several
+# times a day gives plenty of chances to fire and to drain the queue.
+on:
+  schedule:
+    - cron: "0 */3 * * *"
+  workflow_dispatch: # manual run / smoke test from the Actions tab
+
+jobs:
+  announce:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hit /api/cron/launch-announce
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "${CRON_SECRET}" ]; then
+            echo "::error::CRON_SECRET is empty. Set it in Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+          # POST to the canonical host (www). -L follows Vercel's redirects;
+          # capture status + body so a non-2xx prints WHY it failed.
+          resp=$(curl -sS -L -X POST -w $'\n%{http_code}' \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            https://www.cuequill.com/api/cron/launch-announce)
+          code=$(printf '%s' "$resp" | tail -n1)
+          body=$(printf '%s' "$resp" | sed '$d')
+          echo "HTTP $code"
+          echo "$body"
+          if [ "$code" -ge 400 ]; then
+            echo "::error::launch-announce returned HTTP $code"
+            exit 1
+          fi

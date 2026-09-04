@@ -10,6 +10,9 @@ export interface IWaitlist extends Document {
   source?: string; // where they signed up from (e.g. "landing", "pricing")
   createdAt: Date;
   invitedAt?: Date;
+  // Set once the launch-day "we're open" email has been sent, so the
+  // launch-announce cron never emails the same person twice.
+  launchEmailedAt?: Date;
 }
 
 const WaitlistSchema = new Schema<IWaitlist>({
@@ -18,6 +21,7 @@ const WaitlistSchema = new Schema<IWaitlist>({
   source: { type: String, default: "signup" },
   createdAt: { type: Date, default: () => new Date() },
   invitedAt: { type: Date },
+  launchEmailedAt: { type: Date },
 });
 
 if (process.env.NODE_ENV !== "production" && mongoose.models.Waitlist) {
