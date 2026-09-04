@@ -91,19 +91,59 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // No Stripe subscription - a comped/legacy Pro. There's nothing to
-  // cancel in Stripe, so just drop the local grant immediately.
-  if (!user.stripeSubscriptionId) {
+  const stripe = getStripe();
+
+  // Find the subscription to cancel. Prefer the stored id, but if the
+  // webhook never landed it (so stripeSubscriptionId is empty) fall back to
+  // looking it up from the customer - otherwise we'd drop access locally
+  // while Stripe quietly renews and charges the card again.
+  let subId: string | undefined = user.stripeSubscriptionId;
+  if (!subId && user.stripeCustomerId) {
+    try {
+      const list = await stripe.subscriptions.list({
+        customer: user.stripeCustomerId,
+        status: "all",
+        limit: 10,
+      });
+      const CANCELABLE = new Set([
+        "active",
+        "trialing",
+        "past_due",
+        "unpaid",
+        "incomplete",
+      ]);
+      const live = list.data.find((s) => CANCELABLE.has(s.status));
+      subId = (live ?? list.data[0])?.id;
+      if (subId) user.stripeSubscriptionId = subId;
+    } catch (err) {
+      console.error("[plan/cancel] subscription lookup failed", err);
+    }
+  }
+
+  // Genuinely no Stripe subscription (comped / legacy Pro): nothing to
+  // cancel in Stripe, so just drop the local grant.
+  if (!subId) {
     user.isPro = false;
     user.proManualOverride = false;
     await user.save();
     return NextResponse.json({ ok: true, immediate: true });
   }
 
-  const stripe = getStripe();
-  const sub = await stripe.subscriptions.update(user.stripeSubscriptionId, {
-    cancel_at_period_end: true,
-  });
+  // Cancel the renewal: the subscription stays active until the period ends,
+  // then Stripe won't charge again. If Stripe rejects the update (e.g. the
+  // subscription is already canceled/gone), drop access locally instead.
+  let sub;
+  try {
+    sub = await stripe.subscriptions.update(subId, {
+      cancel_at_period_end: true,
+    });
+  } catch (err) {
+    console.error("[plan/cancel] cancel_at_period_end failed", err);
+    user.isPro = !!user.proManualOverride;
+    user.stripeCancelAtPeriodEnd = false;
+    await user.save();
+    return NextResponse.json({ ok: true, immediate: true });
+  }
 
   // Mirror locally for instant UI; the webhook will confirm and, at
   // period end, flip isPro when the subscription actually ends.
