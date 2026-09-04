@@ -407,7 +407,7 @@ export default function PlanTab() {
         plan.cycle === "monthly" &&
         !scheduledCancel && (
           <div className="border border-teal-500/25 bg-teal-500/[0.06] rounded-xl px-3.5 py-3 flex items-center justify-between gap-3 flex-wrap">
-            <div className="text-[12.5px] text-teal-100 flex items-start gap-2">
+            <div className="text-[12.5px] text-teal-300 flex items-start gap-2">
               <i className="fa-solid fa-piggy-bank text-[12px] mt-0.5" />
               <span>
                 You&apos;re on monthly billing - switch to annual and save 20%.
