@@ -1,10 +1,35 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import connectDb from "@/lib/db";
 import { User } from "@/lib/models/User";
+import { getProStatus } from "@/lib/pro";
 
 export const runtime = "nodejs";
+
+// Affirmations are a Pro feature. The client blurs the page for free
+// users, but that's cosmetic - the real gate is here, so the API can't be
+// hit directly. 401 = signed out, 403 = signed in but not Pro.
+async function gate(): Promise<
+  | { ok: true; userId: string }
+  | { ok: false; res: NextResponse }
+> {
+  const { userId, isPro } = await getProStatus();
+  if (!userId) {
+    return {
+      ok: false,
+      res: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
+    };
+  }
+  if (!isPro) {
+    return {
+      ok: false,
+      res: NextResponse.json(
+        { error: "Pro membership required" },
+        { status: 403 },
+      ),
+    };
+  }
+  return { ok: true, userId };
+}
 
 const MAX_COUNT = 50;
 const MAX_LEN = 280;
@@ -30,12 +55,10 @@ function clean(items: unknown): string[] {
 }
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const g = await gate();
+  if (!g.ok) return g.res;
   await connectDb();
-  const user = await User.findById(session.user.id)
+  const user = await User.findById(g.userId)
     .select("affirmations affirmationsRead affirmationStreak")
     .lean<{
       affirmations?: string[];
@@ -59,10 +82,8 @@ export async function GET() {
 }
 
 export async function PUT(req: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const g = await gate();
+  if (!g.ok) return g.res;
   let body: unknown;
   try {
     body = await req.json();
@@ -73,6 +94,6 @@ export async function PUT(req: Request) {
     (body as { affirmations?: unknown })?.affirmations,
   );
   await connectDb();
-  await User.findByIdAndUpdate(session.user.id, { affirmations });
+  await User.findByIdAndUpdate(g.userId, { affirmations });
   return NextResponse.json({ affirmations });
 }

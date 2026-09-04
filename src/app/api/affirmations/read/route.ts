@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import connectDb from "@/lib/db";
+import { getProStatus } from "@/lib/pro";
 import { User } from "@/lib/models/User";
 import {
   advanceStreak,
@@ -18,9 +17,17 @@ const MAX_TEXTS = 100;
 // yyyy-MM-dd `date` string (supplied by the client's local clock, same
 // as before) so the state resets daily and syncs across devices.
 export async function PUT(req: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  // Affirmations are Pro-only; enforce server-side (the client blur is
+  // cosmetic). 401 = signed out, 403 = signed in but not Pro.
+  const { userId, isPro } = await getProStatus();
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!isPro) {
+    return NextResponse.json(
+      { error: "Pro membership required" },
+      { status: 403 },
+    );
   }
 
   let body: unknown;
@@ -50,7 +57,7 @@ export async function PUT(req: Request) {
 
   // Load the current affirmations + streak to decide whether today counts as
   // complete (all current affirmations read) and, if so, advance the streak.
-  const user = await User.findById(session.user.id)
+  const user = await User.findById(userId)
     .select("affirmations affirmationStreak affirmationStreakXp")
     .lean<{
       affirmations?: string[];
@@ -82,7 +89,7 @@ export async function PUT(req: Request) {
     (update.$set as Record<string, unknown>).affirmationStreakXp =
       streak.longest;
   }
-  await User.findByIdAndUpdate(session.user.id, update);
+  await User.findByIdAndUpdate(userId, update);
 
   return NextResponse.json({ read: affirmationsRead, streak, xpGained });
 }
