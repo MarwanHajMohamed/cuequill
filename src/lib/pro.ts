@@ -46,7 +46,24 @@ async function reconcileFromStripe(user: {
         const byNewest = [...list.data].sort(
           (a, b) => (b.created ?? 0) - (a.created ?? 0),
         );
-        sub = byNewest.find((s) => GRANTS.has(s.status)) ?? byNewest[0] ?? null;
+        const granting = byNewest.filter((s) => GRANTS.has(s.status));
+
+        // A single account should never carry more than one live
+        // subscription. If a switch (or a manual change in Stripe) left an
+        // old plan active alongside the new one, the customer would be
+        // billed twice AND cancelling one wouldn't stop the other - so the
+        // profile keeps showing "renews". Keep the newest and cancel the
+        // extras so the account converges to one subscription.
+        if (granting.length > 1) {
+          for (const s of granting.slice(1)) {
+            try {
+              await stripe.subscriptions.cancel(s.id);
+            } catch (e) {
+              console.error("[pro] duplicate subscription cancel failed", s.id, e);
+            }
+          }
+        }
+        sub = granting[0] ?? byNewest[0] ?? null;
       } else if (user.stripeSubscriptionId) {
         sub = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
       }
