@@ -610,6 +610,18 @@ function PlanColumn({
         <PlanCTA plan={plan} cycle={cycle} signedIn={signedIn} isPro={isPro} />
       </div>
 
+      {/* Launch promo - only on Pro, and only for those who could still use
+          it (not existing subscribers). Mirrors the announcement stripe. */}
+      {plan.featured && !isPro && (
+        <div className="mt-4 flex items-center gap-2 rounded-lg border border-teal-500/20 bg-teal-500/[0.06] px-3 py-2 text-[11.5px] text-teal-200">
+          <i className="fa-solid fa-tag text-[10px] shrink-0" />
+          <span>
+            Use <span className="font-semibold tracking-wide">LAUNCH26</span> for
+            50% off your first 6 months
+          </span>
+        </div>
+      )}
+
       {/* Features - hairline divider above. Check = included, muted dash
           with strike = explicitly not included on this tier. */}
       <div className="mt-6 pt-5 border-t border-[var(--rule)]">
