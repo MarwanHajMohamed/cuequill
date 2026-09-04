@@ -28,9 +28,12 @@ export async function POST() {
   }
 
   const stripe = getStripe();
+  // Return to the plan panel (not /pricing) so the user lands where their
+  // subscription state is shown - it force-reconciles on load and reflects
+  // any change (e.g. a cancellation) they just made in the portal.
   const portal = await stripe.billingPortal.sessions.create({
     customer: user.stripeCustomerId,
-    return_url: `${APP_URL}/pricing`,
+    return_url: `${APP_URL}/settings?billing=1`,
   });
 
   return NextResponse.json({ url: portal.url });
