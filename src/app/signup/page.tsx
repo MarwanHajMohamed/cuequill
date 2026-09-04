@@ -173,7 +173,7 @@ function SignupInner() {
         <>
         <div className="flex flex-col gap-1.5 mb-7 text-center">
           <h1 className="text-3xl md:text-4xl font-semibold tracking-tight leading-[1.05]">
-            <span className="bg-gradient-to-r from-teal-300 to-emerald-400 bg-clip-text text-transparent">
+            <span className="auth-heading bg-gradient-to-r from-teal-300 to-emerald-400 bg-clip-text text-transparent">
               Create your account
             </span>
           </h1>
@@ -200,7 +200,7 @@ function SignupInner() {
                   type="button"
                   onClick={() => handleOAuth("google")}
                   disabled={oauthLoading !== null}
-                  className="inline-flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-full border border-white/15 bg-white text-black hover:bg-white/90 transition text-[13.5px] font-medium cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="inline-flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-full border border-[#dadce0] bg-[#ffffff] text-[#1f1f1f] hover:bg-[#f5f6f7] transition text-[13.5px] font-medium cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {oauthLoading === "google" ? (
                     <i className="fa-solid fa-circle-notch animate-spin text-[12px]" />
@@ -215,7 +215,7 @@ function SignupInner() {
                   type="button"
                   onClick={() => handleOAuth("apple")}
                   disabled={oauthLoading !== null}
-                  className="inline-flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-full border border-white/15 bg-black text-white hover:bg-neutral-900 transition text-[13.5px] font-medium cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="inline-flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-full border border-transparent bg-[#000000] text-[#ffffff] hover:bg-[#1a1a1a] transition text-[13.5px] font-medium cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {oauthLoading === "apple" ? (
                     <i className="fa-solid fa-circle-notch animate-spin text-[12px]" />

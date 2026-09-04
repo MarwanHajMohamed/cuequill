@@ -82,6 +82,16 @@
   --color-rose-300: #be123c;
 }
 
+/* Auth-card headings use a teal→emerald gradient clipped to the text,
+   which reads bright and washes out on the light background. In light
+   mode, drop the gradient and paint the heading solid dark teal so it
+   stays legible. Dark mode keeps the gradient. */
+:root.light .auth-heading {
+  background-image: none;
+  color: #0f766e;
+  -webkit-text-fill-color: #0f766e;
+}
+
 /* ── Accent packs ──────────────────────────────────────────────────────
    The whole UI is painted with teal-* utilities (+ emerald-* as the
    companion in gradients), which Tailwind compiles to var(--color-teal-*)
