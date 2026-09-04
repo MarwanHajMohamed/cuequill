@@ -107,6 +107,7 @@ export default function PlanTab() {
 
   const [confirming, setConfirming] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [switching, setSwitching] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [justCancelled, setJustCancelled] = useState(false);
@@ -167,6 +168,30 @@ export default function PlanTab() {
       setError("Network error. Try again?");
     } finally {
       setCancelling(false);
+    }
+  };
+
+  const switchToAnnual = async () => {
+    if (switching) return;
+    setSwitching(true);
+    setError(null);
+    try {
+      const r = await fetch("/api/user/plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "switch", cycle: "annual" }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        setError(d.error ?? "Couldn't switch to annual. Try again?");
+        return;
+      }
+      // Reflect the new cycle (and prorated renewal date) in the panel.
+      await loadPlan();
+    } catch {
+      setError("Network error. Try again?");
+    } finally {
+      setSwitching(false);
     }
   };
 
@@ -429,11 +454,14 @@ export default function PlanTab() {
               </span>
             </div>
             <button
-              onClick={openPortal}
-              disabled={portalLoading}
+              onClick={switchToAnnual}
+              disabled={switching}
               className="shrink-0 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-teal-500/15 text-teal-200 border border-teal-500/30 hover:bg-teal-500/25 transition text-[12.5px] font-medium cursor-pointer disabled:opacity-50"
             >
-              {portalLoading ? "Opening…" : "Switch to annual"}
+              {switching && (
+                <i className="fa-solid fa-circle-notch animate-spin text-[10px]" />
+              )}
+              {switching ? "Switching…" : "Switch to annual"}
             </button>
           </div>
         )}
