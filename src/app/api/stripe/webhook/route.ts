@@ -38,6 +38,12 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Visible in the Vercel function logs so you can confirm deliveries are
+  // arriving and being verified (livemode flags test vs live keys).
+  console.log(
+    `[stripe/webhook] received ${event.type} (livemode=${event.livemode})`,
+  );
+
   try {
     await connectDb();
 
