@@ -11,10 +11,12 @@ import AppearanceTab from "./AppearanceTab";
 function Page() {
   const [selectedSetting, setSelectedSetting] = useState<string>("Account");
 
-  // Land on the Plan tab when returning from a billing Checkout (the switch
-  // flow returns to /settings?switch=…), so PlanTab mounts and can finalize.
+  // Land on the Plan tab when returning from a billing flow - the switch
+  // Checkout (?switch=…) or the Stripe billing portal (?billing=1) - so
+  // PlanTab mounts, reconciles, and shows the updated subscription state.
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).has("switch")) {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has("switch") || params.has("billing")) {
       setSelectedSetting("Plan");
     }
   }, []);
