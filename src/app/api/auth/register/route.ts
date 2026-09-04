@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import connectDb from "@/lib/db";
 import { User } from "@/lib/models/User";
+import { Waitlist } from "@/lib/models/Waitlist";
+import { LAUNCH_AT, isPreLaunch } from "@/lib/launch";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -66,6 +68,10 @@ export async function POST(req: NextRequest) {
   // Cost factor 12 matches the password-change route and OWASP guidance.
   const hashed = await bcrypt.hash(password, 12);
 
+  // Pre-launch: create the account but lock it until the launch date so it
+  // can't sign in yet. After launch, new accounts are created unlocked.
+  const preLaunch = isPreLaunch();
+
   try {
     await User.create({
       email,
@@ -73,6 +79,7 @@ export async function POST(req: NextRequest) {
       surname,
       password: hashed,
       timezone,
+      ...(preLaunch ? { preLaunchLockUntil: LAUNCH_AT } : {}),
     });
   } catch (err) {
     // Unique-index violation from a concurrent registration of the same
@@ -94,7 +101,20 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // The client signs in with the same credentials right after this
-  // succeeds, so there's nothing sensitive to return.
-  return NextResponse.json({ ok: true }, { status: 201 });
+  // Also record the signup on the waitlist (idempotent - ignore a
+  // duplicate email). Best-effort: a waitlist hiccup shouldn't fail the
+  // account creation that already succeeded.
+  try {
+    await Waitlist.updateOne(
+      { email },
+      { $setOnInsert: { email, firstname, source: "signup" } },
+      { upsert: true },
+    );
+  } catch {
+    /* non-fatal */
+  }
+
+  // `locked` tells the client whether to sign the user in (post-launch) or
+  // show the "opens on launch day" confirmation (pre-launch).
+  return NextResponse.json({ ok: true, locked: preLaunch }, { status: 201 });
 }

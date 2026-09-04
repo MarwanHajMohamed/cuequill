@@ -64,7 +64,11 @@ function Login() {
   useEffect(() => {
     const err = searchParams.get("error");
     if (!err) return;
-    if (err === "OAuthNoEmail") {
+    if (err === "PreLaunch") {
+      setError(
+        "Cuequill opens on 25 September 2026. Your account is reserved - we'll email you when it's ready to sign in.",
+      );
+    } else if (err === "OAuthNoEmail") {
       setError("Your Apple ID didn't share an email. Try Google, or the form below.");
     } else if (err === "OAuthAccountNotLinked") {
       setError(
@@ -108,6 +112,10 @@ function Login() {
       if (res.error === "ACCOUNT_LOCKED") {
         setError(
           "Too many failed attempts. This account is locked for 15 minutes.",
+        );
+      } else if (res.error === "PRELAUNCH") {
+        setError(
+          "Cuequill opens on 25 September 2026. Your account is reserved - we'll email you when it's ready to sign in.",
         );
       } else {
         setError("Incorrect email or password.");

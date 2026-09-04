@@ -31,6 +31,9 @@ function SignupInner() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  // Pre-launch: the account is created but locked, so instead of signing in
+  // we show a "you're in, opens on launch day" confirmation.
+  const [done, setDone] = useState(false);
 
   // Set when NextAuth's OAuth signIn callback bounces a user here because
   // their Google/Apple email isn't invited (only in invite-only mode).
@@ -91,8 +94,15 @@ function SignupInner() {
         return;
       }
 
-      // Account created - sign in with the same credentials and land in
-      // the app.
+      // Pre-launch: the account is created but locked. Don't sign in -
+      // show the confirmation.
+      if (data.locked) {
+        setDone(true);
+        setLoading(false);
+        return;
+      }
+
+      // Post-launch: sign in with the same credentials and land in the app.
       const signInRes = await signIn("credentials", {
         email: email.trim(),
         password,
@@ -137,6 +147,30 @@ function SignupInner() {
         transition={{ duration: 0.4, ease: "easeOut" }}
         className="w-full max-w-[420px] rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md p-7 md:p-8 shadow-[0_24px_80px_var(--shadow)]"
       >
+        {done ? (
+          <div className="flex flex-col items-center gap-5 text-center">
+            <div className="w-12 h-12 rounded-full bg-teal-500/20 border border-teal-500/40 flex items-center justify-center">
+              <i className="fa-solid fa-check text-teal-300 text-[16px]" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-semibold tracking-tight">
+                You&apos;re in
+              </h1>
+              <p className="mt-2 text-[13px] text-white/55 leading-relaxed">
+                Your account is reserved. Cuequill opens on{" "}
+                <span className="text-white/80">25 September 2026</span> - we&apos;ll
+                email you the moment it&apos;s ready to sign in.
+              </p>
+            </div>
+            <Link
+              href="/"
+              className="inline-flex items-center justify-center px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium"
+            >
+              Back home
+            </Link>
+          </div>
+        ) : (
+        <>
         <div className="flex flex-col gap-1.5 mb-7 text-center">
           <h1 className="text-3xl md:text-4xl font-semibold tracking-tight leading-[1.05]">
             <span className="bg-gradient-to-r from-teal-300 to-emerald-400 bg-clip-text text-transparent">
@@ -329,6 +363,8 @@ function SignupInner() {
           </Link>
           .
         </div>
+        </>
+        )}
       </motion.div>
     </div>
   );
