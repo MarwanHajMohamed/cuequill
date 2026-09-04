@@ -90,7 +90,7 @@ export default function ForgotPasswordPage() {
           <>
             <div className="flex flex-col gap-1.5 mb-7 text-center">
               <h1 className="text-3xl md:text-4xl font-semibold tracking-tight leading-[1.05]">
-                <span className="bg-gradient-to-r from-teal-300 to-emerald-400 bg-clip-text text-transparent">
+                <span className="auth-heading bg-gradient-to-r from-teal-300 to-emerald-400 bg-clip-text text-transparent">
                   Reset password
                 </span>
               </h1>
