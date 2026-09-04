@@ -204,11 +204,12 @@ export const authOptions: NextAuthOptions = {
   },
   secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
-    // OAuth sign-in / sign-up gate. Existing users sign in. New Google
-    // users can create an account only if their email has been invited off
-    // the waitlist (invitedAt set) - the app stays invite-only, but invited
-    // users can self-serve with Google instead of a set-password flow.
-    // Everyone else is bounced to /signup with a reason param.
+    // OAuth sign-in / sign-up gate. Existing users always sign in. New
+    // Google/Apple users get an account created on the fly - self-serve
+    // sign-up is open at launch. Set INVITE_ONLY=true to fall back to the
+    // pre-launch behaviour, where new OAuth accounts are allowed only for
+    // emails invited off the waitlist (invitedAt set) and everyone else is
+    // bounced to /signup.
     async signIn({ user, account }) {
       if (!account) return false;
       if (account.provider === "credentials") return true;
@@ -220,15 +221,19 @@ export const authOptions: NextAuthOptions = {
         .select("_id");
       if (existing) return true;
 
-      // Not a user yet - allow account creation only for an invited
-      // waitlist entry.
-      const invited = await Waitlist.findOne({ email })
-        .collation(EMAIL_COLLATION)
-        .select("invitedAt firstname")
-        .lean<{ invitedAt?: Date; firstname?: string }>();
-      if (!invited?.invitedAt) return "/signup?reason=oauth-not-invited";
+      // New user. In invite-only mode, require a waitlist invite; carry
+      // the invited first name through for the name split.
+      let fallbackFirst: string | undefined;
+      if (process.env.INVITE_ONLY === "true") {
+        const invited = await Waitlist.findOne({ email })
+          .collation(EMAIL_COLLATION)
+          .select("invitedAt firstname")
+          .lean<{ invitedAt?: Date; firstname?: string }>();
+        if (!invited?.invitedAt) return "/signup?reason=oauth-not-invited";
+        fallbackFirst = invited.firstname;
+      }
 
-      const { first, last } = splitName(user.name, invited.firstname);
+      const { first, last } = splitName(user.name, fallbackFirst);
       try {
         await User.create({ email, firstname: first, surname: last });
       } catch {
