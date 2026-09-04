@@ -5,12 +5,7 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/useToast";
-import {
-  FaqRow,
-  SectionMark,
-  SiteFooter,
-  SiteHeader,
-} from "../_marketing/Chrome";
+import { FaqRow, SiteFooter, SiteHeader } from "../_marketing/Chrome";
 
 // ─── Data ────────────────────────────────────────────────────────────
 
@@ -37,7 +32,7 @@ type Plan = {
 const PLANS: Plan[] = [
   {
     name: "Starter",
-    tagline: "For the journal you keep meaning to read.",
+    tagline: "",
     monthly: 0,
     annual: 0,
     cta: "Start free",
@@ -48,6 +43,7 @@ const PLANS: Plan[] = [
       "Up to 3 custom strategies",
       "Manual IBKR import",
       "Win rate & core stats",
+      "Downloadable CSV reports",
       "90-day history",
     ],
     excluded: [
@@ -56,14 +52,13 @@ const PLANS: Plan[] = [
       "Unlimited strategies",
       "Per-strategy & per-symbol stats",
       "Monthly heatmap & trends",
-      "Downloadable CSV reports",
       "Rules board & affirmations",
       "Unlimited history",
     ],
   },
   {
     name: "Pro",
-    tagline: "The whole thing, working for you every morning.",
+    tagline: "",
     monthly: 39,
     annual: 31,
     cta: "Go pro",
@@ -76,7 +71,6 @@ const PLANS: Plan[] = [
       "Unlimited strategies",
       "Per-strategy & per-symbol stats",
       "Monthly heatmap & trends",
-      "Downloadable CSV reports",
       "Rules board & affirmations",
       "Unlimited history retained",
     ],
@@ -147,7 +141,7 @@ const COMPARE: CompareGroup[] = [
       {
         feature: "Downloadable CSV reports",
         note: "Performance, tax & activity, date-scoped",
-        starter: false,
+        starter: true,
         pro: true,
       },
     ],
@@ -320,9 +314,8 @@ function PricingHero() {
             transition={{ duration: 0.4 }}
             className="mb-8"
           >
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[10.5px] tracking-[0.1em] text-white/55">
-              <span className="w-1.5 h-1.5 rounded-full bg-teal-400" />
-              Pricing · two tiers
+            <span className="text-[11px] tracking-[0.1em] text-teal-300">
+              Pricing
             </span>
           </motion.div>
 
@@ -384,7 +377,7 @@ function BillingToggle({
         }`}
       >
         Yearly
-        <span className="text-[9.5px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25">
+        <span className="text-[9.5px] font-semibold tracking-wide text-teal-300">
           −20%
         </span>
       </button>
@@ -408,7 +401,7 @@ function PlansSpread({
   return (
     <section className="px-6 md:px-10 py-20 md:py-28">
       <div className="max-w-[1100px] mx-auto">
-        <SectionMark label="Plans" />
+        <span className="text-[11px] tracking-[0.1em] text-teal-300">Plans</span>
 
         <div className="mt-6 flex flex-col md:flex-row md:items-end md:justify-between gap-6 md:gap-10">
           <h2 className="text-[32px] md:text-[48px] leading-[1.04] font-medium tracking-[-0.02em] max-w-3xl">
@@ -555,20 +548,22 @@ function PlanColumn({
           : "bg-white/[0.03]"
       }`}
     >
-      {/* Name + recommended pill */}
+      {/* Name + recommended label */}
       <div className="flex items-center justify-between gap-3">
         <h3 className="text-[20px] md:text-[22px] leading-none tracking-[-0.02em] font-medium">
           {plan.name}
         </h3>
         {plan.featured && (
-          <span className="text-[9.5px] tracking-[0.12em] text-teal-300 border border-teal-500/30 rounded-full px-2 py-0.5">
+          <span className="text-[10px] tracking-[0.12em] text-teal-300">
             Recommended
           </span>
         )}
       </div>
-      <p className="mt-1.5 text-[12px] text-white/55 leading-snug italic">
-        {plan.tagline}
-      </p>
+      {plan.tagline && (
+        <p className="mt-1.5 text-[12px] text-white/55 leading-snug italic">
+          {plan.tagline}
+        </p>
+      )}
 
       {/* Price + CTA on one row */}
       <div className="mt-5 flex items-end justify-between gap-4">
@@ -596,15 +591,11 @@ function PlanColumn({
               </span>
             </div>
           )}
-          <p className="mt-1.5 text-[10px] tracking-[0.1em] text-white/40 tabular-nums">
-            {isContact
-              ? "One-time · invite-only"
-              : price === 0
-                ? "No card required"
-                : cycle === "annual"
-                  ? `£${(plan.annual ?? 0) * 12}/yr`
-                  : "Cancel any time"}
-          </p>
+          {!isContact && price !== 0 && cycle === "annual" && (
+            <p className="mt-1.5 text-[10px] tracking-[0.1em] text-white/40 tabular-nums">
+              £{(plan.annual ?? 0) * 12}/yr
+            </p>
+          )}
         </div>
 
         <PlanCTA plan={plan} cycle={cycle} signedIn={signedIn} isPro={isPro} />
@@ -677,7 +668,7 @@ function CompareSection({ cycle }: { cycle: Cycle }) {
   return (
     <section className="px-6 md:px-10 py-20 md:py-28">
       <div className="max-w-[1200px] mx-auto">
-        <SectionMark label="Compare" />
+        <span className="text-[11px] tracking-[0.1em] text-teal-300">Compare</span>
         <h2 className="mt-6 text-[32px] md:text-[40px] leading-[1.04] font-medium tracking-[-0.02em]">
           What sits inside each tier.
         </h2>
@@ -790,7 +781,7 @@ function FaqSection() {
     <section className="px-6 md:px-10 py-20 md:py-28">
       <div className="max-w-[1200px] mx-auto grid md:grid-cols-12 gap-10">
         <div className="md:col-span-4">
-          <SectionMark label="FAQ" />
+          <span className="text-[11px] tracking-[0.1em] text-teal-300">FAQ</span>
           <h2 className="mt-6 text-[32px] md:text-[40px] leading-[1.04] font-medium tracking-[-0.02em]">
             Frequently <span className="italic text-teal-300">asked.</span>
           </h2>
@@ -821,7 +812,7 @@ function Signoff() {
   return (
     <section className="px-6 md:px-10 py-20 md:py-28">
       <div className="max-w-[1200px] mx-auto rounded-3xl border border-white/10 bg-white/[0.02] backdrop-blur-md shadow-[0_8px_40px_var(--shadow-soft)] p-8 md:p-14">
-        <SectionMark label="get started" />
+        <span className="text-[11px] tracking-[0.1em] text-teal-300">Get started</span>
         <h2 className="mt-6 text-[36px] sm:text-[52px] md:text-[64px] leading-[0.98] font-medium tracking-[-0.025em] max-w-4xl">
           Start free, today.{" "}
           <span className="italic text-teal-300">
