@@ -150,67 +150,69 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Find the subscription to cancel. Prefer the stored id, but if the
-  // webhook never landed it (so stripeSubscriptionId is empty) fall back to
-  // looking it up from the customer - otherwise we'd drop access locally
-  // while Stripe quietly renews and charges the card again.
-  let subId: string | undefined = user.stripeSubscriptionId;
-  if (!subId && user.stripeCustomerId) {
+  // Cancel EVERY active subscription for this customer, not just one. A
+  // clean account has a single subscription, but earlier testing (or a
+  // switch) can leave more than one active - and cancelling only one would
+  // leave another renewing, so the profile keeps saying "renews". Setting
+  // cancel_at_period_end on all of them makes "Cancel Pro" a reliable full
+  // stop: access continues to the latest period end, then nothing renews.
+  const CANCELABLE = new Set([
+    "active",
+    "trialing",
+    "past_due",
+    "unpaid",
+    "incomplete",
+  ]);
+  const periodEndOf = (s: unknown): number | undefined => {
+    const sub = s as {
+      current_period_end?: number;
+      items?: { data?: { current_period_end?: number }[] };
+    };
+    return sub.current_period_end ?? sub.items?.data?.[0]?.current_period_end;
+  };
+
+  let cancelledAny = false;
+  let latestEndUnix: number | undefined;
+  if (user.stripeCustomerId) {
     try {
       const list = await stripe.subscriptions.list({
         customer: user.stripeCustomerId,
         status: "all",
-        limit: 10,
+        limit: 20,
       });
-      const CANCELABLE = new Set([
-        "active",
-        "trialing",
-        "past_due",
-        "unpaid",
-        "incomplete",
-      ]);
-      const live = list.data.find((s) => CANCELABLE.has(s.status));
-      subId = (live ?? list.data[0])?.id;
-      if (subId) user.stripeSubscriptionId = subId;
+      for (const s of list.data) {
+        if (!CANCELABLE.has(s.status)) continue;
+        cancelledAny = true;
+        let end = periodEndOf(s);
+        if (!s.cancel_at_period_end) {
+          try {
+            const updated = await stripe.subscriptions.update(s.id, {
+              cancel_at_period_end: true,
+            });
+            end = periodEndOf(updated) ?? end;
+          } catch (e) {
+            console.error("[plan/cancel] cancel failed", s.id, e);
+          }
+        }
+        if (end && (!latestEndUnix || end > latestEndUnix)) latestEndUnix = end;
+      }
     } catch (err) {
-      console.error("[plan] subscription lookup failed", err);
+      console.error("[plan/cancel] list failed", err);
     }
   }
 
-  // Genuinely no Stripe subscription (comped / legacy Pro): nothing to
+  // Genuinely no live Stripe subscription (comped / legacy Pro): nothing to
   // cancel in Stripe, so just drop the local grant.
-  if (!subId) {
+  if (!cancelledAny) {
     user.isPro = false;
     user.proManualOverride = false;
     await user.save();
     return NextResponse.json({ ok: true, immediate: true });
   }
 
-  // Cancel the renewal: the subscription stays active until the period ends,
-  // then Stripe won't charge again. If Stripe rejects the update (e.g. the
-  // subscription is already canceled/gone), drop access locally instead.
-  let sub;
-  try {
-    sub = await stripe.subscriptions.update(subId, {
-      cancel_at_period_end: true,
-    });
-  } catch (err) {
-    console.error("[plan/cancel] cancel_at_period_end failed", err);
-    user.isPro = !!user.proManualOverride;
-    user.stripeCancelAtPeriodEnd = false;
-    await user.save();
-    return NextResponse.json({ ok: true, immediate: true });
-  }
-
-  // Mirror locally for instant UI; the webhook will confirm and, at
-  // period end, flip isPro when the subscription actually ends.
-  user.stripeSubscriptionStatus = sub.status;
+  // Mirror locally for instant UI; access stays until the latest period end.
   user.stripeCancelAtPeriodEnd = true;
-  const endUnix =
-    (sub as unknown as { current_period_end?: number }).current_period_end ??
-    (sub.items?.data?.[0] as unknown as { current_period_end?: number })
-      ?.current_period_end;
-  if (endUnix) user.stripeCurrentPeriodEnd = new Date(endUnix * 1000);
+  if (latestEndUnix) user.stripeCurrentPeriodEnd = new Date(latestEndUnix * 1000);
   await user.save();
 
   return NextResponse.json({
