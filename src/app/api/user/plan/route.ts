@@ -37,10 +37,11 @@ function cycleForPrice(priceId?: string): "monthly" | "annual" | null {
 }
 
 export async function GET() {
-  // getProStatus self-heals a missed webhook (reconciles live from Stripe
-  // when the user has paid but the DB isn't Pro), so opening the plan panel
-  // recovers a stuck subscription. It also gives us the authenticated id.
-  const { userId } = await getProStatus();
+  // getProStatus reconciles live from Stripe (both directions - a missed
+  // upgrade OR a missed cancellation), so opening the plan panel always
+  // reflects the true billing state. force: skip the throttle since this is
+  // an explicit user action. It also gives us the authenticated id.
+  const { userId } = await getProStatus({ force: true });
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

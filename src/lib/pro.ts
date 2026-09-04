@@ -5,17 +5,24 @@ import { User } from "@/lib/models/User";
 import { getStripe } from "@/lib/stripe";
 import { syncSubscriptionToUser } from "@/lib/stripeSync";
 
-// How often to re-check Stripe for a paying-but-not-Pro user. Bounds the
-// self-heal so a genuinely churned account (has a customer id, correctly
-// not Pro) isn't re-queried on every request.
+// How often to re-verify a Stripe-linked account against Stripe. Bounds the
+// self-heal so active subscribers aren't re-queried on every request.
 const RECONCILE_THROTTLE_MS = 5 * 60 * 1000;
 
-// Self-heal a missed webhook: the user paid (has a Stripe customer) but the
-// DB never flipped to Pro. Pull their live subscription from Stripe and
-// re-sync it (which writes isPro). Returns the resulting isPro. Best-effort:
-// on any Stripe error we leave the DB as-is and report the stored value.
+function isMissing(err: unknown): boolean {
+  const e = err as { statusCode?: number; code?: string };
+  return e?.statusCode === 404 || e?.code === "resource_missing";
+}
+
+// Reconcile a user's Pro status live from Stripe - the backstop for a
+// dropped/misconfigured webhook, in BOTH directions: it flips isPro on when
+// a subscription is active but the DB missed it, and off when a subscription
+// was cancelled but the DB still says Pro. Manual comps (proManualOverride)
+// always keep Pro. Returns the resulting isPro; best-effort - on an
+// unexpected Stripe error we leave the DB as-is and report the stored value.
 async function reconcileFromStripe(user: {
   _id: unknown;
+  isPro?: boolean;
   proManualOverride?: boolean;
   stripeCustomerId?: string;
   stripeSubscriptionId?: string;
@@ -23,43 +30,53 @@ async function reconcileFromStripe(user: {
   try {
     const stripe = getStripe();
     let sub = null;
-    if (user.stripeSubscriptionId) {
-      sub = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
-    } else if (user.stripeCustomerId) {
-      const list = await stripe.subscriptions.list({
-        customer: user.stripeCustomerId,
-        status: "all",
-        limit: 1,
-      });
-      sub = list.data[0] ?? null;
+    try {
+      if (user.stripeSubscriptionId) {
+        sub = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
+      } else if (user.stripeCustomerId) {
+        const list = await stripe.subscriptions.list({
+          customer: user.stripeCustomerId,
+          status: "all",
+          limit: 1,
+        });
+        sub = list.data[0] ?? null;
+      }
+    } catch (err) {
+      if (!isMissing(err)) throw err;
+      // A deleted subscription reads as "no subscription" below.
     }
+
     if (sub) {
-      // syncSubscriptionToUser writes isPro (= manual override OR active),
-      // so read it back from that same rule.
+      // Writes isPro = manual override OR active, and mirrors the status.
       await syncSubscriptionToUser(sub);
+    } else {
+      // No live subscription in Stripe → not Pro unless comped.
+      await User.findByIdAndUpdate(user._id, {
+        $set: { isPro: !!user.proManualOverride },
+      });
     }
-    // Stamp the throttle regardless, so a churned/no-sub account doesn't
-    // re-hit Stripe every request.
+
+    // Stamp the throttle regardless so the next request doesn't re-hit Stripe.
     await User.findByIdAndUpdate(user._id, { $set: { proSyncedAt: new Date() } });
+
     const fresh = await User.findById(user._id)
       .select("isPro")
       .lean<{ isPro?: boolean }>();
     return !!fresh?.isPro;
   } catch (err) {
     console.error("[pro] Stripe reconcile failed:", err);
-    return false;
+    return !!user.isPro;
   }
 }
 
-// Server-side Pro check. Reads the live DB flag so a session minted
-// before an upgrade is honored immediately, and a Pro who later loses
-// access can't keep firing gated endpoints from a stale JWT.
-//
-// If the DB says not-Pro but the user has a Stripe customer id (i.e. they
-// paid), it reconciles live from Stripe once per throttle window - this
-// self-heals a dropped/misconfigured webhook so a paying user isn't stuck
-// without access. Free users (no customer id) never touch Stripe here.
-export async function getProStatus(): Promise<{
+// Server-side Pro check. Reads the live DB flag (so a session minted before
+// an upgrade is honoured immediately). For any Stripe-linked account it also
+// re-verifies against Stripe once per throttle window - self-healing both a
+// missed upgrade webhook (access should be on) and a missed cancellation
+// webhook (access should be off). Manual comps and free users (no Stripe
+// customer) never touch Stripe here. Pass { force } to skip the throttle for
+// an explicit user action (e.g. opening the billing panel).
+export async function getProStatus(opts?: { force?: boolean }): Promise<{
   userId: string | null;
   isPro: boolean;
 }> {
@@ -81,18 +98,18 @@ export async function getProStatus(): Promise<{
     }>();
   if (!user) return { userId, isPro: false };
 
-  if (user.isPro) return { userId, isPro: true };
+  // Manual comps are always Pro and have no subscription to verify.
+  if (user.proManualOverride) return { userId, isPro: true };
 
-  // Not Pro in the DB. If they've paid before (have a customer id) and we
-  // haven't reconciled recently, verify against Stripe to catch a missed
-  // webhook.
+  const hasStripe = !!(user.stripeCustomerId || user.stripeSubscriptionId);
   const stale =
     !user.proSyncedAt ||
     Date.now() - new Date(user.proSyncedAt).getTime() > RECONCILE_THROTTLE_MS;
-  if (user.stripeCustomerId && stale) {
+
+  if (hasStripe && (opts?.force || stale)) {
     const isPro = await reconcileFromStripe(user);
     return { userId, isPro };
   }
 
-  return { userId, isPro: false };
+  return { userId, isPro: !!user.isPro };
 }
