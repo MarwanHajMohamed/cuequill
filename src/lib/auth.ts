@@ -4,6 +4,7 @@ import AppleProvider from "next-auth/providers/apple";
 import connectDb from "@/lib/db";
 import { User } from "@/lib/models/User";
 import { Waitlist } from "@/lib/models/Waitlist";
+import { LAUNCH_AT, isPreLaunch } from "@/lib/launch";
 import bcrypt from "bcryptjs";
 import { NextAuthOptions } from "next-auth";
 import type { Provider } from "next-auth/providers/index";
@@ -33,6 +34,7 @@ type DbUser = {
   isPro?: boolean;
   failedLoginAttempts?: number;
   lockedUntil?: Date | null;
+  preLaunchLockUntil?: Date | null;
 };
 
 // Split a Google display name ("Marwan Haj Mohammed") into first + surname,
@@ -177,6 +179,17 @@ providers.push(
         }
       }
 
+      // Pre-launch lock: correct password, but the account is held until
+      // launch. Throw so the login UI can show a specific "opens on launch
+      // day" message (surfaced via res.error). Clears itself once the date
+      // passes, so nothing to migrate at launch.
+      if (
+        user.preLaunchLockUntil &&
+        user.preLaunchLockUntil.getTime() > Date.now()
+      ) {
+        throw new Error("PRELAUNCH");
+      }
+
       return {
         id: user._id.toString(),
         email: user.email,
@@ -218,8 +231,18 @@ export const authOptions: NextAuthOptions = {
       await connectDb();
       const existing = await User.findOne({ email })
         .collation(EMAIL_COLLATION)
-        .select("_id");
-      if (existing) return true;
+        .select("_id preLaunchLockUntil")
+        .lean<{ _id: unknown; preLaunchLockUntil?: Date }>();
+      if (existing) {
+        // Pre-launch lock applies to OAuth sign-in too.
+        if (
+          existing.preLaunchLockUntil &&
+          existing.preLaunchLockUntil.getTime() > Date.now()
+        ) {
+          return "/login?error=PreLaunch";
+        }
+        return true;
+      }
 
       // New user. In invite-only mode, require a waitlist invite; carry
       // the invited first name through for the name split.
@@ -233,9 +256,18 @@ export const authOptions: NextAuthOptions = {
         fallbackFirst = invited.firstname;
       }
 
+      // Pre-launch: still create the account (and waitlist it), but keep it
+      // locked and block this sign-in. After launch, the account is created
+      // unlocked and the sign-in proceeds.
+      const preLaunch = isPreLaunch();
       const { first, last } = splitName(user.name, fallbackFirst);
       try {
-        await User.create({ email, firstname: first, surname: last });
+        await User.create({
+          email,
+          firstname: first,
+          surname: last,
+          ...(preLaunch ? { preLaunchLockUntil: LAUNCH_AT } : {}),
+        });
       } catch {
         // A concurrent sign-in (two tabs) may have created it already;
         // treat an existing row as success, otherwise fail the flow.
@@ -243,6 +275,18 @@ export const authOptions: NextAuthOptions = {
           .collation(EMAIL_COLLATION)
           .select("_id");
         if (!now) return "/login?error=OAuthCreateFailed";
+      }
+      if (preLaunch) {
+        try {
+          await Waitlist.updateOne(
+            { email },
+            { $setOnInsert: { email, firstname: first, source: "oauth" } },
+            { upsert: true },
+          );
+        } catch {
+          /* non-fatal */
+        }
+        return "/login?error=PreLaunch";
       }
       return true;
     },
