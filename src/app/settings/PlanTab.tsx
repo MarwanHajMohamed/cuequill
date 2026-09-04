@@ -171,29 +171,60 @@ export default function PlanTab() {
     }
   };
 
+  // Switching cycle goes through a hosted Stripe Checkout so the user
+  // confirms/authorises the payment (rather than a silent charge). Checkout
+  // creates the annual subscription and returns to /settings?switch=success,
+  // where we finalize (cancel the old monthly plan).
   const switchToAnnual = async () => {
     if (switching) return;
     setSwitching(true);
     setError(null);
     try {
-      const r = await fetch("/api/user/plan", {
+      const r = await fetch("/api/stripe/switch-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "switch", cycle: "annual" }),
+        body: JSON.stringify({ cycle: "annual" }),
       });
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) {
-        setError(d.error ?? "Couldn't switch to annual. Try again?");
+      if (r.ok && d.url) {
+        window.location.href = d.url;
         return;
       }
-      // Reflect the new cycle (and prorated renewal date) in the panel.
-      await loadPlan();
+      setError(d.error ?? "Couldn't start the switch. Try again?");
+      setSwitching(false);
     } catch {
       setError("Network error. Try again?");
-    } finally {
       setSwitching(false);
     }
   };
+
+  // Returning from the switch Checkout. On success, finalize (cancel the old
+  // plan) and refresh the panel; strip the param so a refresh doesn't repeat
+  // it. Runs once.
+  const switchHandledRef = useRef(false);
+  useEffect(() => {
+    if (switchHandledRef.current) return;
+    const params = new URLSearchParams(window.location.search);
+    const sw = params.get("switch");
+    if (!sw) return;
+    switchHandledRef.current = true;
+    params.delete("switch");
+    const qs = params.toString();
+    window.history.replaceState({}, "", `/settings${qs ? `?${qs}` : ""}`);
+    if (sw !== "success") return;
+    (async () => {
+      try {
+        await fetch("/api/user/plan", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "finalize-switch" }),
+        });
+      } catch {
+        /* the reconcile on loadPlan below still corrects the state */
+      }
+      await loadPlan();
+    })();
+  }, [loadPlan]);
 
   const openPortal = async () => {
     if (portalLoading) return;
