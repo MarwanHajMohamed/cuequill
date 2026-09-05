@@ -59,7 +59,9 @@ export const WIDGETS: WidgetDef[] = [
   {
     id: "cueScore",
     title: "Cue points",
-    render: (userId) => <DashboardCueScore userId={userId} />,
+    render: (userId, rowSpan, colSpan) => (
+      <DashboardCueScore userId={userId} rowSpan={rowSpan} colSpan={colSpan} />
+    ),
   },
   {
     id: "quillInsight",
