@@ -143,6 +143,7 @@ export interface IUser extends Document {
   // user's saved layout, so we never fight a later manual removal.
   dashBalanceMigrated?: boolean;
   dashChallengesMigrated?: boolean;
+  dashCueScoreMigrated?: boolean;
   // Challenges & rewards. `xp` accumulates from claimed challenges and
   // drives the level/title; `challengeClaims` records which challenges
   // have been claimed (each awards its XP exactly once).
@@ -267,6 +268,7 @@ const UserSchema = new Schema<IUser>({
   dashInsightMigrated: { type: Boolean, default: false },
   dashBalanceMigrated: { type: Boolean, default: false },
   dashChallengesMigrated: { type: Boolean, default: false },
+  dashCueScoreMigrated: { type: Boolean, default: false },
   xp: { type: Number, default: 0 },
   bonusChatMessages: { type: Number, default: 0 },
   chatPrompts: {
