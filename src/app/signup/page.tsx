@@ -171,14 +171,6 @@ function SignupInner() {
           </div>
         ) : (
         <>
-        <div className="flex flex-col gap-1.5 mb-7 text-center">
-          <h1 className="text-3xl md:text-4xl font-semibold tracking-tight leading-[1.05]">
-            <span className="auth-heading bg-gradient-to-r from-teal-300 to-emerald-400 bg-clip-text text-transparent">
-              Create your account
-            </span>
-          </h1>
-        </div>
-
         {oauthNotInvited && (
           <div className="mb-5 border border-teal-500/25 bg-teal-500/[0.06] rounded-xl px-3.5 py-2.5 text-[12.5px] text-teal-200 flex items-start gap-2">
             <i className="fa-solid fa-circle-info text-[12px] mt-0.5" />
@@ -238,7 +230,6 @@ function SignupInner() {
               First name
             </span>
             <div className="relative">
-              <i className="fa-solid fa-user absolute left-3 top-1/2 -translate-y-1/2 text-[12px] text-white/35" />
               <input
                 type="text"
                 autoComplete="given-name"
@@ -248,7 +239,7 @@ function SignupInner() {
                   setError("");
                 }}
                 placeholder="Marwan"
-                className="w-full bg-white/[0.03] border border-white/10 rounded-xl pl-9 pr-3 py-2.5 text-[14px] text-white placeholder:text-white/30 focus:outline-none focus:border-white/25 transition"
+                className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2.5 text-[14px] text-white placeholder:text-white/30 focus:outline-none focus:border-white/25 transition"
               />
             </div>
           </label>
@@ -259,7 +250,6 @@ function SignupInner() {
               Email
             </span>
             <div className="relative">
-              <i className="fa-solid fa-envelope absolute left-3 top-1/2 -translate-y-1/2 text-[12px] text-white/35" />
               <input
                 type="email"
                 autoComplete="email"
@@ -269,7 +259,7 @@ function SignupInner() {
                   setError("");
                 }}
                 placeholder="you@example.com"
-                className="w-full bg-white/[0.03] border border-white/10 rounded-xl pl-9 pr-3 py-2.5 text-[14px] text-white placeholder:text-white/30 focus:outline-none focus:border-white/25 transition"
+                className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2.5 text-[14px] text-white placeholder:text-white/30 focus:outline-none focus:border-white/25 transition"
               />
             </div>
           </label>
@@ -280,7 +270,6 @@ function SignupInner() {
               Password
             </span>
             <div className="relative">
-              <i className="fa-solid fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-[12px] text-white/35" />
               <input
                 type={showPassword ? "text" : "password"}
                 autoComplete="new-password"
@@ -290,7 +279,7 @@ function SignupInner() {
                   setError("");
                 }}
                 placeholder="At least 8 characters"
-                className="w-full bg-white/[0.03] border border-white/10 rounded-xl pl-9 pr-10 py-2.5 text-[14px] text-white placeholder:text-white/30 focus:outline-none focus:border-white/25 transition"
+                className="w-full bg-white/[0.03] border border-white/10 rounded-xl pl-3 pr-10 py-2.5 text-[14px] text-white placeholder:text-white/30 focus:outline-none focus:border-white/25 transition"
               />
               <button
                 type="button"
