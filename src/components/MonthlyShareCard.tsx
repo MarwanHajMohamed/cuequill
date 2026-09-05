@@ -1,5 +1,12 @@
 import React, { forwardRef } from "react";
+import { DM_Mono } from "next/font/google";
 import { type CardSkin, skinById } from "@/lib/cardSkins";
+
+// Match the app's typeface (DM Mono) so the exported card reads as Cuequill.
+const dmMono = DM_Mono({
+  subsets: ["latin"],
+  weight: ["300", "400", "500"],
+});
 
 // A self-contained, always-dark share card for a month's performance -
 // same visual language as TradeShareCard (brand top-left, hero Net P/L on
@@ -62,8 +69,7 @@ const MonthlyShareCard = forwardRef<
           width: CARD_W,
           height: CARD_H,
           boxSizing: "border-box",
-          fontFamily:
-            "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+          fontFamily: dmMono.style.fontFamily,
           background: skin.bg,
           borderRadius: 22,
           border: `1px solid ${HAIR}`,
@@ -110,21 +116,22 @@ const MonthlyShareCard = forwardRef<
             gap: 20,
           }}
         >
-          <div style={{ minWidth: 0, maxWidth: 280 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div
               style={{
-                fontSize: 72,
+                fontSize: 44,
                 fontWeight: 700,
                 letterSpacing: "-0.02em",
-                lineHeight: 1,
+                lineHeight: 1.05,
+                overflowWrap: "break-word",
               }}
             >
               {stats.title ?? stats.monthName}
             </div>
             <div
               style={{
-                marginTop: 14,
-                fontSize: 15,
+                marginTop: 12,
+                fontSize: 14,
                 color: MUTED,
                 lineHeight: 1.35,
               }}
@@ -148,11 +155,12 @@ const MonthlyShareCard = forwardRef<
             <div
               style={{
                 marginTop: 4,
-                fontSize: 60,
+                fontSize: 46,
                 fontWeight: 700,
                 letterSpacing: "-0.02em",
-                lineHeight: 1,
+                lineHeight: 1.05,
                 color: accent,
+                whiteSpace: "nowrap",
               }}
             >
               {hasClosed ? fmtMoneySigned(stats.netPL) : "-"}
