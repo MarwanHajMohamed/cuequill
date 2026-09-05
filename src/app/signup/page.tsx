@@ -177,9 +177,6 @@ function SignupInner() {
               Create your account
             </span>
           </h1>
-          <p className="text-[13px] text-white/50 mt-1">
-            Start journaling in under a minute. Free, no card required.
-          </p>
         </div>
 
         {oauthNotInvited && (
