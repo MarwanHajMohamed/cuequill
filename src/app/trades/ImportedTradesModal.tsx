@@ -264,11 +264,7 @@ export default function ImportedTradesModal({
                     key={`grp-${gi}`}
                     className="rounded-xl border border-teal-500/40 bg-teal-500/[0.05] p-1"
                   >
-                    <div className="flex items-center justify-between gap-2 px-2 pt-1 pb-0.5">
-                      <span className="flex items-center gap-1.5 text-[10.5px] font-medium text-teal-300/90">
-                        <i className="fa-solid fa-object-group text-[10px]" />
-                        {group.length} fills · same contract
-                      </span>
+                    <div className="flex items-center justify-end gap-2 px-2 pt-1 pb-0.5">
                       <button
                         type="button"
                         onClick={() => handleMergeGroup(group)}
