@@ -142,11 +142,10 @@ function CueRadar({
 
 export default function DashboardCueScore({
   userId,
+  colSpan = 1,
   rowSpan = 1,
 }: {
   userId: string;
-  // colSpan is accepted (passed by the registry) but the layout only keys
-  // off height, so it's intentionally not destructured.
   colSpan?: number;
   rowSpan?: number;
 }) {
@@ -171,11 +170,13 @@ export default function DashboardCueScore({
   const band = cueBand(result.score);
   const color = BAND_HEX[band];
 
-  // Single-row tiles (1×1 and 2×1) go side-by-side (score left, radar
-  // right) so the hexagon gets the full row height instead of being
-  // squished under the score. Taller tiles keep the stacked layout with
-  // the hexagon centred below the score.
-  const sideBySide = rowSpan === 1;
+  // Layout by tile shape:
+  //  - 1×1 (square, short): side-by-side - score left, radar right.
+  //  - 2×1 (wide, short): radar centred and full-height, score overlaid
+  //    top-left, so the hexagon uses the whole tile top-to-bottom.
+  //  - taller: stacked - score on top, radar centred below.
+  const square = rowSpan === 1 && colSpan === 1;
+  const wideShort = rowSpan === 1 && colSpan >= 2;
 
   // Stacked layout (all tiles bigger than 1×1): title row + score line with
   // the band on the right, hexagon centred below.
@@ -202,7 +203,39 @@ export default function DashboardCueScore({
     </>
   );
 
-  if (sideBySide) {
+  if (wideShort) {
+    return (
+      <section
+        className={`${CARD_CLASS_BASE} h-full overflow-hidden relative`}
+      >
+        {/* Score overlaid top-left so it doesn't shrink the radar's height. */}
+        <div className="absolute top-4 left-4 md:top-5 md:left-5 z-10 flex flex-col pointer-events-none">
+          <h2 className="text-sm md:text-base font-semibold">Cue points</h2>
+          <div className="mt-1 flex items-baseline gap-1.5">
+            <span
+              className="text-[28px] leading-none font-semibold tabular-nums"
+              style={{ color }}
+            >
+              {result.score}
+            </span>
+            <span className="text-[11px] text-white/40">/ 100</span>
+          </div>
+          <span className="mt-0.5 text-[12px] font-medium" style={{ color }}>
+            {BAND_LABEL[band]}
+          </span>
+          <span className="mt-1.5 text-[11px] text-white/45 tabular-nums">
+            {result.trades} closed
+          </span>
+        </div>
+        {/* Radar fills the whole tile, centred top-to-bottom. */}
+        <div className="h-full flex items-center justify-center">
+          <CueRadar components={result.components} color={color} />
+        </div>
+      </section>
+    );
+  }
+
+  if (square) {
     return (
       <section
         className={`${CARD_CLASS_BASE} h-full overflow-hidden flex flex-row items-stretch gap-3`}
