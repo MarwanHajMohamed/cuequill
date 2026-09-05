@@ -4,7 +4,7 @@ import React, { useMemo } from "react";
 import { useTrades } from "@/hooks/useTrades";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { computeCueScore, cueBand, type CueComponent } from "@/lib/cueScore";
-import { CARD_CLASS } from "../DashboardCard";
+import { CARD_CLASS_BASE } from "../DashboardCard";
 
 // "Cue points" - a single 0–100 score for the quality of your trading,
 // built from six components (win rate, profit factor, win/loss, drawdown,
@@ -59,9 +59,13 @@ function CueRadar({
     .join(" ");
 
   return (
+    // Scale to fill whatever space the tile leaves (meet keeps the whole
+    // hexagon + labels visible), so it shrinks on a 1×1 and grows on a
+    // taller/wider tile.
     <svg
       viewBox="0 0 260 214"
-      className="w-full max-w-[300px] mx-auto"
+      preserveAspectRatio="xMidYMid meet"
+      className="w-full h-full max-h-full"
       role="img"
       aria-label="Cue points breakdown"
     >
@@ -149,7 +153,7 @@ export default function DashboardCueScore({ userId }: { userId: string }) {
 
   if (!result) {
     return (
-      <section className={`${CARD_CLASS} flex flex-col gap-3 h-full`}>
+      <section className={`${CARD_CLASS_BASE} flex flex-col gap-3 h-full`}>
         <h2 className="text-sm md:text-base font-semibold">Cue points</h2>
         <div className="flex-1 flex items-center justify-center text-[12px] text-white/40 text-center py-6">
           Close a few trades to build your score.
@@ -162,8 +166,10 @@ export default function DashboardCueScore({ userId }: { userId: string }) {
   const color = BAND_HEX[band];
 
   return (
-    <section className={`${CARD_CLASS} flex flex-col gap-3 h-full`}>
-      <div className="flex items-center justify-between gap-2">
+    <section
+      className={`${CARD_CLASS_BASE} flex flex-col gap-3 h-full overflow-hidden`}
+    >
+      <div className="flex items-center justify-between gap-2 shrink-0">
         <h2 className="text-sm md:text-base font-semibold">Cue points</h2>
         <span className="text-[11px] md:text-xs text-white/45 tabular-nums">
           {result.trades} closed
@@ -171,7 +177,7 @@ export default function DashboardCueScore({ userId }: { userId: string }) {
       </div>
 
       {/* Overall score */}
-      <div className="flex items-baseline gap-2">
+      <div className="flex items-baseline gap-2 shrink-0">
         <span
           className="text-[34px] leading-none font-semibold tabular-nums"
           style={{ color }}
@@ -184,8 +190,10 @@ export default function DashboardCueScore({ userId }: { userId: string }) {
         </span>
       </div>
 
-      {/* Hexagon radar of the six spokes */}
-      <div className="flex-1 flex items-center justify-center min-h-0">
+      {/* Hexagon radar of the six spokes - fills the remaining space and
+          scales with the tile (min height so it stays legible on mobile,
+          where the row has no fixed height). */}
+      <div className="flex-1 min-h-[150px] lg:min-h-0 flex items-center justify-center">
         <CueRadar components={result.components} color={color} />
       </div>
     </section>
