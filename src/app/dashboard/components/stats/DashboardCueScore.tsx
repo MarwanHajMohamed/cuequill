@@ -142,10 +142,11 @@ function CueRadar({
 
 export default function DashboardCueScore({
   userId,
-  colSpan = 1,
   rowSpan = 1,
 }: {
   userId: string;
+  // colSpan is accepted (passed by the registry) but the layout only keys
+  // off height, so it's intentionally not destructured.
   colSpan?: number;
   rowSpan?: number;
 }) {
@@ -170,10 +171,11 @@ export default function DashboardCueScore({
   const band = cueBand(result.score);
   const color = BAND_HEX[band];
 
-  // Only the smallest tile (1×1) goes side-by-side (score left, radar
-  // right) - there isn't room to stack there. Every larger tile keeps the
-  // original stacked layout with the hexagon centred below the score.
-  const sideBySide = colSpan === 1 && rowSpan === 1;
+  // Single-row tiles (1×1 and 2×1) go side-by-side (score left, radar
+  // right) so the hexagon gets the full row height instead of being
+  // squished under the score. Taller tiles keep the stacked layout with
+  // the hexagon centred below the score.
+  const sideBySide = rowSpan === 1;
 
   // Stacked layout (all tiles bigger than 1×1): title row + score line with
   // the band on the right, hexagon centred below.
