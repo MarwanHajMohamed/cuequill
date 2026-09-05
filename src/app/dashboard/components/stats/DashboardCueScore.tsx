@@ -175,16 +175,13 @@ export default function DashboardCueScore({
   // original stacked layout with the hexagon centred below the score.
   const sideBySide = colSpan === 1 && rowSpan === 1;
 
+  // Stacked layout (all tiles bigger than 1×1): title row + score line with
+  // the band on the right, hexagon centred below.
   const scoreBlock = (
-    <div
-      className={sideBySide ? "flex flex-col justify-center gap-1.5" : "contents"}
-    >
-      <div
-        className={`flex items-center gap-2 ${sideBySide ? "" : "justify-between"}`}
-      >
+    <>
+      <div className="flex items-center justify-between gap-2">
         <h2 className="text-sm md:text-base font-semibold">Cue points</h2>
         <span className="text-[11px] md:text-xs text-white/45 tabular-nums">
-          {sideBySide ? "· " : ""}
           {result.trades} closed
         </span>
       </div>
@@ -196,18 +193,11 @@ export default function DashboardCueScore({
           {result.score}
         </span>
         <span className="text-[12px] text-white/40">/ 100</span>
-        {!sideBySide && (
-          <span className="ml-auto text-[12px] font-medium" style={{ color }}>
-            {BAND_LABEL[band]}
-          </span>
-        )}
-      </div>
-      {sideBySide && (
-        <span className="text-[13px] font-medium" style={{ color }}>
+        <span className="ml-auto text-[12px] font-medium" style={{ color }}>
           {BAND_LABEL[band]}
         </span>
-      )}
-    </div>
+      </div>
+    </>
   );
 
   if (sideBySide) {
@@ -215,8 +205,25 @@ export default function DashboardCueScore({
       <section
         className={`${CARD_CLASS_BASE} h-full overflow-hidden flex flex-row items-stretch gap-3`}
       >
+        {/* Left column: title + smaller score + band, with the closed-trade
+            count pinned to the bottom-left. */}
         <div className="shrink-0 w-[42%] max-w-[180px] min-w-[110px] flex flex-col">
-          {scoreBlock}
+          <h2 className="text-sm font-semibold">Cue points</h2>
+          <div className="mt-1 flex items-baseline gap-1.5">
+            <span
+              className="text-[24px] leading-none font-semibold tabular-nums"
+              style={{ color }}
+            >
+              {result.score}
+            </span>
+            <span className="text-[11px] text-white/40">/ 100</span>
+          </div>
+          <span className="mt-0.5 text-[12px] font-medium" style={{ color }}>
+            {BAND_LABEL[band]}
+          </span>
+          <span className="mt-auto text-[11px] text-white/45 tabular-nums">
+            {result.trades} closed
+          </span>
         </div>
         <div className="flex-1 min-w-0 min-h-0 flex items-center justify-center">
           <CueRadar components={result.components} color={color} />
