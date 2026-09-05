@@ -46,6 +46,7 @@ type RowSpan = 1 | 2 | 3;
 // its content without clipping. Anything unlisted defaults to one row.
 const DEFAULT_ROWS: Partial<Record<WidgetId, RowSpan>> = {
   glance: 2,
+  cueScore: 2,
   equity: 2,
   openPositions: 2,
   recentCloses: 2,

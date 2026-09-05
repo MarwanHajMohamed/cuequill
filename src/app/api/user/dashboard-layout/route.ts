@@ -58,7 +58,7 @@ export async function GET() {
 
   await connectDb();
   const user = await User.findById(session.user.id).select(
-    "dashboardLayout dashboardGlanceTiles dashboardWidgetSizes dashboardWidgetRows isPro dashInsightMigrated dashBalanceMigrated dashChallengesMigrated",
+    "dashboardLayout dashboardGlanceTiles dashboardWidgetSizes dashboardWidgetRows isPro dashInsightMigrated dashBalanceMigrated dashChallengesMigrated dashCueScoreMigrated",
   );
   if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -126,6 +126,26 @@ export async function GET() {
       user.dashboardLayout = next;
     }
     user.dashChallengesMigrated = true;
+    await user.save().catch(() => {
+      /* best-effort - still return the migrated layout in-memory */
+    });
+  }
+
+  // One-time migration: add the "Cue points" widget to an existing layout
+  // (right after "glance", or at the end). Runs once for every user.
+  if (!user.dashCueScoreMigrated) {
+    if (
+      Array.isArray(layout) &&
+      layout.length > 0 &&
+      !layout.includes("cueScore")
+    ) {
+      const next = [...layout];
+      const anchor = next.indexOf("glance");
+      next.splice(anchor >= 0 ? anchor + 1 : next.length, 0, "cueScore");
+      layout = next;
+      user.dashboardLayout = next;
+    }
+    user.dashCueScoreMigrated = true;
     await user.save().catch(() => {
       /* best-effort - still return the migrated layout in-memory */
     });
