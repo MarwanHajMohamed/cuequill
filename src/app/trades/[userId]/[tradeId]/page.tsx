@@ -629,6 +629,8 @@ function TradeSummary({ trade }: { trade: Trade }) {
   const isCall = trade.option === "CALL";
   const dateStr = (v?: string | null) =>
     v ? new Date(v).toLocaleDateString("en-GB") : "-";
+  // Stored as "HH:MM" (24h); show as-is, or a dash when not recorded.
+  const timeStr = (v?: string | null) => (v && v.trim() ? v : "-");
   const signed = (n: number, suffix = "", digits = 2) =>
     `${n >= 0 ? "" : "−"}${Math.abs(n).toFixed(digits)}${suffix}`;
 
@@ -705,36 +707,61 @@ function TradeSummary({ trade }: { trade: Trade }) {
         )}
       </div>
 
-      {/* Stat grid */}
-      <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+      {/* Entry */}
+      <Section title="Entry">
         <StatTile
           label="Entry price"
           value={trade.contractPrice != null ? `$${trade.contractPrice}` : "-"}
         />
-        <StatTile
-          label="Exit price"
-          value={
-            isClosed && trade.closingContractPrice != null
-              ? `$${trade.closingContractPrice}`
-              : "-"
-          }
-        />
-        <StatTile
-          label="Change"
-          value={change != null ? signed(change, "%", 0) : "-"}
-          tone={change == null ? undefined : change >= 0 ? "up" : "down"}
-        />
         <StatTile label="Cost basis" value={hasCost ? fmtMoneyFull(cost) : "-"} />
-        <StatTile
-          label="Fees"
-          value={trade.fees != null ? fmtMoneyFull(trade.fees) : "-"}
-        />
-        <StatTile label="Held" value={heldDays != null ? `${heldDays}d` : "-"} />
-        <StatTile label="Bought" value={dateStr(trade.dateBought)} />
-        <StatTile label="Closed" value={dateStr(trade.dateClosed)} />
+        <StatTile label="Date" value={dateStr(trade.dateBought)} />
+        <StatTile label="Time" value={timeStr(trade.timeEntered)} />
+      </Section>
+
+      {/* Exit - only meaningful once the trade is closed */}
+      {isClosed && (
+        <Section title="Exit">
+          <StatTile
+            label="Exit price"
+            value={
+              trade.closingContractPrice != null
+                ? `$${trade.closingContractPrice}`
+                : "-"
+            }
+          />
+          <StatTile
+            label="Change"
+            value={change != null ? signed(change, "%", 0) : "-"}
+            tone={change == null ? undefined : change >= 0 ? "up" : "down"}
+          />
+          <StatTile label="Date" value={dateStr(trade.dateClosed)} />
+          <StatTile label="Time" value={timeStr(trade.timeExited)} />
+          <StatTile
+            label="Held"
+            value={heldDays != null ? `${heldDays}d` : "-"}
+          />
+          <StatTile
+            label="Fees"
+            value={trade.fees != null ? fmtMoneyFull(trade.fees) : "-"}
+          />
+        </Section>
+      )}
+
+      {/* Details */}
+      <Section title="Details">
         <StatTile label="Expiry" value={dateStr(trade.expiryDate)} />
-        <StatTile label="Strategy" value={trade.strategy || "-"} />
-      </div>
+        {!isClosed && (
+          <StatTile
+            label="Fees"
+            value={trade.fees != null ? fmtMoneyFull(trade.fees) : "-"}
+          />
+        )}
+        <StatTile
+          label="Strategy"
+          value={trade.strategy || "-"}
+          className="col-span-2"
+        />
+      </Section>
 
       {/* Tags */}
       {(trade.tags?.length ?? 0) > 0 && (
@@ -757,10 +784,12 @@ function StatTile({
   label,
   value,
   tone,
+  className = "",
 }: {
   label: string;
   value: React.ReactNode;
   tone?: "up" | "down";
+  className?: string;
 }) {
   const color =
     tone === "up"
@@ -769,13 +798,33 @@ function StatTile({
         ? "text-red-400"
         : "text-white/85";
   return (
-    <div className="min-w-0">
+    <div className={`min-w-0 ${className}`}>
       <div className="text-[11px] text-white/40">{label}</div>
       <div
         className={`mt-0.5 text-[14px] font-medium tabular-nums truncate ${color}`}
       >
         {value}
       </div>
+    </div>
+  );
+}
+
+// Grouped block of stats with a small sentence-case heading and a hairline
+// rule, so the summary reads as sections (Entry / Exit / Details) rather
+// than one long grid.
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="text-[11px] text-white/40 border-b border-white/[0.08] pb-1.5">
+        {title}
+      </div>
+      <div className="grid grid-cols-2 gap-x-6 gap-y-3.5">{children}</div>
     </div>
   );
 }
