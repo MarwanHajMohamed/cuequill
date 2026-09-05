@@ -143,11 +143,10 @@ function CueRadar({
 export default function DashboardCueScore({
   userId,
   colSpan = 1,
+  rowSpan = 1,
 }: {
   userId: string;
   colSpan?: number;
-  // rowSpan is accepted (passed by the registry) but the layout only keys
-  // off width, so it's intentionally unused.
   rowSpan?: number;
 }) {
   const [simulated] = useLocalStorage<boolean>("simulated", false);
@@ -171,18 +170,21 @@ export default function DashboardCueScore({
   const band = cueBand(result.score);
   const color = BAND_HEX[band];
 
-  // Wide tile → side-by-side (score left, radar right). A short 1-row tile
-  // benefits most since the radar then gets the full card height.
-  const wide = colSpan >= 2;
+  // Only the smallest tile (1×1) goes side-by-side (score left, radar
+  // right) - there isn't room to stack there. Every larger tile keeps the
+  // original stacked layout with the hexagon centred below the score.
+  const sideBySide = colSpan === 1 && rowSpan === 1;
 
   const scoreBlock = (
-    <div className={wide ? "flex flex-col justify-center gap-1.5" : "contents"}>
+    <div
+      className={sideBySide ? "flex flex-col justify-center gap-1.5" : "contents"}
+    >
       <div
-        className={`flex items-center gap-2 ${wide ? "" : "justify-between"}`}
+        className={`flex items-center gap-2 ${sideBySide ? "" : "justify-between"}`}
       >
         <h2 className="text-sm md:text-base font-semibold">Cue points</h2>
         <span className="text-[11px] md:text-xs text-white/45 tabular-nums">
-          {wide ? "· " : ""}
+          {sideBySide ? "· " : ""}
           {result.trades} closed
         </span>
       </div>
@@ -194,13 +196,13 @@ export default function DashboardCueScore({
           {result.score}
         </span>
         <span className="text-[12px] text-white/40">/ 100</span>
-        {!wide && (
+        {!sideBySide && (
           <span className="ml-auto text-[12px] font-medium" style={{ color }}>
             {BAND_LABEL[band]}
           </span>
         )}
       </div>
-      {wide && (
+      {sideBySide && (
         <span className="text-[13px] font-medium" style={{ color }}>
           {BAND_LABEL[band]}
         </span>
@@ -208,12 +210,12 @@ export default function DashboardCueScore({
     </div>
   );
 
-  if (wide) {
+  if (sideBySide) {
     return (
       <section
-        className={`${CARD_CLASS_BASE} h-full overflow-hidden flex flex-row items-stretch gap-4`}
+        className={`${CARD_CLASS_BASE} h-full overflow-hidden flex flex-row items-stretch gap-3`}
       >
-        <div className="shrink-0 w-[38%] max-w-[260px] min-w-[130px] flex flex-col">
+        <div className="shrink-0 w-[42%] max-w-[180px] min-w-[110px] flex flex-col">
           {scoreBlock}
         </div>
         <div className="flex-1 min-w-0 min-h-0 flex items-center justify-center">
