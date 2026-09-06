@@ -6,6 +6,7 @@ import { useUserProfile } from "@/hooks/useUserProfile";
 import { avatarGradient } from "@/lib/avatarColors";
 import { avatarFrameRing } from "@/lib/avatarFrames";
 import { useScrollLock } from "@/hooks/useScrollLock";
+import { useTheme } from "@/hooks/useTheme";
 
 // A public profile card for a leaderboard user. Opened by tapping a row on
 // the leaderboard; all stats are discipline-based (never P/L). Avatar +
@@ -23,13 +24,38 @@ function Stat({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
-function Medal({ icon, label }: { icon: string; label: string }) {
+// Medallion matching the Trophies page: a conic-gradient gold ring with a
+// glow, an inner disc holding the icon, and the label beneath.
+function Medal({
+  icon,
+  label,
+  isLight,
+}: {
+  icon: string;
+  label: string;
+  isLight: boolean;
+}) {
   return (
-    <div className="flex flex-col items-center gap-1 w-[52px]" title={label}>
-      <div className="w-11 h-11 rounded-full flex items-center justify-center bg-gradient-to-br from-amber-300/25 to-yellow-600/20 border border-amber-400/40 text-amber-300 shadow-[0_2px_10px_rgba(245,158,11,0.15)]">
-        <i className={`${icon} text-[15px]`} />
+    <div className="flex flex-col items-center text-center w-[76px]" title={label}>
+      <div
+        className="relative w-[60px] h-[60px] rounded-full flex items-center justify-center"
+        style={{
+          background:
+            "conic-gradient(from 140deg, #fcd34d, #f59e0b, #b45309, #fcd34d)",
+          boxShadow: "0 0 22px -6px rgba(245,158,11,0.75)",
+        }}
+      >
+        <div
+          className={`w-[49px] h-[49px] rounded-full flex items-center justify-center border ${
+            isLight
+              ? "bg-amber-100 border-amber-400/40 text-amber-700"
+              : "bg-[#1a1206] border-amber-300/30 text-amber-200"
+          }`}
+        >
+          <i className={`${icon} text-[19px]`} />
+        </div>
       </div>
-      <span className="text-[9px] text-white/50 text-center leading-tight truncate w-full">
+      <span className="mt-2 text-[10px] text-white/60 leading-tight">
         {label}
       </span>
     </div>
@@ -46,6 +72,8 @@ export default function UserProfileModal({
   const open = !!userId;
   useScrollLock(open);
   const { data: p, isLoading, isError, error } = useUserProfile(userId);
+  const { theme } = useTheme();
+  const isLight = theme === "light";
 
   const memberSince = p?.memberSince
     ? new Date(p.memberSince).toLocaleDateString(undefined, {
@@ -72,7 +100,7 @@ export default function UserProfileModal({
             exit={{ opacity: 0, scale: 0.96, y: 8 }}
             transition={{ duration: 0.18, ease: "easeOut" }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-[500px] rounded-2xl border border-white/10 bg-[var(--surface)] shadow-[0_24px_80px_rgba(0,0,0,0.5)] overflow-hidden"
+            className="w-full max-w-[620px] rounded-2xl border border-white/10 bg-[var(--surface)] shadow-[0_24px_80px_rgba(0,0,0,0.5)] overflow-hidden"
           >
             {/* Soft header wash */}
             <div className="relative">
@@ -155,9 +183,14 @@ export default function UserProfileModal({
                         </span>
                       </div>
                       {p.medals.length > 0 ? (
-                        <div className="flex flex-wrap gap-x-2 gap-y-3">
+                        <div className="flex flex-wrap gap-x-3 gap-y-4">
                           {p.medals.map((m) => (
-                            <Medal key={m.id} icon={m.icon} label={m.label} />
+                            <Medal
+                              key={m.id}
+                              icon={m.icon}
+                              label={m.label}
+                              isLight={isLight}
+                            />
                           ))}
                         </div>
                       ) : (
