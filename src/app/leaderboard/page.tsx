@@ -9,15 +9,12 @@ import {
   type LeaderboardEntry,
   type LeaderboardScope,
 } from "@/hooks/useLeaderboard";
-import {
-  useFriends,
-  useFriendAction,
-  type FriendMini,
-} from "@/hooks/useFriends";
+import { useFriends } from "@/hooks/useFriends";
 import { avatarGradient } from "@/lib/avatarColors";
 import { avatarFrameRing } from "@/lib/avatarFrames";
 import { Skeleton } from "@/components/Loaders";
 import UserProfileModal from "@/components/UserProfileModal";
+import FriendsModal from "@/components/FriendsModal";
 
 // The three ranking boards. Every metric is process / discipline based -
 // consistency of journaling, never P/L - so climbing rewards good habits.
@@ -101,9 +98,11 @@ function LeaderboardPage() {
   const [board, setBoard] = useState<BoardId>("level");
   // Which user's profile card is open (leaderboard row → profile).
   const [profileId, setProfileId] = useState<string | null>(null);
+  const [friendsOpen, setFriendsOpen] = useState(false);
 
   const active = BOARDS.find((b) => b.id === board)!;
-  const incoming = friends?.incoming ?? [];
+  const incomingCount = friends?.incoming.length ?? 0;
+  const friendCount = friends?.friends.length ?? 0;
 
   const ranked = useMemo(() => {
     const entries = [...(data?.entries ?? [])];
@@ -116,11 +115,6 @@ function LeaderboardPage() {
     });
     return entries;
   }, [data?.entries, active]);
-
-  const myRank = useMemo(() => {
-    const idx = ranked.findIndex((e) => e.isMe);
-    return idx === -1 ? null : idx + 1;
-  }, [ranked]);
 
   const optedIn = data?.optedIn ?? false;
   const podium = ranked.slice(0, 3);
@@ -150,18 +144,8 @@ function LeaderboardPage() {
             </p>
           </div>
 
-          {myRank ? (
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-center">
-              <div className="text-[10px] uppercase tracking-[0.14em] text-white/45">
-                Your rank
-              </div>
-              <div className="text-xl font-semibold tabular-nums text-teal-300">
-                #{myRank}
-              </div>
-            </div>
-          ) : (
-            !isLoading &&
-            !optedIn && (
+          <div className="flex items-center gap-2">
+            {!isLoading && !optedIn && (
               <button
                 type="button"
                 onClick={() => optInMut.mutate(true)}
@@ -171,8 +155,29 @@ function LeaderboardPage() {
                 <i className="fa-solid fa-ranking-star text-[12px]" />
                 Join leaderboard
               </button>
-            )
-          )}
+            )}
+            <button
+              type="button"
+              onClick={() => setFriendsOpen(true)}
+              className="relative shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/12 bg-white/[0.03] text-[13px] font-semibold text-white/80 hover:text-white hover:border-white/25 transition cursor-pointer"
+            >
+              <i className="fa-solid fa-user-group text-[12px] text-teal-300" />
+              Friends
+              {friendCount > 0 && (
+                <span className="text-white/45 tabular-nums font-medium">
+                  {friendCount}
+                </span>
+              )}
+              {incomingCount > 0 && (
+                <span
+                  className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-teal-500 text-[#fff] text-[10px] font-bold flex items-center justify-center ring-2 ring-[var(--background)] tabular-nums"
+                  aria-label={`${incomingCount} friend requests`}
+                >
+                  {incomingCount}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Controls: metric tabs (left) + scope toggle (right) */}
@@ -251,10 +256,6 @@ function LeaderboardPage() {
           </div>
         </div>
 
-        {/* Incoming friend requests */}
-        {incoming.length > 0 && (
-          <FriendRequests requests={incoming} onOpen={setProfileId} />
-        )}
 
         {/* Body */}
         <div className="mt-5">
@@ -324,6 +325,7 @@ function LeaderboardPage() {
         userId={profileId}
         onClose={() => setProfileId(null)}
       />
+      <FriendsModal open={friendsOpen} onClose={() => setFriendsOpen(false)} />
     </div>
   );
 }
@@ -345,16 +347,21 @@ function PodiumCard({
   const size = tall ? 76 : 60;
   return (
     <motion.div
-      layout
+      layout="position"
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
+      transition={{
+        layout: { duration: 0.32, ease: [0.22, 1, 0.36, 1] },
+        opacity: { duration: 0.25 },
+        y: { duration: 0.25 },
+      }}
       onClick={() => onOpen(entry.id)}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") onOpen(entry.id);
       }}
-      className={`flex flex-col items-center text-center px-1 md:px-3 cursor-pointer rounded-2xl hover:bg-white/[0.03] transition ${
+      className={`flex flex-col items-center text-center px-1 md:px-3 cursor-pointer rounded-2xl hover:bg-white/[0.03] transition-colors ${
         tall ? "" : "pt-6 md:pt-9"
       }`}
     >
@@ -416,17 +423,21 @@ function Row({
 }) {
   return (
     <motion.div
-      layout
+      layout="position"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
+      transition={{
+        layout: { duration: 0.32, ease: [0.22, 1, 0.36, 1] },
+        opacity: { duration: 0.2 },
+      }}
       onClick={() => onOpen(entry.id)}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") onOpen(entry.id);
       }}
-      className={`flex items-center gap-3 md:gap-4 px-3.5 md:px-4 py-3 cursor-pointer transition hover:bg-white/[0.04] ${
+      className={`flex items-center gap-3 md:gap-4 px-3.5 md:px-4 py-3 cursor-pointer transition-colors hover:bg-white/[0.04] ${
         entry.isMe ? "bg-teal-500/[0.07]" : ""
       }`}
     >
@@ -472,79 +483,6 @@ function EmptyState({ scope }: { scope: LeaderboardScope }) {
           ? "No friends on the board yet. Open a trader's profile from the Everyone board to add them."
           : "No one's on the board yet. Be the first to join and set the pace."}
       </p>
-    </div>
-  );
-}
-
-// Incoming friend requests, each with accept / decline and a tap-through to
-// the requester's profile.
-function FriendRequests({
-  requests,
-  onOpen,
-}: {
-  requests: FriendMini[];
-  onOpen: (id: string) => void;
-}) {
-  const friendMut = useFriendAction();
-  return (
-    <div className="mt-4 rounded-2xl border border-teal-400/20 bg-teal-500/[0.06] p-3">
-      <div className="flex items-center gap-2 px-1 pb-2 text-[12px] font-medium text-teal-200">
-        <i className="fa-solid fa-user-plus text-[11px]" />
-        Friend requests
-        <span className="text-teal-300/70 tabular-nums">
-          ({requests.length})
-        </span>
-      </div>
-      <div className="flex flex-col gap-1.5">
-        {requests.map((r) => (
-          <div
-            key={r.id}
-            className="flex items-center gap-3 rounded-xl bg-white/[0.03] px-3 py-2"
-          >
-            <button
-              type="button"
-              onClick={() => onOpen(r.id)}
-              className="flex items-center gap-3 min-w-0 flex-1 text-left cursor-pointer group"
-            >
-              <div
-                className={`shrink-0 w-9 h-9 rounded-full bg-gradient-to-br ${avatarGradient(
-                  r.avatarColor,
-                )} ${avatarFrameRing(
-                  r.avatarFrame,
-                )} border border-white/15 flex items-center justify-center font-semibold text-white text-[13px]`}
-              >
-                {r.name.trim().charAt(0).toUpperCase() || "?"}
-              </div>
-              <span className="text-[13.5px] font-medium truncate group-hover:text-white">
-                {r.name}
-              </span>
-            </button>
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                type="button"
-                disabled={friendMut.isPending}
-                onClick={() =>
-                  friendMut.mutate({ action: "accept", userId: r.id })
-                }
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-teal-500 hover:bg-teal-400 text-[#fff] text-[12px] font-medium transition cursor-pointer disabled:opacity-60"
-              >
-                <i className="fa-solid fa-check text-[10px]" />
-                Accept
-              </button>
-              <button
-                type="button"
-                disabled={friendMut.isPending}
-                onClick={() =>
-                  friendMut.mutate({ action: "decline", userId: r.id })
-                }
-                className="inline-flex items-center px-3 py-1.5 rounded-full border border-white/12 bg-white/[0.03] text-white/70 hover:text-white hover:border-white/25 text-[12px] font-medium transition cursor-pointer disabled:opacity-60"
-              >
-                Decline
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }

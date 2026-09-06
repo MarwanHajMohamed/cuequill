@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { FriendMini } from "@/app/api/friends/route";
+import type { UserSearchResult } from "@/app/api/users/search/route";
 import type { FriendStatus } from "@/lib/friends";
 
-export type { FriendMini, FriendStatus };
+export type { FriendMini, FriendStatus, UserSearchResult };
 
 export type FriendsData = {
   friends: FriendMini[];
@@ -33,6 +34,23 @@ export function useFriends(enabled = true) {
   });
 }
 
+// Search for people to add as friends by name or email. Results carry the
+// caller's current relationship so each row shows the right action.
+export function useUserSearch(query: string) {
+  const q = query.trim();
+  return useQuery<UserSearchResult[]>({
+    queryKey: ["userSearch", q],
+    queryFn: async () => {
+      const res = await fetch(`/api/users/search?q=${encodeURIComponent(q)}`);
+      if (!res.ok) throw new Error("Search failed");
+      const d = (await res.json()) as { results: UserSearchResult[] };
+      return d.results;
+    },
+    enabled: q.length >= 2,
+    staleTime: 15_000,
+  });
+}
+
 // Change a friend relationship. Invalidates the affected views so the profile
 // card, friends lists, and the friends leaderboard all reflect the new state.
 export function useFriendAction() {
@@ -52,6 +70,7 @@ export function useFriendAction() {
       qc.invalidateQueries({ queryKey: ["friends"] });
       qc.invalidateQueries({ queryKey: ["userProfile", vars.userId] });
       qc.invalidateQueries({ queryKey: ["leaderboard"] });
+      qc.invalidateQueries({ queryKey: ["userSearch"] });
     },
   });
 }
