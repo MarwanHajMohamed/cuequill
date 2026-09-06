@@ -206,14 +206,14 @@ export default function DashboardCueScore({
   if (wideShort) {
     return (
       <section
-        className={`${CARD_CLASS_BASE} h-full overflow-hidden relative`}
+        className={`${CARD_CLASS_BASE} h-full overflow-hidden flex flex-row items-stretch gap-3`}
       >
-        {/* Score overlaid top-left so it doesn't shrink the radar's height. */}
-        <div className="absolute top-4 left-4 md:top-5 md:left-5 z-10 flex flex-col pointer-events-none">
+        {/* Score in its own column so the radar never overlaps the text. */}
+        <div className="shrink-0 w-[36%] max-w-[190px] min-w-[120px] flex flex-col">
           <h2 className="text-sm md:text-base font-semibold">Cue points</h2>
           <div className="mt-1 flex items-baseline gap-1.5">
             <span
-              className="text-[28px] leading-none font-semibold tabular-nums"
+              className="text-[24px] leading-none font-semibold tabular-nums"
               style={{ color }}
             >
               {result.score}
@@ -223,12 +223,12 @@ export default function DashboardCueScore({
           <span className="mt-0.5 text-[12px] font-medium" style={{ color }}>
             {BAND_LABEL[band]}
           </span>
-          <span className="mt-1.5 text-[11px] text-white/45 tabular-nums">
+          <span className="mt-auto text-[11px] text-white/45 tabular-nums">
             {result.trades} closed
           </span>
         </div>
-        {/* Radar fills the whole tile, centred top-to-bottom. */}
-        <div className="h-full flex items-center justify-center">
+        {/* Radar takes the remaining width, centred and full-height. */}
+        <div className="flex-1 min-w-0 min-h-0 flex items-center justify-center">
           <CueRadar components={result.components} color={color} />
         </div>
       </section>
