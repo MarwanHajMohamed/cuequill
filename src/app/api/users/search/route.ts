@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
 export type UserSearchResult = {
   id: string;
   name: string; // full "First Last"
-  email: string;
+  email: string; // masked, e.g. "j•••@gmail.com"
   avatarColor: string;
   avatarFrame: string;
   friendStatus: FriendStatus;
@@ -25,6 +25,18 @@ export type UserSearchResult = {
 
 function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// Mask an email for display: keep the first character of the local part and
+// the domain (so people can still tell accounts apart), hide the rest.
+// e.g. "jane.doe@gmail.com" -> "j•••@gmail.com".
+function maskEmail(email: string): string {
+  const at = email.lastIndexOf("@");
+  if (at <= 0) return email ? "•••" : "";
+  const local = email.slice(0, at);
+  const domain = email.slice(at + 1);
+  const first = local.charAt(0);
+  return `${first}•••@${domain}`;
 }
 
 export async function GET(req: Request) {
@@ -83,7 +95,7 @@ export async function GET(req: Request) {
     return {
       id: String(u._id),
       name,
-      email: u.email ?? "",
+      email: maskEmail(u.email ?? ""),
       avatarColor: u.avatarColor ?? "teal",
       avatarFrame: u.avatarFrame ?? "none",
       friendStatus: states.get(String(u._id)) ?? "none",
