@@ -14,7 +14,7 @@ import { avatarGradient } from "@/lib/avatarColors";
 import { avatarFrameRing } from "@/lib/avatarFrames";
 import { Skeleton } from "@/components/Loaders";
 import UserProfileModal from "@/components/UserProfileModal";
-import FriendsModal from "@/components/FriendsModal";
+import Link from "next/link";
 
 // The three ranking boards. Every metric is process / discipline based -
 // consistency of journaling, never P/L - so climbing rewards good habits.
@@ -98,7 +98,6 @@ function LeaderboardPage() {
   const [board, setBoard] = useState<BoardId>("level");
   // Which user's profile card is open (leaderboard row → profile).
   const [profileId, setProfileId] = useState<string | null>(null);
-  const [friendsOpen, setFriendsOpen] = useState(false);
 
   const active = BOARDS.find((b) => b.id === board)!;
   const incomingCount = friends?.incoming.length ?? 0;
@@ -156,9 +155,8 @@ function LeaderboardPage() {
                 Join leaderboard
               </button>
             )}
-            <button
-              type="button"
-              onClick={() => setFriendsOpen(true)}
+            <Link
+              href="/friends"
               className="relative shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/12 bg-white/[0.03] text-[13px] font-semibold text-white/80 hover:text-white hover:border-white/25 transition cursor-pointer"
             >
               <i className="fa-solid fa-user-group text-[12px] text-teal-300" />
@@ -176,7 +174,7 @@ function LeaderboardPage() {
                   {incomingCount}
                 </span>
               )}
-            </button>
+            </Link>
           </div>
         </div>
 
@@ -325,7 +323,6 @@ function LeaderboardPage() {
         userId={profileId}
         onClose={() => setProfileId(null)}
       />
-      <FriendsModal open={friendsOpen} onClose={() => setFriendsOpen(false)} />
     </div>
   );
 }
