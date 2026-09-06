@@ -1,5 +1,12 @@
 import React, { forwardRef } from "react";
+import { DM_Mono } from "next/font/google";
 import { type CardSkin, skinById } from "@/lib/cardSkins";
+
+// Match the app's typeface (DM Mono) so the exported card reads as Cuequill.
+const dmMono = DM_Mono({
+  subsets: ["latin"],
+  weight: ["300", "400", "500"],
+});
 
 // A self-contained, PNG-capturable share card for a challenge milestone:
 // either a "level up" or a "challenge complete". Same 600×300 family as the
@@ -36,8 +43,7 @@ const AchievementShareCard = forwardRef<
         width: CARD_W,
         height: CARD_H,
         boxSizing: "border-box",
-        fontFamily:
-          "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+        fontFamily: dmMono.style.fontFamily,
         background: skin.bg,
         borderRadius: 22,
         border: `1px solid ${skin.hair}`,
