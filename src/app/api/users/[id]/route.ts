@@ -7,6 +7,7 @@ import Trade from "@/lib/models/Trade";
 import { User } from "@/lib/models/User";
 import { CHALLENGES, levelInfo, titleLabel } from "@/lib/challenges";
 import { TROPHIES, type TrophyStats } from "@/lib/trophies";
+import { friendState, type FriendStatus } from "@/lib/friends";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -33,6 +34,8 @@ export type PublicProfile = {
   challengesCompleted: number;
   memberSince: string; // ISO date
   isMe: boolean;
+  // The caller's friend relationship with this user.
+  friendStatus: FriendStatus;
   // Earned milestone trophies ("medals") and the total available.
   medals: { id: string; label: string; icon: string }[];
   medalsTotal: number;
@@ -152,6 +155,7 @@ export async function GET(
   const name = lastInitial ? `${first} ${lastInitial}.` : first || "Trader";
   const title = (user.equippedTitle ?? "").trim() || titleLabel(info.level);
   const todayUtc = new Date().toISOString().slice(0, 10);
+  const friendStatus = await friendState(session.user.id, String(user._id));
 
   const profile: PublicProfile = {
     id: String(user._id),
@@ -172,6 +176,7 @@ export async function GET(
     // schema has no separate createdAt.
     memberSince: user._id.getTimestamp().toISOString(),
     isMe: String(user._id) === session.user.id,
+    friendStatus,
     medals,
     medalsTotal: TROPHIES.length,
   };

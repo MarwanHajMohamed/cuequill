@@ -6,6 +6,7 @@ import mongoose from "mongoose";
 import Trade from "@/lib/models/Trade";
 import { User } from "@/lib/models/User";
 import { levelInfo, titleLabel } from "@/lib/challenges";
+import { getFriendIds } from "@/lib/friends";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -43,8 +44,9 @@ function liveStreak(
 
 // GET /api/leaderboard - the ranked entries for every user who has opted in,
 // each carrying all three ranking metrics, plus whether the caller is opted
-// in so the page can show a "join" prompt.
-export async function GET() {
+// in so the page can show a "join" prompt. With ?scope=friends the board is
+// limited to the caller's accepted friends plus themselves.
+export async function GET(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -52,8 +54,19 @@ export async function GET() {
 
   await connectDb();
   const meId = session.user.id;
+  const scope =
+    new URL(req.url).searchParams.get("scope") === "friends"
+      ? "friends"
+      : "all";
 
-  const users = await User.find({ leaderboardOptIn: true })
+  // In friends scope, restrict to the caller and their accepted friends.
+  const filter: Record<string, unknown> = { leaderboardOptIn: true };
+  if (scope === "friends") {
+    const friendIds = await getFriendIds(meId);
+    filter._id = { $in: [...friendIds, meId] };
+  }
+
+  const users = await User.find(filter)
     .select(
       "firstname surname avatarColor avatarFrame equippedTitle xp affirmationStreak",
     )
