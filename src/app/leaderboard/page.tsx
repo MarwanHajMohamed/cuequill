@@ -11,6 +11,7 @@ import {
 import { avatarGradient } from "@/lib/avatarColors";
 import { avatarFrameRing } from "@/lib/avatarFrames";
 import { Skeleton } from "@/components/Loaders";
+import UserProfileModal from "@/components/UserProfileModal";
 
 // The three ranking boards. Every metric is process / discipline based -
 // consistency of journaling, never P/L - so climbing rewards good habits.
@@ -90,6 +91,8 @@ function LeaderboardPage() {
   const { data, isLoading } = useLeaderboard();
   const optInMut = useLeaderboardOptIn();
   const [board, setBoard] = useState<BoardId>("level");
+  // Which user's profile card is open (leaderboard row → profile).
+  const [profileId, setProfileId] = useState<string | null>(null);
 
   const active = BOARDS.find((b) => b.id === board)!;
 
@@ -213,6 +216,7 @@ function LeaderboardPage() {
                         rank={col === 1 ? 1 : col === 0 ? 2 : 3}
                         board={active}
                         tall={col === 1}
+                        onOpen={setProfileId}
                       />
                     ) : (
                       <div key={col} />
@@ -231,6 +235,7 @@ function LeaderboardPage() {
                         entry={e}
                         rank={i + 4}
                         board={active}
+                        onOpen={setProfileId}
                       />
                     ))}
                   </AnimatePresence>
@@ -254,6 +259,11 @@ function LeaderboardPage() {
           )}
         </div>
       </div>
+
+      <UserProfileModal
+        userId={profileId}
+        onClose={() => setProfileId(null)}
+      />
     </div>
   );
 }
@@ -263,11 +273,13 @@ function PodiumCard({
   rank,
   board,
   tall,
+  onOpen,
 }: {
   entry: LeaderboardEntry;
   rank: number;
   board: (typeof BOARDS)[number];
   tall: boolean;
+  onOpen: (id: string) => void;
 }) {
   const medal = MEDAL[rank - 1];
   const size = tall ? 76 : 60;
@@ -276,7 +288,13 @@ function PodiumCard({
       layout
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`flex flex-col items-center text-center px-1 md:px-3 ${
+      onClick={() => onOpen(entry.id)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") onOpen(entry.id);
+      }}
+      className={`flex flex-col items-center text-center px-1 md:px-3 cursor-pointer rounded-2xl hover:bg-white/[0.03] transition ${
         tall ? "" : "pt-6 md:pt-9"
       }`}
     >
@@ -329,10 +347,12 @@ function Row({
   entry,
   rank,
   board,
+  onOpen,
 }: {
   entry: LeaderboardEntry;
   rank: number;
   board: (typeof BOARDS)[number];
+  onOpen: (id: string) => void;
 }) {
   return (
     <motion.div
@@ -340,7 +360,13 @@ function Row({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className={`flex items-center gap-3 md:gap-4 px-3.5 md:px-4 py-3 ${
+      onClick={() => onOpen(entry.id)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") onOpen(entry.id);
+      }}
+      className={`flex items-center gap-3 md:gap-4 px-3.5 md:px-4 py-3 cursor-pointer transition hover:bg-white/[0.04] ${
         entry.isMe ? "bg-teal-500/[0.07]" : ""
       }`}
     >
