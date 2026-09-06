@@ -3,6 +3,11 @@
 import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import {
+  useFriendAction,
+  type FriendAction,
+  type FriendStatus,
+} from "@/hooks/useFriends";
 import { avatarGradient } from "@/lib/avatarColors";
 import { avatarFrameRing } from "@/lib/avatarFrames";
 import { useScrollLock } from "@/hooks/useScrollLock";
@@ -62,6 +67,89 @@ function Medal({
   );
 }
 
+// The friend action(s) available for the current relationship. One primary
+// button, except an incoming request which offers Accept + Decline.
+function FriendControls({
+  status,
+  pending,
+  onAction,
+}: {
+  status: FriendStatus;
+  pending: boolean;
+  onAction: (action: FriendAction) => void;
+}) {
+  const base =
+    "inline-flex items-center gap-2 px-3.5 py-2 rounded-full text-[12.5px] font-medium transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed";
+
+  if (status === "incoming") {
+    return (
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => onAction("accept")}
+          className={`${base} bg-teal-500 hover:bg-teal-400 text-[#fff]`}
+        >
+          <i className="fa-solid fa-check text-[11px]" />
+          Accept
+        </button>
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => onAction("decline")}
+          className={`${base} border border-white/12 bg-white/[0.03] text-white/70 hover:text-white hover:border-white/25`}
+        >
+          Decline
+        </button>
+      </div>
+    );
+  }
+
+  if (status === "friends") {
+    return (
+      <button
+        type="button"
+        disabled={pending}
+        onClick={() => onAction("remove")}
+        title="Remove friend"
+        className={`${base} group border border-teal-400/30 bg-teal-500/10 text-teal-200 hover:border-red-400/40 hover:bg-red-500/10 hover:text-red-200`}
+      >
+        <i className="fa-solid fa-user-check text-[11px] group-hover:hidden" />
+        <i className="fa-solid fa-user-xmark text-[11px] hidden group-hover:inline" />
+        <span className="group-hover:hidden">Friends</span>
+        <span className="hidden group-hover:inline">Remove</span>
+      </button>
+    );
+  }
+
+  if (status === "outgoing") {
+    return (
+      <button
+        type="button"
+        disabled={pending}
+        onClick={() => onAction("cancel")}
+        title="Cancel request"
+        className={`${base} border border-white/12 bg-white/[0.03] text-white/70 hover:text-white hover:border-white/25`}
+      >
+        <i className="fa-solid fa-clock text-[11px]" />
+        Requested
+      </button>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      disabled={pending}
+      onClick={() => onAction("request")}
+      className={`${base} bg-teal-500 hover:bg-teal-400 text-[#fff]`}
+    >
+      <i className="fa-solid fa-user-plus text-[11px]" />
+      Add friend
+    </button>
+  );
+}
+
 export default function UserProfileModal({
   userId,
   onClose,
@@ -74,6 +162,7 @@ export default function UserProfileModal({
   const { data: p, isLoading, isError, error } = useUserProfile(userId);
   const { theme } = useTheme();
   const isLight = theme === "light";
+  const friendMut = useFriendAction();
 
   const memberSince = p?.memberSince
     ? new Date(p.memberSince).toLocaleDateString(undefined, {
@@ -225,16 +314,15 @@ export default function UserProfileModal({
                         </span>
                       )}
                       {!p.isMe && (
-                        <button
-                          type="button"
-                          disabled
-                          title="Coming soon"
-                          className="ml-auto inline-flex items-center gap-2 px-3.5 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/40 text-[12.5px] font-medium cursor-not-allowed"
-                        >
-                          <i className="fa-solid fa-user-plus text-[11px]" />
-                          Add friend
-                          <span className="text-[10px] text-white/30">· soon</span>
-                        </button>
+                        <div className="ml-auto">
+                          <FriendControls
+                            status={p.friendStatus}
+                            pending={friendMut.isPending}
+                            onAction={(action) =>
+                              friendMut.mutate({ action, userId: p.id })
+                            }
+                          />
+                        </div>
                       )}
                     </div>
                   </div>

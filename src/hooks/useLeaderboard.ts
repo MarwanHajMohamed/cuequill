@@ -8,16 +8,21 @@ export type LeaderboardData = {
   optedIn: boolean;
 };
 
-async function fetchLeaderboard(): Promise<LeaderboardData> {
-  const res = await fetch("/api/leaderboard");
+export type LeaderboardScope = "all" | "friends";
+
+async function fetchLeaderboard(
+  scope: LeaderboardScope,
+): Promise<LeaderboardData> {
+  const qs = scope === "friends" ? "?scope=friends" : "";
+  const res = await fetch(`/api/leaderboard${qs}`);
   if (!res.ok) throw new Error("Failed to load leaderboard");
   return res.json();
 }
 
-export function useLeaderboard(enabled = true) {
+export function useLeaderboard(scope: LeaderboardScope = "all", enabled = true) {
   return useQuery<LeaderboardData>({
-    queryKey: ["leaderboard"],
-    queryFn: fetchLeaderboard,
+    queryKey: ["leaderboard", scope],
+    queryFn: () => fetchLeaderboard(scope),
     enabled,
     staleTime: 60_000,
   });
@@ -39,12 +44,20 @@ export function useLeaderboardOptIn() {
     },
     onMutate: async (optIn) => {
       await qc.cancelQueries({ queryKey: ["leaderboard"] });
-      const prev = qc.getQueryData<LeaderboardData>(["leaderboard"]);
-      if (prev) qc.setQueryData(["leaderboard"], { ...prev, optedIn: optIn });
+      // Patch every cached scope ("all"/"friends") so the join/leave state
+      // flips instantly regardless of which board is showing.
+      const prev = qc.getQueriesData<LeaderboardData>({
+        queryKey: ["leaderboard"],
+      });
+      for (const [key, data] of prev) {
+        if (data) qc.setQueryData(key, { ...data, optedIn: optIn });
+      }
       return { prev };
     },
     onError: (_e, _v, ctx) => {
-      if (ctx?.prev) qc.setQueryData(["leaderboard"], ctx.prev);
+      for (const [key, data] of ctx?.prev ?? []) {
+        qc.setQueryData(key, data);
+      }
     },
     onSettled: () => qc.invalidateQueries({ queryKey: ["leaderboard"] }),
   });

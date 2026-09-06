@@ -7,7 +7,13 @@ import {
   useLeaderboard,
   useLeaderboardOptIn,
   type LeaderboardEntry,
+  type LeaderboardScope,
 } from "@/hooks/useLeaderboard";
+import {
+  useFriends,
+  useFriendAction,
+  type FriendMini,
+} from "@/hooks/useFriends";
 import { avatarGradient } from "@/lib/avatarColors";
 import { avatarFrameRing } from "@/lib/avatarFrames";
 import { Skeleton } from "@/components/Loaders";
@@ -88,13 +94,16 @@ function Avatar({
 const MEDAL = ["#facc15", "#cbd5e1", "#d08b5b"]; // gold, silver, bronze
 
 function LeaderboardPage() {
-  const { data, isLoading } = useLeaderboard();
+  const [scope, setScope] = useState<LeaderboardScope>("all");
+  const { data, isLoading } = useLeaderboard(scope);
   const optInMut = useLeaderboardOptIn();
+  const { data: friends } = useFriends();
   const [board, setBoard] = useState<BoardId>("level");
   // Which user's profile card is open (leaderboard row → profile).
   const [profileId, setProfileId] = useState<string | null>(null);
 
   const active = BOARDS.find((b) => b.id === board)!;
+  const incoming = friends?.incoming ?? [];
 
   const ranked = useMemo(() => {
     const entries = [...(data?.entries ?? [])];
@@ -166,42 +175,93 @@ function LeaderboardPage() {
           )}
         </div>
 
-        {/* Tabs */}
-        <div className="mt-6 inline-flex items-center gap-1 p-1 rounded-2xl border border-white/10 bg-white/[0.03] self-start">
-          {BOARDS.map((b) => {
-            const on = b.id === board;
-            return (
-              <button
-                key={b.id}
-                type="button"
-                onClick={() => setBoard(b.id)}
-                className={`relative inline-flex items-center gap-2 px-3.5 md:px-4 py-2 rounded-xl text-[12.5px] md:text-[13px] font-medium transition cursor-pointer ${
-                  on ? "text-white" : "text-white/55 hover:text-white/80"
-                }`}
-              >
-                {on && (
-                  <motion.span
-                    layoutId="lb-tab"
-                    className="absolute inset-0 rounded-xl bg-white/[0.08] border border-white/10"
-                    transition={{ type: "spring", stiffness: 500, damping: 40 }}
+        {/* Controls: metric tabs (left) + scope toggle (right) */}
+        <div className="mt-6 flex items-center justify-between gap-3 flex-wrap">
+          <div className="inline-flex items-center gap-1 p-1 rounded-2xl border border-white/10 bg-white/[0.03]">
+            {BOARDS.map((b) => {
+              const on = b.id === board;
+              return (
+                <button
+                  key={b.id}
+                  type="button"
+                  onClick={() => setBoard(b.id)}
+                  className={`relative inline-flex items-center gap-2 px-3.5 md:px-4 py-2 rounded-xl text-[12.5px] md:text-[13px] font-medium transition cursor-pointer ${
+                    on ? "text-white" : "text-white/55 hover:text-white/80"
+                  }`}
+                >
+                  {on && (
+                    <motion.span
+                      layoutId="lb-tab"
+                      className="absolute inset-0 rounded-xl bg-white/[0.08] border border-white/10"
+                      transition={{
+                        type: "spring",
+                        stiffness: 500,
+                        damping: 40,
+                      }}
+                    />
+                  )}
+                  <i
+                    className={`${b.icon} text-[12px] relative`}
+                    style={{ color: on ? b.accent : undefined }}
                   />
-                )}
-                <i
-                  className={`${b.icon} text-[12px] relative`}
-                  style={{ color: on ? b.accent : undefined }}
-                />
-                <span className="relative">{b.label}</span>
-              </button>
-            );
-          })}
+                  <span className="relative">{b.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* All / Friends scope */}
+          <div className="inline-flex items-center gap-1 p-1 rounded-2xl border border-white/10 bg-white/[0.03]">
+            {(
+              [
+                { id: "all", label: "Everyone", icon: "fa-solid fa-globe" },
+                {
+                  id: "friends",
+                  label: "Friends",
+                  icon: "fa-solid fa-user-group",
+                },
+              ] as const
+            ).map((s) => {
+              const on = scope === s.id;
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => setScope(s.id)}
+                  className={`relative inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-[12.5px] md:text-[13px] font-medium transition cursor-pointer ${
+                    on ? "text-white" : "text-white/55 hover:text-white/80"
+                  }`}
+                >
+                  {on && (
+                    <motion.span
+                      layoutId="lb-scope"
+                      className="absolute inset-0 rounded-xl bg-white/[0.08] border border-white/10"
+                      transition={{
+                        type: "spring",
+                        stiffness: 500,
+                        damping: 40,
+                      }}
+                    />
+                  )}
+                  <i className={`${s.icon} text-[12px] relative`} />
+                  <span className="relative">{s.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
+
+        {/* Incoming friend requests */}
+        {incoming.length > 0 && (
+          <FriendRequests requests={incoming} onOpen={setProfileId} />
+        )}
 
         {/* Body */}
         <div className="mt-5">
           {isLoading ? (
             <LeaderboardSkeleton />
           ) : ranked.length === 0 ? (
-            <EmptyState />
+            <EmptyState scope={scope} />
           ) : (
             <div className="flex flex-col gap-3">
               {/* Podium */}
@@ -396,15 +456,95 @@ function Row({
   );
 }
 
-function EmptyState() {
+function EmptyState({ scope }: { scope: LeaderboardScope }) {
+  const friends = scope === "friends";
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.02] px-6 py-14 text-center">
       <div className="w-12 h-12 mx-auto rounded-2xl bg-teal-500/10 border border-teal-500/25 text-teal-300 flex items-center justify-center">
-        <i className="fa-solid fa-ranking-star text-[17px]" />
+        <i
+          className={`${
+            friends ? "fa-solid fa-user-group" : "fa-solid fa-ranking-star"
+          } text-[17px]`}
+        />
       </div>
       <p className="mt-3 text-[13.5px] text-white/60 max-w-sm mx-auto">
-        No one&apos;s on the board yet. Be the first to join and set the pace.
+        {friends
+          ? "No friends on the board yet. Open a trader's profile from the Everyone board to add them."
+          : "No one's on the board yet. Be the first to join and set the pace."}
       </p>
+    </div>
+  );
+}
+
+// Incoming friend requests, each with accept / decline and a tap-through to
+// the requester's profile.
+function FriendRequests({
+  requests,
+  onOpen,
+}: {
+  requests: FriendMini[];
+  onOpen: (id: string) => void;
+}) {
+  const friendMut = useFriendAction();
+  return (
+    <div className="mt-4 rounded-2xl border border-teal-400/20 bg-teal-500/[0.06] p-3">
+      <div className="flex items-center gap-2 px-1 pb-2 text-[12px] font-medium text-teal-200">
+        <i className="fa-solid fa-user-plus text-[11px]" />
+        Friend requests
+        <span className="text-teal-300/70 tabular-nums">
+          ({requests.length})
+        </span>
+      </div>
+      <div className="flex flex-col gap-1.5">
+        {requests.map((r) => (
+          <div
+            key={r.id}
+            className="flex items-center gap-3 rounded-xl bg-white/[0.03] px-3 py-2"
+          >
+            <button
+              type="button"
+              onClick={() => onOpen(r.id)}
+              className="flex items-center gap-3 min-w-0 flex-1 text-left cursor-pointer group"
+            >
+              <div
+                className={`shrink-0 w-9 h-9 rounded-full bg-gradient-to-br ${avatarGradient(
+                  r.avatarColor,
+                )} ${avatarFrameRing(
+                  r.avatarFrame,
+                )} border border-white/15 flex items-center justify-center font-semibold text-white text-[13px]`}
+              >
+                {r.name.trim().charAt(0).toUpperCase() || "?"}
+              </div>
+              <span className="text-[13.5px] font-medium truncate group-hover:text-white">
+                {r.name}
+              </span>
+            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                disabled={friendMut.isPending}
+                onClick={() =>
+                  friendMut.mutate({ action: "accept", userId: r.id })
+                }
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-teal-500 hover:bg-teal-400 text-[#fff] text-[12px] font-medium transition cursor-pointer disabled:opacity-60"
+              >
+                <i className="fa-solid fa-check text-[10px]" />
+                Accept
+              </button>
+              <button
+                type="button"
+                disabled={friendMut.isPending}
+                onClick={() =>
+                  friendMut.mutate({ action: "decline", userId: r.id })
+                }
+                className="inline-flex items-center px-3 py-1.5 rounded-full border border-white/12 bg-white/[0.03] text-white/70 hover:text-white hover:border-white/25 text-[12px] font-medium transition cursor-pointer disabled:opacity-60"
+              >
+                Decline
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
