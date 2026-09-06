@@ -5,7 +5,8 @@ import { authOptions } from "@/lib/auth";
 import connectDb from "@/lib/db";
 import Trade from "@/lib/models/Trade";
 import { User } from "@/lib/models/User";
-import { levelInfo, titleLabel } from "@/lib/challenges";
+import { CHALLENGES, levelInfo, titleLabel } from "@/lib/challenges";
+import { TROPHIES, type TrophyStats } from "@/lib/trophies";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,6 +33,9 @@ export type PublicProfile = {
   challengesCompleted: number;
   memberSince: string; // ISO date
   isMe: boolean;
+  // Earned milestone trophies ("medals") and the total available.
+  medals: { id: string; label: string; icon: string }[];
+  medalsTotal: number;
 };
 
 // A streak counts as alive when its last completed day is within a day of
@@ -87,31 +91,61 @@ export async function GET(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  // Activity totals from real (non-simulated) trades: total count + distinct
-  // journaled days (UTC), the same basis as activityXp() and the board.
-  const agg = await Trade.aggregate<{ trades: number; days: number }>([
-    { $match: { userID: user._id, simulated: false } },
-    {
-      $group: {
-        _id: {
-          d: {
-            $dateToString: {
-              format: "%Y-%m-%d",
-              date: { $ifNull: ["$dateClosed", "$dateBought"] },
-              timezone: "UTC",
-            },
-          },
-        },
-        c: { $sum: 1 },
-      },
-    },
-    { $group: { _id: null, trades: { $sum: "$c" }, days: { $sum: 1 } } },
-  ]);
-  const trades = agg[0]?.trades ?? 0;
-  const activeDays = agg[0]?.days ?? 0;
+  // Load the user's real (non-simulated) trades once and derive everything:
+  // activity totals (for level/XP) and the trophy stats (for medals).
+  const tradeDocs = await Trade.find({ userID: user._id, simulated: false })
+    .select("status symbol dateBought dateClosed")
+    .lean<
+      {
+        status: string;
+        symbol?: string | null;
+        dateBought?: string | Date | null;
+        dateClosed?: string | Date | null;
+      }[]
+    >();
+
+  const dayKeys = new Set<string>();
+  const monthKeys = new Set<string>();
+  const symbols = new Set<string>();
+  let closedTrades = 0;
+  let wins = 0;
+  for (const t of tradeDocs) {
+    const d = t.dateClosed ?? t.dateBought;
+    if (d) {
+      const iso = new Date(d).toISOString();
+      dayKeys.add(iso.slice(0, 10));
+      monthKeys.add(iso.slice(0, 7));
+    }
+    if (t.symbol) symbols.add(String(t.symbol).toUpperCase());
+    if (t.status === "WIN" || t.status === "LOSS") {
+      closedTrades += 1;
+      if (t.status === "WIN") wins += 1;
+    }
+  }
+  const trades = tradeDocs.length;
+  const activeDays = dayKeys.size;
 
   const activityXp = trades * 10 + activeDays * 10;
   const info = levelInfo((user.xp ?? 0) + activityXp);
+
+  // Earned milestone trophies, evaluated from the same stats the trophies
+  // page uses (never P/L).
+  const trophyStats: TrophyStats = {
+    totalTrades: trades,
+    closedTrades,
+    wins,
+    months: monthKeys.size,
+    symbols: symbols.size,
+    level: info.level,
+    levelTitle: info.title,
+    claimedCount: user.challengeClaims?.length ?? 0,
+    totalChallenges: CHALLENGES.length,
+  };
+  const medals = TROPHIES.filter((t) => t.earned(trophyStats)).map((t) => ({
+    id: t.id,
+    label: t.label,
+    icon: t.icon,
+  }));
 
   const first = (user.firstname ?? "").trim();
   const lastInitial = (user.surname ?? "").trim().charAt(0).toUpperCase();
@@ -138,6 +172,8 @@ export async function GET(
     // schema has no separate createdAt.
     memberSince: user._id.getTimestamp().toISOString(),
     isMe: String(user._id) === session.user.id,
+    medals,
+    medalsTotal: TROPHIES.length,
   };
 
   return NextResponse.json(profile);
