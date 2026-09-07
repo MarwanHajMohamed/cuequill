@@ -13,6 +13,7 @@ import {
 import { avatarGradient } from "@/lib/avatarColors";
 import { avatarFrameRing } from "@/lib/avatarFrames";
 import { Skeleton } from "@/components/Loaders";
+import UserProfileModal from "@/components/UserProfileModal";
 
 // The friends hub: search for people by name or email and manage requests
 // and friendships in one place. Reached from the leaderboard's Friends button.
@@ -88,8 +89,7 @@ function RowAction({
         title="Remove friend"
         className={`${base} group border border-teal-400/30 bg-teal-500/10 text-teal-200 hover:border-red-400/40 hover:bg-red-500/10 hover:text-red-200`}
       >
-        <i className="fa-solid fa-user-check text-[10px] group-hover:hidden" />
-        <i className="fa-solid fa-user-xmark text-[10px] hidden group-hover:inline" />
+        <i className="fa-solid fa-user-check text-[10px]" />
         <span className="group-hover:hidden">Friends</span>
         <span className="hidden group-hover:inline">Remove</span>
       </button>
@@ -129,21 +129,33 @@ function PersonRow({
   status,
   pending,
   onAction,
+  onOpenProfile,
 }: {
   p: Person;
   status: FriendStatus;
   pending: boolean;
   onAction: (action: FriendAction) => void;
+  onOpenProfile: (id: string) => void;
 }) {
   return (
     <div className="flex items-center gap-3 rounded-xl bg-white/[0.03] px-3 py-2.5">
-      <Avatar p={p} size={40} />
-      <div className="min-w-0 flex-1">
-        <div className="text-[13.5px] font-medium truncate">{p.name}</div>
-        {p.email && (
-          <div className="text-[11.5px] text-white/45 truncate">{p.email}</div>
-        )}
-      </div>
+      <button
+        type="button"
+        onClick={() => onOpenProfile(p.id)}
+        className="group flex items-center gap-3 min-w-0 flex-1 text-left cursor-pointer"
+      >
+        <Avatar p={p} size={40} />
+        <div className="min-w-0 flex-1">
+          <div className="text-[13.5px] font-medium truncate group-hover:text-teal-300 transition-colors">
+            {p.name}
+          </div>
+          {p.email && (
+            <div className="text-[11.5px] text-white/45 truncate">
+              {p.email}
+            </div>
+          )}
+        </div>
+      </button>
       <div className="shrink-0">
         <RowAction status={status} pending={pending} onAction={onAction} />
       </div>
@@ -165,6 +177,7 @@ function FriendsPage() {
 
   const [raw, setRaw] = React.useState("");
   const [q, setQ] = React.useState("");
+  const [profileId, setProfileId] = React.useState<string | null>(null);
 
   // Debounce the query so we don't hit the search endpoint on every keystroke.
   React.useEffect(() => {
@@ -253,6 +266,7 @@ function FriendsPage() {
                     status={r.friendStatus}
                     pending={friendMut.isPending}
                     onAction={(a) => act(r.id, a)}
+                    onOpenProfile={setProfileId}
                   />
                 ))
               ) : (
@@ -276,6 +290,7 @@ function FriendsPage() {
                         status="incoming"
                         pending={friendMut.isPending}
                         onAction={(a) => act(p.id, a)}
+                        onOpenProfile={setProfileId}
                       />
                     ))}
                   </div>
@@ -295,6 +310,7 @@ function FriendsPage() {
                         status="friends"
                         pending={friendMut.isPending}
                         onAction={(a) => act(p.id, a)}
+                        onOpenProfile={setProfileId}
                       />
                     ))}
                   </div>
@@ -322,6 +338,7 @@ function FriendsPage() {
                         status="outgoing"
                         pending={friendMut.isPending}
                         onAction={(a) => act(p.id, a)}
+                        onOpenProfile={setProfileId}
                       />
                     ))}
                   </div>
@@ -331,6 +348,11 @@ function FriendsPage() {
           )}
         </div>
       </div>
+
+      <UserProfileModal
+        userId={profileId}
+        onClose={() => setProfileId(null)}
+      />
     </div>
   );
 }

@@ -72,9 +72,9 @@ export async function GET(
   }
 
   await connectDb();
-  const user = await User.findOne({ _id: id, leaderboardOptIn: true })
+  const user = await User.findOne({ _id: id })
     .select(
-      "firstname surname avatarColor avatarFrame equippedTitle xp affirmationStreak challengeClaims",
+      "firstname surname avatarColor avatarFrame equippedTitle xp affirmationStreak challengeClaims leaderboardOptIn",
     )
     .lean<{
       _id: mongoose.Types.ObjectId;
@@ -86,11 +86,19 @@ export async function GET(
       xp?: number;
       affirmationStreak?: { current: number; longest: number; lastDate: string };
       challengeClaims?: { id: string; claimedAt: Date }[];
+      leaderboardOptIn?: boolean;
     }>();
 
-  // 404 both when the user doesn't exist and when they haven't opted in -
-  // don't reveal the difference.
   if (!user) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  // A profile is viewable if the user opted into the leaderboard (the public
+  // surface these are reached from), it's you, or you're already friends.
+  // 404 otherwise - don't reveal whether the account exists.
+  const isMe = String(user._id) === session.user.id;
+  const friendStatus = await friendState(session.user.id, String(user._id));
+  if (!user.leaderboardOptIn && !isMe && friendStatus !== "friends") {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
@@ -155,7 +163,6 @@ export async function GET(
   const name = lastInitial ? `${first} ${lastInitial}.` : first || "Trader";
   const title = (user.equippedTitle ?? "").trim() || titleLabel(info.level);
   const todayUtc = new Date().toISOString().slice(0, 10);
-  const friendStatus = await friendState(session.user.id, String(user._id));
 
   const profile: PublicProfile = {
     id: String(user._id),
@@ -175,7 +182,7 @@ export async function GET(
     // ObjectId carries its creation time; use it as "member since" since the
     // schema has no separate createdAt.
     memberSince: user._id.getTimestamp().toISOString(),
-    isMe: String(user._id) === session.user.id,
+    isMe,
     friendStatus,
     medals,
     medalsTotal: TROPHIES.length,
