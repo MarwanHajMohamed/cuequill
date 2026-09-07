@@ -114,8 +114,7 @@ function FriendControls({
         title="Remove friend"
         className={`${base} group border border-teal-400/30 bg-teal-500/10 text-teal-200 hover:border-red-400/40 hover:bg-red-500/10 hover:text-red-200`}
       >
-        <i className="fa-solid fa-user-check text-[11px] group-hover:hidden" />
-        <i className="fa-solid fa-user-xmark text-[11px] hidden group-hover:inline" />
+        <i className="fa-solid fa-user-check text-[11px]" />
         <span className="group-hover:hidden">Friends</span>
         <span className="hidden group-hover:inline">Remove</span>
       </button>
