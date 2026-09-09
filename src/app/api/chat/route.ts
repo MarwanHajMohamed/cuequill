@@ -168,6 +168,22 @@ export async function POST(req: Request) {
     .filter(Boolean)
     .join("\n\n");
 
+  // query_stats must be EXACT over the whole journal, not just the row
+  // snapshot (which is capped for token size). Lazily load every
+  // non-simulated trade the first time the model calls query_stats, and
+  // reuse it for any further calls in this same turn. Trades under the cap
+  // reuse the snapshot we already have and skip the extra query entirely.
+  let allTradesPromise: Promise<LeanTrade[]> | null = null;
+  const getAllTrades = (): Promise<LeanTrade[]> => {
+    if (trades.length < 1000) return Promise.resolve(trades);
+    if (!allTradesPromise) {
+      allTradesPromise = Trade.find({ userID: userId, simulated: false })
+        .sort({ dateBought: -1 })
+        .lean() as unknown as Promise<LeanTrade[]>;
+    }
+    return allTradesPromise;
+  };
+
   // Build a today-reference block so Gemini can resolve relative dates
   // like "today", "Friday", "next Monday" correctly. LLMs don't know the
   // current date on their own.
@@ -340,10 +356,12 @@ export async function POST(req: Request) {
                 functionResponse: { name: call.name, response: res },
               });
             } else if (call.name === "query_stats") {
-              // Read-only: exact aggregates over the in-scope trades. No DB
-              // write, so it never sets touchedTrades.
+              // Read-only: exact aggregates over the user's ENTIRE journal
+              // (not just the capped row snapshot). No DB write, so it never
+              // sets touchedTrades.
+              const allTrades = await getAllTrades();
               const res = computeQueryStats(
-                trades,
+                allTrades,
                 (call.args ?? {}) as QueryStatsFilter,
               );
               fnResponses.push({
@@ -860,7 +878,7 @@ const DELETE_TRADE_TOOL: FunctionDeclaration = {
 const QUERY_STATS_TOOL: FunctionDeclaration = {
   name: "query_stats",
   description:
-    "Compute EXACT performance stats for a slice of the user's trades (win rate, net P/L, expectancy, profit factor, payoff, avg win/loss, best/worst, max drawdown). ALWAYS prefer this over counting or adding up rows yourself when the user asks for a specific number - e.g. 'win rate on NVDA', 'net P/L in July', 'how do my Monday trades do'. All filters are optional and combined with AND. Omit a filter to include everything on that dimension. Returns numbers you can quote directly.",
+    "Compute EXACT performance stats for a slice of the user's trades (win rate, net P/L, expectancy, profit factor, payoff, avg win/loss, best/worst, max drawdown). This runs over the user's ENTIRE journal - including trades older than the row snapshot below - so use it for any total or count that must be complete, and always prefer it over counting or adding up rows yourself when the user asks for a specific number - e.g. 'win rate on NVDA', 'net P/L in July', 'how do my Monday trades do', 'net P/L all time'. All filters are optional and combined with AND. Omit a filter to include everything on that dimension (omit everything for lifetime totals). Returns numbers you can quote directly.",
   parameters: {
     type: SchemaType.OBJECT,
     properties: {
@@ -970,12 +988,15 @@ trading journal and powered by Google Gemini.
 
 Your job:
 - Answer questions about their trading history, strategies, P/L, win rate,
-  streaks, and patterns. The TRADER SNAPSHOT below contains the FULL list
-  of their recent trades (up to 1000 entries, newest first), each with
-  entry + exit dates, prices, status, strategy, and net P/L - plus
-  pre-computed weekly and monthly aggregates. Use it as the source of
-  truth. You CAN compare arbitrary weeks, months, or symbols directly
-  from this data.
+  streaks, and patterns. The TRADER SNAPSHOT below lists their most recent
+  trades (up to 1000, newest first), each with entry + exit dates, prices,
+  status, strategy, and net P/L - plus pre-computed weekly and monthly
+  aggregates. Use it as the source of truth for individual trades. You CAN
+  compare arbitrary weeks, months, or symbols directly from this data.
+  If the user has more than 1000 trades, older ones aren't listed here -
+  for any lifetime or complete total/count, call query_stats (it computes
+  over the ENTIRE journal, not just this snapshot) rather than summing the
+  visible rows.
 - Hold them to their own plan. The snapshot may also include their written
   TRADING RULES, their documented STRATEGIES, and their GOALS. When it's
   relevant, check trades against their rules ("this one broke your 'no
@@ -1054,7 +1075,10 @@ STYLE & ANALYSIS
 - Surface observations the user might miss: drawdowns, repeated mistakes,
   oversized losses, strategies underperforming.
 - Stay concise. Bullet points and short paragraphs over prose walls.
-- Never make up trades, P/L, or stats. If the snapshot doesn't show it, say so.
+- Never make up trades, P/L, or stats. For an individual trade the snapshot
+  doesn't show, say so - but for totals/counts over a period or the whole
+  journal, call query_stats (it sees every trade, even beyond the snapshot)
+  before saying you don't have it.
 - The KEY METRICS block and any query_stats result are pre-computed and exact -
   quote them as-is. Don't re-derive expectancy, profit factor, win rate, etc.
   by hand from the row list; use those numbers or call query_stats.
