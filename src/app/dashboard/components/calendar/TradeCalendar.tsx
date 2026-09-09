@@ -592,6 +592,25 @@ export default function TradeCalendar({ userId }: { userId: string }) {
                 value={value}
                 onMonthChange={setDisplayedMonth}
                 onViewChange={setCalView}
+                headerLeft={
+                  calView === "month" &&
+                  getMonthSummary(displayedMonth).closedCount > 0 ? (
+                    <div className="flex items-baseline gap-1.5 text-xs">
+                      <span className="text-white/40">Net</span>
+                      <span
+                        className={`font-medium ${
+                          getMonthSummary(displayedMonth).netPL >= 0
+                            ? "text-green-500"
+                            : "text-red-500"
+                        }`}
+                      >
+                        {fmtMoneySignedCompact(
+                          getMonthSummary(displayedMonth).netPL,
+                        )}
+                      </span>
+                    </div>
+                  ) : null
+                }
               />
             </div>
             {/* Sidebar - empty spacer at top sized to the calendar's
