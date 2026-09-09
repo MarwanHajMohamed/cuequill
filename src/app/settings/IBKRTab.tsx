@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
+import { useQueryClient } from "@tanstack/react-query";
 import { useIsPro } from "@/hooks/useIsPro";
 
 const COOLDOWN_MS = 15 * 60 * 1000;
@@ -28,6 +29,16 @@ type ImportedTrade = {
 
 export default function IBKRTab() {
   const { isPro } = useIsPro();
+  const queryClient = useQueryClient();
+
+  // A sync or a fee backfill changes trades server-side (new rows, and
+  // commissions/fees written onto existing ones). The trades table is a
+  // cached React Query, so refresh it - otherwise net P/L keeps showing the
+  // pre-fee numbers until some other action happens to invalidate the cache.
+  const refreshTradeData = () => {
+    queryClient.invalidateQueries({ queryKey: ["trades"] });
+    queryClient.invalidateQueries({ queryKey: ["challenges"] });
+  };
   const [token, setToken] = useState("");
   const [queryId, setQueryId] = useState("");
   const [hasToken, setHasToken] = useState(false);
@@ -125,6 +136,8 @@ export default function IBKRTab() {
       setImportedTrades([]);
       setHaveLoadedImported(false);
       setLastSkipped(data.skipped);
+      // Newly imported trades (and their fees) need to reach the table.
+      refreshTradeData();
       // If a panel was open, refresh; otherwise let user open it.
       if (importedOpen) loadImported();
     } else {
@@ -146,6 +159,8 @@ export default function IBKRTab() {
             ? "No trades are missing fees."
             : "No matching fills found. Widen the query period and try again.",
       );
+      // Fees just changed on existing trades - refresh so net P/L updates.
+      if (data.updated > 0) refreshTradeData();
     } catch (e) {
       setBackfillStatus(
         `Error: ${e instanceof Error ? e.message : "Backfill failed"}`,
