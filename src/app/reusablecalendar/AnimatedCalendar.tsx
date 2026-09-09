@@ -43,6 +43,8 @@ interface AnimatedCalendarProps {
   className?: string;
   /** Render the built-in Today button inside the calendar. Defaults to true. */
   showTodayButton?: boolean;
+  /** Optional content shown on the left of the Today-button row. */
+  headerLeft?: React.ReactNode;
   /**
    * Whether to show days that spill in from the previous/next month to fill
    * the calendar grid. Defaults to true (react-calendar's default).
@@ -68,6 +70,7 @@ const AnimatedCalendar = forwardRef<
     tileClassName,
     className = "custom-calendar_full-view",
     showTodayButton = true,
+    headerLeft,
     showNeighboringMonth = true,
     onMonthChange,
     onViewChange,
@@ -344,14 +347,17 @@ const AnimatedCalendar = forwardRef<
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      {showTodayButton && (
-        <div className="flex justify-end mb-1">
-          <button
-            onClick={goToToday}
-            className="text-xs px-2 py-1 rounded border border-white/10 hover:bg-white/5 text-white/70 hover:text-white cursor-pointer transition"
-          >
-            Today
-          </button>
+      {(showTodayButton || headerLeft) && (
+        <div className="flex items-center justify-between gap-2 mb-1">
+          <div className="min-w-0">{headerLeft}</div>
+          {showTodayButton && (
+            <button
+              onClick={goToToday}
+              className="shrink-0 text-xs px-2 py-1 rounded border border-white/10 hover:bg-white/5 text-white/70 hover:text-white cursor-pointer transition"
+            >
+              Today
+            </button>
+          )}
         </div>
       )}
       <Calendar
