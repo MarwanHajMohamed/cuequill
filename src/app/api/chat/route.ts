@@ -159,20 +159,11 @@ export async function POST(req: Request) {
     >,
   ]);
 
-  const context = [
-    buildTradeContext(trades),
-    buildRulesContext(rulesBoard),
-    buildStrategiesContext(strategies, trades),
-    buildGoalsContext(goals, trades),
-  ]
-    .filter(Boolean)
-    .join("\n\n");
-
-  // query_stats must be EXACT over the whole journal, not just the row
-  // snapshot (which is capped for token size). Lazily load every
-  // non-simulated trade the first time the model calls query_stats, and
-  // reuse it for any further calls in this same turn. Trades under the cap
-  // reuse the snapshot we already have and skip the extra query entirely.
+  // The row list is capped for token size, but every aggregate (breakdown
+  // tables, key metrics, strategy/goal analysis) and query_stats must be
+  // EXACT over the whole journal. Load every non-simulated trade once when
+  // the cap is hit and reuse it for the rest of the turn; under the cap the
+  // snapshot IS the whole journal, so skip the extra query.
   let allTradesPromise: Promise<LeanTrade[]> | null = null;
   const getAllTrades = (): Promise<LeanTrade[]> => {
     if (trades.length < 1000) return Promise.resolve(trades);
@@ -183,6 +174,17 @@ export async function POST(req: Request) {
     }
     return allTradesPromise;
   };
+  const allTrades = await getAllTrades();
+
+  const context = [
+    // Row list capped to `trades`; aggregates span `allTrades`.
+    buildTradeContext(trades, allTrades),
+    buildRulesContext(rulesBoard),
+    buildStrategiesContext(strategies, allTrades),
+    buildGoalsContext(goals, allTrades),
+  ]
+    .filter(Boolean)
+    .join("\n\n");
 
   // Build a today-reference block so Gemini can resolve relative dates
   // like "today", "Friday", "next Monday" correctly. LLMs don't know the

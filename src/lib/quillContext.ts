@@ -191,8 +191,18 @@ function groupBy<T>(arr: T[], key: (t: T) => string): Record<string, T[]> {
   return out;
 }
 
-export function buildTradeContext(trades: LeanTrade[]): string {
-  if (trades.length === 0) {
+// `rowTrades` is the (capped) set listed one-per-line for the model to
+// reference individual trades. `aggTrades` is the set every aggregate is
+// computed over - pass the full journal here so totals/breakdowns are
+// complete even when the row list is capped. Defaults to rowTrades so
+// callers that don't page can pass a single set.
+export function buildTradeContext(
+  rowTrades: LeanTrade[],
+  aggTrades: LeanTrade[] = rowTrades,
+): string {
+  const trades = aggTrades; // aggregates below all read `trades`
+  const capped = rowTrades.length < aggTrades.length;
+  if (aggTrades.length === 0) {
     return "The trader has no trades yet.";
   }
 
@@ -367,7 +377,7 @@ export function buildTradeContext(trades: LeanTrade[]): string {
   // without ambiguity. Format:
   //   [id:…] entry → exit | symbol option strike xqty | entry$ → exit$
   //   | status | strategy | net | tags:a,b
-  const tradeRows = trades
+  const tradeRows = rowTrades
     .map((t) => {
       const isClosed = t.status === "WIN" || t.status === "LOSS";
       const exitDate = isClosed ? dateStr(t.dateClosed) : "-";
@@ -395,7 +405,7 @@ export function buildTradeContext(trades: LeanTrade[]): string {
         } in a row`
       : "none";
   const keyMetrics = [
-    "KEY METRICS (pre-computed over the closed trades in this snapshot -",
+    `KEY METRICS (pre-computed over ${capped ? "ALL" : "the"} closed trades${capped ? "" : " in this snapshot"} -`,
     "treat as authoritative; do NOT recompute these from the row list):",
     `  - Expectancy: ${fmtMoney(core.expectancy)}/trade`,
     `  - Profit factor: ${core.profitFactor == null ? "n/a" : core.profitFactor.toFixed(2)} · Payoff ratio: ${core.payoff == null ? "n/a" : core.payoff.toFixed(2) + "x"}`,
@@ -406,9 +416,11 @@ export function buildTradeContext(trades: LeanTrade[]): string {
   ].join("\n");
 
   return [
-    `Snapshot from the most recent ${trades.length} trades (non-simulated):`,
+    capped
+      ? `Journal totals over ALL ${aggTrades.length} non-simulated trades (breakdowns below cover the full history; the per-trade list further down shows only the most recent ${rowTrades.length}):`
+      : `Snapshot from the most recent ${aggTrades.length} trades (non-simulated):`,
     `- Closed: ${closed.length} (${wins} W / ${losses} L), Win rate ${winRate.toFixed(0)}%`,
-    `- Net P/L (all closed in snapshot): ${fmtMoney(totalNet)}`,
+    `- Net P/L (all closed${capped ? "" : " in snapshot"}): ${fmtMoney(totalNet)}`,
     `- Avg winner: ${fmtMoney(avgWin)} · Avg loser: ${fmtMoney(avgLoss)}`,
     `- Currently open: ${open.length}`,
     "",
@@ -435,7 +447,11 @@ export function buildTradeContext(trades: LeanTrade[]): string {
     "By week (closed trades, Mon-start, newest first):",
     weeklyRows || "  (none)",
     "",
-    `All ${trades.length} trades (entry → exit | symbol option strike qty | entry$ → exit$ | status | strategy | net):`,
+    `${
+      capped
+        ? `Most recent ${rowTrades.length} trades (older trades aren't listed here but ARE included in the totals/breakdowns above)`
+        : `All ${rowTrades.length} trades`
+    } (entry → exit | symbol option strike qty | entry$ → exit$ | status | strategy | net):`,
     tradeRows,
   ].join("\n");
 }
