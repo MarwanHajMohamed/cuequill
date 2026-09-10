@@ -1,10 +1,79 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { useTrades } from "@/hooks/useTrades";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { computeCueScore, cueBand, type CueComponent } from "@/lib/cueScore";
 import { CARD_CLASS_BASE } from "../DashboardCard";
+
+// A small "i" that opens a plain-language explainer of what Cue points are
+// and how they're built. The component list (and weights) comes straight
+// from the live score so the popover can never drift from the formula.
+function CueInfo({ components }: { components: CueComponent[] }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        type="button"
+        aria-label="What are Cue points?"
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen(true);
+        }}
+        className="ml-1.5 inline-flex items-center justify-center text-white/35 hover:text-white/80 transition cursor-pointer align-middle"
+      >
+        <i className="fa-solid fa-circle-info text-[12px]" />
+      </button>
+      {open && (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            setOpen(false);
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-[340px] rounded-2xl border border-white/10 bg-[var(--surface)] shadow-[0_24px_80px_rgba(0,0,0,0.5)] p-5 text-left"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-[15px] font-semibold">Cue points</h3>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                aria-label="Close"
+                className="w-7 h-7 inline-flex items-center justify-center rounded-full text-white/45 hover:text-white hover:bg-white/[0.06] transition cursor-pointer"
+              >
+                <i className="fa-solid fa-xmark text-[13px]" />
+              </button>
+            </div>
+            <p className="text-[12.5px] text-white/60 leading-relaxed">
+              A single 0–100 score for the <em>quality</em> of your trading —
+              not just how much you made. It blends six parts of your
+              closed-trade history into one number, each weighted as below.
+            </p>
+            <div className="mt-3 flex flex-col gap-1">
+              {components.map((c) => (
+                <div
+                  key={c.key}
+                  className="flex items-center justify-between text-[12px]"
+                >
+                  <span className="text-white/70">{c.label}</span>
+                  <span className="text-white/40 tabular-nums">
+                    {Math.round(c.weight * 100)}%
+                  </span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 pt-3 border-t border-white/10 text-[11.5px] text-white/50 leading-relaxed">
+              80+ Excellent · 60+ Solid · 40+ Developing · below 40 Needs work
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
 
 // "Cue points" - a single 0–100 score for the quality of your trading,
 // built from six components (win rate, profit factor, win/loss, drawdown,
@@ -183,7 +252,10 @@ export default function DashboardCueScore({
   const scoreBlock = (
     <>
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-sm md:text-base font-semibold">Cue points</h2>
+        <h2 className="text-sm md:text-base font-semibold flex items-center">
+          Cue points
+          <CueInfo components={result.components} />
+        </h2>
         <span className="text-[11px] md:text-xs text-white/45 tabular-nums">
           {result.trades} closed
         </span>
@@ -210,7 +282,10 @@ export default function DashboardCueScore({
       >
         {/* Score in its own column so the radar never overlaps the text. */}
         <div className="shrink-0 w-[36%] max-w-[190px] min-w-[120px] flex flex-col">
-          <h2 className="text-sm md:text-base font-semibold">Cue points</h2>
+          <h2 className="text-sm md:text-base font-semibold flex items-center">
+            Cue points
+            <CueInfo components={result.components} />
+          </h2>
           <div className="mt-1 flex items-baseline gap-1.5">
             <span
               className="text-[24px] leading-none font-semibold tabular-nums"
@@ -243,7 +318,10 @@ export default function DashboardCueScore({
         {/* Left column: title + smaller score + band, with the closed-trade
             count pinned to the bottom-left. */}
         <div className="shrink-0 w-[42%] max-w-[180px] min-w-[110px] flex flex-col">
-          <h2 className="text-sm font-semibold">Cue points</h2>
+          <h2 className="text-sm font-semibold flex items-center">
+            Cue points
+            <CueInfo components={result.components} />
+          </h2>
           <div className="mt-1 flex items-baseline gap-1.5">
             <span
               className="text-[24px] leading-none font-semibold tabular-nums"
