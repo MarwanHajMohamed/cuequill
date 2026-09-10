@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { useTrades } from "@/hooks/useTrades";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { computeCueScore, cueBand, type CueComponent } from "@/lib/cueScore";
@@ -24,14 +25,19 @@ function CueInfo({ components }: { components: CueComponent[] }) {
       >
         <i className="fa-solid fa-circle-info text-[12px]" />
       </button>
-      {open && (
-        <div
-          className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-          onClick={(e) => {
-            e.stopPropagation();
-            setOpen(false);
-          }}
-        >
+      {open &&
+        typeof document !== "undefined" &&
+        createPortal(
+          // Portalled to <body> so the overlay covers the whole viewport - a
+          // dashboard tile has a CSS transform, and a `fixed` child would
+          // otherwise anchor to that tile instead of the screen.
+          <div
+            className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              setOpen(false);
+            }}
+          >
           <div
             onClick={(e) => e.stopPropagation()}
             className="w-full max-w-[340px] rounded-2xl border border-white/10 bg-[var(--surface)] shadow-[0_24px_80px_rgba(0,0,0,0.5)] p-5 text-left"
@@ -69,8 +75,9 @@ function CueInfo({ components }: { components: CueComponent[] }) {
               80+ Excellent · 60+ Solid · 40+ Developing · below 40 Needs work
             </div>
           </div>
-        </div>
-      )}
+        </div>,
+          document.body,
+        )}
     </>
   );
 }
