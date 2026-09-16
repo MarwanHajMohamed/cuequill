@@ -141,7 +141,7 @@ function PaymentPanel({ initialCycle }: { initialCycle: Cycle }) {
         return;
       }
       if (d.noPaymentRequired) {
-        window.location.href = "/settings?checkout=success";
+        window.location.href = "/checkout/success";
         return;
       }
       const { error: payErr } = await stripe.confirmCardPayment(d.clientSecret, {
@@ -152,7 +152,7 @@ function PaymentPanel({ initialCycle }: { initialCycle: Cycle }) {
         setSubmitting(false);
         return;
       }
-      window.location.href = "/settings?checkout=success";
+      window.location.href = "/checkout/success";
     } catch {
       setError("Network error. Please try again.");
       setSubmitting(false);
