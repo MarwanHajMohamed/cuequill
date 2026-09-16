@@ -88,6 +88,26 @@ export async function resolvePromo(
           .retrieve(rawCoupon)
           .catch(() => undefined)) as unknown as CouponLike | undefined;
       }
+      // Some API versions don't inline the coupon on list results - fetch the
+      // promotion code on its own (which includes the full coupon) so we can
+      // show the actual discount amount.
+      if (!coupon) {
+        try {
+          const full = (await stripe.promotionCodes.retrieve(
+            pc.id,
+          )) as unknown as { coupon?: unknown };
+          const fc = full.coupon;
+          if (fc && typeof fc === "object") {
+            coupon = fc as CouponLike;
+          } else if (typeof fc === "string") {
+            coupon = (await stripe.coupons
+              .retrieve(fc)
+              .catch(() => undefined)) as unknown as CouponLike | undefined;
+          }
+        } catch {
+          /* leave coupon undefined - label falls back, discount just won't show */
+        }
+      }
       return {
         discount: { promotion_code: pc.id },
         label: labelFromCoupon(coupon),
