@@ -45,16 +45,19 @@ export async function resolvePromo(
 ): Promise<ResolvedPromo | null> {
   const code = raw.trim();
   if (!code) return null;
+  const wanted = code.toUpperCase();
 
-  // 1) Customer-facing promotion code. Stripe's `code` filter is
-  //    case-insensitive, so casing on entry doesn't matter here.
+  // 1) Customer-facing promotion code. Try the exact-code filter first, then
+  //    scan active codes and match case-insensitively (the filter's casing
+  //    behaviour isn't something to rely on).
   try {
-    const list = await stripe.promotionCodes.list({
-      code,
-      active: true,
-      limit: 1,
-    });
-    const pc = list.data[0];
+    let pc: Stripe.PromotionCode | null =
+      (await stripe.promotionCodes.list({ code, active: true, limit: 1 }))
+        .data[0] ?? null;
+    if (!pc) {
+      const all = await stripe.promotionCodes.list({ active: true, limit: 100 });
+      pc = all.data.find((p) => (p.code ?? "").toUpperCase() === wanted) ?? null;
+    }
     if (pc) {
       const c = (pc as unknown as { coupon: CouponLike }).coupon;
       return {
@@ -63,12 +66,12 @@ export async function resolvePromo(
         code: pc.code,
       };
     }
-  } catch {
-    /* fall through to coupon lookup */
+  } catch (err) {
+    console.error("[promo] promotion-code lookup failed", err);
   }
 
   // 2) A coupon id directly (try as typed and uppercased - ids are exact).
-  for (const id of Array.from(new Set([code, code.toUpperCase()]))) {
+  for (const id of Array.from(new Set([code, wanted]))) {
     try {
       const coupon = (await stripe.coupons.retrieve(id)) as unknown as CouponLike & {
         id: string;
@@ -85,5 +88,6 @@ export async function resolvePromo(
     }
   }
 
+  console.warn(`[promo] no active promotion code or coupon matched "${code}"`);
   return null;
 }
