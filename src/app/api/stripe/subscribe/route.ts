@@ -103,18 +103,40 @@ export async function POST(req: NextRequest) {
     discounts = [resolved.discount];
   }
 
+  // The first invoice's client secret lives under different fields depending
+  // on the account's Stripe API version: newer versions expose
+  // `latest_invoice.confirmation_secret`, older ones
+  // `latest_invoice.payment_intent`. Expanding an unsupported field throws, so
+  // try the newer expand first and fall back only on an expand error.
+  const baseParams: Stripe.SubscriptionCreateParams = {
+    customer: customerId,
+    items: [{ price: priceId }],
+    payment_behavior: "default_incomplete",
+    payment_settings: { save_default_payment_method: "on_subscription" },
+    metadata: { userId: user._id.toString() },
+    ...(discounts ? { discounts } : {}),
+  };
+  const isExpandError = (err: unknown) => {
+    const m = err instanceof Error ? err.message.toLowerCase() : "";
+    return m.includes("expand") || m.includes("confirmation_secret");
+  };
+
   let sub: Stripe.Subscription;
   try {
-    sub = await stripe.subscriptions.create({
-      customer: customerId,
-      items: [{ price: priceId }],
-      payment_behavior: "default_incomplete",
-      payment_settings: { save_default_payment_method: "on_subscription" },
-      expand: ["latest_invoice.payment_intent"],
-      metadata: { userId: user._id.toString() },
-      ...(discounts ? { discounts } : {}),
-    });
+    try {
+      sub = await stripe.subscriptions.create({
+        ...baseParams,
+        expand: ["latest_invoice.confirmation_secret"],
+      });
+    } catch (err) {
+      if (!isExpandError(err)) throw err;
+      sub = await stripe.subscriptions.create({
+        ...baseParams,
+        expand: ["latest_invoice.payment_intent"],
+      });
+    }
   } catch (err) {
+    console.error("[stripe/subscribe] create failed", err);
     const message =
       err instanceof Error ? err.message : "Couldn't start the subscription.";
     return NextResponse.json({ error: message }, { status: 400 });
@@ -124,11 +146,14 @@ export async function POST(req: NextRequest) {
   // before the payment confirms.
   await syncSubscriptionToUser(sub);
 
-  const invoice = sub.latest_invoice as Stripe.Invoice | null;
-  const pi = (
-    invoice as unknown as { payment_intent?: Stripe.PaymentIntent | null }
-  )?.payment_intent;
-  const clientSecret = pi?.client_secret ?? null;
+  const invoice = sub.latest_invoice as unknown as {
+    confirmation_secret?: { client_secret?: string | null } | null;
+    payment_intent?: { client_secret?: string | null } | null;
+  } | null;
+  const clientSecret =
+    invoice?.confirmation_secret?.client_secret ??
+    invoice?.payment_intent?.client_secret ??
+    null;
 
   // A 100%-off coupon can settle the first invoice with no payment, leaving
   // the subscription already active - nothing to confirm client-side.
