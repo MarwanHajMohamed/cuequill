@@ -226,6 +226,30 @@ export default function PlanTab() {
     })();
   }, [loadPlan]);
 
+  // Returning from a fresh subscription Checkout (?checkout=success). Reconcile
+  // the plan (the GET verifies live against Stripe, so the DB flips to Pro even
+  // if the webhook is lagging), then refresh the NextAuth session so isPro
+  // unlocks the navbar and every gate app-wide without a reload. Strip the
+  // param so a refresh doesn't repeat it. Runs once.
+  const checkoutHandledRef = useRef(false);
+  useEffect(() => {
+    if (checkoutHandledRef.current) return;
+    const params = new URLSearchParams(window.location.search);
+    const co = params.get("checkout");
+    if (!co) return;
+    checkoutHandledRef.current = true;
+    params.delete("checkout");
+    const qs = params.toString();
+    window.history.replaceState({}, "", `/settings${qs ? `?${qs}` : ""}`);
+    if (co !== "success") return;
+    (async () => {
+      await loadPlan();
+      // The jwt callback ignores a client-sent isPro and re-derives it from
+      // the (now reconciled) DB, so this just triggers that live re-check.
+      await update({ isPro: true });
+    })();
+  }, [loadPlan, update]);
+
   const openPortal = async () => {
     if (portalLoading) return;
     setPortalLoading(true);
