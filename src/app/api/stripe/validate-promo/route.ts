@@ -29,5 +29,8 @@ export async function POST(req: NextRequest) {
     valid: true,
     code: resolved.code,
     label: resolved.label,
+    percentOff: resolved.percentOff,
+    amountOff: resolved.amountOff,
+    currency: resolved.currency,
   });
 }

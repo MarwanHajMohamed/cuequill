@@ -9,6 +9,10 @@ export type ResolvedPromo = {
   discount: Stripe.SubscriptionCreateParams.Discount;
   label: string;
   code: string;
+  // Normalised discount so the client can show the reduced price.
+  percentOff: number | null;
+  amountOff: number | null; // major units (e.g. pounds), not pennies
+  currency: string | null;
 };
 
 type CouponLike = {
@@ -38,6 +42,18 @@ function labelFromCoupon(c: CouponLike | null | undefined): string {
         ? " on your first payment"
         : "";
   return `${amount}${duration}`;
+}
+
+function couponNumbers(c: CouponLike | null | undefined): {
+  percentOff: number | null;
+  amountOff: number | null;
+  currency: string | null;
+} {
+  return {
+    percentOff: c?.percent_off ?? null,
+    amountOff: c?.amount_off != null ? c.amount_off / 100 : null,
+    currency: c?.currency ?? null,
+  };
 }
 
 export async function resolvePromo(
@@ -76,6 +92,7 @@ export async function resolvePromo(
         discount: { promotion_code: pc.id },
         label: labelFromCoupon(coupon),
         code: pc.code,
+        ...couponNumbers(coupon),
       };
     }
   } catch (err) {
@@ -93,6 +110,7 @@ export async function resolvePromo(
           discount: { coupon: coupon.id },
           label: labelFromCoupon(coupon),
           code: coupon.id,
+          ...couponNumbers(coupon),
         };
       }
     } catch {
