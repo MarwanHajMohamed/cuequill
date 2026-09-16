@@ -522,26 +522,21 @@ export default function PlanTab() {
           <div
             ref={mainPaneRef}
             aria-hidden={showInvoices}
-            className="w-1/2 shrink-0"
+            className="w-1/2 shrink-0 transition-opacity duration-300 ease-out"
+            style={{ opacity: showInvoices ? 0 : 1 }}
           >
             <div className="flex flex-col gap-7">
-              {/* Status hero */}
-              <div className="relative overflow-hidden rounded-3xl border border-teal-500/25 bg-gradient-to-br from-teal-500/[0.12] via-transparent to-indigo-500/[0.07] p-6 md:p-7">
-                <div
-                  aria-hidden
-                  className="pointer-events-none absolute -top-20 -right-14 w-64 h-64 rounded-full bg-teal-400/15 blur-3xl"
-                />
-                <div className="relative flex items-start justify-between gap-4 flex-wrap">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-teal-400/30 to-emerald-400/15 border border-teal-400/40 text-teal-100 flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]">
-                      <i className="fa-solid fa-crown text-[17px]" />
-                    </div>
+              {/* Status header - clean and boxless */}
+              <div>
+                <div className="flex items-start justify-between gap-4 flex-wrap">
+                  <div className="flex items-center gap-3">
+                    <i className="fa-solid fa-crown text-[22px] text-teal-300" />
                     <div>
                       <div className="text-[12px] text-white/50">
                         Cuequill membership
                       </div>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-[26px] leading-none font-semibold tracking-tight bg-gradient-to-r from-teal-100 via-teal-200 to-emerald-200 bg-clip-text text-transparent">
+                        <span className="text-[26px] leading-none font-semibold tracking-tight text-white">
                           Pro
                         </span>
                         {scheduledCancel && (
@@ -566,7 +561,7 @@ export default function PlanTab() {
                     </button>
                   )}
                 </div>
-                <div className="relative mt-4 pt-4 border-t border-white/[0.08] flex items-center gap-2 text-[13px] text-white/60">
+                <div className="mt-3 flex items-center gap-2 text-[13px] text-white/60">
                   <i className="fa-regular fa-calendar text-[12px] text-white/40" />
                   <span>{heroSub}</span>
                 </div>
@@ -775,7 +770,8 @@ export default function PlanTab() {
           <div
             ref={invPaneRef}
             aria-hidden={!showInvoices}
-            className="w-1/2 shrink-0"
+            className="w-1/2 shrink-0 transition-opacity duration-300 ease-out"
+            style={{ opacity: showInvoices ? 1 : 0 }}
           >
             <div className="flex flex-col gap-4">
               <button
