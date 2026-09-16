@@ -1,11 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useChatUsage } from "@/hooks/useChatUsage";
 import BillingCardModal from "./BillingCardModal";
 import CancelProModal from "./CancelProModal";
-import UpgradeModal from "@/components/UpgradeModal";
 import type {
   BillingCard,
   BillingInvoice,
@@ -122,7 +122,6 @@ export default function PlanTab() {
   const [billingLoaded, setBillingLoaded] = useState(false);
   const [cardSecret, setCardSecret] = useState<string | null>(null);
   const [openingCard, setOpeningCard] = useState(false);
-  const [upgradeOpen, setUpgradeOpen] = useState(false);
 
   // Invoices open in a slide-over pane: the plan slides left, invoices come
   // in from the right. Two panes share one track; we sync the wrapper height
@@ -359,16 +358,6 @@ export default function PlanTab() {
         />
       )}
 
-      {upgradeOpen && (
-        <UpgradeModal
-          initialCycle="annual"
-          onClose={() => setUpgradeOpen(false)}
-          onSuccess={() => {
-            window.location.href = "/settings?checkout=success";
-          }}
-        />
-      )}
-
       <CancelProModal
         open={cancelOpen}
         onClose={() => setCancelOpen(false)}
@@ -407,14 +396,13 @@ export default function PlanTab() {
               history and strategies, and deeper stats — everything working for
               you every morning.
             </p>
-            <button
-              type="button"
-              onClick={() => setUpgradeOpen(true)}
+            <Link
+              href="/checkout?cycle=annual"
               className="mt-6 inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-teal-500 hover:bg-teal-400 text-[#fff] text-[15px] font-semibold transition cursor-pointer shadow-[0_10px_40px_-10px_rgba(20,184,166,0.7)]"
             >
               <i className="fa-solid fa-crown text-[13px]" />
               Upgrade to Pro
-            </button>
+            </Link>
           </div>
         </div>
 

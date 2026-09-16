@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import UpgradeModal from "@/components/UpgradeModal";
 import { FaqRow, SiteFooter, SiteHeader } from "../_marketing/Chrome";
 
 // ─── Data ────────────────────────────────────────────────────────────
@@ -462,8 +461,6 @@ function PlanCTA({
   signedIn: boolean;
   isPro: boolean;
 }) {
-  const [upgradeOpen, setUpgradeOpen] = useState(false);
-
   const base = `shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-full transition text-[11px] font-semibold tracking-[0.08em] cursor-pointer disabled:opacity-60 disabled:cursor-default ${
     plan.featured
       ? "bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25"
@@ -500,27 +497,12 @@ function PlanCTA({
     );
   }
 
-  // Pro tier, signed in but free - upgrade in-app (no Stripe redirect).
+  // Pro tier, signed in but free - go to the in-app checkout page.
   return (
-    <>
-      <button
-        type="button"
-        onClick={() => setUpgradeOpen(true)}
-        className={base}
-      >
-        {plan.cta}
-        <i className="fa-solid fa-chevron-right text-[9px]" />
-      </button>
-      {upgradeOpen && (
-        <UpgradeModal
-          initialCycle={cycle}
-          onClose={() => setUpgradeOpen(false)}
-          onSuccess={() => {
-            window.location.href = "/settings?checkout=success";
-          }}
-        />
-      )}
-    </>
+    <Link href={`/checkout?cycle=${cycle}`} className={base}>
+      {plan.cta}
+      <i className="fa-solid fa-chevron-right text-[9px]" />
+    </Link>
   );
 }
 
