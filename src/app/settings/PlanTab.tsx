@@ -82,7 +82,7 @@ function Meter({
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="text-[11px] tracking-[0.08em] uppercase text-white/40 font-medium mb-3">
+    <div className="text-[11px] tracking-[0.08em] text-white/45 font-medium mb-3">
       {children}
     </div>
   );
@@ -122,6 +122,26 @@ export default function PlanTab() {
   const [billingLoaded, setBillingLoaded] = useState(false);
   const [cardSecret, setCardSecret] = useState<string | null>(null);
   const [openingCard, setOpeningCard] = useState(false);
+
+  // Invoices open in a slide-over pane: the plan slides left, invoices come
+  // in from the right. Two panes share one track; we sync the wrapper height
+  // to whichever pane is showing so it grows/shrinks smoothly with the slide.
+  const [showInvoices, setShowInvoices] = useState(false);
+  const mainPaneRef = useRef<HTMLDivElement>(null);
+  const invPaneRef = useRef<HTMLDivElement>(null);
+  const [paneHeight, setPaneHeight] = useState<number | undefined>(undefined);
+
+  useEffect(() => {
+    const measure = () => {
+      const el = showInvoices ? invPaneRef.current : mainPaneRef.current;
+      if (el) setPaneHeight(el.offsetHeight);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    if (mainPaneRef.current) ro.observe(mainPaneRef.current);
+    if (invPaneRef.current) ro.observe(invPaneRef.current);
+    return () => ro.disconnect();
+  }, [showInvoices, plan, invoices, card, usage, billingLoaded]);
 
   const loadPlan = useCallback(async () => {
     try {
@@ -426,56 +446,133 @@ export default function PlanTab() {
 
   // ── Pro tier: premium status, usage, billing; cancel tucked away ──────
   function ProView() {
-    return (
-      <div className="flex flex-col gap-7">
-        {/* Status hero */}
-        <div className="relative overflow-hidden rounded-3xl border border-teal-500/25 bg-gradient-to-br from-teal-500/[0.12] via-transparent to-indigo-500/[0.07] p-6 md:p-7">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -top-20 -right-14 w-64 h-64 rounded-full bg-teal-400/15 blur-3xl"
-          />
-          <div className="relative flex items-start justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-teal-500/15 border border-teal-500/40 text-teal-300 flex items-center justify-center">
-                <i className="fa-solid fa-crown text-[18px]" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <div className="text-[20px] font-semibold tracking-tight">
-                    Cuequill Pro
+    const cycleLabel = plan?.cycle
+      ? plan.cycle === "annual"
+        ? "Annual"
+        : "Monthly"
+      : "";
+    const heroSub =
+      scheduledCancel && periodEnd
+        ? `Access until ${periodEnd}, then reverts to Free.`
+        : plan?.hasSubscription && periodEnd
+          ? `${cycleLabel ? `${cycleLabel} · ` : ""}Renews ${periodEnd}.`
+          : "Full access to every Pro tool.";
+
+    // The invoice list, rendered inside the slide-over pane.
+    const invoiceTable =
+      invoices.length > 0 ? (
+        <div className="rounded-2xl border border-white/10 bg-white/[0.02] divide-y divide-white/[0.06] overflow-hidden">
+          {invoices.map((inv) => {
+            const href = inv.invoicePdf ?? inv.hostedInvoiceUrl;
+            return (
+              <div
+                key={inv.id}
+                className="flex items-center justify-between gap-3 px-4 py-3"
+              >
+                <div className="min-w-0">
+                  <div className="text-[13px] text-white/85 tabular-nums">
+                    {fmtDate(inv.created)}
                   </div>
+                  <div className="text-[11.5px] text-white/45 capitalize">
+                    {inv.status}
+                    {inv.number ? ` · ${inv.number}` : ""}
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className="text-[13px] text-white/85 tabular-nums">
+                    {new Intl.NumberFormat(undefined, {
+                      style: "currency",
+                      currency: inv.currency,
+                    }).format(inv.amount)}
+                  </span>
+                  {href ? (
+                    <a
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border border-white/12 bg-white/[0.03] text-white/70 hover:text-white hover:border-white/25 text-[12px] font-medium transition cursor-pointer"
+                    >
+                      <i className="fa-solid fa-download text-[10px]" />
+                      Invoice
+                    </a>
+                  ) : null}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] px-4 py-10 text-center text-[12.5px] text-white/40">
+          No invoices yet.
+        </div>
+      );
+
+    return (
+      <div
+        className="overflow-hidden"
+        style={{ height: paneHeight, transition: "height 0.32s ease" }}
+      >
+        <div
+          className="flex w-[200%] transition-transform duration-300 ease-out"
+          style={{
+            transform: showInvoices ? "translateX(-50%)" : "translateX(0%)",
+          }}
+        >
+          {/* Plan pane */}
+          <div
+            ref={mainPaneRef}
+            aria-hidden={showInvoices}
+            className="w-1/2 shrink-0"
+          >
+            <div className="flex flex-col gap-7">
+              {/* Status hero */}
+              <div className="relative overflow-hidden rounded-3xl border border-teal-500/25 bg-gradient-to-br from-teal-500/[0.12] via-transparent to-indigo-500/[0.07] p-6 md:p-7">
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute -top-20 -right-14 w-64 h-64 rounded-full bg-teal-400/15 blur-3xl"
+                />
+                <div className="relative flex items-start justify-between gap-4 flex-wrap">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-teal-400/30 to-emerald-400/15 border border-teal-400/40 text-teal-100 flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]">
+                      <i className="fa-solid fa-crown text-[17px]" />
+                    </div>
+                    <div>
+                      <div className="text-[12px] text-white/50">
+                        Cuequill membership
+                      </div>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-[26px] leading-none font-semibold tracking-tight bg-gradient-to-r from-teal-100 via-teal-200 to-emerald-200 bg-clip-text text-transparent">
+                          Pro
+                        </span>
+                        {scheduledCancel && (
+                          <span className="text-[10px] tracking-wide px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                            Ending
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
                   {scheduledCancel && (
-                    <span className="text-[10px] tracking-wide uppercase px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
-                      Ending
-                    </span>
+                    <button
+                      onClick={handleResume}
+                      disabled={resuming}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-[#fff] text-[14px] font-semibold transition cursor-pointer disabled:opacity-60 shadow-[0_8px_30px_-8px_rgba(20,184,166,0.6)]"
+                    >
+                      {resuming && (
+                        <i className="fa-solid fa-circle-notch animate-spin text-[11px]" />
+                      )}
+                      {resuming ? "Resuming…" : "Keep my Pro"}
+                    </button>
                   )}
                 </div>
-                <div className="text-[13px] text-white/60 mt-0.5">
-                  {scheduledCancel && periodEnd
-                    ? `Access until ${periodEnd} — then reverts to Free.`
-                    : plan?.hasSubscription && periodEnd
-                      ? `${plan.cycle ? `${plan.cycle} · ` : ""}Renews ${periodEnd}.`
-                      : "Full access to every Pro tool."}
+                <div className="relative mt-4 pt-4 border-t border-white/[0.08] flex items-center gap-2 text-[13px] text-white/60">
+                  <i className="fa-regular fa-calendar text-[12px] text-white/40" />
+                  <span>{heroSub}</span>
                 </div>
               </div>
-            </div>
 
-            {scheduledCancel && (
-              <button
-                onClick={handleResume}
-                disabled={resuming}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-[#fff] text-[14px] font-semibold transition cursor-pointer disabled:opacity-60 shadow-[0_8px_30px_-8px_rgba(20,184,166,0.6)]"
-              >
-                {resuming && (
-                  <i className="fa-solid fa-circle-notch animate-spin text-[11px]" />
-                )}
-                {resuming ? "Resuming…" : "Keep my Pro"}
-              </button>
-            )}
-          </div>
-        </div>
-
-        {scheduledCancel && periodEnd && (
+              {scheduledCancel && periodEnd && (
           <div className="border border-amber-500/25 bg-amber-500/[0.06] rounded-xl px-3.5 py-2.5 text-[12.5px] text-amber-200 flex items-start gap-2">
             <i className="fa-solid fa-circle-info text-[12px] mt-0.5" />
             <span>
@@ -606,50 +703,34 @@ export default function PlanTab() {
           </div>
         )}
 
-        {/* Invoices */}
-        {plan?.hasSubscription && invoices.length > 0 && (
+        {/* Invoices - opens the slide-over pane on the right. */}
+        {plan?.hasSubscription && (
           <div>
             <SectionLabel>Invoices</SectionLabel>
-            <div className="rounded-2xl border border-white/10 bg-white/[0.02] divide-y divide-white/[0.06] overflow-hidden">
-              {invoices.map((inv) => {
-                const href = inv.invoicePdf ?? inv.hostedInvoiceUrl;
-                return (
-                  <div
-                    key={inv.id}
-                    className="flex items-center justify-between gap-3 px-4 py-3"
-                  >
-                    <div className="min-w-0">
-                      <div className="text-[13px] text-white/85 tabular-nums">
-                        {fmtDate(inv.created)}
-                      </div>
-                      <div className="text-[11.5px] text-white/45 capitalize">
-                        {inv.status}
-                        {inv.number ? ` · ${inv.number}` : ""}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0">
-                      <span className="text-[13px] text-white/85 tabular-nums">
-                        {new Intl.NumberFormat(undefined, {
-                          style: "currency",
-                          currency: inv.currency,
-                        }).format(inv.amount)}
-                      </span>
-                      {href ? (
-                        <a
-                          href={href}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border border-white/12 bg-white/[0.03] text-white/70 hover:text-white hover:border-white/25 text-[12px] font-medium transition cursor-pointer"
-                        >
-                          <i className="fa-solid fa-download text-[10px]" />
-                          Invoice
-                        </a>
-                      ) : null}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            <button
+              onClick={() => setShowInvoices(true)}
+              disabled={invoices.length === 0}
+              className="w-full rounded-2xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.04] transition px-4 py-3.5 flex items-center justify-between gap-3 text-left cursor-pointer disabled:opacity-50 disabled:cursor-default"
+            >
+              <span className="flex items-center gap-3">
+                <span className="w-9 h-9 rounded-lg bg-white/[0.05] border border-white/10 flex items-center justify-center text-white/70">
+                  <i className="fa-solid fa-receipt text-[13px]" />
+                </span>
+                <span>
+                  <span className="block text-[13px] text-white/85">
+                    Invoices &amp; receipts
+                  </span>
+                  <span className="block text-[11.5px] text-white/45">
+                    {invoices.length > 0
+                      ? `${invoices.length} on file`
+                      : billingLoaded
+                        ? "None yet"
+                        : "Loading…"}
+                  </span>
+                </span>
+              </span>
+              <i className="fa-solid fa-chevron-right text-[12px] text-white/40" />
+            </button>
           </div>
         )}
 
@@ -687,6 +768,31 @@ export default function PlanTab() {
             </button>
           </div>
         )}
+            </div>
+          </div>
+
+          {/* Invoices slide-over pane */}
+          <div
+            ref={invPaneRef}
+            aria-hidden={!showInvoices}
+            className="w-1/2 shrink-0"
+          >
+            <div className="flex flex-col gap-4">
+              <button
+                type="button"
+                onClick={() => setShowInvoices(false)}
+                className="inline-flex items-center gap-2 text-[13px] text-white/55 hover:text-white transition cursor-pointer w-fit"
+              >
+                <i className="fa-solid fa-chevron-left text-[11px]" />
+                Back to plan
+              </button>
+              <div>
+                <SectionLabel>Invoices</SectionLabel>
+                {invoiceTable}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
