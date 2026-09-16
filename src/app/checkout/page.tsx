@@ -22,10 +22,21 @@ type Cycle = "monthly" | "annual";
 const pk = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 const stripePromise = pk ? loadStripe(pk) : null;
 
-const PRICES: Record<Cycle, { perMonth: string; billed: string }> = {
-  monthly: { perMonth: "£39", billed: "billed monthly" },
-  annual: { perMonth: "£31", billed: "billed £372 yearly" },
+const PRICES: Record<
+  Cycle,
+  { perMonth: string; billed: string; amount: number; unit: string }
+> = {
+  // `amount` is what's actually charged per billing period (`unit`).
+  monthly: { perMonth: "£39", billed: "billed monthly", amount: 39, unit: "/mo" },
+  annual: {
+    perMonth: "£31",
+    billed: "billed £372 yearly",
+    amount: 372,
+    unit: "/yr",
+  },
 };
+
+const gbp = (n: number) => `£${Number.isInteger(n) ? n : n.toFixed(2)}`;
 
 const PRO_FEATURES: { icon: string; title: string; body: string }[] = [
   {
@@ -87,9 +98,12 @@ function PaymentPanel({ initialCycle }: { initialCycle: Cycle }) {
 
   const [cycle, setCycle] = useState<Cycle>(initialCycle);
   const [promo, setPromo] = useState("");
-  const [applied, setApplied] = useState<{ code: string; label: string } | null>(
-    null,
-  );
+  const [applied, setApplied] = useState<{
+    code: string;
+    label: string;
+    percentOff: number | null;
+    amountOff: number | null;
+  } | null>(null);
   const [promoError, setPromoError] = useState<string | null>(null);
   const [checkingPromo, setCheckingPromo] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -108,7 +122,12 @@ function PaymentPanel({ initialCycle }: { initialCycle: Cycle }) {
       });
       const d = await r.json().catch(() => ({}));
       if (d.valid) {
-        setApplied({ code: d.code, label: d.label });
+        setApplied({
+          code: d.code,
+          label: d.label,
+          percentOff: d.percentOff ?? null,
+          amountOff: d.amountOff ?? null,
+        });
         setPromoError(null);
       } else {
         setApplied(null);
@@ -119,6 +138,12 @@ function PaymentPanel({ initialCycle }: { initialCycle: Cycle }) {
     } finally {
       setCheckingPromo(false);
     }
+  };
+
+  const removePromo = () => {
+    setApplied(null);
+    setPromo("");
+    setPromoError(null);
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -160,6 +185,15 @@ function PaymentPanel({ initialCycle }: { initialCycle: Cycle }) {
   };
 
   const price = PRICES[cycle];
+  const base = price.amount;
+  const dueToday = applied
+    ? applied.percentOff != null
+      ? base * (1 - applied.percentOff / 100)
+      : applied.amountOff != null
+        ? Math.max(0, base - applied.amountOff)
+        : base
+    : base;
+  const hasDiscount = applied != null && dueToday < base;
 
   return (
     <form
@@ -215,37 +249,52 @@ function PaymentPanel({ initialCycle }: { initialCycle: Cycle }) {
 
       {/* Promo */}
       <div>
-        <div className="flex items-center gap-2">
-          <input
-            value={promo}
-            onChange={(e) => {
-              setPromo(e.target.value);
-              setApplied(null);
-              setPromoError(null);
-            }}
-            placeholder="Promo code"
-            className="flex-1 rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-2.5 text-[13px] text-white placeholder:text-white/35 outline-none focus:border-teal-400/40 transition uppercase"
-          />
-          <button
-            type="button"
-            onClick={applyPromo}
-            disabled={!promo.trim() || checkingPromo}
-            className="shrink-0 px-3.5 py-2.5 rounded-xl border border-white/12 bg-white/[0.03] text-white/80 hover:text-white hover:border-white/25 text-[12.5px] font-medium transition cursor-pointer disabled:opacity-50"
-          >
-            {checkingPromo ? "…" : "Apply"}
-          </button>
-        </div>
-        {applied && (
-          <div className="mt-1.5 text-[12px] text-teal-300 inline-flex items-center gap-1.5">
-            <i className="fa-solid fa-circle-check text-[10px]" />
-            {applied.code} applied — {applied.label}
+        {applied ? (
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-teal-500/30 bg-teal-500/[0.08] px-3.5 py-2.5">
+            <div className="min-w-0 text-[12.5px] text-teal-200 inline-flex items-center gap-1.5">
+              <i className="fa-solid fa-circle-check text-[10px] shrink-0" />
+              <span className="truncate">
+                <span className="font-medium">{applied.code}</span> ·{" "}
+                {applied.label}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={removePromo}
+              className="shrink-0 inline-flex items-center gap-1 text-[12px] text-white/50 hover:text-white transition cursor-pointer"
+            >
+              <i className="fa-solid fa-xmark text-[11px]" />
+              Remove
+            </button>
           </div>
-        )}
-        {promoError && (
-          <div className="mt-1.5 text-[12px] text-red-300 inline-flex items-center gap-1.5">
-            <i className="fa-solid fa-triangle-exclamation text-[10px]" />
-            {promoError}
-          </div>
+        ) : (
+          <>
+            <div className="flex items-center gap-2">
+              <input
+                value={promo}
+                onChange={(e) => {
+                  setPromo(e.target.value);
+                  setPromoError(null);
+                }}
+                placeholder="Promo code"
+                className="flex-1 rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-2.5 text-[13px] text-white placeholder:text-white/35 outline-none focus:border-teal-400/40 transition uppercase"
+              />
+              <button
+                type="button"
+                onClick={applyPromo}
+                disabled={!promo.trim() || checkingPromo}
+                className="shrink-0 px-3.5 py-2.5 rounded-xl border border-white/12 bg-white/[0.03] text-white/80 hover:text-white hover:border-white/25 text-[12.5px] font-medium transition cursor-pointer disabled:opacity-50"
+              >
+                {checkingPromo ? "…" : "Apply"}
+              </button>
+            </div>
+            {promoError && (
+              <div className="mt-1.5 text-[12px] text-red-300 inline-flex items-center gap-1.5">
+                <i className="fa-solid fa-triangle-exclamation text-[10px]" />
+                {promoError}
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -256,6 +305,36 @@ function PaymentPanel({ initialCycle }: { initialCycle: Cycle }) {
         </div>
         <div className="rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-3">
           <CardElement options={cardStyle(isLight)} />
+        </div>
+      </div>
+
+      {/* Order summary */}
+      <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3.5 flex flex-col gap-1.5 text-[13px]">
+        <div className="flex items-center justify-between">
+          <span className="text-white/55">
+            {cycle === "annual" ? "Annual plan" : "Monthly plan"}
+          </span>
+          <span className="tabular-nums text-white/80">
+            {gbp(base)}
+            {price.unit}
+          </span>
+        </div>
+        {hasDiscount && (
+          <div className="flex items-center justify-between text-teal-300">
+            <span className="truncate mr-2">Discount</span>
+            <span className="tabular-nums">−{gbp(base - dueToday)}</span>
+          </div>
+        )}
+        <div className="mt-1 pt-2 border-t border-white/10 flex items-center justify-between">
+          <span className="font-medium">Due today</span>
+          <span className="tabular-nums font-semibold">
+            {hasDiscount && (
+              <span className="text-white/40 line-through mr-1.5 font-normal">
+                {gbp(base)}
+              </span>
+            )}
+            {gbp(dueToday)}
+          </span>
         </div>
       </div>
 
@@ -274,7 +353,7 @@ function PaymentPanel({ initialCycle }: { initialCycle: Cycle }) {
         {submitting && (
           <i className="fa-solid fa-circle-notch animate-spin text-[12px]" />
         )}
-        {submitting ? "Processing…" : `Start Pro · ${price.perMonth}/mo`}
+        {submitting ? "Processing…" : `Start Pro · ${gbp(dueToday)} today`}
       </button>
       <p className="text-[11px] text-white/40 text-center leading-relaxed">
         {price.billed}. Cancel any time. Secured by Stripe — your card details
