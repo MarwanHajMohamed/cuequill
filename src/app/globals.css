@@ -857,20 +857,29 @@ body {
   cursor: pointer;
 }
 
-/* One-time coin-flip spin for the crown on the "Upgrade to Pro" button,
-   played when the button mounts (on load). */
+/* One-time entrance for the crown on the "Upgrade to Pro" button, played
+   when it mounts (on load): rises up and fades in while spinning five times
+   on its Y axis, then settles centred and facing front. */
 @keyframes crown-spin-in {
-  from {
-    transform: rotateY(0deg);
+  0% {
+    transform: translateY(16px) rotateY(0deg);
+    opacity: 0;
   }
-  to {
-    transform: rotateY(360deg);
+  60% {
+    opacity: 1;
+  }
+  85% {
+    transform: translateY(-4px) rotateY(1530deg);
+  }
+  100% {
+    transform: translateY(0) rotateY(1800deg);
+    opacity: 1;
   }
 }
 .crown-spin-in {
   display: inline-block;
   transform-style: preserve-3d;
-  animation: crown-spin-in 0.9s ease-out 1;
+  animation: crown-spin-in 1.3s ease-in-out 1 both;
 }
 @media (prefers-reduced-motion: reduce) {
   .crown-spin-in {
