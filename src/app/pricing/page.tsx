@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { useToast } from "@/hooks/useToast";
+import UpgradeModal from "@/components/UpgradeModal";
 import { FaqRow, SiteFooter, SiteHeader } from "../_marketing/Chrome";
 
 // ─── Data ────────────────────────────────────────────────────────────
@@ -462,34 +462,13 @@ function PlanCTA({
   signedIn: boolean;
   isPro: boolean;
 }) {
-  const toast = useToast();
-  const [loading, setLoading] = useState(false);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
 
   const base = `shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-full transition text-[11px] font-semibold tracking-[0.08em] cursor-pointer disabled:opacity-60 disabled:cursor-default ${
     plan.featured
       ? "bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25"
       : "border border-white/15 text-white/85 hover:bg-white/[0.06]"
   }`;
-
-  const post = async (endpoint: string, body?: unknown) => {
-    setLoading(true);
-    try {
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: body ? { "Content-Type": "application/json" } : undefined,
-        body: body ? JSON.stringify(body) : undefined,
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok && data.url) {
-        window.location.href = data.url;
-        return;
-      }
-      toast(data.error || "Something went wrong. Please try again.");
-    } catch {
-      toast("Network error. Please try again.");
-    }
-    setLoading(false);
-  };
 
   // Starter (free) tier - a link into the app / sign-up.
   if (!plan.featured) {
@@ -511,32 +490,37 @@ function PlanCTA({
     );
   }
 
-  // Pro tier, already subscribed - manage billing.
+  // Pro tier, already subscribed - manage the plan in-app.
   if (isPro) {
     return (
-      <button
-        type="button"
-        onClick={() => post("/api/stripe/portal")}
-        disabled={loading}
-        className={base}
-      >
-        {loading ? "Opening…" : "Manage billing"}
-        {!loading && <i className="fa-solid fa-arrow-up-right-from-square text-[9px]" />}
-      </button>
+      <Link href="/settings" className={base}>
+        Manage plan
+        <i className="fa-solid fa-chevron-right text-[9px]" />
+      </Link>
     );
   }
 
-  // Pro tier, signed in but free - start checkout for the chosen cycle.
+  // Pro tier, signed in but free - upgrade in-app (no Stripe redirect).
   return (
-    <button
-      type="button"
-      onClick={() => post("/api/stripe/checkout", { cycle })}
-      disabled={loading}
-      className={base}
-    >
-      {loading ? "Redirecting…" : plan.cta}
-      {!loading && <i className="fa-solid fa-chevron-right text-[9px]" />}
-    </button>
+    <>
+      <button
+        type="button"
+        onClick={() => setUpgradeOpen(true)}
+        className={base}
+      >
+        {plan.cta}
+        <i className="fa-solid fa-chevron-right text-[9px]" />
+      </button>
+      {upgradeOpen && (
+        <UpgradeModal
+          initialCycle={cycle}
+          onClose={() => setUpgradeOpen(false)}
+          onSuccess={() => {
+            window.location.href = "/settings?checkout=success";
+          }}
+        />
+      )}
+    </>
   );
 }
 
