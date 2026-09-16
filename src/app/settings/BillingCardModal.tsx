@@ -8,6 +8,7 @@ import {
   useStripe,
   useElements,
 } from "@stripe/react-stripe-js";
+import { useTheme } from "@/hooks/useTheme";
 
 // Native "update card" modal, replacing the Stripe billing portal's card
 // management. The parent fetches a SetupIntent client secret; here we collect
@@ -18,19 +19,27 @@ import {
 const pk = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 const stripePromise = pk ? loadStripe(pk) : null;
 
-const CARD_STYLE = {
-  style: {
-    base: {
-      color: "#e5e7eb",
-      fontFamily:
-        'ui-monospace, SFMono-Regular, Menlo, Monaco, "DM Mono", monospace',
-      fontSize: "15px",
-      "::placeholder": { color: "rgba(255,255,255,0.35)" },
-      iconColor: "#5eead4",
+// CardElement renders in its own iframe, so it can't inherit the app's CSS -
+// its colours must be passed explicitly and matched to the active theme, or
+// the text is invisible (light-on-light) in light mode.
+function cardStyle(isLight: boolean) {
+  return {
+    hidePostalCode: true,
+    style: {
+      base: {
+        color: isLight ? "#1f2937" : "#e5e7eb",
+        fontFamily:
+          'ui-monospace, SFMono-Regular, Menlo, Monaco, "DM Mono", monospace',
+        fontSize: "15px",
+        "::placeholder": {
+          color: isLight ? "rgba(31,41,55,0.4)" : "rgba(255,255,255,0.35)",
+        },
+        iconColor: isLight ? "#0d9488" : "#5eead4",
+      },
+      invalid: { color: "#ef4444", iconColor: "#ef4444" },
     },
-    invalid: { color: "#f87171", iconColor: "#f87171" },
-  },
-};
+  };
+}
 
 function CardForm({
   clientSecret,
@@ -43,6 +52,8 @@ function CardForm({
 }) {
   const stripe = useStripe();
   const elements = useElements();
+  const { theme } = useTheme();
+  const isLight = theme === "light";
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -93,7 +104,7 @@ function CardForm({
   return (
     <form onSubmit={submit} className="flex flex-col gap-4">
       <div className="rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-3">
-        <CardElement options={CARD_STYLE} />
+        <CardElement options={cardStyle(isLight)} />
       </div>
       {error && (
         <div className="text-[12px] text-red-300 inline-flex items-center gap-1.5">
@@ -134,6 +145,7 @@ export default function BillingCardModal({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const { theme } = useTheme();
   return (
     <div
       className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
@@ -157,7 +169,9 @@ export default function BillingCardModal({
         {stripePromise ? (
           <Elements
             stripe={stripePromise}
-            options={{ appearance: { theme: "night" } }}
+            options={{
+              appearance: { theme: theme === "light" ? "stripe" : "night" },
+            }}
           >
             <CardForm
               clientSecret={clientSecret}
