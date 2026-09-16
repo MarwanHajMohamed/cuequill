@@ -5,19 +5,16 @@ import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useChatUsage } from "@/hooks/useChatUsage";
 import BillingCardModal from "./BillingCardModal";
+import CancelProModal from "./CancelProModal";
 import type {
   BillingCard,
   BillingInvoice,
 } from "@/app/api/stripe/billing/route";
 
-// Current plan + upgrade/cancel controls, backed by Stripe.
-//
-// Cancellation goes through /api/user/plan (which cancels the Stripe
-// subscription at period end), so the user keeps the access they paid
-// for until the term runs out. "Manage billing" opens the Stripe Billing
-// Portal for card changes / resuming. On an immediate downgrade (a comped
-// account with no subscription) we ask NextAuth to refresh so isPro flips
-// in the UI without a reload.
+// Current plan + upgrade/manage controls, backed by Stripe. Upgrading is a
+// single prominent tap; cancelling lives quietly at the bottom behind a
+// multi-step retention flow (CancelProModal). All billing management -
+// card on file, invoices, resume - is native (no Stripe portal).
 
 type PlanInfo = {
   isPro: boolean;
@@ -29,8 +26,6 @@ type PlanInfo = {
   cancelAtPeriodEnd: boolean;
 };
 
-// What each tier ships with - shown as a "your plan includes" list, with
-// the Pro-only rows presented as an upsell to free users.
 const INCLUDED_FREE = [
   "Unlimited manual trade logging",
   "Calendar with net P&L",
@@ -52,8 +47,6 @@ const compactNum = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 1,
 });
 
-// A labelled usage bar (used / limit) with the fill turning amber near
-// the cap.
 function Meter({
   label,
   used,
@@ -72,8 +65,7 @@ function Meter({
       <div className="flex items-center justify-between text-[12.5px]">
         <span className="text-white/70">{label}</span>
         <span className="tabular-nums text-white/85">
-          {format(used)}{" "}
-          <span className="text-white/40">/ {format(limit)}</span>
+          {format(used)} <span className="text-white/40">/ {format(limit)}</span>
         </span>
       </div>
       <div className="h-2 rounded-full bg-white/[0.06] overflow-hidden">
@@ -84,6 +76,14 @@ function Meter({
           style={{ width: `${Math.max(pct, used > 0 ? 2 : 0)}%` }}
         />
       </div>
+    </div>
+  );
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="text-[11px] tracking-[0.08em] uppercase text-white/40 font-medium mb-3">
+      {children}
     </div>
   );
 }
@@ -106,15 +106,14 @@ export default function PlanTab() {
   const { data: usage } = useChatUsage(!!session?.user?.isPro);
 
   const [plan, setPlan] = useState<PlanInfo | null>(null);
-  // Fall back to the session flag until the detailed plan loads so the
-  // panel isn't blank on first paint.
   const isPro = plan?.isPro ?? !!session?.user?.isPro;
 
-  const [confirming, setConfirming] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [resuming, setResuming] = useState(false);
   const [switching, setSwitching] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cancelError, setCancelError] = useState<string | null>(null);
   const [justCancelled, setJustCancelled] = useState(false);
 
   // In-app billing (replaces the Stripe portal): card on file + invoices.
@@ -137,7 +136,6 @@ export default function PlanTab() {
     loadPlan();
   }, [loadPlan]);
 
-  // Card + invoices, once we know there's a billing account to show.
   const loadBilling = useCallback(async () => {
     try {
       const r = await fetch("/api/stripe/billing", { cache: "no-store" });
@@ -150,7 +148,7 @@ export default function PlanTab() {
         setInvoices(d.invoices ?? []);
       }
     } catch {
-      // Non-fatal - the rest of the panel still works.
+      // Non-fatal.
     } finally {
       setBillingLoaded(true);
     }
@@ -160,11 +158,9 @@ export default function PlanTab() {
     if (plan?.hasSubscription) loadBilling();
   }, [plan?.hasSubscription, loadBilling]);
 
-  // The plan GET reconciles against Stripe server-side (both directions). If
-  // the reconciled DB value disagrees with the session flag (which drives the
-  // badge and gates), refresh the session once so the UI catches up without
-  // waiting for the periodic re-check. One-shot ref guard so we don't
-  // re-trigger as the session revalidates.
+  // The plan GET reconciles against Stripe (both directions). Refresh the
+  // session once if the reconciled value disagrees with the session flag so
+  // the badge / gates catch up without waiting for the periodic re-check.
   const refreshedRef = useRef(false);
   useEffect(() => {
     if (refreshedRef.current || !plan) return;
@@ -178,7 +174,7 @@ export default function PlanTab() {
   const handleCancel = async () => {
     if (cancelling) return;
     setCancelling(true);
-    setError(null);
+    setCancelError(null);
     try {
       const r = await fetch("/api/user/plan", {
         method: "POST",
@@ -187,29 +183,24 @@ export default function PlanTab() {
       });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) {
-        setError(d.error ?? "Couldn't cancel. Try again?");
+        setCancelError(d.error ?? "Couldn't cancel. Try again?");
         return;
       }
-      setConfirming(false);
+      setCancelOpen(false);
       if (d.immediate) {
-        // Comped/legacy account - access ended now.
         await update({ isPro: false });
         setJustCancelled(true);
       }
-      // For a scheduled cancellation the user stays Pro until period end;
-      // reloading the plan surfaces the "cancels on <date>" state.
       await loadPlan();
     } catch {
-      setError("Network error. Try again?");
+      setCancelError("Network error. Try again?");
     } finally {
       setCancelling(false);
     }
   };
 
-  // Switching cycle goes through a hosted Stripe Checkout so the user
-  // confirms/authorises the payment (rather than a silent charge). Checkout
-  // creates the annual subscription and returns to /settings?switch=success,
-  // where we finalize (cancel the old monthly plan).
+  // Switching cycle goes through hosted Checkout so the user authorises the
+  // payment. Returns to /settings?switch=success, where we finalize.
   const switchToAnnual = async () => {
     if (switching) return;
     setSwitching(true);
@@ -233,9 +224,7 @@ export default function PlanTab() {
     }
   };
 
-  // Returning from the switch Checkout. On success, finalize (cancel the old
-  // plan) and refresh the panel; strip the param so a refresh doesn't repeat
-  // it. Runs once.
+  // Returning from the switch Checkout - finalize (cancel the old plan).
   const switchHandledRef = useRef(false);
   useEffect(() => {
     if (switchHandledRef.current) return;
@@ -261,11 +250,8 @@ export default function PlanTab() {
     })();
   }, [loadPlan]);
 
-  // Returning from a fresh subscription Checkout (?checkout=success). Reconcile
-  // the plan (the GET verifies live against Stripe, so the DB flips to Pro even
-  // if the webhook is lagging), then refresh the NextAuth session so isPro
-  // unlocks the navbar and every gate app-wide without a reload. Strip the
-  // param so a refresh doesn't repeat it. Runs once.
+  // Returning from a fresh subscription Checkout - reconcile + refresh session
+  // so Pro unlocks app-wide without a reload.
   const checkoutHandledRef = useRef(false);
   useEffect(() => {
     if (checkoutHandledRef.current) return;
@@ -279,13 +265,11 @@ export default function PlanTab() {
     if (co !== "success") return;
     (async () => {
       await loadPlan();
-      // The jwt callback ignores a client-sent isPro and re-derives it from
-      // the (now reconciled) DB, so this just triggers that live re-check.
       await update({ isPro: true });
     })();
   }, [loadPlan, update]);
 
-  // Undo a scheduled cancellation in-app (replaces the portal's reactivate).
+  // Undo a scheduled cancellation in-app.
   const handleResume = async () => {
     if (resuming) return;
     setResuming(true);
@@ -309,8 +293,7 @@ export default function PlanTab() {
     }
   };
 
-  // Open the native card-update modal: fetch a SetupIntent, then Elements
-  // collects and confirms the card.
+  // Open the native card-update modal.
   const openCardModal = async () => {
     if (openingCard) return;
     setOpeningCard(true);
@@ -332,329 +315,350 @@ export default function PlanTab() {
 
   const scheduledCancel = !!plan?.cancelAtPeriodEnd;
   const periodEnd = fmtDate(plan?.currentPeriodEnd ?? null);
-
-  const subline = (() => {
-    if (!isPro) return "90 days of history and the core journal.";
-    if (scheduledCancel && periodEnd) {
-      return `Pro until ${periodEnd}. Won't renew after that.`;
-    }
-    if (plan?.hasSubscription && periodEnd) {
-      const cyc = plan.cycle ? `${plan.cycle} · ` : "";
-      return `${cyc}Renews ${periodEnd}.`;
-    }
-    return "Full access to Quill AI, auto-sync, and unlimited history.";
-  })();
+  const offerAnnual =
+    isPro &&
+    !!plan?.hasSubscription &&
+    plan?.cycle === "monthly" &&
+    !scheduledCancel;
 
   return (
-    <div className="p-5 md:p-7 flex flex-col md:flex-row gap-6 md:gap-8">
-      {/* Left column: plan card, alerts, usage, billing, nudge */}
-      <div className="flex-1 min-w-0 flex flex-col gap-6">
-      <div>
-        <div className="text-[11px] tracking-[0.08em] text-white/45 font-medium mb-1">
-          Current plan
+    <div className="p-5 md:p-7 max-w-[760px]">
+      {/* Render helpers (called, not mounted as components, so parent
+          re-renders don't remount the subtree). */}
+      <div className="relative">{isPro ? ProView() : FreeView()}</div>
+
+      {cardSecret && (
+        <BillingCardModal
+          clientSecret={cardSecret}
+          onClose={() => setCardSecret(null)}
+          onSaved={() => {
+            setCardSecret(null);
+            loadBilling();
+          }}
+        />
+      )}
+
+      <CancelProModal
+        open={cancelOpen}
+        onClose={() => setCancelOpen(false)}
+        periodEnd={periodEnd}
+        cycle={plan?.cycle ?? null}
+        proFeatures={PRO_ADDS}
+        offerAnnual={offerAnnual}
+        onSwitchAnnual={switchToAnnual}
+        switching={switching}
+        onConfirmCancel={handleCancel}
+        cancelling={cancelling}
+        error={cancelError}
+      />
+    </div>
+  );
+
+  // ── Free tier: an unmissable upgrade hero ─────────────────────────────
+  function FreeView() {
+    return (
+      <div className="flex flex-col gap-6">
+        <div className="relative overflow-hidden rounded-3xl border border-teal-500/25 bg-gradient-to-br from-teal-500/[0.12] via-white/[0.02] to-indigo-500/[0.08] p-6 md:p-8">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -top-24 -right-16 w-72 h-72 rounded-full bg-teal-400/15 blur-3xl"
+          />
+          <div className="relative">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.05] px-3 py-1 text-[11px] font-medium text-white/70">
+              <i className="fa-solid fa-user text-[10px]" />
+              You&apos;re on Free
+            </div>
+            <h2 className="mt-4 text-[24px] md:text-[28px] font-semibold tracking-tight">
+              Unlock the full journal with Pro
+            </h2>
+            <p className="mt-2 text-[14px] text-white/60 leading-relaxed max-w-md">
+              Quill AI over your own trades, automatic IBKR sync, unlimited
+              history and strategies, and deeper stats — everything working for
+              you every morning.
+            </p>
+            <Link
+              href="/pricing"
+              className="mt-6 inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-teal-500 hover:bg-teal-400 text-[#fff] text-[15px] font-semibold transition cursor-pointer shadow-[0_10px_40px_-10px_rgba(20,184,166,0.7)]"
+            >
+              <i className="fa-solid fa-crown text-[13px]" />
+              Upgrade to Pro
+            </Link>
+          </div>
         </div>
-        <div
-          className={`mt-3 relative overflow-hidden rounded-2xl border p-5 ${
-            isPro
-              ? "border-teal-500/25 bg-gradient-to-br from-teal-500/[0.10] via-transparent to-indigo-500/[0.06]"
-              : "border-white/10 bg-white/[0.03]"
-          }`}
-        >
-          {isPro && (
-            <div
-              aria-hidden
-              className="pointer-events-none absolute -top-16 -right-16 w-48 h-48 rounded-full bg-teal-400/15 blur-3xl"
-            />
-          )}
-          <div className="relative flex items-center justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-3">
-              <div
-                className={`w-10 h-10 rounded-full border flex items-center justify-center ${
-                  isPro
-                    ? "bg-teal-500/15 border-teal-500/40 text-teal-300"
-                    : "bg-white/[0.04] border-white/15 text-white/70"
-                }`}
-              >
-                <i
-                  className={`fa-solid ${
-                    isPro ? "fa-crown" : "fa-user"
-                  } text-[14px]`}
-                />
+
+        <div className="grid md:grid-cols-2 gap-6">
+          <div>
+            <SectionLabel>Your plan includes</SectionLabel>
+            <div className="flex flex-col gap-2.5">
+              {INCLUDED_FREE.map((f) => (
+                <div key={f} className="flex items-start gap-2.5 text-[13px]">
+                  <i className="fa-solid fa-check text-teal-300 text-[11px] mt-[3px]" />
+                  <span className="text-white/85">{f}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <SectionLabel>Pro adds</SectionLabel>
+            <div className="flex flex-col gap-2.5">
+              {PRO_ADDS.map((f) => (
+                <div
+                  key={f}
+                  className="flex items-start gap-2.5 text-[13px] text-white/55"
+                >
+                  <i className="fa-solid fa-crown text-amber-300/70 text-[10px] mt-[4px]" />
+                  <span>{f}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {error && (
+          <div className="text-[12px] text-red-300 inline-flex items-center gap-1.5">
+            <i className="fa-solid fa-triangle-exclamation text-[10px]" />
+            {error}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── Pro tier: premium status, usage, billing; cancel tucked away ──────
+  function ProView() {
+    return (
+      <div className="flex flex-col gap-7">
+        {/* Status hero */}
+        <div className="relative overflow-hidden rounded-3xl border border-teal-500/25 bg-gradient-to-br from-teal-500/[0.12] via-transparent to-indigo-500/[0.07] p-6 md:p-7">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -top-20 -right-14 w-64 h-64 rounded-full bg-teal-400/15 blur-3xl"
+          />
+          <div className="relative flex items-start justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-teal-500/15 border border-teal-500/40 text-teal-300 flex items-center justify-center">
+                <i className="fa-solid fa-crown text-[18px]" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <div className="text-[16px] font-semibold">
-                    {isPro ? "Pro" : "Free"}
+                  <div className="text-[20px] font-semibold tracking-tight">
+                    Cuequill Pro
                   </div>
                   {scheduledCancel && (
                     <span className="text-[10px] tracking-wide uppercase px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
-                      Cancelling
+                      Ending
                     </span>
                   )}
                 </div>
-                <div className="text-[12.5px] text-white/55">{subline}</div>
+                <div className="text-[13px] text-white/60 mt-0.5">
+                  {scheduledCancel && periodEnd
+                    ? `Access until ${periodEnd} — then reverts to Free.`
+                    : plan?.hasSubscription && periodEnd
+                      ? `${plan.cycle ? `${plan.cycle} · ` : ""}Renews ${periodEnd}.`
+                      : "Full access to every Pro tool."}
+                </div>
               </div>
             </div>
 
-            {!isPro ? (
-              <Link
-                href="/pricing"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[13px] font-medium cursor-pointer"
-              >
-                <i className="fa-solid fa-arrow-up text-[11px]" />
-                Upgrade to Pro
-              </Link>
-            ) : scheduledCancel ? (
-              // Already scheduled to cancel - offer a native "resume" that
-              // clears the pending cancellation so it renews again.
+            {scheduledCancel && (
               <button
                 onClick={handleResume}
                 disabled={resuming}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[13px] font-medium cursor-pointer disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-[#fff] text-[14px] font-semibold transition cursor-pointer disabled:opacity-60 shadow-[0_8px_30px_-8px_rgba(20,184,166,0.6)]"
               >
                 {resuming && (
                   <i className="fa-solid fa-circle-notch animate-spin text-[11px]" />
                 )}
-                {resuming ? "Resuming…" : "Resume plan"}
-              </button>
-            ) : confirming ? (
-              <div className="flex items-center gap-1.5 text-[12.5px] text-white/75">
-                <span>Cancel?</span>
-                <button
-                  onClick={() => setConfirming(false)}
-                  disabled={cancelling}
-                  className="px-2.5 py-1 rounded-full text-white/70 hover:text-white hover:bg-white/[0.08] transition text-[12px] cursor-pointer"
-                >
-                  No
-                </button>
-                <button
-                  onClick={handleCancel}
-                  disabled={cancelling}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500/20 text-red-300 border border-red-500/40 hover:bg-red-500/30 transition text-[12px] font-semibold cursor-pointer disabled:opacity-50"
-                >
-                  {cancelling && (
-                    <i className="fa-solid fa-circle-notch animate-spin text-[10px]" />
-                  )}
-                  Yes
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => {
-                  setConfirming(true);
-                  setJustCancelled(false);
-                  setError(null);
-                }}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/15 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer"
-              >
-                Cancel Pro
+                {resuming ? "Resuming…" : "Keep my Pro"}
               </button>
             )}
           </div>
         </div>
-      </div>
 
-      {scheduledCancel && periodEnd && (
-        <div className="border border-amber-500/25 bg-amber-500/[0.06] rounded-xl px-3.5 py-2.5 text-[12.5px] text-amber-200 flex items-start gap-2">
-          <i className="fa-solid fa-circle-info text-[12px] mt-0.5" />
-          <span>
-            Your Pro plan is set to end on {periodEnd}. You keep full access
-            until then - hit “Resume plan” any time to keep it.
-          </span>
-        </div>
-      )}
-
-      {justCancelled && (
-        <div className="border border-teal-500/25 bg-teal-500/[0.06] rounded-xl px-3.5 py-2.5 text-[12.5px] text-teal-200 flex items-start gap-2">
-          <i className="fa-solid fa-circle-check text-[12px] mt-0.5" />
-          <span>You&apos;re back on the Free plan. Re-upgrade any time.</span>
-        </div>
-      )}
-
-      {error && (
-        <div className="text-[12px] text-red-300 inline-flex items-center gap-1.5">
-          <i className="fa-solid fa-triangle-exclamation text-[10px]" />
-          {error}
-        </div>
-      )}
-
-      {/* Quill AI usage - the fair-use counters, Pro-only. */}
-      {isPro && usage && (
-        <div>
-          <div className="text-[11px] tracking-[0.08em] text-white/45 font-medium mb-3">
-            Quill AI usage
+        {scheduledCancel && periodEnd && (
+          <div className="border border-amber-500/25 bg-amber-500/[0.06] rounded-xl px-3.5 py-2.5 text-[12.5px] text-amber-200 flex items-start gap-2">
+            <i className="fa-solid fa-circle-info text-[12px] mt-0.5" />
+            <span>
+              Your Pro plan ends on {periodEnd}. Hit “Keep my Pro” any time
+              before then to stay — you won&apos;t be charged again to continue.
+            </span>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5 flex flex-col gap-4">
-            <Meter
-              label="Messages today"
-              used={usage.messagesToday}
-              limit={usage.dailyLimit}
-            />
-            <Meter
-              label="Tokens this month"
-              used={usage.tokensThisMonth}
-              limit={usage.monthlyTokenLimit}
-              format={(n) => compactNum.format(n)}
-            />
-            {usage.bonusMessages > 0 && (
-              <div className="inline-flex items-center gap-1.5 text-[12px] text-violet-300 bg-violet-500/10 border border-violet-500/25 rounded-full px-3 py-1 w-fit">
-                <i className="fa-solid fa-gift text-[10px]" />
-                {usage.bonusMessages} bonus message
-                {usage.bonusMessages === 1 ? "" : "s"} from challenges - used
-                once you hit the daily cap.
-              </div>
-            )}
-            <div className="text-[11px] text-white/40 leading-relaxed">
-              Daily messages reset at midnight UTC; the monthly token budget
-              resets on the 1st. Each question includes your trade context, so
-              tokens add up faster than message count.
-            </div>
-          </div>
-        </div>
-      )}
+        )}
 
-      {/* Billing details - only meaningful with a real Stripe subscription. */}
-      {plan?.hasSubscription && (
-        <div>
-          <div className="text-[11px] tracking-[0.08em] text-white/45 font-medium mb-3">
-            Billing
+        {justCancelled && (
+          <div className="border border-teal-500/25 bg-teal-500/[0.06] rounded-xl px-3.5 py-2.5 text-[12.5px] text-teal-200 flex items-start gap-2">
+            <i className="fa-solid fa-circle-check text-[12px] mt-0.5" />
+            <span>You&apos;re back on the Free plan. Re-upgrade any time.</span>
           </div>
-          <dl className="rounded-2xl border border-white/10 bg-white/[0.02] divide-y divide-white/[0.06] overflow-hidden">
-            {[
-              [
-                "Billing cycle",
-                plan.cycle
-                  ? plan.cycle === "annual"
-                    ? "Annual"
-                    : "Monthly"
-                  : "-",
-              ],
-              [
-                "Status",
-                plan.status
-                  ? plan.status.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase())
-                  : "-",
-              ],
-              [scheduledCancel ? "Ends on" : "Next renewal", periodEnd || "-"],
-            ].map(([label, value]) => (
-              <div
-                key={label}
-                className="flex items-center justify-between gap-4 px-4 py-3"
-              >
-                <dt className="text-[12.5px] text-white/50">{label}</dt>
-                <dd className="text-[13px] text-white/85 tabular-nums">
-                  {value}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-      )}
+        )}
 
-      {/* Payment method - the card on file, updated in-app via Elements. */}
-      {plan?.hasSubscription && (
-        <div>
-          <div className="text-[11px] tracking-[0.08em] text-white/45 font-medium mb-3">
-            Payment method
+        {error && (
+          <div className="text-[12px] text-red-300 inline-flex items-center gap-1.5">
+            <i className="fa-solid fa-triangle-exclamation text-[10px]" />
+            {error}
           </div>
-          <div className="rounded-2xl border border-white/10 bg-white/[0.02] px-4 py-3.5 flex items-center justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-9 h-9 rounded-lg bg-white/[0.05] border border-white/10 flex items-center justify-center text-white/70">
-                <i className="fa-solid fa-credit-card text-[13px]" />
-              </div>
-              <div className="min-w-0">
-                {card ? (
-                  <>
-                    <div className="text-[13px] text-white/85">
-                      <span className="capitalize">{card.brand}</span> ••••{" "}
-                      {card.last4}
-                    </div>
-                    <div className="text-[11.5px] text-white/45 tabular-nums">
-                      Expires{" "}
-                      {String(card.expMonth).padStart(2, "0")}/{card.expYear}
-                    </div>
-                  </>
-                ) : (
-                  <div className="text-[12.5px] text-white/55">
-                    {billingLoaded ? "No card on file" : "Loading…"}
-                  </div>
-                )}
-              </div>
-            </div>
-            <button
-              onClick={openCardModal}
-              disabled={openingCard}
-              className="shrink-0 inline-flex items-center gap-2 px-3.5 py-2 rounded-full border border-white/15 bg-white/[0.03] text-white/80 hover:bg-white/[0.06] hover:text-white transition text-[12.5px] font-medium cursor-pointer disabled:opacity-50"
-            >
-              {openingCard && (
-                <i className="fa-solid fa-circle-notch animate-spin text-[10px]" />
+        )}
+
+        {/* Quill AI usage */}
+        {usage && (
+          <div>
+            <SectionLabel>Quill AI usage</SectionLabel>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5 flex flex-col gap-4">
+              <Meter
+                label="Messages today"
+                used={usage.messagesToday}
+                limit={usage.dailyLimit}
+              />
+              <Meter
+                label="Tokens this month"
+                used={usage.tokensThisMonth}
+                limit={usage.monthlyTokenLimit}
+                format={(n) => compactNum.format(n)}
+              />
+              {usage.bonusMessages > 0 && (
+                <div className="inline-flex items-center gap-1.5 text-[12px] text-violet-300 bg-violet-500/10 border border-violet-500/25 rounded-full px-3 py-1 w-fit">
+                  <i className="fa-solid fa-gift text-[10px]" />
+                  {usage.bonusMessages} bonus message
+                  {usage.bonusMessages === 1 ? "" : "s"} from challenges.
+                </div>
               )}
-              {card ? "Update card" : "Add card"}
-            </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Invoices - full history, each linking to Stripe's generated PDF. */}
-      {plan?.hasSubscription && invoices.length > 0 && (
-        <div>
-          <div className="text-[11px] tracking-[0.08em] text-white/45 font-medium mb-3">
-            Invoices
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-white/[0.02] divide-y divide-white/[0.06] overflow-hidden">
-            {invoices.map((inv) => {
-              const href = inv.invoicePdf ?? inv.hostedInvoiceUrl;
-              return (
-              <div
-                key={inv.id}
-                className="flex items-center justify-between gap-3 px-4 py-3"
-              >
-                <div className="min-w-0">
-                  <div className="text-[13px] text-white/85 tabular-nums">
-                    {fmtDate(inv.created)}
-                  </div>
-                  <div className="text-[11.5px] text-white/45 capitalize">
-                    {inv.status}
-                    {inv.number ? ` · ${inv.number}` : ""}
-                  </div>
+        {/* Billing details */}
+        {plan?.hasSubscription && (
+          <div>
+            <SectionLabel>Billing</SectionLabel>
+            <dl className="rounded-2xl border border-white/10 bg-white/[0.02] divide-y divide-white/[0.06] overflow-hidden">
+              {[
+                [
+                  "Billing cycle",
+                  plan.cycle
+                    ? plan.cycle === "annual"
+                      ? "Annual"
+                      : "Monthly"
+                    : "-",
+                ],
+                [
+                  "Status",
+                  plan.status
+                    ? plan.status
+                        .replace(/_/g, " ")
+                        .replace(/^\w/, (c) => c.toUpperCase())
+                    : "-",
+                ],
+                [scheduledCancel ? "Ends on" : "Next renewal", periodEnd || "-"],
+              ].map(([label, value]) => (
+                <div
+                  key={label}
+                  className="flex items-center justify-between gap-4 px-4 py-3"
+                >
+                  <dt className="text-[12.5px] text-white/50">{label}</dt>
+                  <dd className="text-[13px] text-white/85 tabular-nums">
+                    {value}
+                  </dd>
                 </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  <span className="text-[13px] text-white/85 tabular-nums">
-                    {new Intl.NumberFormat(undefined, {
-                      style: "currency",
-                      currency: inv.currency,
-                    }).format(inv.amount)}
-                  </span>
-                  {href ? (
-                    <a
-                      href={href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border border-white/12 bg-white/[0.03] text-white/70 hover:text-white hover:border-white/25 text-[12px] font-medium transition cursor-pointer"
-                    >
-                      <i className="fa-solid fa-download text-[10px]" />
-                      Invoice
-                    </a>
-                  ) : null}
+              ))}
+            </dl>
+          </div>
+        )}
+
+        {/* Payment method */}
+        {plan?.hasSubscription && (
+          <div>
+            <SectionLabel>Payment method</SectionLabel>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.02] px-4 py-3.5 flex items-center justify-between gap-4 flex-wrap">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 rounded-lg bg-white/[0.05] border border-white/10 flex items-center justify-center text-white/70">
+                  <i className="fa-solid fa-credit-card text-[13px]" />
+                </div>
+                <div className="min-w-0">
+                  {card ? (
+                    <>
+                      <div className="text-[13px] text-white/85">
+                        <span className="capitalize">{card.brand}</span> ••••{" "}
+                        {card.last4}
+                      </div>
+                      <div className="text-[11.5px] text-white/45 tabular-nums">
+                        Expires {String(card.expMonth).padStart(2, "0")}/
+                        {card.expYear}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-[12.5px] text-white/55">
+                      {billingLoaded ? "No card on file" : "Loading…"}
+                    </div>
+                  )}
                 </div>
               </div>
-              );
-            })}
+              <button
+                onClick={openCardModal}
+                disabled={openingCard}
+                className="shrink-0 inline-flex items-center gap-2 px-3.5 py-2 rounded-full border border-white/15 bg-white/[0.03] text-white/80 hover:bg-white/[0.06] hover:text-white transition text-[12.5px] font-medium cursor-pointer disabled:opacity-50"
+              >
+                {openingCard && (
+                  <i className="fa-solid fa-circle-notch animate-spin text-[10px]" />
+                )}
+                {card ? "Update card" : "Add card"}
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Annual-savings nudge for monthly subscribers. */}
-      {isPro &&
-        plan?.hasSubscription &&
-        plan.cycle === "monthly" &&
-        !scheduledCancel && (
+        {/* Invoices */}
+        {plan?.hasSubscription && invoices.length > 0 && (
+          <div>
+            <SectionLabel>Invoices</SectionLabel>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.02] divide-y divide-white/[0.06] overflow-hidden">
+              {invoices.map((inv) => {
+                const href = inv.invoicePdf ?? inv.hostedInvoiceUrl;
+                return (
+                  <div
+                    key={inv.id}
+                    className="flex items-center justify-between gap-3 px-4 py-3"
+                  >
+                    <div className="min-w-0">
+                      <div className="text-[13px] text-white/85 tabular-nums">
+                        {fmtDate(inv.created)}
+                      </div>
+                      <div className="text-[11.5px] text-white/45 capitalize">
+                        {inv.status}
+                        {inv.number ? ` · ${inv.number}` : ""}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className="text-[13px] text-white/85 tabular-nums">
+                        {new Intl.NumberFormat(undefined, {
+                          style: "currency",
+                          currency: inv.currency,
+                        }).format(inv.amount)}
+                      </span>
+                      {href ? (
+                        <a
+                          href={href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border border-white/12 bg-white/[0.03] text-white/70 hover:text-white hover:border-white/25 text-[12px] font-medium transition cursor-pointer"
+                        >
+                          <i className="fa-solid fa-download text-[10px]" />
+                          Invoice
+                        </a>
+                      ) : null}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Annual-savings nudge for monthly subscribers */}
+        {offerAnnual && (
           <div className="border border-teal-500/25 bg-teal-500/[0.06] rounded-xl px-3.5 py-3 flex items-center justify-between gap-3 flex-wrap">
             <div className="text-[12.5px] text-teal-300 flex items-start gap-2">
               <i className="fa-solid fa-piggy-bank text-[12px] mt-0.5" />
-              <span>
-                You&apos;re on monthly billing - switch to annual and save 20%.
-              </span>
+              <span>You&apos;re on monthly — switch to annual and save 20%.</span>
             </div>
             <button
               onClick={switchToAnnual}
@@ -668,62 +672,22 @@ export default function PlanTab() {
             </button>
           </div>
         )}
+
+        {/* Cancel - intentionally quiet, at the very bottom, behind a flow. */}
+        {plan?.hasSubscription && !scheduledCancel && (
+          <div className="pt-2 mt-1 border-t border-white/[0.06] flex justify-center">
+            <button
+              onClick={() => {
+                setCancelError(null);
+                setCancelOpen(true);
+              }}
+              className="text-[12px] text-white/35 hover:text-white/60 transition cursor-pointer py-1"
+            >
+              Cancel membership
+            </button>
+          </div>
+        )}
       </div>
-
-      {/* Separator - a horizontal rule on mobile, a full-height rule on
-          desktop between the two columns. */}
-      <div className="h-px w-full md:h-auto md:w-px bg-white/10 shrink-0" />
-
-      {/* Right column: what's included on the current plan. */}
-      <div className="md:w-[300px] shrink-0">
-        <div className="text-[11px] tracking-[0.08em] text-white/45 font-medium mb-3">
-          {isPro ? "Plan includes" : "What's included"}
-        </div>
-        <div className="flex flex-col gap-2.5">
-          {(isPro ? [...INCLUDED_FREE, ...PRO_ADDS] : INCLUDED_FREE).map((f) => (
-            <div key={f} className="flex items-start gap-2.5 text-[13px]">
-              <i className="fa-solid fa-check text-teal-300 text-[11px] mt-[3px]" />
-              <span className="text-white/85">{f}</span>
-            </div>
-          ))}
-
-          {!isPro && (
-            <>
-              <div className="h-px bg-white/10 my-1.5" />
-              <div className="text-[11px] tracking-[0.08em] text-white/40 font-medium">
-                Pro adds
-              </div>
-              {PRO_ADDS.map((f) => (
-                <div
-                  key={f}
-                  className="flex items-start gap-2.5 text-[13px] text-white/45"
-                >
-                  <i className="fa-solid fa-lock text-white/30 text-[10px] mt-[3px]" />
-                  <span>{f}</span>
-                </div>
-              ))}
-              <Link
-                href="/pricing"
-                className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[13px] font-medium cursor-pointer w-fit"
-              >
-                <i className="fa-solid fa-arrow-up text-[11px]" />
-                Upgrade to Pro
-              </Link>
-            </>
-          )}
-        </div>
-      </div>
-
-      {cardSecret && (
-        <BillingCardModal
-          clientSecret={cardSecret}
-          onClose={() => setCardSecret(null)}
-          onSaved={() => {
-            setCardSecret(null);
-            loadBilling();
-          }}
-        />
-      )}
-    </div>
-  );
+    );
+  }
 }
