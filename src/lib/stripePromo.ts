@@ -20,7 +20,8 @@ type CouponLike = {
   valid?: boolean;
 };
 
-function labelFromCoupon(c: CouponLike): string {
+function labelFromCoupon(c: CouponLike | null | undefined): string {
+  if (!c) return "Discount applied";
   const amount =
     c.percent_off != null
       ? `${c.percent_off}% off`
@@ -59,10 +60,21 @@ export async function resolvePromo(
       pc = all.data.find((p) => (p.code ?? "").toUpperCase() === wanted) ?? null;
     }
     if (pc) {
-      const c = (pc as unknown as { coupon: CouponLike }).coupon;
+      // The promo code's coupon may come back as a full object, as a bare id
+      // string, or not at all depending on the API version - normalise it so
+      // the label never crashes and stays accurate when possible.
+      const rawCoupon = (pc as unknown as { coupon?: unknown }).coupon;
+      let coupon: CouponLike | undefined;
+      if (rawCoupon && typeof rawCoupon === "object") {
+        coupon = rawCoupon as CouponLike;
+      } else if (typeof rawCoupon === "string") {
+        coupon = (await stripe.coupons
+          .retrieve(rawCoupon)
+          .catch(() => undefined)) as unknown as CouponLike | undefined;
+      }
       return {
         discount: { promotion_code: pc.id },
-        label: labelFromCoupon(c),
+        label: labelFromCoupon(coupon),
         code: pc.code,
       };
     }
