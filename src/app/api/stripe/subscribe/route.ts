@@ -11,6 +11,7 @@ import {
   type BillingCycle,
 } from "@/lib/stripe";
 import { syncSubscriptionToUser } from "@/lib/stripeSync";
+import { resolvePromo } from "@/lib/stripePromo";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -89,22 +90,17 @@ export async function POST(req: NextRequest) {
     /* non-fatal - the create below is still safe */
   }
 
-  // Resolve the promo code to a discount, if one was supplied.
+  // Resolve the promo/coupon code to a discount, if one was supplied.
   let discounts: Stripe.SubscriptionCreateParams.Discount[] | undefined;
   if (promoCode) {
-    const list = await stripe.promotionCodes.list({
-      code: promoCode,
-      active: true,
-      limit: 1,
-    });
-    const pc = list.data[0];
-    if (!pc) {
+    const resolved = await resolvePromo(stripe, promoCode);
+    if (!resolved) {
       return NextResponse.json(
         { error: "That promo code isn't valid." },
         { status: 400 },
       );
     }
-    discounts = [{ promotion_code: pc.id }];
+    discounts = [resolved.discount];
   }
 
   let sub: Stripe.Subscription;
