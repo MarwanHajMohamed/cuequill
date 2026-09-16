@@ -856,3 +856,24 @@ body {
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
   cursor: pointer;
 }
+
+/* One-time coin-flip spin for the crown on the "Upgrade to Pro" button,
+   played when the button mounts (on load). */
+@keyframes crown-spin-in {
+  from {
+    transform: rotateY(0deg);
+  }
+  to {
+    transform: rotateY(360deg);
+  }
+}
+.crown-spin-in {
+  display: inline-block;
+  transform-style: preserve-3d;
+  animation: crown-spin-in 0.9s ease-out 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .crown-spin-in {
+    animation: none;
+  }
+}
