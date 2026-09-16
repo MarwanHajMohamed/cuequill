@@ -4,6 +4,11 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useChatUsage } from "@/hooks/useChatUsage";
+import BillingCardModal from "./BillingCardModal";
+import type {
+  BillingCard,
+  BillingInvoice,
+} from "@/app/api/stripe/billing/route";
 
 // Current plan + upgrade/cancel controls, backed by Stripe.
 //
@@ -107,10 +112,17 @@ export default function PlanTab() {
 
   const [confirming, setConfirming] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [resuming, setResuming] = useState(false);
   const [switching, setSwitching] = useState(false);
-  const [portalLoading, setPortalLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [justCancelled, setJustCancelled] = useState(false);
+
+  // In-app billing (replaces the Stripe portal): card on file + invoices.
+  const [card, setCard] = useState<BillingCard>(null);
+  const [invoices, setInvoices] = useState<BillingInvoice[]>([]);
+  const [billingLoaded, setBillingLoaded] = useState(false);
+  const [cardSecret, setCardSecret] = useState<string | null>(null);
+  const [openingCard, setOpeningCard] = useState(false);
 
   const loadPlan = useCallback(async () => {
     try {
@@ -124,6 +136,29 @@ export default function PlanTab() {
   useEffect(() => {
     loadPlan();
   }, [loadPlan]);
+
+  // Card + invoices, once we know there's a billing account to show.
+  const loadBilling = useCallback(async () => {
+    try {
+      const r = await fetch("/api/stripe/billing", { cache: "no-store" });
+      if (r.ok) {
+        const d = (await r.json()) as {
+          card: BillingCard;
+          invoices: BillingInvoice[];
+        };
+        setCard(d.card);
+        setInvoices(d.invoices ?? []);
+      }
+    } catch {
+      // Non-fatal - the rest of the panel still works.
+    } finally {
+      setBillingLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (plan?.hasSubscription) loadBilling();
+  }, [plan?.hasSubscription, loadBilling]);
 
   // The plan GET reconciles against Stripe server-side (both directions). If
   // the reconciled DB value disagrees with the session flag (which drives the
@@ -250,22 +285,48 @@ export default function PlanTab() {
     })();
   }, [loadPlan, update]);
 
-  const openPortal = async () => {
-    if (portalLoading) return;
-    setPortalLoading(true);
+  // Undo a scheduled cancellation in-app (replaces the portal's reactivate).
+  const handleResume = async () => {
+    if (resuming) return;
+    setResuming(true);
     setError(null);
     try {
-      const r = await fetch("/api/stripe/portal", { method: "POST" });
+      const r = await fetch("/api/user/plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "resume" }),
+      });
       const d = await r.json().catch(() => ({}));
-      if (r.ok && d.url) {
-        window.location.href = d.url;
+      if (!r.ok) {
+        setError(d.error ?? "Couldn't resume. Try again?");
         return;
       }
-      setError(d.error ?? "Couldn't open billing. Try again?");
+      await loadPlan();
     } catch {
       setError("Network error. Try again?");
     } finally {
-      setPortalLoading(false);
+      setResuming(false);
+    }
+  };
+
+  // Open the native card-update modal: fetch a SetupIntent, then Elements
+  // collects and confirms the card.
+  const openCardModal = async () => {
+    if (openingCard) return;
+    setOpeningCard(true);
+    setError(null);
+    try {
+      const r = await fetch("/api/stripe/setup-intent", { method: "POST" });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || !d.clientSecret) {
+        setError(d.error ?? "Couldn't start the card update. Try again?");
+        return;
+      }
+      setCardSecret(d.clientSecret as string);
+    } catch {
+      setError("Network error. Try again?");
+    } finally {
+      setOpeningCard(false);
     }
   };
 
@@ -344,14 +405,17 @@ export default function PlanTab() {
                 Upgrade to Pro
               </Link>
             ) : scheduledCancel ? (
-              // Already scheduled to cancel - offer resume/card management
-              // via the Stripe portal instead of another cancel button.
+              // Already scheduled to cancel - offer a native "resume" that
+              // clears the pending cancellation so it renews again.
               <button
-                onClick={openPortal}
-                disabled={portalLoading}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/15 bg-white/[0.03] text-white/80 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer disabled:opacity-50"
+                onClick={handleResume}
+                disabled={resuming}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[13px] font-medium cursor-pointer disabled:opacity-50"
               >
-                {portalLoading ? "Opening…" : "Manage billing"}
+                {resuming && (
+                  <i className="fa-solid fa-circle-notch animate-spin text-[11px]" />
+                )}
+                {resuming ? "Resuming…" : "Resume plan"}
               </button>
             ) : confirming ? (
               <div className="flex items-center gap-1.5 text-[12.5px] text-white/75">
@@ -375,25 +439,16 @@ export default function PlanTab() {
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={openPortal}
-                  disabled={portalLoading}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/15 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer disabled:opacity-50"
-                >
-                  {portalLoading ? "Opening…" : "Manage billing"}
-                </button>
-                <button
-                  onClick={() => {
-                    setConfirming(true);
-                    setJustCancelled(false);
-                    setError(null);
-                  }}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/15 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer"
-                >
-                  Cancel Pro
-                </button>
-              </div>
+              <button
+                onClick={() => {
+                  setConfirming(true);
+                  setJustCancelled(false);
+                  setError(null);
+                }}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/15 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer"
+              >
+                Cancel Pro
+              </button>
             )}
           </div>
         </div>
@@ -404,7 +459,7 @@ export default function PlanTab() {
           <i className="fa-solid fa-circle-info text-[12px] mt-0.5" />
           <span>
             Your Pro plan is set to end on {periodEnd}. You keep full access
-            until then - reactivate any time from “Manage billing”.
+            until then - hit “Resume plan” any time to keep it.
           </span>
         </div>
       )}
@@ -496,6 +551,99 @@ export default function PlanTab() {
         </div>
       )}
 
+      {/* Payment method - the card on file, updated in-app via Elements. */}
+      {plan?.hasSubscription && (
+        <div>
+          <div className="text-[11px] tracking-[0.08em] text-white/45 font-medium mb-3">
+            Payment method
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/[0.02] px-4 py-3.5 flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-9 h-9 rounded-lg bg-white/[0.05] border border-white/10 flex items-center justify-center text-white/70">
+                <i className="fa-solid fa-credit-card text-[13px]" />
+              </div>
+              <div className="min-w-0">
+                {card ? (
+                  <>
+                    <div className="text-[13px] text-white/85">
+                      <span className="capitalize">{card.brand}</span> ••••{" "}
+                      {card.last4}
+                    </div>
+                    <div className="text-[11.5px] text-white/45 tabular-nums">
+                      Expires{" "}
+                      {String(card.expMonth).padStart(2, "0")}/{card.expYear}
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-[12.5px] text-white/55">
+                    {billingLoaded ? "No card on file" : "Loading…"}
+                  </div>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={openCardModal}
+              disabled={openingCard}
+              className="shrink-0 inline-flex items-center gap-2 px-3.5 py-2 rounded-full border border-white/15 bg-white/[0.03] text-white/80 hover:bg-white/[0.06] hover:text-white transition text-[12.5px] font-medium cursor-pointer disabled:opacity-50"
+            >
+              {openingCard && (
+                <i className="fa-solid fa-circle-notch animate-spin text-[10px]" />
+              )}
+              {card ? "Update card" : "Add card"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Invoices - full history, each linking to Stripe's generated PDF. */}
+      {plan?.hasSubscription && invoices.length > 0 && (
+        <div>
+          <div className="text-[11px] tracking-[0.08em] text-white/45 font-medium mb-3">
+            Invoices
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/[0.02] divide-y divide-white/[0.06] overflow-hidden">
+            {invoices.map((inv) => {
+              const href = inv.invoicePdf ?? inv.hostedInvoiceUrl;
+              return (
+              <div
+                key={inv.id}
+                className="flex items-center justify-between gap-3 px-4 py-3"
+              >
+                <div className="min-w-0">
+                  <div className="text-[13px] text-white/85 tabular-nums">
+                    {fmtDate(inv.created)}
+                  </div>
+                  <div className="text-[11.5px] text-white/45 capitalize">
+                    {inv.status}
+                    {inv.number ? ` · ${inv.number}` : ""}
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className="text-[13px] text-white/85 tabular-nums">
+                    {new Intl.NumberFormat(undefined, {
+                      style: "currency",
+                      currency: inv.currency,
+                    }).format(inv.amount)}
+                  </span>
+                  {href ? (
+                    <a
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border border-white/12 bg-white/[0.03] text-white/70 hover:text-white hover:border-white/25 text-[12px] font-medium transition cursor-pointer"
+                    >
+                      <i className="fa-solid fa-download text-[10px]" />
+                      Invoice
+                    </a>
+                  ) : null}
+                </div>
+              </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Annual-savings nudge for monthly subscribers. */}
       {isPro &&
         plan?.hasSubscription &&
@@ -565,6 +713,17 @@ export default function PlanTab() {
           )}
         </div>
       </div>
+
+      {cardSecret && (
+        <BillingCardModal
+          clientSecret={cardSecret}
+          onClose={() => setCardSecret(null)}
+          onSaved={() => {
+            setCardSecret(null);
+            loadBilling();
+          }}
+        />
+      )}
     </div>
   );
 }

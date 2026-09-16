@@ -79,7 +79,11 @@ export async function POST(req: NextRequest) {
     action?: unknown;
     cycle?: unknown;
   };
-  if (body.action !== "cancel" && body.action !== "finalize-switch") {
+  if (
+    body.action !== "cancel" &&
+    body.action !== "resume" &&
+    body.action !== "finalize-switch"
+  ) {
     return NextResponse.json({ error: "Unknown action." }, { status: 400 });
   }
 
@@ -140,6 +144,43 @@ export async function POST(req: NextRequest) {
       isPro: !!fresh?.isPro,
       cycle: cycleForPrice(fresh?.stripePriceId),
     });
+  }
+
+  // Resume: undo a scheduled cancellation by clearing cancel_at_period_end
+  // on every active subscription, so it renews as normal again. Replaces the
+  // portal's "reactivate" action.
+  if (body.action === "resume") {
+    let resumedAny = false;
+    if (user.stripeCustomerId) {
+      try {
+        const list = await stripe.subscriptions.list({
+          customer: user.stripeCustomerId,
+          status: "all",
+          limit: 20,
+        });
+        const LIVE = new Set(["active", "trialing", "past_due"]);
+        for (const s of list.data) {
+          if (LIVE.has(s.status) && s.cancel_at_period_end) {
+            const updated = await stripe.subscriptions.update(s.id, {
+              cancel_at_period_end: false,
+            });
+            await syncSubscriptionToUser(updated);
+            resumedAny = true;
+          }
+        }
+      } catch (err) {
+        console.error("[plan/resume] failed", err);
+        return NextResponse.json(
+          { error: "Couldn't resume. Try again?" },
+          { status: 500 },
+        );
+      }
+    }
+    if (resumedAny) {
+      user.stripeCancelAtPeriodEnd = false;
+      await user.save();
+    }
+    return NextResponse.json({ ok: true, resumed: resumedAny });
   }
 
   // ── action === "cancel" ─────────────────────────────────────────────
