@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { withAuth } from "@/lib/withAuth";
@@ -10,14 +10,23 @@ import { withAuth } from "@/lib/withAuth";
 // the webhook lags), then refreshes the session so Pro unlocks app-wide, and
 // confirms it to the user.
 
+// Module-level so it survives remounts within a single page load. withAuth
+// briefly renders a loading state while `update()` refreshes the session,
+// which unmounts + remounts this page; a component ref would reset on that
+// remount and re-run the verify → refresh → remount cycle forever. This flag
+// resets naturally on the next full navigation to the page.
+let verifiedOnce = false;
+
 function CheckoutSuccessPage() {
   const { update } = useSession();
-  const [verified, setVerified] = useState(false);
-  const ranRef = useRef(false);
+  const [verified, setVerified] = useState(verifiedOnce);
 
   useEffect(() => {
-    if (ranRef.current) return;
-    ranRef.current = true;
+    if (verifiedOnce) {
+      setVerified(true);
+      return;
+    }
+    verifiedOnce = true;
     (async () => {
       try {
         // Force a live reconcile so the DB reflects the just-paid subscription.
@@ -34,7 +43,9 @@ function CheckoutSuccessPage() {
       }
       setVerified(true);
     })();
-  }, [update]);
+    // Run once per page load; `update` intentionally omitted.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="w-full flex justify-center min-h-screen">
