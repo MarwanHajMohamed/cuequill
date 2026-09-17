@@ -862,14 +862,15 @@ body {
    on its Y axis, then settles centred and facing front. */
 @keyframes crown-spin-in {
   0% {
-    transform: translateY(16px) rotateY(0deg);
+    transform: translateY(14px) rotateY(0deg);
     opacity: 0;
   }
-  60% {
+  40% {
     opacity: 1;
   }
-  85% {
-    transform: translateY(-4px) rotateY(1530deg);
+  50% {
+    /* fade + rise finish early; the spin keeps going */
+    transform: translateY(0) rotateY(900deg);
   }
   100% {
     transform: translateY(0) rotateY(1800deg);
@@ -879,10 +880,21 @@ body {
 .crown-spin-in {
   display: inline-block;
   transform-style: preserve-3d;
-  animation: crown-spin-in 1.3s ease-in-out 1 both;
+  animation: crown-spin-in 0.8s ease-in-out 1;
+}
+/* A single forward spin on hover. The transition lives on the hover state
+   so entering eases 0->360deg; leaving snaps back (invisible, 360 == 0) and
+   never replays the entrance animation. */
+.group:hover .crown-spin-in {
+  transform: rotateY(360deg);
+  transition: transform 0.6s ease-in-out;
 }
 @media (prefers-reduced-motion: reduce) {
   .crown-spin-in {
     animation: none;
+  }
+  .group:hover .crown-spin-in {
+    transform: none;
+    transition: none;
   }
 }

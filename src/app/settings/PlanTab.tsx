@@ -398,7 +398,7 @@ export default function PlanTab() {
             </p>
             <Link
               href="/checkout?cycle=annual"
-              className="mt-6 inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-teal-500 hover:bg-teal-400 text-[#fff] text-[15px] font-semibold transition cursor-pointer shadow-[0_10px_40px_-10px_rgba(20,184,166,0.7)]"
+              className="group mt-6 inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-teal-500 hover:bg-teal-400 text-[#fff] text-[15px] font-semibold transition cursor-pointer shadow-[0_10px_40px_-10px_rgba(20,184,166,0.7)]"
             >
               <i className="fa-solid fa-crown text-[13px] crown-spin-in" />
               Upgrade to Pro
