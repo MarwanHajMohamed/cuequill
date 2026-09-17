@@ -940,11 +940,11 @@ body {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 7px;
-  height: 7px;
+  width: 10px;
+  height: 10px;
   border-radius: 999px;
   opacity: 0;
-  animation: sb-spark 0.7s ease-out 0.4s forwards;
+  animation: sb-spark 1.6s cubic-bezier(0.16, 0.8, 0.3, 1) 0.4s forwards;
 }
 @keyframes sb-pop {
   0% {
@@ -974,14 +974,18 @@ body {
 @keyframes sb-spark {
   0% {
     opacity: 0;
-    transform: translate(-50%, -50%) rotate(var(--a)) translateY(0) scale(0.4);
+    transform: translate(-50%, -50%) rotate(var(--a)) translateY(0) scale(0.3);
   }
-  35% {
+  20% {
+    opacity: 1;
+  }
+  75% {
     opacity: 1;
   }
   100% {
     opacity: 0;
-    transform: translate(-50%, -50%) rotate(var(--a)) translateY(-58px) scale(1);
+    transform: translate(-50%, -50%) rotate(var(--a))
+      translateY(var(--dist, -120px)) scale(1);
   }
 }
 @media (prefers-reduced-motion: reduce) {

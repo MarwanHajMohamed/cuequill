@@ -10,17 +10,16 @@ import { withAuth } from "@/lib/withAuth";
 // the webhook lags), then refreshes the session so Pro unlocks app-wide, and
 // confirms it to the user.
 
-// Confetti spokes that burst out from behind the tick — angle, colour, delay.
-const SPARKS = [
-  { a: 0, c: "#2dd4bf", d: 0 },
-  { a: 45, c: "#34d399", d: 0.05 },
-  { a: 90, c: "#fbbf24", d: 0.02 },
-  { a: 135, c: "#5eead4", d: 0.07 },
-  { a: 180, c: "#34d399", d: 0.03 },
-  { a: 225, c: "#fbbf24", d: 0.06 },
-  { a: 270, c: "#2dd4bf", d: 0.01 },
-  { a: 315, c: "#6ee7b7", d: 0.08 },
-];
+// Confetti spokes that burst out from behind the tick. 16 spokes at
+// alternating distances make a fuller, wider burst; per-spoke delay staggers
+// it. angle / colour / travel distance (px) / delay (s).
+const SPARK_COLORS = ["#2dd4bf", "#34d399", "#fbbf24", "#5eead4", "#6ee7b7"];
+const SPARKS = Array.from({ length: 16 }, (_, i) => ({
+  a: i * 22.5,
+  c: SPARK_COLORS[i % SPARK_COLORS.length],
+  dist: i % 2 === 0 ? -150 : -110,
+  d: (i % 5) * 0.04,
+}));
 
 // Module-level so it survives remounts within a single page load. withAuth
 // briefly renders a loading state while `update()` refreshes the session,
@@ -87,6 +86,7 @@ function CheckoutSuccessPage() {
                   style={
                     {
                       "--a": `${s.a}deg`,
+                      "--dist": `${s.dist}px`,
                       background: s.c,
                       animationDelay: `${0.4 + s.d}s`,
                     } as React.CSSProperties
