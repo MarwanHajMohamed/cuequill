@@ -513,7 +513,7 @@ export default function PlanTab() {
         style={{ height: paneHeight, transition: "height 0.32s ease" }}
       >
         <div
-          className="flex w-[200%] transition-transform duration-300 ease-out"
+          className="flex items-start w-[200%] transition-transform duration-300 ease-out"
           style={{
             transform: showInvoices ? "translateX(-50%)" : "translateX(0%)",
           }}
