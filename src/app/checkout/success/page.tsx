@@ -10,14 +10,39 @@ import { withAuth } from "@/lib/withAuth";
 // the webhook lags), then refreshes the session so Pro unlocks app-wide, and
 // confirms it to the user.
 
-// Confetti spokes that burst out from behind the tick. 16 spokes at
-// alternating distances make a fuller, wider burst; per-spoke delay staggers
-// it. angle / colour / travel distance (px) / delay (s).
-const SPARK_COLORS = ["#2dd4bf", "#34d399", "#fbbf24", "#5eead4", "#6ee7b7"];
-const SPARKS = Array.from({ length: 16 }, (_, i) => ({
-  a: i * 22.5,
+// Confetti that bursts out from behind the tick — a mix of colours and
+// shapes (dots, squares, strips, triangles) that tumble as they fly.
+const SPARK_COLORS = [
+  "#2dd4bf", "#34d399", "#fbbf24", "#f472b6", "#818cf8",
+  "#fb923c", "#a78bfa", "#5eead4", "#f87171", "#facc15",
+];
+type SparkShape = "dot" | "square" | "strip" | "triangle";
+const SHAPES: SparkShape[] = ["dot", "square", "strip", "triangle"];
+
+function shapeStyle(shape: SparkShape, color: string): React.CSSProperties {
+  switch (shape) {
+    case "square":
+      return { width: 10, height: 10, borderRadius: 2, background: color };
+    case "strip":
+      return { width: 6, height: 15, borderRadius: 1, background: color };
+    case "triangle":
+      return {
+        width: 12,
+        height: 12,
+        background: color,
+        clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)",
+      };
+    default:
+      return { width: 10, height: 10, borderRadius: 999, background: color };
+  }
+}
+
+const SPARKS = Array.from({ length: 20 }, (_, i) => ({
+  a: i * 18, // 20 spokes around the circle
   c: SPARK_COLORS[i % SPARK_COLORS.length],
-  dist: i % 2 === 0 ? -150 : -110,
+  shape: SHAPES[i % SHAPES.length],
+  dist: i % 2 === 0 ? -155 : -115,
+  spin: (i % 2 === 0 ? 1 : -1) * (200 + (i % 4) * 90), // tumble each way
   d: (i % 5) * 0.04,
 }));
 
@@ -87,8 +112,9 @@ function CheckoutSuccessPage() {
                     {
                       "--a": `${s.a}deg`,
                       "--dist": `${s.dist}px`,
-                      background: s.c,
+                      "--spin": `${s.spin}deg`,
                       animationDelay: `${0.4 + s.d}s`,
+                      ...shapeStyle(s.shape, s.c),
                     } as React.CSSProperties
                   }
                 />

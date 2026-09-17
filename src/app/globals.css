@@ -974,7 +974,8 @@ body {
 @keyframes sb-spark {
   0% {
     opacity: 0;
-    transform: translate(-50%, -50%) rotate(var(--a)) translateY(0) scale(0.3);
+    transform: translate(-50%, -50%) rotate(var(--a)) translateY(0)
+      rotate(0deg) scale(0.3);
   }
   20% {
     opacity: 1;
@@ -984,8 +985,10 @@ body {
   }
   100% {
     opacity: 0;
+    /* rotate(--a) aims the travel direction; the trailing rotate(--spin)
+       tumbles the piece about its own centre as it flies. */
     transform: translate(-50%, -50%) rotate(var(--a))
-      translateY(var(--dist, -120px)) scale(1);
+      translateY(var(--dist, -120px)) rotate(var(--spin, 220deg)) scale(1);
   }
 }
 @media (prefers-reduced-motion: reduce) {
