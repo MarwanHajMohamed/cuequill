@@ -2,7 +2,6 @@
 
 import React from "react";
 import DashboardStats from "./components/stats/DashboardStats";
-import DashboardCueScore from "./components/stats/DashboardCueScore";
 import DashboardEquity from "./components/stats/DashboardEquity";
 import DashboardBalance from "./components/stats/DashboardBalance";
 import DashboardChallenges from "./components/stats/DashboardChallenges";
@@ -23,7 +22,6 @@ import DashboardQuillInsight from "./components/insights/DashboardQuillInsight";
 // customisable grid reads layout as an ordered list of these ids.
 export type WidgetId =
   | "glance"
-  | "cueScore"
   | "quillInsight"
   | "equity"
   | "balance"
@@ -55,13 +53,6 @@ export const WIDGETS: WidgetDef[] = [
     id: "glance",
     title: "At a glance",
     render: (userId) => <DashboardStats userId={userId} />,
-  },
-  {
-    id: "cueScore",
-    title: "Cue points",
-    render: (userId, rowSpan, colSpan) => (
-      <DashboardCueScore userId={userId} rowSpan={rowSpan} colSpan={colSpan} />
-    ),
   },
   {
     id: "quillInsight",
@@ -135,7 +126,6 @@ export const WIDGET_MAP: Record<WidgetId, WidgetDef> = Object.fromEntries(
 // win/loss - sit together at the end) rather than brick-laying.
 export const DEFAULT_LAYOUT: WidgetId[] = [
   "glance",
-  "cueScore",
   "quillInsight",
   "equity",
   "balance",
