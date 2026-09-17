@@ -10,6 +10,18 @@ import { withAuth } from "@/lib/withAuth";
 // the webhook lags), then refreshes the session so Pro unlocks app-wide, and
 // confirms it to the user.
 
+// Confetti spokes that burst out from behind the tick — angle, colour, delay.
+const SPARKS = [
+  { a: 0, c: "#2dd4bf", d: 0 },
+  { a: 45, c: "#34d399", d: 0.05 },
+  { a: 90, c: "#fbbf24", d: 0.02 },
+  { a: 135, c: "#5eead4", d: 0.07 },
+  { a: 180, c: "#34d399", d: 0.03 },
+  { a: 225, c: "#fbbf24", d: 0.06 },
+  { a: 270, c: "#2dd4bf", d: 0.01 },
+  { a: 315, c: "#6ee7b7", d: 0.08 },
+];
+
 // Module-level so it survives remounts within a single page load. withAuth
 // briefly renders a loading state while `update()` refreshes the session,
 // which unmounts + remounts this page; a component ref would reset on that
@@ -59,32 +71,52 @@ function CheckoutSuccessPage() {
       />
 
       <div className="w-full max-w-[440px] px-5 flex flex-col items-center text-center pt-[18vh] pb-24">
-        {/* Check badge */}
+        {/* Animated success badge */}
         <div className="relative">
           <div
             aria-hidden
-            className="absolute inset-0 rounded-full bg-teal-400/25 blur-2xl"
+            className="absolute inset-0 rounded-full bg-teal-400/30 blur-2xl"
           />
-          <div className="relative w-20 h-20 rounded-full bg-teal-500/15 border border-teal-400/40 flex items-center justify-center">
-            <i
-              className={`fa-solid fa-circle-check text-teal-300 text-[38px] transition-all duration-500 ${
-                verified ? "scale-100 opacity-100" : "scale-75 opacity-60"
-              }`}
-            />
-          </div>
+          {verified ? (
+            <div className="success-badge" aria-hidden>
+              <span className="ring" />
+              {SPARKS.map((s, i) => (
+                <span
+                  key={i}
+                  className="spark"
+                  style={
+                    {
+                      "--a": `${s.a}deg`,
+                      background: s.c,
+                      animationDelay: `${0.4 + s.d}s`,
+                    } as React.CSSProperties
+                  }
+                />
+              ))}
+              <div className="disc">
+                <svg viewBox="0 0 52 52">
+                  <path className="check-path" d="M14 27l7.5 7.5L38 18" />
+                </svg>
+              </div>
+            </div>
+          ) : (
+            <div className="relative w-[104px] h-[104px] rounded-full bg-teal-500/10 border border-teal-400/30 flex items-center justify-center">
+              <i className="fa-solid fa-circle-notch animate-spin text-teal-300 text-[30px]" />
+            </div>
+          )}
         </div>
 
-        <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-teal-500/30 bg-teal-500/10 px-3 py-1 text-[11px] font-medium text-teal-300">
+        <div className="mt-7 inline-flex items-center gap-2 rounded-full border border-teal-500/30 bg-teal-500/10 px-3 py-1 text-[11px] font-medium text-teal-300">
           <i className="fa-solid fa-crown text-[10px]" />
           Cuequill Pro
         </div>
 
         <h1 className="mt-4 text-[26px] font-semibold tracking-tight">
-          {verified ? "Payment verified — Pro activated" : "Verifying payment…"}
+          {verified ? "You're Pro." : "Verifying payment…"}
         </h1>
         <p className="mt-2 text-[14px] text-white/55 leading-relaxed">
           {verified
-            ? "You're all set. Quill AI, auto-sync, unlimited history and every Pro tool are unlocked on your account."
+            ? "Payment verified. Welcome to Cuequill Pro."
             : "Confirming your subscription with Stripe. This only takes a moment."}
         </p>
 
