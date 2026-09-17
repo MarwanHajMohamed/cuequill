@@ -26,7 +26,7 @@ export async function GET() {
   await connectDb();
   const [user, trades] = await Promise.all([
     User.findById(session.user.id).select(
-      "currency startingBalance riskPerTrade avatarColor avatarFrame accentColor cardSkin equippedTitle xp isPro proManualOverride stripeCurrentPeriodEnd stripeCancelAtPeriodEnd",
+      "currency startingBalance simulatedStartingBalance riskPerTrade avatarColor avatarFrame accentColor cardSkin equippedTitle xp isPro proManualOverride stripeCurrentPeriodEnd stripeCancelAtPeriodEnd",
     ),
     // Just the dates + count needed to derive activity XP (real trades only).
     Trade.find({
@@ -43,6 +43,7 @@ export async function GET() {
   return NextResponse.json({
     currency: user.currency ?? "USD",
     startingBalance: user.startingBalance ?? 0,
+    simulatedStartingBalance: user.simulatedStartingBalance ?? 0,
     riskPerTrade: user.riskPerTrade ?? null,
     avatarColor: user.avatarColor ?? "teal",
     avatarFrame: user.avatarFrame ?? "none",
@@ -80,6 +81,7 @@ export async function PATCH(req: Request) {
     newPassword?: string;
     currency?: string;
     startingBalance?: number;
+    simulatedStartingBalance?: number;
     riskPerTrade?: number | null;
     avatarColor?: string;
     avatarFrame?: string;
@@ -184,6 +186,16 @@ export async function PATCH(req: Request) {
     }
     user.startingBalance = n;
   }
+  if (body.simulatedStartingBalance !== undefined) {
+    const n = Number(body.simulatedStartingBalance);
+    if (!Number.isFinite(n)) {
+      return NextResponse.json(
+        { error: "Simulated starting balance must be a number" },
+        { status: 400 },
+      );
+    }
+    user.simulatedStartingBalance = n;
+  }
   if (body.riskPerTrade !== undefined) {
     if (body.riskPerTrade === null || body.riskPerTrade === ("" as unknown)) {
       user.riskPerTrade = undefined;
@@ -265,6 +277,7 @@ export async function PATCH(req: Request) {
     email: user.email,
     currency: user.currency,
     startingBalance: user.startingBalance,
+    simulatedStartingBalance: user.simulatedStartingBalance ?? 0,
     riskPerTrade: user.riskPerTrade ?? null,
     avatarColor: user.avatarColor,
     avatarFrame: user.avatarFrame,

@@ -58,7 +58,7 @@ export async function GET() {
 
   await connectDb();
   const user = await User.findById(session.user.id).select(
-    "dashboardLayout dashboardGlanceTiles dashboardWidgetSizes dashboardWidgetRows isPro dashInsightMigrated dashBalanceMigrated dashChallengesMigrated",
+    "dashboardLayout dashboardGlanceTiles dashboardWidgetSizes dashboardWidgetRows simDashboardLayout simDashboardWidgetSizes simDashboardWidgetRows isPro dashInsightMigrated dashBalanceMigrated dashChallengesMigrated",
   );
   if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -136,6 +136,10 @@ export async function GET() {
     glanceTiles: user.dashboardGlanceTiles ?? null,
     widgetSizes: user.dashboardWidgetSizes ?? null,
     widgetRows: user.dashboardWidgetRows ?? null,
+    // Separate saved layout for simulated (paper) mode.
+    simLayout: user.simDashboardLayout ?? null,
+    simWidgetSizes: user.simDashboardWidgetSizes ?? null,
+    simWidgetRows: user.simDashboardWidgetRows ?? null,
   });
 }
 
@@ -152,11 +156,22 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { layout, glanceTiles, widgetSizes, widgetRows } = (body ?? {}) as {
+  const {
+    layout,
+    glanceTiles,
+    widgetSizes,
+    widgetRows,
+    simLayout,
+    simWidgetSizes,
+    simWidgetRows,
+  } = (body ?? {}) as {
     layout?: unknown;
     glanceTiles?: unknown;
     widgetSizes?: unknown;
     widgetRows?: unknown;
+    simLayout?: unknown;
+    simWidgetSizes?: unknown;
+    simWidgetRows?: unknown;
   };
 
   const update: {
@@ -164,6 +179,9 @@ export async function PUT(req: NextRequest) {
     dashboardGlanceTiles?: string[];
     dashboardWidgetSizes?: Record<string, number>;
     dashboardWidgetRows?: Record<string, number>;
+    simDashboardLayout?: string[];
+    simDashboardWidgetSizes?: Record<string, number>;
+    simDashboardWidgetRows?: Record<string, number>;
   } = {};
 
   if (layout !== undefined) {
@@ -202,6 +220,33 @@ export async function PUT(req: NextRequest) {
     }
     update.dashboardWidgetRows = widgetRows;
   }
+  if (simLayout !== undefined) {
+    if (!isIdArray(simLayout)) {
+      return NextResponse.json(
+        { error: "simLayout must be an array of ids" },
+        { status: 400 },
+      );
+    }
+    update.simDashboardLayout = simLayout;
+  }
+  if (simWidgetSizes !== undefined) {
+    if (!isSizeMap(simWidgetSizes)) {
+      return NextResponse.json(
+        { error: "simWidgetSizes must be a map of id → 1|2" },
+        { status: 400 },
+      );
+    }
+    update.simDashboardWidgetSizes = simWidgetSizes;
+  }
+  if (simWidgetRows !== undefined) {
+    if (!isRowMap(simWidgetRows)) {
+      return NextResponse.json(
+        { error: "simWidgetRows must be a map of id → 1|2|3" },
+        { status: 400 },
+      );
+    }
+    update.simDashboardWidgetRows = simWidgetRows;
+  }
 
   if (Object.keys(update).length === 0) {
     return NextResponse.json(
@@ -214,7 +259,7 @@ export async function PUT(req: NextRequest) {
   const user = await User.findByIdAndUpdate(session.user.id, update, {
     new: true,
   }).select(
-    "dashboardLayout dashboardGlanceTiles dashboardWidgetSizes dashboardWidgetRows",
+    "dashboardLayout dashboardGlanceTiles dashboardWidgetSizes dashboardWidgetRows simDashboardLayout simDashboardWidgetSizes simDashboardWidgetRows",
   );
   if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -225,5 +270,8 @@ export async function PUT(req: NextRequest) {
     glanceTiles: user.dashboardGlanceTiles ?? null,
     widgetSizes: user.dashboardWidgetSizes ?? null,
     widgetRows: user.dashboardWidgetRows ?? null,
+    simLayout: user.simDashboardLayout ?? null,
+    simWidgetSizes: user.simDashboardWidgetSizes ?? null,
+    simWidgetRows: user.simDashboardWidgetRows ?? null,
   });
 }

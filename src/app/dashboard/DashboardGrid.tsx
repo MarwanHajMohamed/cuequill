@@ -80,25 +80,48 @@ function sanitizeRows(raw: unknown): Record<WidgetId, RowSpan> {
   return out;
 }
 
-export default function DashboardGrid({ userId }: { userId: string }) {
-  const [layout, persist] = usePersistedField<WidgetId[]>(
-    LAYOUT_KEY,
-    "layout",
-    DEFAULT_LAYOUT,
+// Widgets that don't apply to simulated (paper) mode - they're tied to the
+// progression / goal-setting surfaces that are hidden while simulating.
+const SIM_HIDDEN_WIDGETS = new Set<WidgetId>(["challenges", "goals"]);
+const SIM_DEFAULT_LAYOUT: WidgetId[] = DEFAULT_LAYOUT.filter(
+  (id) => !SIM_HIDDEN_WIDGETS.has(id),
+);
+
+function DashboardGridInner({
+  userId,
+  simulated,
+}: {
+  userId: string;
+  simulated: boolean;
+}) {
+  // Simulated mode keeps a completely separate saved layout (different
+  // storage keys + server fields) so customising one never affects the other.
+  const defaultLayout = simulated ? SIM_DEFAULT_LAYOUT : DEFAULT_LAYOUT;
+  const isAllowed = (id: WidgetId) =>
+    !simulated || !SIM_HIDDEN_WIDGETS.has(id);
+
+  const [layoutRaw, persist] = usePersistedField<WidgetId[]>(
+    simulated ? `${LAYOUT_KEY}:sim` : LAYOUT_KEY,
+    simulated ? "simLayout" : "layout",
+    defaultLayout,
     sanitizeLayout,
   );
   const [sizes, persistSizes] = usePersistedField<Record<WidgetId, ColSpan>>(
-    SIZES_KEY,
-    "widgetSizes",
+    simulated ? `${SIZES_KEY}:sim` : SIZES_KEY,
+    simulated ? "simWidgetSizes" : "widgetSizes",
     {} as Record<WidgetId, ColSpan>,
     sanitizeSizes,
   );
   const [rows, persistRows] = usePersistedField<Record<WidgetId, RowSpan>>(
-    ROWS_KEY,
-    "widgetRows",
+    simulated ? `${ROWS_KEY}:sim` : ROWS_KEY,
+    simulated ? "simWidgetRows" : "widgetRows",
     {} as Record<WidgetId, RowSpan>,
     sanitizeRows,
   );
+
+  // Never render a widget that's hidden in the current mode, even if an old
+  // saved layout still lists it.
+  const layout = layoutRaw.filter(isAllowed);
 
   const [editing, setEditing] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
@@ -112,7 +135,9 @@ export default function DashboardGrid({ userId }: { userId: string }) {
     }),
   );
 
-  const disabledWidgets = WIDGETS.filter((w) => !layout.includes(w.id));
+  const disabledWidgets = WIDGETS.filter(
+    (w) => !layout.includes(w.id) && isAllowed(w.id),
+  );
 
   const setWidgetSize = (id: WidgetId, span: ColSpan) => {
     if ((sizes[id] ?? 1) === span) return;
@@ -144,7 +169,7 @@ export default function DashboardGrid({ userId }: { userId: string }) {
   };
 
   const resetLayout = () => {
-    persist([...DEFAULT_LAYOUT]);
+    persist([...defaultLayout]);
     persistSizes({} as Record<WidgetId, ColSpan>);
     persistRows({} as Record<WidgetId, RowSpan>);
   };
@@ -253,6 +278,28 @@ export default function DashboardGrid({ userId }: { userId: string }) {
         </div>
       )}
     </div>
+  );
+}
+
+// Resolve the simulated flag on the client before rendering the grid, then
+// mount a fresh inner keyed by mode so its persisted-layout hooks read the
+// correct (real vs simulated) storage keys and server fields from the very
+// first render. The toggle reloads the page, so this runs once per load.
+export default function DashboardGrid({ userId }: { userId: string }) {
+  const [simulated, setSimulated] = useState<boolean | null>(null);
+  React.useEffect(() => {
+    setSimulated(
+      typeof window !== "undefined" &&
+        localStorage.getItem("simulated") === "true",
+    );
+  }, []);
+  if (simulated === null) return null;
+  return (
+    <DashboardGridInner
+      key={simulated ? "sim" : "real"}
+      userId={userId}
+      simulated={simulated}
+    />
   );
 }
 

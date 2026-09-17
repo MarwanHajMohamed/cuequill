@@ -16,7 +16,16 @@ import {
 // realized trade P/L), its change over the tracked window, and a
 // sparkline - linking through to the full /balance page.
 export default function DashboardBalance() {
-  const { points, loading, hasData } = useBalanceTimeline();
+  // Simulated mode is fixed for the page load (the nav toggle reloads), so
+  // a one-shot read is enough.
+  const [simulated, setSimulated] = useState(false);
+  React.useEffect(() => {
+    setSimulated(
+      typeof window !== "undefined" &&
+        localStorage.getItem("simulated") === "true",
+    );
+  }, []);
+  const { points, loading, hasData } = useBalanceTimeline(simulated);
   // Index of the point under the cursor (null = not hovering).
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
 

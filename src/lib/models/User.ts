@@ -25,6 +25,9 @@ export interface IUser extends Document {
   // trade; `avatarColor` is a preset key for the nav avatar.
   currency?: string;
   startingBalance?: number;
+  // Opening balance for simulated (paper) mode - kept separate from the
+  // real starting balance so the simulated Balance page has its own base.
+  simulatedStartingBalance?: number;
   riskPerTrade?: number;
   avatarColor?: string;
   avatarFrame?: string;
@@ -124,6 +127,12 @@ export interface IUser extends Document {
   // Per-widget row span (1 = one row tall, 2 = two rows tall) keyed by
   // widget id. Missing id → default span of 1.
   dashboardWidgetRows?: Record<string, number>;
+  // Separate dashboard customisation for simulated (paper) mode, so the
+  // simulated dashboard keeps its own layout / sizes / rows independent of
+  // the real one.
+  simDashboardLayout?: string[];
+  simDashboardWidgetSizes?: Record<string, number>;
+  simDashboardWidgetRows?: Record<string, number>;
   // Cached "Insight of the day" for the dashboard Quill widget. Generated
   // once per local day (see dashInsightDate) so it stays stable through the
   // day and doesn't burn the Quill token budget on every dashboard load.
@@ -201,6 +210,7 @@ const UserSchema = new Schema<IUser>({
   timezone: { type: String, default: null },
   currency: { type: String, default: "USD" },
   startingBalance: { type: Number, default: 0 },
+  simulatedStartingBalance: { type: Number, default: 0 },
   riskPerTrade: { type: Number },
   avatarColor: { type: String, default: "teal" },
   avatarFrame: { type: String, default: "none" },
@@ -260,6 +270,9 @@ const UserSchema = new Schema<IUser>({
   dashboardGlanceTiles: { type: [String], default: undefined },
   dashboardWidgetSizes: { type: Schema.Types.Mixed, default: undefined },
   dashboardWidgetRows: { type: Schema.Types.Mixed, default: undefined },
+  simDashboardLayout: { type: [String], default: undefined },
+  simDashboardWidgetSizes: { type: Schema.Types.Mixed, default: undefined },
+  simDashboardWidgetRows: { type: Schema.Types.Mixed, default: undefined },
   dashInsightDate: { type: String, default: "" },
   dashInsightText: { type: String, default: "" },
   dashInsightAt: { type: Date },

@@ -270,7 +270,7 @@ export default function Navbar() {
 
   // Secondary destinations shown in the bottom-sheet "More" menu.
   // Quill AI (chat) lives in the bottom tab bar, so it's not repeated here.
-  const moreItems = [
+  const moreItemsAll = [
     {
       icon: "fa-regular fa-circle-check",
       label: "Affirmations",
@@ -318,7 +318,7 @@ export default function Navbar() {
   // an unlabeled divider line. Each former group member is now its own
   // top-level nav item.
   type NavLink = { icon: string; label: string; slug: string };
-  const navSections: NavLink[][] = [
+  const navSectionsAll: NavLink[][] = [
     [
       { icon: "fa-solid fa-house", label: "Dashboard", slug: "/" },
       {
@@ -375,6 +375,25 @@ export default function Navbar() {
       },
     ],
   ];
+
+  // Simulated (paper) trading is a sandbox for practising trades - the
+  // progression, competitive and reporting surfaces don't apply to it, so
+  // hide them while simulated mode is on.
+  const SIM_HIDDEN_SLUGS = new Set([
+    "goals",
+    "challenges",
+    "trophies",
+    "leaderboard",
+    "reports",
+  ]);
+  const moreItems = simulated
+    ? moreItemsAll.filter((m) => !SIM_HIDDEN_SLUGS.has(m.slug))
+    : moreItemsAll;
+  const navSections = simulated
+    ? navSectionsAll
+        .map((s) => s.filter((i) => !SIM_HIDDEN_SLUGS.has(i.slug)))
+        .filter((s) => s.length > 0)
+    : navSectionsAll;
 
   /* ---------------- EFFECTS ---------------- */
 

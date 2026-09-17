@@ -20,17 +20,22 @@ const isoDay = (d: string | Date) =>
 // accumulated in date order. Because it recomputes from all events each
 // time, a back-dated deposit correctly shifts every later day - including
 // today's balance - without touching the trades.
-export function useBalanceTimeline() {
+export function useBalanceTimeline(simulated = false) {
   const { data: session } = useSession();
   const userId = session?.user?.id;
-  // Real money only - simulated trades never affect the account balance.
+  // Trades and transactions are scoped to the active mode: the real
+  // balance uses real trades + real cash flows; the simulated (paper)
+  // balance uses simulated trades + simulated cash flows.
   const { data: trades = [], isLoading: loadingTrades } = useTrades(
     userId,
-    false,
+    simulated,
   );
-  const { data: transactions = [], isLoading: loadingTx } = useTransactions();
+  const { data: transactions = [], isLoading: loadingTx } =
+    useTransactions(simulated);
   const { data: profile } = useProfile();
-  const startingBalance = profile?.startingBalance ?? 0;
+  const startingBalance = simulated
+    ? (profile?.simulatedStartingBalance ?? 0)
+    : (profile?.startingBalance ?? 0);
 
   const points = useMemo<BalancePoint[]>(() => {
     const flowByDay = new Map<string, number>();

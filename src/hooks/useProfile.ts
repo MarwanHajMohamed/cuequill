@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 export type Profile = {
   currency: string;
   startingBalance: number;
+  simulatedStartingBalance: number;
   riskPerTrade: number | null;
   avatarColor: string;
   avatarFrame: string;

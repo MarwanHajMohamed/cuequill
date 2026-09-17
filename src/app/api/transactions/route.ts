@@ -13,16 +13,24 @@ type TxLean = {
   date: Date;
   amount: number;
   type: "DEPOSIT" | "WITHDRAW" | "ADJUST";
+  simulated?: boolean;
 };
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   await connectDb();
 
-  const transactions = await Transaction.find({ userID: session.user.id })
+  // Simulated (paper) transactions are a separate ledger from real money.
+  const simulated = req.nextUrl.searchParams.get("simulated") === "true";
+
+  const transactions = await Transaction.find({
+    userID: session.user.id,
+    // Legacy rows predate the field; treat missing as real (false).
+    simulated: simulated ? true : { $ne: true },
+  })
     .sort({ date: 1 })
     .lean<TxLean[]>();
 
@@ -32,6 +40,7 @@ export async function GET() {
     date: t.date,
     amount: t.amount,
     type: t.type,
+    simulated: !!t.simulated,
   }));
 
   return NextResponse.json(timeline);
@@ -45,7 +54,7 @@ export async function POST(req: NextRequest) {
   await connectDb();
 
   try {
-    const { type, amount, date } = await req.json();
+    const { type, amount, date, simulated } = await req.json();
 
     if (!type || typeof amount !== "number" || !date) {
       return NextResponse.json(
@@ -72,6 +81,7 @@ export async function POST(req: NextRequest) {
       type,
       amount: type === "ADJUST" ? amount : Math.abs(amount),
       date: new Date(date),
+      simulated: !!simulated,
     });
 
     return NextResponse.json({ transaction }, { status: 201 });

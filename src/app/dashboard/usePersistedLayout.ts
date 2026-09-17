@@ -18,7 +18,14 @@ const ENDPOINT = "/api/user/dashboard-layout";
 //              stable (module-level) function.
 export function usePersistedField<T>(
   storageKey: string,
-  field: "layout" | "glanceTiles" | "widgetSizes" | "widgetRows",
+  field:
+    | "layout"
+    | "glanceTiles"
+    | "widgetSizes"
+    | "widgetRows"
+    | "simLayout"
+    | "simWidgetSizes"
+    | "simWidgetRows",
   fallback: T,
   sanitize: (raw: unknown) => T,
 ): [T, (next: T) => void] {

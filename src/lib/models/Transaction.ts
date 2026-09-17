@@ -9,6 +9,10 @@ export interface ITransaction extends Document {
   type: "DEPOSIT" | "WITHDRAW" | "ADJUST";
   amount: number;
   date: Date;
+  // Simulated (paper) transactions live in their own ledger - the real
+  // Balance page ignores them and the simulated Balance page only shows
+  // them, so play money never touches the real account balance.
+  simulated: boolean;
 }
 
 const TransactionSchema = new Schema<ITransaction>({
@@ -16,6 +20,7 @@ const TransactionSchema = new Schema<ITransaction>({
   type: { type: String, enum: ["DEPOSIT", "WITHDRAW", "ADJUST"], required: true },
   amount: { type: Number, required: true },
   date: { type: Date, default: Date.now },
+  simulated: { type: Boolean, default: false },
 });
 
 export const Transaction =

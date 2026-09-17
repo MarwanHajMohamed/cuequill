@@ -36,8 +36,14 @@ const isoDay = (d: string) => new Date(d).toISOString().split("T")[0];
 
 function Page() {
   const qc = useQueryClient();
-  const { points, loading, hasData } = useBalanceTimeline();
-  const { data: transactions = [] } = useTransactions();
+  // Simulated mode is fixed for the page load (the nav toggle reloads).
+  const [simulated] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      localStorage.getItem("simulated") === "true",
+  );
+  const { points, loading, hasData } = useBalanceTimeline(simulated);
+  const { data: transactions = [] } = useTransactions(simulated);
 
   const [range, setRange] = useState<Range>("6M");
   const [mode, setMode] = useState<Mode>("balance");
@@ -131,7 +137,8 @@ function Page() {
     [filtered, activeKey, hoverIndex],
   );
 
-  const refresh = () => qc.invalidateQueries({ queryKey: ["transactions"] });
+  const refresh = () =>
+    qc.invalidateQueries({ queryKey: ["transactions", simulated] });
 
   const handleAdd = async () => {
     const amt = Number(amount);
@@ -164,7 +171,12 @@ function Page() {
         const res = await fetch("/api/transactions", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ type: "ADJUST", amount: delta, date }),
+          body: JSON.stringify({
+            type: "ADJUST",
+            amount: delta,
+            date,
+            simulated,
+          }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "Failed to save");
@@ -193,7 +205,7 @@ function Page() {
       const res = await fetch("/api/transactions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: txType, amount: amt, date }),
+        body: JSON.stringify({ type: txType, amount: amt, date, simulated }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Failed to save");
@@ -225,11 +237,20 @@ function Page() {
         />
 
         {/* Header */}
-        <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight">
-          Balance
-        </h1>
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight">
+            Balance
+          </h1>
+          {simulated && (
+            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full border border-amber-500/25 bg-amber-500/10 text-amber-300">
+              Simulated
+            </span>
+          )}
+        </div>
         <p className="mt-1.5 text-[13px] md:text-sm text-white/55 max-w-xl">
-          Your account balance over time.
+          {simulated
+            ? "Your simulated (paper) balance over time."
+            : "Your account balance over time."}
         </p>
 
         {status && (

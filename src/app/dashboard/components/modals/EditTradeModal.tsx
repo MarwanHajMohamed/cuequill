@@ -95,9 +95,16 @@ export default function EditTradeModal({
   };
   const removeTag = (label: string) =>
     setTags((prev) => prev.filter((t) => t !== label));
-  const [simulated, setSimulated] = useState<boolean>(
-    initialTrade?.simulated || false,
-  );
+  // Editing an existing trade keeps its own flag; a brand-new trade defaults
+  // to whatever mode the app is in - so adding a trade while in simulated
+  // mode pre-checks "Mark as simulated".
+  const [simulated, setSimulated] = useState<boolean>(() => {
+    if (initialTrade) return !!initialTrade.simulated;
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("simulated") === "true";
+    }
+    return false;
+  });
   // Invalid fields are tracked individually so the modal can outline
   // each broken input in red instead of showing a single banner. A
   // field is removed from the set as soon as the user edits it.
