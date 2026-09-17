@@ -64,49 +64,57 @@ export async function resolvePromo(
   if (!code) return null;
   const wanted = code.toUpperCase();
 
-  // 1) Customer-facing promotion code. Try the exact-code filter first, then
-  //    scan active codes and match case-insensitively (the filter's casing
-  //    behaviour isn't something to rely on).
+  // Turn whatever a `coupon` field holds (full object, bare id, or nothing)
+  // into a coupon object, fetching it by id when needed.
+  const toCoupon = async (raw: unknown): Promise<CouponLike | undefined> => {
+    if (raw && typeof raw === "object") return raw as CouponLike;
+    if (typeof raw === "string") {
+      return (await stripe.coupons
+        .retrieve(raw)
+        .catch(() => undefined)) as unknown as CouponLike | undefined;
+    }
+    return undefined;
+  };
+
+  // 1) Customer-facing promotion code. Expand the coupon so its amounts come
+  //    back inlined (some API versions omit it otherwise); if expanding isn't
+  //    allowed, retry without and recover the coupon by id.
   try {
+    const listWithCoupon = async (params: Stripe.PromotionCodeListParams) => {
+      try {
+        return await stripe.promotionCodes.list({
+          ...params,
+          expand: ["data.coupon"],
+        });
+      } catch {
+        return await stripe.promotionCodes.list(params);
+      }
+    };
+
     let pc: Stripe.PromotionCode | null =
-      (await stripe.promotionCodes.list({ code, active: true, limit: 1 }))
-        .data[0] ?? null;
+      (await listWithCoupon({ code, active: true, limit: 1 })).data[0] ?? null;
     if (!pc) {
-      const all = await stripe.promotionCodes.list({ active: true, limit: 100 });
+      const all = await listWithCoupon({ active: true, limit: 100 });
       pc = all.data.find((p) => (p.code ?? "").toUpperCase() === wanted) ?? null;
     }
     if (pc) {
-      // The promo code's coupon may come back as a full object, as a bare id
-      // string, or not at all depending on the API version - normalise it so
-      // the label never crashes and stays accurate when possible.
-      const rawCoupon = (pc as unknown as { coupon?: unknown }).coupon;
-      let coupon: CouponLike | undefined;
-      if (rawCoupon && typeof rawCoupon === "object") {
-        coupon = rawCoupon as CouponLike;
-      } else if (typeof rawCoupon === "string") {
-        coupon = (await stripe.coupons
-          .retrieve(rawCoupon)
-          .catch(() => undefined)) as unknown as CouponLike | undefined;
-      }
-      // Some API versions don't inline the coupon on list results - fetch the
-      // promotion code on its own (which includes the full coupon) so we can
-      // show the actual discount amount.
+      let coupon = await toCoupon((pc as unknown as { coupon?: unknown }).coupon);
+      // Still nothing? Retrieve the promotion code on its own (expanded).
       if (!coupon) {
-        try {
-          const full = (await stripe.promotionCodes.retrieve(
-            pc.id,
-          )) as unknown as { coupon?: unknown };
-          const fc = full.coupon;
-          if (fc && typeof fc === "object") {
-            coupon = fc as CouponLike;
-          } else if (typeof fc === "string") {
-            coupon = (await stripe.coupons
-              .retrieve(fc)
-              .catch(() => undefined)) as unknown as CouponLike | undefined;
-          }
-        } catch {
-          /* leave coupon undefined - label falls back, discount just won't show */
-        }
+        const full = await stripe.promotionCodes
+          .retrieve(pc.id, { expand: ["coupon"] })
+          .catch(() =>
+            stripe.promotionCodes.retrieve(pc!.id).catch(() => null),
+          );
+        coupon = await toCoupon(
+          (full as unknown as { coupon?: unknown } | null)?.coupon,
+        );
+      }
+      if (!coupon) {
+        console.warn(
+          "[promo] found code but no coupon object; pc keys:",
+          Object.keys(pc as object),
+        );
       }
       return {
         discount: { promotion_code: pc.id },
