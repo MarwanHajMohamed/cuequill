@@ -881,13 +881,12 @@ body {
   display: inline-block;
   transform-style: preserve-3d;
   animation: crown-spin-in 0.8s ease-in-out 1;
+  /* Transition lives on the base so the crown spins forward on hover and
+     spins back on un-hover. */
+  transition: transform 0.35s ease-in-out;
 }
-/* A single forward spin on hover. The transition lives on the hover state
-   so entering eases 0->360deg; leaving snaps back (invisible, 360 == 0) and
-   never replays the entrance animation. */
 .group:hover .crown-spin-in {
   transform: rotateY(360deg);
-  transition: transform 0.6s ease-in-out;
 }
 @media (prefers-reduced-motion: reduce) {
   .crown-spin-in {
