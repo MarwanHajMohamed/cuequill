@@ -7,6 +7,7 @@ import Link from "next/link";
 import React, { use, useEffect, useState } from "react";
 import { useRulesBoard, type Rule } from "../useRulesBoard";
 import IconBtn from "../IconBtn";
+import ConfirmDialog from "../ConfirmDialog";
 
 function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -19,6 +20,10 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
     moveRuleToSection,
   } = useRulesBoard();
   const [editMode, setEditMode] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<{
+    ruleId: string;
+    title: string;
+  } | null>(null);
 
   const index = sections?.findIndex((s) => s.id === id) ?? -1;
   const section = index >= 0 ? sections![index] : null;
@@ -116,7 +121,6 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
                     <RuleRow
                       key={rule.id}
                       editMode={editMode}
-                      index={i}
                       rule={rule}
                       isFirst={i === 0}
                       isLast={i === section.rules.length - 1}
@@ -126,15 +130,14 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
                         moveRuleToSection(section.id, rule.id, toId)
                       }
                       onEdit={(t, b) => editRule(section.id, rule.id, t, b)}
-                      onDelete={() => deleteRule(section.id, rule.id)}
+                      onDelete={() =>
+                        setPendingDelete({ ruleId: rule.id, title: rule.title })
+                      }
                     />
                   ))}
                 </AnimatePresence>
                 {editMode && (
-                  <AddRuleRow
-                    index={section.rules.length}
-                    onAdd={(t, b) => addRule(section.id, t, b)}
-                  />
+                  <AddRuleRow onAdd={(t, b) => addRule(section.id, t, b)} />
                 )}
               </ol>
             )}
@@ -171,13 +174,30 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
           </>
         )}
       </div>
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title="Delete rule?"
+        message={
+          <>
+            &ldquo;{pendingDelete?.title}&rdquo; will be removed. This can&apos;t
+            be undone.
+          </>
+        }
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={() => {
+          if (section && pendingDelete) {
+            deleteRule(section.id, pendingDelete.ruleId);
+          }
+          setPendingDelete(null);
+        }}
+      />
     </div>
   );
 }
 
 function RuleRow({
   editMode,
-  index,
   rule,
   isFirst,
   isLast,
@@ -188,7 +208,6 @@ function RuleRow({
   onDelete,
 }: {
   editMode: boolean;
-  index: number;
   rule: Rule;
   isFirst: boolean;
   isLast: boolean;
@@ -229,10 +248,6 @@ function RuleRow({
       transition={{ duration: 0.18, ease: "easeOut" }}
       className="group flex gap-4 md:gap-5 py-4 md:py-5 border-b border-white/[0.08]"
     >
-      <span className="shrink-0 w-6 text-[13px] text-white/30 tabular-nums pt-0.5">
-        {index + 1}
-      </span>
-
       <div className="flex-1 min-w-0">
         {editing && editMode ? (
           <div className="flex flex-col gap-2">
@@ -354,10 +369,8 @@ function RuleRow({
 }
 
 function AddRuleRow({
-  index,
   onAdd,
 }: {
-  index: number;
   onAdd: (title: string, body: string) => void;
 }) {
   const [title, setTitle] = useState("");
@@ -372,9 +385,6 @@ function AddRuleRow({
 
   return (
     <li className="flex gap-4 md:gap-5 py-4 md:py-5 border-b border-white/[0.08]">
-      <span className="shrink-0 w-6 text-[13px] text-white/25 tabular-nums pt-0.5">
-        {index + 1}
-      </span>
       <div className="flex-1 min-w-0">
         <input
           value={title}

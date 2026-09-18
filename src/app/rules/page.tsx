@@ -8,6 +8,7 @@ import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { useRulesBoard, type Section } from "./useRulesBoard";
 import IconBtn from "./IconBtn";
+import ConfirmDialog from "./ConfirmDialog";
 
 function Page() {
   const {
@@ -18,6 +19,11 @@ function Page() {
     moveSection,
   } = useRulesBoard();
   const [editMode, setEditMode] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<{
+    id: string;
+    title: string;
+    count: number;
+  } | null>(null);
 
   return (
     <div className="w-full flex justify-center min-h-screen pb-24">
@@ -76,12 +82,17 @@ function Page() {
                   <SectionCard
                     key={section.id}
                     section={section}
-                    index={i}
                     editMode={editMode}
                     isFirst={i === 0}
                     isLast={i === sections.length - 1}
                     onRename={(t) => renameSection(section.id, t)}
-                    onDelete={() => deleteSection(section.id)}
+                    onDelete={() =>
+                      setPendingDelete({
+                        id: section.id,
+                        title: section.title,
+                        count: section.rules.length,
+                      })
+                    }
                     onMove={(dir) => moveSection(section.id, dir)}
                   />
                 ))}
@@ -116,13 +127,33 @@ function Page() {
           </>
         )}
       </div>
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title="Delete section?"
+        message={
+          <>
+            &ldquo;{pendingDelete?.title}&rdquo;
+            {pendingDelete && pendingDelete.count > 0
+              ? ` and its ${pendingDelete.count} rule${
+                  pendingDelete.count === 1 ? "" : "s"
+                }`
+              : ""}{" "}
+            will be removed. This can&apos;t be undone.
+          </>
+        }
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={() => {
+          if (pendingDelete) deleteSection(pendingDelete.id);
+          setPendingDelete(null);
+        }}
+      />
     </div>
   );
 }
 
 function SectionCard({
   section,
-  index,
   editMode,
   isFirst,
   isLast,
@@ -131,7 +162,6 @@ function SectionCard({
   onMove,
 }: {
   section: Section;
-  index: number;
   editMode: boolean;
   isFirst: boolean;
   isLast: boolean;
@@ -152,9 +182,6 @@ function SectionCard({
 
   const inner = (
     <div className="flex items-center gap-4 px-5 py-4">
-      <span className="shrink-0 w-6 text-[13px] text-white/30 tabular-nums">
-        {index + 1}
-      </span>
       <div className="flex-1 min-w-0">
         {editMode ? (
           <input
