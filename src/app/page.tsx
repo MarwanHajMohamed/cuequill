@@ -1,26 +1,17 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import PageLoading from "./PageLoading";
 import { FaqRow, SiteFooter, SiteHeader } from "./_marketing/Chrome";
 
 // ─── Page ────────────────────────────────────────────────────────────
 
+// The landing page is public and stays reachable when signed in - logged-in
+// visitors see the top marketing navbar (with a "Go to Dashboard" button)
+// instead of the app sidebar, which NavbarWrapper/ContentShell suppress on
+// this route.
 export default function Home() {
-  const { status } = useSession();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (status === "authenticated") router.push("/dashboard");
-  }, [status, router]);
-
-  if (status === "loading") return <PageLoading />;
-  if (status === "authenticated") return null;
-
   return (
     <div className="min-h-screen flex flex-col">
       <div

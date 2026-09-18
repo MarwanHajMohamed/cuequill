@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useState } from "react";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -104,6 +105,10 @@ export function AnnouncementBar() {
 // reachable without crowding the pill.
 export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
+  // When signed in, the two auth CTAs collapse into a single "Go to
+  // Dashboard" button so logged-in visitors can jump straight back in.
+  const { status } = useSession();
+  const authed = status === "authenticated";
 
   return (
     <header
@@ -136,18 +141,30 @@ export function SiteHeader() {
           >
             Pricing
           </Link>
-          <Link
-            href="/login"
-            className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-full text-white/55 hover:text-white transition text-[12.5px]"
-          >
-            Sign in
-          </Link>
-          <Link
-            href="/signup"
-            className="hidden sm:inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[12.5px] font-medium"
-          >
-            Sign up
-          </Link>
+          {authed ? (
+            <Link
+              href="/dashboard"
+              className="hidden sm:inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[12.5px] font-medium"
+            >
+              Go to Dashboard
+              <i className="fa-solid fa-chevron-right text-[10px]" />
+            </Link>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-full text-white/55 hover:text-white transition text-[12.5px]"
+              >
+                Sign in
+              </Link>
+              <Link
+                href="/signup"
+                className="hidden sm:inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[12.5px] font-medium"
+              >
+                Sign up
+              </Link>
+            </>
+          )}
           <button
             type="button"
             onClick={() => setMenuOpen((o) => !o)}
@@ -187,22 +204,35 @@ export function SiteHeader() {
               >
                 Pricing
               </Link>
-              <Link
-                href="/login"
-                onClick={() => setMenuOpen(false)}
-                className="px-5 py-3.5 text-[14px] text-white/80 hover:text-white hover:bg-white/[0.04] border-b border-[var(--rule)] transition inline-flex items-center justify-between"
-              >
-                Sign in
-                <i className="fa-solid fa-chevron-right text-[11px]" />
-              </Link>
-              <Link
-                href="/signup"
-                onClick={() => setMenuOpen(false)}
-                className="px-5 py-3.5 text-[14px] font-medium text-teal-300 hover:bg-teal-500/[0.08] transition inline-flex items-center justify-between"
-              >
-                Sign up
-                <i className="fa-solid fa-chevron-right text-[11px]" />
-              </Link>
+              {authed ? (
+                <Link
+                  href="/dashboard"
+                  onClick={() => setMenuOpen(false)}
+                  className="px-5 py-3.5 text-[14px] font-medium text-teal-300 hover:bg-teal-500/[0.08] transition inline-flex items-center justify-between"
+                >
+                  Go to Dashboard
+                  <i className="fa-solid fa-chevron-right text-[11px]" />
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    onClick={() => setMenuOpen(false)}
+                    className="px-5 py-3.5 text-[14px] text-white/80 hover:text-white hover:bg-white/[0.04] border-b border-[var(--rule)] transition inline-flex items-center justify-between"
+                  >
+                    Sign in
+                    <i className="fa-solid fa-chevron-right text-[11px]" />
+                  </Link>
+                  <Link
+                    href="/signup"
+                    onClick={() => setMenuOpen(false)}
+                    className="px-5 py-3.5 text-[14px] font-medium text-teal-300 hover:bg-teal-500/[0.08] transition inline-flex items-center justify-between"
+                  >
+                    Sign up
+                    <i className="fa-solid fa-chevron-right text-[11px]" />
+                  </Link>
+                </>
+              )}
             </div>
           </motion.div>
         )}

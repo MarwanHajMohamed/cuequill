@@ -1,6 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
+import { usePathname } from "next/navigation";
 
 // Offsets page content to the right of the desktop sidebar. Only applies
 // when signed in (the sidebar renders for authenticated users) and only on
@@ -16,6 +17,12 @@ export default function ContentShell({
   children: React.ReactNode;
 }) {
   const { status } = useSession();
+  const pathname = usePathname();
   const authed = status === "authenticated";
-  return <div className={authed ? "content-shell" : ""}>{children}</div>;
+  // On the landing page the sidebar is suppressed (the top marketing navbar
+  // shows instead), so don't reserve the sidebar's offset there.
+  const isLanding = pathname === "/";
+  return (
+    <div className={authed && !isLanding ? "content-shell" : ""}>{children}</div>
+  );
 }
