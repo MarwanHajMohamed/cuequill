@@ -2,6 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
+import { isMarketingRoute } from "./_marketing/routes";
 
 // Offsets page content to the right of the desktop sidebar. Only applies
 // when signed in (the sidebar renders for authenticated users) and only on
@@ -19,10 +20,10 @@ export default function ContentShell({
   const { status } = useSession();
   const pathname = usePathname();
   const authed = status === "authenticated";
-  // On the landing page the sidebar is suppressed (the top marketing navbar
-  // shows instead), so don't reserve the sidebar's offset there.
-  const isLanding = pathname === "/";
+  // On the marketing surfaces the sidebar is suppressed (the top marketing
+  // navbar shows instead), so don't reserve the sidebar's offset there.
+  const marketing = isMarketingRoute(pathname);
   return (
-    <div className={authed && !isLanding ? "content-shell" : ""}>{children}</div>
+    <div className={authed && !marketing ? "content-shell" : ""}>{children}</div>
   );
 }

@@ -291,12 +291,11 @@ export default function PricingPage() {
             "radial-gradient(50% 50% at 50% 0%, rgba(20,184,166,0.14) 0%, rgba(20,184,166,0) 75%), radial-gradient(40% 45% at 80% 5%, rgba(99,102,241,0.10) 0%, rgba(99,102,241,0) 75%)",
         }}
       />
-      {/* Only render the marketing header once we KNOW the visitor is
-          logged out. During the brief "loading" state signedIn is also
-          false, which - paired with the app navbar appearing only when
-          authenticated - made the two headers flicker back and forth on
-          session revalidation. */}
-      {status === "unauthenticated" && <SiteHeader />}
+      {/* Pricing is a marketing surface: the app sidebar is suppressed here
+          (NavbarWrapper), so the top marketing header shows for everyone -
+          signed in or out. When signed in its CTAs collapse to "Go to
+          Dashboard". */}
+      <SiteHeader />
 
       <main className="flex-1 pt-20">
         <PricingHero />
