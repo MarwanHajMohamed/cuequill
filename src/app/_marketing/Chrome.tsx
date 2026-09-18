@@ -266,8 +266,6 @@ export function SiteFooter() {
             { label: "Overview", href: "/" },
             { label: "Features", href: "/features" },
             { label: "Pricing", href: "/pricing" },
-            { label: "Sign up", href: "/signup" },
-            { label: "Sign in", href: "/login" },
           ]}
         />
         <FooterCol
