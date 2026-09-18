@@ -472,11 +472,12 @@ export function LegalDoc({
       />
       <SiteHeader />
 
-      <main className="flex-1 pt-28 md:pt-36 px-6 md:px-10">
+      <main className="flex-1 pt-28 md:pt-44 px-6 md:px-10">
         {layout === "split" ? (
           <div className="max-w-[1100px] mx-auto pb-24 grid md:grid-cols-12 gap-10 md:gap-12">
-            {/* Contents rail - sticky on desktop, stacks on top on mobile. */}
-            <aside className="md:col-span-4 md:sticky md:top-28 self-start md:max-h-[calc(100vh-8rem)] md:overflow-y-auto">
+            {/* Contents rail - sticky on desktop, stacks on top on mobile.
+                top-40 keeps a clear gap below the fixed navbar when pinned. */}
+            <aside className="md:col-span-4 md:sticky md:top-40 self-start md:max-h-[calc(100vh-11rem)] md:overflow-y-auto">
               {contentsNav}
             </aside>
             {/* Everything else. */}

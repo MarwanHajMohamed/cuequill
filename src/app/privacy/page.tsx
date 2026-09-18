@@ -228,6 +228,7 @@ export default function PrivacyPage() {
         "Your trading journal is personal, and we treat it that way. This policy explains what we collect, why, and what you can do about it. It is written to be read, not just filed away.",
       ]}
       sections={SECTIONS}
+      layout="split"
     />
   );
 }

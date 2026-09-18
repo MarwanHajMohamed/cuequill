@@ -287,8 +287,8 @@ function FeatureGroupSection({ group }: { group: FeatureGroup }) {
   return (
     <section className="px-6 md:px-10 py-20 md:py-28">
       <div className="max-w-[1200px] mx-auto grid md:grid-cols-12 gap-10 md:gap-12 items-start">
-        {/* Group head (sticky) */}
-        <div className="md:col-span-4 md:sticky md:top-28 self-start">
+        {/* Group head (sticky) - top-40 keeps a clear gap below the navbar. */}
+        <div className="md:col-span-4 md:sticky md:top-40 self-start">
           <SectionMark label={group.label} />
           <h2 className="mt-6 text-[30px] md:text-[38px] leading-[1.06] font-medium tracking-[-0.02em]">
             {group.heading}
