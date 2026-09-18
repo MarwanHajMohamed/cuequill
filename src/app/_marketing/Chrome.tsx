@@ -363,6 +363,7 @@ export function LegalDoc({
   effective,
   intro,
   sections,
+  layout = "centered",
 }: {
   title: string;
   tagline: string;
@@ -370,7 +371,95 @@ export function LegalDoc({
   effective: string;
   intro: string[];
   sections: LegalSection[];
+  // "centered" keeps the classic single narrow column with the Contents
+  // inline. "split" pins the Contents to a sticky left rail and puts the
+  // title, intro and sections in a wider right column.
+  layout?: "centered" | "split";
 }) {
+  const titleBlock = (
+    <>
+      {/* Title block */}
+      <SectionMark label="Legal" />
+      <h1 className="mt-6 text-[36px] md:text-[52px] leading-[1.02] font-medium tracking-[-0.025em]">
+        {title}
+      </h1>
+      <p className="mt-5 max-w-xl text-[14px] text-white/60 leading-relaxed">
+        {tagline}
+      </p>
+      <div className="mt-6 flex flex-wrap gap-x-6 gap-y-1 text-[11px] tracking-[0.08em] text-white/40">
+        <span>Effective {effective}</span>
+        <span>Last updated {updated}</span>
+      </div>
+
+      {/* Intro */}
+      <div className="mt-10 flex flex-col gap-4">
+        {intro.map((t, i) => (
+          <p key={i} className="text-[14px] text-white/70 leading-relaxed">
+            {t}
+          </p>
+        ))}
+      </div>
+    </>
+  );
+
+  const contentsNav = (
+    <nav className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
+      <h2 className="text-[10.5px] tracking-[0.1em] text-white/40 mb-3 font-medium">
+        Contents
+      </h2>
+      <ol className="flex flex-col gap-1.5 text-[13px]">
+        {sections.map((s, i) => (
+          <li key={s.id} className="flex gap-2.5">
+            <span className="tabular-nums text-white/35">{i + 1}.</span>
+            <a
+              href={`#${s.id}`}
+              className="text-white/65 hover:text-white transition"
+            >
+              {s.heading}
+            </a>
+          </li>
+        ))}
+      </ol>
+    </nav>
+  );
+
+  const sectionsBlock = (
+    <div className="flex flex-col gap-12">
+      {sections.map((s, i) => (
+        <section key={s.id} id={s.id} className="scroll-mt-28">
+          <h2 className="text-[19px] md:text-[21px] font-medium tracking-[-0.01em]">
+            <span className="text-white/35 tabular-nums mr-2">{i + 1}.</span>
+            {s.heading}
+          </h2>
+          <div className="mt-4 flex flex-col gap-4">
+            {s.blocks.map((b, j) =>
+              b.type === "p" ? (
+                <p
+                  key={j}
+                  className="text-[14px] text-white/70 leading-relaxed"
+                >
+                  {b.text}
+                </p>
+              ) : (
+                <ul key={j} className="flex flex-col gap-2 pl-1">
+                  {b.items.map((it, k) => (
+                    <li
+                      key={k}
+                      className="flex items-start gap-2.5 text-[14px] text-white/70 leading-relaxed"
+                    >
+                      <span className="shrink-0 mt-[9px] w-1.5 h-1.5 rounded-full bg-teal-400/70" />
+                      <span>{it}</span>
+                    </li>
+                  ))}
+                </ul>
+              ),
+            )}
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+
   return (
     <div className="min-h-screen flex flex-col">
       <div
@@ -384,93 +473,25 @@ export function LegalDoc({
       <SiteHeader />
 
       <main className="flex-1 pt-28 md:pt-36 px-6 md:px-10">
-        <div className="max-w-[760px] mx-auto pb-24">
-          {/* Title block */}
-          <SectionMark label="Legal" />
-          <h1 className="mt-6 text-[36px] md:text-[52px] leading-[1.02] font-medium tracking-[-0.025em]">
-            {title}
-          </h1>
-          <p className="mt-5 max-w-xl text-[14px] text-white/60 leading-relaxed">
-            {tagline}
-          </p>
-          <div className="mt-6 flex flex-wrap gap-x-6 gap-y-1 text-[11px] tracking-[0.08em] text-white/40">
-            <span>Effective {effective}</span>
-            <span>Last updated {updated}</span>
+        {layout === "split" ? (
+          <div className="max-w-[1100px] mx-auto pb-24 grid md:grid-cols-12 gap-10 md:gap-12">
+            {/* Contents rail - sticky on desktop, stacks on top on mobile. */}
+            <aside className="md:col-span-4 md:sticky md:top-28 self-start md:max-h-[calc(100vh-8rem)] md:overflow-y-auto">
+              {contentsNav}
+            </aside>
+            {/* Everything else. */}
+            <div className="md:col-span-8">
+              {titleBlock}
+              <div className="mt-14">{sectionsBlock}</div>
+            </div>
           </div>
-
-          {/* Intro */}
-          <div className="mt-10 flex flex-col gap-4">
-            {intro.map((t, i) => (
-              <p
-                key={i}
-                className="text-[14px] text-white/70 leading-relaxed"
-              >
-                {t}
-              </p>
-            ))}
+        ) : (
+          <div className="max-w-[760px] mx-auto pb-24">
+            {titleBlock}
+            <div className="mt-10">{contentsNav}</div>
+            <div className="mt-14">{sectionsBlock}</div>
           </div>
-
-          {/* Contents */}
-          <nav className="mt-10 rounded-2xl border border-white/10 bg-white/[0.02] p-5">
-            <h2 className="text-[10.5px] tracking-[0.1em] text-white/40 mb-3 font-medium">
-              Contents
-            </h2>
-            <ol className="flex flex-col gap-1.5 text-[13px]">
-              {sections.map((s, i) => (
-                <li key={s.id} className="flex gap-2.5">
-                  <span className="tabular-nums text-white/35">{i + 1}.</span>
-                  <a
-                    href={`#${s.id}`}
-                    className="text-white/65 hover:text-white transition"
-                  >
-                    {s.heading}
-                  </a>
-                </li>
-              ))}
-            </ol>
-          </nav>
-
-          {/* Sections */}
-          <div className="mt-14 flex flex-col gap-12">
-            {sections.map((s, i) => (
-              <section key={s.id} id={s.id} className="scroll-mt-28">
-                <h2 className="text-[19px] md:text-[21px] font-medium tracking-[-0.01em]">
-                  <span className="text-white/35 tabular-nums mr-2">
-                    {i + 1}.
-                  </span>
-                  {s.heading}
-                </h2>
-                <div className="mt-4 flex flex-col gap-4">
-                  {s.blocks.map((b, j) =>
-                    b.type === "p" ? (
-                      <p
-                        key={j}
-                        className="text-[14px] text-white/70 leading-relaxed"
-                      >
-                        {b.text}
-                      </p>
-                    ) : (
-                      <ul
-                        key={j}
-                        className="flex flex-col gap-2 pl-1"
-                      >
-                        {b.items.map((it, k) => (
-                          <li
-                            key={k}
-                            className="flex items-start gap-2.5 text-[14px] text-white/70 leading-relaxed"
-                          >
-                            <span className="shrink-0 mt-[9px] w-1.5 h-1.5 rounded-full bg-teal-400/70" />
-                            <span>{it}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    ),
-                  )}
-                </div>
-              </section>
-            ))}
-          </div>
-        </div>
+        )}
       </main>
 
       <SiteFooter />

@@ -214,6 +214,7 @@ export default function TermsPage() {
         "These terms set out what you can expect from Cuequill and what we ask of you in return. Please read them - especially the sections on financial advice and liability.",
       ]}
       sections={SECTIONS}
+      layout="split"
     />
   );
 }
