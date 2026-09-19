@@ -104,7 +104,7 @@ const GROUPS: FeatureGroup[] = [
       {
         title: "Downloadable reports",
         body: "Export performance, tax and activity reports to CSV.",
-        tiers: ["Pro"],
+        tiers: ["Free", "Pro"],
       },
       {
         title: "Dashboard insights",
