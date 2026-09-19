@@ -178,14 +178,17 @@ function Hero() {
 // product's signature "calendar tinted by your P/L". Pure JSX/CSS, no
 // external asset. Data is a fixed, believable mostly-green month.
 type HeroCell = { pl?: number; tone: "win" | "loss" | "flat" };
+// 6 weeks × 5 weekdays (Mon-Fri). Weekends are skipped entirely so
+// the calendar reads as a trading-days grid, not a full month.
 const HERO_MONTH: HeroCell[] = [
-  { tone: "flat" }, { tone: "win", pl: 120 }, { tone: "flat" }, { tone: "loss", pl: -80 }, { tone: "win", pl: 260 }, { tone: "flat" }, { tone: "flat" },
-  { tone: "win", pl: 90 }, { tone: "flat" }, { tone: "flat" }, { tone: "win", pl: 540 }, { tone: "loss", pl: -210 }, { tone: "flat" }, { tone: "win", pl: 75 },
-  { tone: "flat" }, { tone: "win", pl: 320 }, { tone: "flat" }, { tone: "flat" }, { tone: "win", pl: 180 }, { tone: "flat" }, { tone: "loss", pl: -60 },
-  { tone: "win", pl: 410 }, { tone: "flat" }, { tone: "win", pl: 95 }, { tone: "flat" }, { tone: "flat" }, { tone: "win", pl: 230 }, { tone: "flat" },
-  { tone: "flat" }, { tone: "loss", pl: -140 }, { tone: "win", pl: 680 }, { tone: "flat" }, { tone: "win", pl: 150 }, { tone: "flat" }, { tone: "flat" },
+  { tone: "flat" }, { tone: "win", pl: 120 }, { tone: "flat" }, { tone: "loss", pl: -80 }, { tone: "win", pl: 260 },
+  { tone: "win", pl: 90 }, { tone: "flat" }, { tone: "win", pl: 540 }, { tone: "loss", pl: -210 }, { tone: "flat" },
+  { tone: "win", pl: 75 }, { tone: "flat" }, { tone: "win", pl: 320 }, { tone: "flat" }, { tone: "win", pl: 180 },
+  { tone: "flat" }, { tone: "loss", pl: -60 }, { tone: "win", pl: 410 }, { tone: "flat" }, { tone: "win", pl: 95 },
+  { tone: "flat" }, { tone: "win", pl: 230 }, { tone: "flat" }, { tone: "loss", pl: -140 }, { tone: "win", pl: 680 },
+  { tone: "flat" }, { tone: "win", pl: 150 }, { tone: "flat" }, { tone: "win", pl: 200 }, { tone: "flat" },
 ];
-const HERO_DOW = ["S", "M", "T", "W", "T", "F", "S"];
+const HERO_DOW = ["M", "T", "W", "T", "F"];
 
 function fmtCellPL(n: number): string {
   const sign = n >= 0 ? "+" : "-";
@@ -208,6 +211,59 @@ const heroCell = {
   },
 };
 
+// The single "featured" day the drill-down animation zooms into,
+// plus the trades that make up its P/L (they must sum to that day's
+// total so the story is honest). Day 8 in HERO_MONTH is +$540 and
+// sits at row 1 col 2 of the 5×6 grid (a nice mid-upper anchor).
+const FEATURED_INDEX = 7;
+const FEATURED_TRADES: {
+  symbol: string;
+  side: "Call" | "Put";
+  strike: number;
+  expiry: string;
+  entry: number;
+  exit: number;
+  qty: number;
+  held: string;
+  pl: number;
+}[] = [
+  {
+    symbol: "AAPL",
+    side: "Call",
+    strike: 220,
+    expiry: "26 Jul",
+    entry: 1.85,
+    exit: 3.65,
+    qty: 1,
+    held: "1h 42m",
+    pl: 180,
+  },
+  {
+    symbol: "TSLA",
+    side: "Put",
+    strike: 285,
+    expiry: "25 Jul",
+    entry: 2.4,
+    exit: 4.6,
+    qty: 1,
+    held: "2h 14m",
+    pl: 220,
+  },
+  {
+    symbol: "NVDA",
+    side: "Call",
+    strike: 125,
+    expiry: "26 Jul",
+    entry: 0.98,
+    exit: 2.38,
+    qty: 1,
+    held: "58m",
+    pl: 140,
+  },
+];
+// Which trade the animation "clicks into" for the detail modal.
+const FEATURED_DETAIL_INDEX = 1;
+
 function HeroCalendar() {
   const net = HERO_MONTH.reduce((s, c) => s + (c.pl ?? 0), 0);
   const wins = HERO_MONTH.filter((c) => c.tone === "win").length;
@@ -215,6 +271,54 @@ function HeroCalendar() {
   const winRate = closed ? Math.round((wins / closed) * 100) : 0;
   const animatedNet = Math.round(useCountUp(net, 1300, true));
   let dayNo = 0;
+
+  // Drill-down loop: calendar settles → zoom into the featured day
+  // → trades animate down under it → the middle trade "opens" into a
+  // detail modal → detail closes → trades close → zoom out → rest.
+  // Loops continuously so late-arriving visitors still see the story.
+  const [phase, setPhase] = useState<
+    "idle" | "trades" | "detail" | "unzoom"
+  >("idle");
+  useEffect(() => {
+    let cancelled = false;
+    const timeouts: ReturnType<typeof setTimeout>[] = [];
+    const wait = (ms: number) =>
+      new Promise<void>((r) => {
+        timeouts.push(setTimeout(() => r(), ms));
+      });
+    (async () => {
+      await wait(2400); // let the entrance stagger finish first
+      while (!cancelled) {
+        // Zoom + trades enter together — the panel animates in during
+        // the zoom, so the drill-down feels like one continuous move
+        // rather than a stepped "zoom then modal".
+        setPhase("trades");
+        await wait(2600);
+        if (cancelled) return;
+        setPhase("detail");
+        await wait(2600);
+        if (cancelled) return;
+        setPhase("trades");
+        await wait(400);
+        if (cancelled) return;
+        setPhase("unzoom");
+        await wait(700);
+        if (cancelled) return;
+        setPhase("idle");
+        await wait(3000);
+      }
+    })();
+    return () => {
+      cancelled = true;
+      timeouts.forEach(clearTimeout);
+    };
+  }, []);
+
+  const zoomed = phase === "trades" || phase === "detail";
+  const showTrades = phase === "trades" || phase === "detail";
+  const showDetail = phase === "detail";
+  const featuredTotal = FEATURED_TRADES.reduce((s, t) => s + t.pl, 0);
+  const detailTrade = FEATURED_TRADES[FEATURED_DETAIL_INDEX];
 
   return (
     <div className="relative mx-auto w-full max-w-[440px]">
@@ -229,96 +333,273 @@ function HeroCalendar() {
             "radial-gradient(60% 60% at 70% 20%, rgba(45,212,191,0.18) 0%, rgba(45,212,191,0) 70%)",
         }}
       />
-      <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5 shadow-[0_8px_40px_var(--shadow-soft)]">
-        <div className="flex items-center justify-between mb-3">
-          <div className="text-[12px] tracking-[0.1em] text-white/45 font-medium">
-            This month
-          </div>
-          <div
-            className={`text-[15px] font-semibold tabular-nums ${
-              net >= 0 ? "text-green-400" : "text-red-400"
-            }`}
-          >
-            {net >= 0 ? "+" : "-"}${Math.abs(animatedNet).toLocaleString()}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-7 gap-1 mb-1.5">
-          {HERO_DOW.map((d, i) => (
-            <div
-              key={i}
-              className="text-center text-[9px] text-white/30 tracking-wide"
-            >
-              {d}
+      <div className="relative rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5 shadow-[0_8px_40px_var(--shadow-soft)] overflow-hidden">
+        {/* Card contents are wrapped in a scaling layer so the zoom-in
+            drill-down enlarges everything from an anchor at day 11's
+            centre. Origin is the featured cell's centre inside the
+            grid: col 3.5/7 ≈ 50%, row (1.5/5 rows) ≈ 34%. */}
+        <motion.div
+          animate={{ scale: zoomed ? 2.4 : 1 }}
+          transition={{ duration: 0.7, ease: [0.4, 0, 0.2, 1] }}
+          style={{ transformOrigin: "50% 30%" }}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="text-[12px] tracking-[0.1em] text-white/45 font-medium">
+              This month
             </div>
-          ))}
-        </div>
+            <div
+              className={`text-[15px] font-semibold tabular-nums ${
+                net >= 0 ? "text-green-400" : "text-red-400"
+              }`}
+            >
+              {net >= 0 ? "+" : "-"}${Math.abs(animatedNet).toLocaleString()}
+            </div>
+          </div>
 
-        {/* Tiles stagger-fill in; a light sweep passes across on a loop. */}
-        <div className="relative overflow-hidden rounded-md">
-          <motion.div
-            className="grid grid-cols-7 gap-1"
-            variants={heroGrid}
-            initial="hidden"
-            animate="show"
-          >
-            {HERO_MONTH.map((c, i) => {
-              dayNo += 1;
-              const tone =
-                c.tone === "win"
-                  ? "bg-green-500/15 border-green-500/25"
-                  : c.tone === "loss"
-                    ? "bg-red-500/15 border-red-500/25"
-                    : "bg-white/[0.02] border-white/[0.06]";
-              const plColor =
-                c.tone === "win" ? "text-green-300" : "text-red-300";
-              return (
-                <motion.div
-                  key={i}
-                  variants={heroCell}
-                  className={`relative aspect-square rounded-md border ${tone} flex flex-col items-center justify-center`}
-                >
-                  <span className="absolute top-0.5 left-1 text-[7.5px] text-white/30 tabular-nums">
-                    {dayNo}
-                  </span>
-                  {c.pl != null && (
-                    <span
-                      className={`text-[8.5px] md:text-[9.5px] font-semibold tabular-nums ${plColor}`}
-                    >
-                      {fmtCellPL(c.pl)}
+          <div className="grid grid-cols-5 gap-1 mb-1.5">
+            {HERO_DOW.map((d, i) => (
+              <div
+                key={i}
+                className="text-center text-[10px] text-white/30 tracking-wide"
+              >
+                {d}
+              </div>
+            ))}
+          </div>
+
+          {/* Tiles stagger-fill in; a light sweep passes across on a loop. */}
+          <div className="relative overflow-hidden rounded-md">
+            <motion.div
+              className="grid grid-cols-5 gap-1"
+              variants={heroGrid}
+              initial="hidden"
+              animate="show"
+            >
+              {HERO_MONTH.map((c, i) => {
+                dayNo += 1;
+                const tone =
+                  c.tone === "win"
+                    ? "bg-green-500/15 border-green-500/25"
+                    : c.tone === "loss"
+                      ? "bg-red-500/15 border-red-500/25"
+                      : "bg-white/[0.02] border-white/[0.06]";
+                const plColor =
+                  c.tone === "win" ? "text-green-300" : "text-red-300";
+                const isFeatured = i === FEATURED_INDEX;
+                const highlight =
+                  isFeatured && zoomed
+                    ? "ring-1 ring-teal-400/70 shadow-[0_0_0_1px_rgba(45,212,191,0.35)]"
+                    : "";
+                return (
+                  <motion.div
+                    key={i}
+                    variants={heroCell}
+                    className={`relative aspect-square rounded-md border ${tone} ${highlight} flex flex-col items-center justify-center`}
+                  >
+                    <span className="absolute top-0.5 left-1 text-[7.5px] text-white/30 tabular-nums">
+                      {dayNo}
                     </span>
-                  )}
-                </motion.div>
-              );
-            })}
-          </motion.div>
+                    {c.pl != null && (
+                      <span
+                        className={`text-[8.5px] md:text-[9.5px] font-semibold tabular-nums ${plColor}`}
+                      >
+                        {fmtCellPL(c.pl)}
+                      </span>
+                    )}
+                  </motion.div>
+                );
+              })}
+            </motion.div>
 
-          {/* Looping diagonal light sweep. */}
-          <motion.div
-            aria-hidden
-            className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 skew-x-[-18deg]"
-            style={{
-              background:
-                "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.07) 50%, rgba(255,255,255,0) 100%)",
-            }}
-            animate={{ left: ["-33%", "133%"] }}
-            transition={{
-              duration: 2.6,
-              ease: "easeInOut",
-              repeat: Infinity,
-              repeatDelay: 3.2,
-            }}
-          />
-        </div>
+            {/* Looping diagonal light sweep. */}
+            <motion.div
+              aria-hidden
+              className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 skew-x-[-18deg]"
+              style={{
+                background:
+                  "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.07) 50%, rgba(255,255,255,0) 100%)",
+              }}
+              animate={{ left: ["-33%", "133%"] }}
+              transition={{
+                duration: 2.6,
+                ease: "easeInOut",
+                repeat: Infinity,
+                repeatDelay: 3.2,
+              }}
+            />
+          </div>
 
-        <div className="flex items-center gap-4 mt-3 pt-3 border-t border-white/[0.06] text-[11px]">
-          <span className="text-white/45">
-            Win rate <span className="text-white/80 font-medium">{winRate}%</span>
-          </span>
-          <span className="text-white/45">
-            Trades <span className="text-white/80 font-medium">{closed}</span>
-          </span>
-        </div>
+          <div className="flex items-center gap-4 mt-3 pt-3 border-t border-white/[0.06] text-[11px]">
+            <span className="text-white/45">
+              Win rate <span className="text-white/80 font-medium">{winRate}%</span>
+            </span>
+            <span className="text-white/45">
+              Trades <span className="text-white/80 font-medium">{closed}</span>
+            </span>
+          </div>
+        </motion.div>
+
+        {/* Drill-down: a small trade breakdown that slides down under
+            the enlarged featured cell, showing which trades summed to
+            that day's total. Stays mounted through the detail-modal
+            phase (dimming behind it) so it's visible around the edges
+            of the modal instead of blinking away and back. */}
+        <AnimatePresence>
+          {showTrades && (
+            <motion.div
+              key="trades"
+              className="absolute left-4 right-4 md:left-5 md:right-5 rounded-lg bg-[var(--surface-2)] border border-teal-500/25 p-3 shadow-[0_10px_30px_rgba(0,0,0,0.35)] backdrop-blur-sm z-10"
+              style={{ top: "54%" }}
+              initial={{ opacity: 0, y: -22, scale: 0.9 }}
+              animate={{
+                opacity: showDetail ? 0.35 : 1,
+                y: 0,
+                scale: showDetail ? 0.96 : 1,
+              }}
+              exit={{
+                opacity: 0,
+                y: -14,
+                scale: 0.94,
+                transition: { duration: 0.35, ease: [0.4, 0, 0.2, 1] },
+              }}
+              transition={{ duration: 0.65, ease: [0.4, 0, 0.2, 1] }}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-[9.5px] tracking-[0.12em] text-white/50">
+                  Wed · Day 8
+                </div>
+                <div className="text-[9.5px] text-white/40">
+                  {FEATURED_TRADES.length} trades
+                </div>
+              </div>
+              <motion.ul
+                className="space-y-1.5"
+                initial="hidden"
+                animate="show"
+                exit="hide"
+                variants={{
+                  hidden: {},
+                  show: {
+                    transition: { staggerChildren: 0.14, delayChildren: 0.1 },
+                  },
+                  hide: {
+                    transition: { staggerChildren: 0.05, staggerDirection: -1 },
+                  },
+                }}
+              >
+                {FEATURED_TRADES.map((t, idx) => {
+                  const selected = idx === FEATURED_DETAIL_INDEX;
+                  return (
+                    <motion.li
+                      key={t.symbol}
+                      variants={{
+                        hidden: { opacity: 0, y: -12 },
+                        show: {
+                          opacity: 1,
+                          y: 0,
+                          transition: { duration: 0.28, ease: "easeOut" },
+                        },
+                        hide: {
+                          opacity: 0,
+                          y: -8,
+                          transition: { duration: 0.2 },
+                        },
+                      }}
+                      className={`flex items-center justify-between rounded-md px-1.5 py-1 transition-colors ${
+                        selected && showDetail
+                          ? "bg-teal-500/15 ring-1 ring-teal-400/50"
+                          : ""
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-[12px] font-semibold text-white/85 tabular-nums">
+                          {t.symbol}
+                        </span>
+                        <span
+                          className={`px-1.5 py-0.5 rounded-[3px] text-[8.5px] font-medium tracking-wide ${
+                            t.side === "Call"
+                              ? "bg-teal-500/15 text-teal-300"
+                              : "bg-fuchsia-500/15 text-fuchsia-300"
+                          }`}
+                        >
+                          {t.side}
+                        </span>
+                      </div>
+                      <span className="text-[12px] font-semibold text-green-300 tabular-nums">
+                        +${t.pl}
+                      </span>
+                    </motion.li>
+                  );
+                })}
+              </motion.ul>
+              <motion.div
+                className="mt-2.5 pt-2 border-t border-white/10 flex items-center justify-between"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1, transition: { delay: 0.6 } }}
+                exit={{ opacity: 0, transition: { duration: 0.15 } }}
+              >
+                <span className="text-[10px] tracking-[0.08em] text-white/50">
+                  Net
+                </span>
+                <span className="text-[13px] font-semibold text-green-300 tabular-nums">
+                  +${featuredTotal}
+                </span>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Trade detail modal: opens after the middle trade is
+            "selected". Grows from the selected row's Y position, sits
+            over the (dimmed) trades panel, and shows the contract +
+            entry/exit + net P/L. */}
+        <AnimatePresence>
+          {showDetail && (
+            <motion.div
+              key="detail"
+              className="absolute left-3 right-3 md:left-4 md:right-4 rounded-xl bg-[var(--surface-2)] border border-teal-500/40 p-4 shadow-[0_20px_60px_rgba(0,0,0,0.55)] backdrop-blur-md z-20"
+              style={{ top: "50%" }}
+              initial={{ opacity: 0, y: 18, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 12, scale: 0.94 }}
+              transition={{ duration: 0.32, ease: [0.4, 0, 0.2, 1] }}
+            >
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[15px] font-bold text-white/90 tabular-nums">
+                    {detailTrade.symbol}
+                  </span>
+                  <span
+                    className={`px-1.5 py-0.5 rounded-[3px] text-[9px] font-medium tracking-wide ${
+                      detailTrade.side === "Call"
+                        ? "bg-teal-500/15 text-teal-300"
+                        : "bg-fuchsia-500/15 text-fuchsia-300"
+                    }`}
+                  >
+                    {detailTrade.side}
+                  </span>
+                  <span className="text-[10px] text-white/45 tabular-nums">
+                    ${detailTrade.strike} · {detailTrade.expiry}
+                  </span>
+                </div>
+                <i className="fa-solid fa-xmark text-white/35 text-[11px] mt-0.5" />
+              </div>
+              <div className="grid grid-cols-3 gap-2 mb-3">
+                <DetailStat label="Entry" value={`$${detailTrade.entry.toFixed(2)}`} />
+                <DetailStat label="Exit" value={`$${detailTrade.exit.toFixed(2)}`} />
+                <DetailStat label="Held" value={detailTrade.held} />
+              </div>
+              <div className="pt-2.5 border-t border-white/10 flex items-center justify-between">
+                <span className="text-[10px] tracking-[0.08em] text-white/50">
+                  Net P/L
+                </span>
+                <span className="text-[15px] font-bold text-green-300 tabular-nums">
+                  +${detailTrade.pl}
+                </span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Floating Quill AI hint chip - gently bobs. */}
@@ -330,6 +611,19 @@ function HeroCalendar() {
         <i className="fa-solid fa-wand-magic-sparkles text-[10px]" />
         Ask Quill AI
       </motion.div>
+    </div>
+  );
+}
+
+function DetailStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className="text-[8.5px] tracking-[0.08em] text-white/45">
+        {label}
+      </span>
+      <span className="text-[12px] font-semibold text-white/85 tabular-nums">
+        {value}
+      </span>
     </div>
   );
 }
