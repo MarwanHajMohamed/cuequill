@@ -23,6 +23,23 @@ function Page() {
       params.has("checkout")
     ) {
       setSelectedSetting("Plan");
+      return;
+    }
+    // Deep-link to any tab via ?tab= (e.g. /settings?tab=notifications).
+    const wanted = params.get("tab")?.trim().toLowerCase();
+    if (wanted) {
+      const titles = [
+        "Account",
+        "Appearance",
+        "Plan",
+        "Trades",
+        "IBKR auto-sync",
+        "Notifications",
+      ];
+      const match = titles.find(
+        (t) => t.toLowerCase() === wanted || t.toLowerCase().startsWith(wanted),
+      );
+      if (match) setSelectedSetting(match);
     }
   }, []);
 
