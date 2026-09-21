@@ -276,8 +276,17 @@ function HeroCalendar() {
   // → trades animate down under it → the middle trade "opens" into a
   // detail modal → detail closes → trades close → zoom out → rest.
   // Loops continuously so late-arriving visitors still see the story.
+  // Each drill step is split into an "aim" phase (the cursor glides to its
+  // target, nothing else moves) and the action phase (zoom / modal), which
+  // fires on arrival - so the zoom is synced to the cursor's click.
   const [phase, setPhase] = useState<
-    "idle" | "trades" | "detail" | "unzoom"
+    | "idle"
+    | "aimDay"
+    | "trades"
+    | "aimTrade"
+    | "detail"
+    | "closing"
+    | "unzoom"
   >("idle");
   useEffect(() => {
     let cancelled = false;
@@ -289,23 +298,26 @@ function HeroCalendar() {
     (async () => {
       await wait(2400); // let the entrance stagger finish first
       while (!cancelled) {
-        // Zoom + trades enter together — the panel animates in during
-        // the zoom, so the drill-down feels like one continuous move
-        // rather than a stepped "zoom then modal".
-        setPhase("trades");
-        await wait(2600);
+        setPhase("aimDay"); // cursor glides to the featured day
+        await wait(750);
         if (cancelled) return;
-        setPhase("detail");
-        await wait(2600);
+        setPhase("trades"); // click lands → zoom in + trades open
+        await wait(2000);
         if (cancelled) return;
-        setPhase("trades");
-        await wait(600);
+        setPhase("aimTrade"); // cursor glides down to the middle trade
+        await wait(750);
         if (cancelled) return;
-        setPhase("unzoom");
+        setPhase("detail"); // click lands → detail modal opens
+        await wait(2400);
+        if (cancelled) return;
+        setPhase("closing"); // modal closes, still zoomed in
+        await wait(650);
+        if (cancelled) return;
+        setPhase("unzoom"); // zoom back out to the calendar
         await wait(1500);
         if (cancelled) return;
         setPhase("idle");
-        await wait(3000);
+        await wait(2600);
       }
     })();
     return () => {
@@ -314,8 +326,14 @@ function HeroCalendar() {
     };
   }, []);
 
-  const zoomed = phase === "trades" || phase === "detail";
-  const showTrades = phase === "trades" || phase === "detail";
+  // Zoomed in from the moment the day is clicked through to the modal
+  // closing; the trades panel is mounted the whole time we're zoomed.
+  const zoomed =
+    phase === "trades" ||
+    phase === "aimTrade" ||
+    phase === "detail" ||
+    phase === "closing";
+  const showTrades = zoomed;
   const showDetail = phase === "detail";
   const featuredTotal = FEATURED_TRADES.reduce((s, t) => s + t.pl, 0);
   const detailTrade = FEATURED_TRADES[FEATURED_DETAIL_INDEX];
@@ -636,30 +654,40 @@ function HeroCalendar() {
 function HeroCursor({
   phase,
 }: {
-  phase: "idle" | "trades" | "detail" | "unzoom";
+  phase:
+    | "idle"
+    | "aimDay"
+    | "trades"
+    | "aimTrade"
+    | "detail"
+    | "closing"
+    | "unzoom";
 }) {
   const pos = {
     idle: { left: "57%", top: "70%", opacity: 0.85 },
+    // The cursor glides to the day during aimDay, then holds there for the
+    // click/zoom (trades); likewise aimTrade → detail on the trade row.
+    aimDay: { left: "49%", top: "39%", opacity: 1 },
     trades: { left: "49%", top: "39%", opacity: 1 },
+    aimTrade: { left: "50%", top: "63%", opacity: 1 },
     detail: { left: "50%", top: "63%", opacity: 1 },
+    closing: { left: "50%", top: "63%", opacity: 1 },
     unzoom: { left: "62%", top: "82%", opacity: 0 },
   }[phase];
 
-  // Fire a click pulse only when moving deeper (idle→trades, trades→detail),
-  // and only AFTER the cursor has finished gliding to its target - so the
-  // click lands on arrival, not as it sets off.
+  // The cursor has already glided to its target during the aim phase, so the
+  // click fires the instant we enter the action phase - in lockstep with the
+  // zoom / modal it triggers.
   const [clickId, setClickId] = useState(0);
   const prevPhase = useRef(phase);
   useEffect(() => {
     const p = prevPhase.current;
     prevPhase.current = phase;
     if (
-      (p === "idle" && phase === "trades") ||
-      (p === "trades" && phase === "detail")
+      (p === "aimDay" && phase === "trades") ||
+      (p === "aimTrade" && phase === "detail")
     ) {
-      // Matches the 0.55s move transition, plus a small beat to settle.
-      const t = setTimeout(() => setClickId((n) => n + 1), 600);
-      return () => clearTimeout(t);
+      setClickId((n) => n + 1);
     }
   }, [phase]);
 
