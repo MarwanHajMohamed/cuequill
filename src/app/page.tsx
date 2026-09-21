@@ -2,7 +2,13 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
 import { FaqRow, SiteFooter, SiteHeader } from "./_marketing/Chrome";
 
 // ─── Page ────────────────────────────────────────────────────────────
@@ -338,6 +344,12 @@ function HeroCalendar() {
   const featuredTotal = FEATURED_TRADES.reduce((s, t) => s + t.pl, 0);
   const detailTrade = FEATURED_TRADES[FEATURED_DETAIL_INDEX];
 
+  // Measured so the cursor can point at the real featured tile / trade row
+  // rather than guessed percentages.
+  const cardRef = useRef<HTMLDivElement>(null);
+  const dayRef = useRef<HTMLDivElement>(null);
+  const tradeRef = useRef<HTMLLIElement>(null);
+
   return (
     <div className="relative mx-auto w-full max-w-[440px]">
       {/* Soft glow behind the card. Clipped to the card's own bounds
@@ -351,7 +363,10 @@ function HeroCalendar() {
             "radial-gradient(60% 60% at 70% 20%, rgba(45,212,191,0.18) 0%, rgba(45,212,191,0) 70%)",
         }}
       />
-      <div className="relative rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5 shadow-[0_8px_40px_var(--shadow-soft)] overflow-hidden">
+      <div
+        ref={cardRef}
+        className="relative rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5 shadow-[0_8px_40px_var(--shadow-soft)] overflow-hidden"
+      >
         {/* Card contents are wrapped in a scaling layer so the zoom-in
             drill-down enlarges everything from an anchor at day 11's
             centre. Origin is the featured cell's centre inside the
@@ -417,6 +432,7 @@ function HeroCalendar() {
                 return (
                   <motion.div
                     key={i}
+                    ref={isFeatured ? dayRef : undefined}
                     variants={heroCell}
                     className={`relative aspect-square rounded-md border ${tone} ${highlight} flex flex-col items-center justify-center`}
                   >
@@ -518,6 +534,7 @@ function HeroCalendar() {
                   return (
                     <motion.li
                       key={t.symbol}
+                      ref={idx === FEATURED_DETAIL_INDEX ? tradeRef : undefined}
                       variants={{
                         hidden: { opacity: 0, y: -12 },
                         show: {
@@ -630,7 +647,12 @@ function HeroCalendar() {
         {/* Animated cursor that "drives" the drill-down: clicks the
             featured day to zoom in, then the middle trade to open its
             detail. Decorative (pointer-events-none), clipped to the card. */}
-        <HeroCursor phase={phase} />
+        <HeroCursor
+          phase={phase}
+          cardRef={cardRef}
+          dayRef={dayRef}
+          tradeRef={tradeRef}
+        />
       </div>
 
       {/* Floating Quill AI hint chip - gently bobs. */}
@@ -653,6 +675,9 @@ function HeroCalendar() {
 // the return leg doesn't look like an extra click.
 function HeroCursor({
   phase,
+  cardRef,
+  dayRef,
+  tradeRef,
 }: {
   phase:
     | "idle"
@@ -662,18 +687,62 @@ function HeroCursor({
     | "detail"
     | "closing"
     | "unzoom";
+  cardRef: RefObject<HTMLDivElement | null>;
+  dayRef: RefObject<HTMLDivElement | null>;
+  tradeRef: RefObject<HTMLLIElement | null>;
 }) {
-  const pos = {
-    idle: { left: "57%", top: "70%", opacity: 0.85 },
-    // The cursor glides to the day during aimDay, then holds there for the
-    // click/zoom (trades); likewise aimTrade → detail on the trade row.
-    aimDay: { left: "49%", top: "39%", opacity: 1 },
-    trades: { left: "49%", top: "39%", opacity: 1 },
-    aimTrade: { left: "50%", top: "63%", opacity: 1 },
-    detail: { left: "50%", top: "63%", opacity: 1 },
-    closing: { left: "50%", top: "63%", opacity: 1 },
-    unzoom: { left: "62%", top: "82%", opacity: 0 },
-  }[phase];
+  // The cursor points at the real element centres, measured relative to the
+  // card. The day is measured only before the zoom (aimDay); the trade row
+  // is unscaled so it's measured whenever we're on it. trades keeps the day
+  // target so it doesn't jump onto the tile mid-zoom.
+  const [target, setTarget] = useState<{
+    x: number;
+    y: number;
+    opacity: number;
+  } | null>(null);
+
+  const applyTarget = useCallback(() => {
+    const card = cardRef.current;
+    if (!card) return;
+    const cr = card.getBoundingClientRect();
+    const bx = cr.left + card.clientLeft;
+    const by = cr.top + card.clientTop;
+    const w = card.clientWidth;
+    const h = card.clientHeight;
+    const centerOf = (el: HTMLElement | null) => {
+      if (!el) return null;
+      const r = el.getBoundingClientRect();
+      return { x: r.left + r.width / 2 - bx, y: r.top + r.height / 2 - by };
+    };
+    let next: { x: number; y: number; opacity: number } | null = null;
+    if (phase === "aimDay") {
+      const c = centerOf(dayRef.current);
+      if (c) next = { ...c, opacity: 1 };
+    } else if (
+      phase === "aimTrade" ||
+      phase === "detail" ||
+      phase === "closing"
+    ) {
+      const c = centerOf(tradeRef.current);
+      if (c) next = { ...c, opacity: 1 };
+    } else if (phase === "unzoom") {
+      next = { x: w * 0.64, y: h * 0.86, opacity: 0 };
+    } else if (phase === "idle") {
+      next = { x: w * 0.58, y: h * 0.72, opacity: 0.85 };
+    }
+    // phase === "trades": leave the day target from aimDay in place.
+    if (next) setTarget(next);
+  }, [phase, cardRef, dayRef, tradeRef]);
+
+  useEffect(() => {
+    applyTarget();
+  }, [applyTarget]);
+
+  useEffect(() => {
+    const on = () => applyTarget();
+    window.addEventListener("resize", on);
+    return () => window.removeEventListener("resize", on);
+  }, [applyTarget]);
 
   // The cursor has already glided to its target during the aim phase, so the
   // click fires the instant we enter the action phase - in lockstep with the
@@ -691,12 +760,16 @@ function HeroCursor({
     }
   }, [phase]);
 
+  if (!target) return null;
+
   return (
     <motion.div
       aria-hidden
       className="pointer-events-none absolute z-30"
       initial={false}
-      animate={{ left: pos.left, top: pos.top, opacity: pos.opacity }}
+      // Nudge so the pointer's tip (not its top-left) sits on the target.
+      style={{ transform: "translate(-3px, -2px)" }}
+      animate={{ left: target.x, top: target.y, opacity: target.opacity }}
       transition={{
         left: { duration: 0.55, ease: [0.4, 0, 0.2, 1] },
         top: { duration: 0.55, ease: [0.4, 0, 0.2, 1] },
