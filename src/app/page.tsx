@@ -608,6 +608,11 @@ function HeroCalendar() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Animated cursor that "drives" the drill-down: clicks the
+            featured day to zoom in, then the middle trade to open its
+            detail. Decorative (pointer-events-none), clipped to the card. */}
+        <HeroCursor phase={phase} />
       </div>
 
       {/* Floating Quill AI hint chip - gently bobs. */}
@@ -620,6 +625,82 @@ function HeroCalendar() {
         Ask Quill AI
       </motion.div>
     </div>
+  );
+}
+
+// A fake pointer that glides across the hero card in time with the
+// drill-down loop: it hovers, "clicks" the featured day (zoom in), then
+// "clicks" the middle trade (open detail), then drifts away as it unzooms.
+// A click ripple + a small press-scale fire only on the forward clicks, so
+// the return leg doesn't look like an extra click.
+function HeroCursor({
+  phase,
+}: {
+  phase: "idle" | "trades" | "detail" | "unzoom";
+}) {
+  const pos = {
+    idle: { left: "57%", top: "70%", opacity: 0.85 },
+    trades: { left: "49%", top: "39%", opacity: 1 },
+    detail: { left: "50%", top: "63%", opacity: 1 },
+    unzoom: { left: "62%", top: "82%", opacity: 0 },
+  }[phase];
+
+  // Fire a click pulse only when moving deeper (idle→trades, trades→detail).
+  const [clickId, setClickId] = useState(0);
+  const prevPhase = useRef(phase);
+  useEffect(() => {
+    const p = prevPhase.current;
+    if (
+      (p === "idle" && phase === "trades") ||
+      (p === "trades" && phase === "detail")
+    ) {
+      setClickId((n) => n + 1);
+    }
+    prevPhase.current = phase;
+  }, [phase]);
+
+  return (
+    <motion.div
+      aria-hidden
+      className="pointer-events-none absolute z-30"
+      initial={false}
+      animate={{ left: pos.left, top: pos.top, opacity: pos.opacity }}
+      transition={{
+        left: { duration: 0.55, ease: [0.4, 0, 0.2, 1] },
+        top: { duration: 0.55, ease: [0.4, 0, 0.2, 1] },
+        opacity: { duration: 0.4 },
+      }}
+    >
+      {/* Click ripple - remounts (and replays) on each forward click. */}
+      {clickId > 0 && (
+        <motion.span
+          key={clickId}
+          className="absolute left-0 top-0 rounded-full border border-teal-300/80"
+          initial={{ width: 6, height: 6, x: -3, y: -3, opacity: 0.75 }}
+          animate={{ width: 28, height: 28, x: -14, y: -14, opacity: 0 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+        />
+      )}
+      {/* Pointer - a small press-scale plays on each click. */}
+      <motion.svg
+        key={`ptr-${clickId}`}
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.55)]"
+        style={{ transformOrigin: "4px 3px" }}
+        animate={clickId > 0 ? { scale: [1, 0.8, 1] } : { scale: 1 }}
+        transition={{ duration: 0.32, ease: "easeOut" }}
+      >
+        <path
+          d="M4 2.5l14.5 8.2-6.1 1.35-3.1 6.3L4 2.5z"
+          fill="#ffffff"
+          stroke="rgba(0,0,0,0.55)"
+          strokeWidth="1"
+          strokeLinejoin="round"
+        />
+      </motion.svg>
+    </motion.div>
   );
 }
 
