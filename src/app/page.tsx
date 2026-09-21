@@ -172,7 +172,7 @@ function Hero() {
           transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
           className="md:col-span-6"
         >
-          <HeroCalendar />
+          <HeroCarousel />
         </motion.div>
       </div>
     </section>
@@ -806,6 +806,303 @@ function HeroCursor({
         />
       </motion.svg>
     </motion.div>
+  );
+}
+
+// ─── Hero carousel ──────────────────────────────────────────────────
+// Rotates the hero visual through the calendar drill-down and the
+// affirmations tick-off so the hero shows two of Cuequill's rituals
+// in turn rather than only the calendar. Each slide runs its own
+// self-contained animation loop; the carousel just cross-fades
+// between them at a fixed interval.
+
+const CAROUSEL_SLIDE_MS = 16000;
+const CAROUSEL_SLIDES = 2;
+
+function HeroCarousel() {
+  const [slide, setSlide] = useState(0);
+  useEffect(() => {
+    const t = setInterval(
+      () => setSlide((s) => (s + 1) % CAROUSEL_SLIDES),
+      CAROUSEL_SLIDE_MS,
+    );
+    return () => clearInterval(t);
+  }, []);
+
+  return (
+    <div className="relative mx-auto w-full max-w-[440px] min-h-[630px]">
+      <AnimatePresence mode="wait">
+        {slide === 0 ? (
+          <motion.div
+            key="cal"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.45, ease: [0.4, 0, 0.2, 1] }}
+          >
+            <HeroCalendar />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="aff"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.45, ease: [0.4, 0, 0.2, 1] }}
+          >
+            <HeroAffirmations />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Slide indicator dots. */}
+      <div className="absolute left-1/2 -translate-x-1/2 -bottom-8 flex items-center gap-1.5">
+        {Array.from({ length: CAROUSEL_SLIDES }).map((_, i) => (
+          <button
+            key={i}
+            type="button"
+            aria-label={`Show slide ${i + 1}`}
+            onClick={() => setSlide(i)}
+            className={`h-1.5 rounded-full transition-all ${
+              i === slide
+                ? "w-5 bg-teal-300"
+                : "w-1.5 bg-white/25 hover:bg-white/40"
+            }`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Affirmations slide ─────────────────────────────────────────────
+// A miniature Morning Affirmations widget. Six affirmations sit on
+// screen, the "camera" zooms in on the first, then ticks each one
+// off in turn while translating up so the current focus stays near
+// the top of the visible viewport. When the last one is ticked the
+// zoom reverses and the progress bar reads full — a scripted
+// demonstration of the daily-affirmations ritual.
+
+const HERO_AFFIRMATIONS = [
+  "Trust the process, not the outcome.",
+  "One trade won't make my year.",
+  "I only take A+ setups.",
+  "I journal every trade - win or loss.",
+  "Discipline compounds.",
+  "The market rewards patience.",
+  "I honor my stops without hesitation.",
+  "Green days don't require green trades.",
+  "My edge is boring - that's the point.",
+  "I reset after every fill.",
+];
+
+const AFF_ROW_HEIGHT = 44; // px, unscaled
+const AFF_ZOOM_SCALE = 1.4;
+
+function HeroAffirmations() {
+  const total = HERO_AFFIRMATIONS.length;
+  const [phase, setPhase] = useState<
+    "idle" | "zoom" | "ticking" | "unzoom" | "complete"
+  >("idle");
+  const [focusIndex, setFocusIndex] = useState(0);
+  const [checkedCount, setCheckedCount] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    const timeouts: ReturnType<typeof setTimeout>[] = [];
+    const wait = (ms: number) =>
+      new Promise<void>((r) => {
+        timeouts.push(setTimeout(() => r(), ms));
+      });
+    (async () => {
+      // Let the card and rows settle in first.
+      await wait(1400);
+      if (cancelled) return;
+      setPhase("zoom");
+      setFocusIndex(0);
+      await wait(650);
+      if (cancelled) return;
+      setPhase("ticking");
+      for (let i = 0; i < total; i++) {
+        if (cancelled) return;
+        setFocusIndex(i);
+        // Each subsequent tick lands faster, so the checklist builds
+        // momentum — first affirmation has room to breathe, the last
+        // couple snap through.
+        const readPause = Math.max(140, 460 - i * 70);
+        const holdAfter = Math.max(120, 380 - i * 60);
+        await wait(readPause);
+        if (cancelled) return;
+        setCheckedCount(i + 1);
+        await wait(holdAfter);
+      }
+      if (cancelled) return;
+      setPhase("unzoom");
+      await wait(700);
+      if (cancelled) return;
+      setPhase("complete");
+      // The carousel typically advances after ~16s, so this hold
+      // just needs to survive the remainder of the slide.
+      await wait(4000);
+    })();
+    return () => {
+      cancelled = true;
+      timeouts.forEach(clearTimeout);
+    };
+  }, [total]);
+
+  const zoomed = phase === "zoom" || phase === "ticking";
+  // Slide the list up so the current focus row sits near the top
+  // of the visible viewport. Because scale is applied on the same
+  // element, y needs to be multiplied by the scale factor so the
+  // shift lines up with a whole row in visual pixels.
+  const listY = zoomed ? -focusIndex * AFF_ROW_HEIGHT * AFF_ZOOM_SCALE : 0;
+
+  return (
+    <div className="relative mx-auto w-full max-w-[440px]">
+      {/* Same soft teal glow behind the card as the calendar hero. */}
+      <div
+        aria-hidden
+        className="absolute inset-0 -z-10 rounded-2xl opacity-70 overflow-hidden"
+        style={{
+          background:
+            "radial-gradient(60% 60% at 70% 20%, rgba(45,212,191,0.18) 0%, rgba(45,212,191,0) 70%)",
+        }}
+      />
+      <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5 shadow-[0_8px_40px_var(--shadow-soft)]">
+        <div className="flex items-center justify-between mb-3">
+          <div className="text-[12px] tracking-[0.1em] text-white/45 font-medium">
+            Morning affirmations
+          </div>
+          <div className="text-[13px] font-semibold text-white/85 tabular-nums">
+            <motion.span
+              key={checkedCount}
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25 }}
+            >
+              {checkedCount}
+            </motion.span>
+            <span className="text-white/35"> / {total}</span>
+          </div>
+        </div>
+
+        {/* Progress bar. */}
+        <div className="relative h-1.5 rounded-full bg-white/[0.06] overflow-hidden mb-4">
+          <motion.div
+            className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-teal-400/80 to-teal-300"
+            animate={{ width: `${(checkedCount / total) * 100}%` }}
+            transition={{ duration: 0.45, ease: [0.4, 0, 0.2, 1] }}
+          />
+        </div>
+
+        {/* Viewport for the affirmations list. Fixed height, clipped,
+            so the scale + translate stay contained inside the card. */}
+        <div className="relative h-[480px] overflow-hidden rounded-md">
+          <motion.div
+            animate={{ scale: zoomed ? AFF_ZOOM_SCALE : 1, y: listY }}
+            transition={{ duration: 0.55, ease: [0.4, 0, 0.2, 1] }}
+            style={{ transformOrigin: "0% 0%" }}
+          >
+            {HERO_AFFIRMATIONS.map((text, i) => {
+              const checked = i < checkedCount;
+              const isFocus = zoomed && i === focusIndex && !checked;
+              return (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{
+                    duration: 0.35,
+                    delay: 0.4 + i * 0.08,
+                    ease: "easeOut",
+                  }}
+                  className="flex items-center gap-3 px-2"
+                  style={{ height: AFF_ROW_HEIGHT }}
+                >
+                  <motion.div
+                    animate={{
+                      backgroundColor: checked
+                        ? "rgba(45,212,191,0.9)"
+                        : "rgba(255,255,255,0)",
+                      borderColor: checked
+                        ? "rgba(45,212,191,0.9)"
+                        : isFocus
+                          ? "rgba(94,234,212,0.55)"
+                          : "rgba(255,255,255,0.18)",
+                      scale: isFocus ? 1.08 : 1,
+                    }}
+                    transition={{ duration: 0.28, ease: "easeOut" }}
+                    className="relative flex items-center justify-center w-4 h-4 rounded-[5px] border shrink-0"
+                  >
+                    <AnimatePresence>
+                      {checked && (
+                        <motion.i
+                          key="check"
+                          initial={{ scale: 0, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0, opacity: 0 }}
+                          transition={{
+                            duration: 0.24,
+                            ease: [0.34, 1.56, 0.64, 1],
+                          }}
+                          className="fa-solid fa-check text-[9px] text-[color:var(--background)]"
+                        />
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
+                  <motion.span
+                    animate={{
+                      opacity: checked ? 0.55 : isFocus ? 1 : 0.8,
+                    }}
+                    transition={{ duration: 0.28 }}
+                    className={`text-[12.5px] leading-snug ${
+                      checked
+                        ? "line-through text-white/60"
+                        : isFocus
+                          ? "text-white"
+                          : "text-white/80"
+                    }`}
+                  >
+                    {text}
+                  </motion.span>
+                </motion.div>
+              );
+            })}
+          </motion.div>
+        </div>
+
+        <div className="flex items-center gap-4 mt-3 pt-3 border-t border-white/[0.06] text-[11px]">
+          <span className="text-white/45">
+            Streak <span className="text-white/80 font-medium">14 days</span>
+          </span>
+          <span className="text-white/45">
+            {phase === "complete"
+              ? "All read for today"
+              : `${total - checkedCount} to go`}
+          </span>
+        </div>
+      </div>
+
+      {/* Ritual-complete confetti chip that pops up when finished. */}
+      <AnimatePresence>
+        {phase === "complete" && (
+          <motion.div
+            className="absolute -bottom-3 -right-2 md:-right-4 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-[var(--surface-2)] border border-teal-500/25 text-teal-300 shadow-lg text-[11px] font-medium"
+            initial={{ opacity: 0, scale: 0.7, y: 6 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{
+              duration: 0.35,
+              ease: [0.34, 1.56, 0.64, 1],
+            }}
+          >
+            <i className="fa-solid fa-circle-check text-[10px]" />
+            Complete
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 
