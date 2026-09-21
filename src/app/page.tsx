@@ -299,10 +299,10 @@ function HeroCalendar() {
         await wait(2600);
         if (cancelled) return;
         setPhase("trades");
-        await wait(400);
+        await wait(600);
         if (cancelled) return;
         setPhase("unzoom");
-        await wait(700);
+        await wait(1500);
         if (cancelled) return;
         setPhase("idle");
         await wait(3000);
@@ -340,7 +340,13 @@ function HeroCalendar() {
             grid: col 3.5/7 ≈ 50%, row (1.5/5 rows) ≈ 34%. */}
         <motion.div
           animate={{ scale: zoomed ? 2.4 : 1 }}
-          transition={{ duration: 0.7, ease: [0.4, 0, 0.2, 1] }}
+          transition={{
+            // The zoom-out back to the calendar (unzoom) is deliberately
+            // slower than the zoom-in so the last step reads as a gentle
+            // pull-back rather than a snap.
+            duration: phase === "unzoom" ? 1.5 : 0.7,
+            ease: [0.4, 0, 0.2, 1],
+          }}
           style={{ transformOrigin: "50% 30%" }}
         >
           <div className="flex items-center justify-between mb-3">
@@ -460,7 +466,9 @@ function HeroCalendar() {
                 opacity: 0,
                 y: -14,
                 scale: 0.94,
-                transition: { duration: 0.35, ease: [0.4, 0, 0.2, 1] },
+                // Slower fade-out so the panel eases away in step with the
+                // slower zoom-out to the calendar.
+                transition: { duration: 0.7, ease: [0.4, 0, 0.2, 1] },
               }}
               transition={{ duration: 0.65, ease: [0.4, 0, 0.2, 1] }}
             >
