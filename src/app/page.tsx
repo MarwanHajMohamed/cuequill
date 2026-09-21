@@ -645,18 +645,22 @@ function HeroCursor({
     unzoom: { left: "62%", top: "82%", opacity: 0 },
   }[phase];
 
-  // Fire a click pulse only when moving deeper (idle→trades, trades→detail).
+  // Fire a click pulse only when moving deeper (idle→trades, trades→detail),
+  // and only AFTER the cursor has finished gliding to its target - so the
+  // click lands on arrival, not as it sets off.
   const [clickId, setClickId] = useState(0);
   const prevPhase = useRef(phase);
   useEffect(() => {
     const p = prevPhase.current;
+    prevPhase.current = phase;
     if (
       (p === "idle" && phase === "trades") ||
       (p === "trades" && phase === "detail")
     ) {
-      setClickId((n) => n + 1);
+      // Matches the 0.55s move transition, plus a small beat to settle.
+      const t = setTimeout(() => setClickId((n) => n + 1), 600);
+      return () => clearTimeout(t);
     }
-    prevPhase.current = phase;
   }, [phase]);
 
   return (
