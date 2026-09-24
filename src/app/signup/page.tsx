@@ -171,6 +171,15 @@ function SignupInner() {
           </div>
         ) : (
         <>
+        {/* Header - matches the sign-in page. */}
+        <div className="mb-7 text-center">
+          <h1 className="text-3xl md:text-4xl font-semibold tracking-tight leading-[1.05]">
+            <span className="auth-heading bg-gradient-to-r from-teal-300 to-emerald-400 bg-clip-text text-transparent">
+              Sign up
+            </span>
+          </h1>
+        </div>
+
         {oauthNotInvited && (
           <div className="mb-5 border border-teal-500/25 bg-teal-500/[0.06] rounded-xl px-3.5 py-2.5 text-[12.5px] text-teal-200 flex items-start gap-2">
             <i className="fa-solid fa-circle-info text-[12px] mt-0.5" />
@@ -238,7 +247,7 @@ function SignupInner() {
                   setFirstname(e.target.value);
                   setError("");
                 }}
-                placeholder="Marwan"
+                placeholder="John"
                 className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2.5 text-[14px] text-white placeholder:text-white/30 focus:outline-none focus:border-white/25 transition"
               />
             </div>
@@ -327,19 +336,7 @@ function SignupInner() {
           </button>
         </form>
 
-        <p className="mt-5 text-center text-[11px] text-white/35 leading-relaxed">
-          By creating an account you agree to our{" "}
-          <Link href="/terms" className="text-white/55 hover:text-white underline decoration-white/20 underline-offset-2">
-            Terms
-          </Link>{" "}
-          and{" "}
-          <Link href="/privacy" className="text-white/55 hover:text-white underline decoration-white/20 underline-offset-2">
-            Privacy policy
-          </Link>
-          .
-        </p>
-
-        <div className="mt-4 text-center text-[11.5px] text-white/40">
+        <div className="mt-6 text-center text-[11.5px] text-white/40">
           Already have an account?{" "}
           <Link
             href="/login"
@@ -352,6 +349,27 @@ function SignupInner() {
         </>
         )}
       </motion.div>
+
+      {/* Terms line - sits outside the card, at the foot of the page. */}
+      {!done && (
+        <p className="mt-5 w-full max-w-[420px] px-2 text-center text-[11px] text-white/35 leading-relaxed">
+          By creating an account you agree to our{" "}
+          <Link
+            href="/terms"
+            className="text-white/55 hover:text-white underline decoration-white/20 underline-offset-2"
+          >
+            Terms
+          </Link>{" "}
+          and{" "}
+          <Link
+            href="/privacy"
+            className="text-white/55 hover:text-white underline decoration-white/20 underline-offset-2"
+          >
+            Privacy policy
+          </Link>
+          .
+        </p>
+      )}
     </div>
   );
 }
