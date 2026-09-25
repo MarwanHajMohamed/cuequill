@@ -4,7 +4,6 @@ import AppleProvider from "next-auth/providers/apple";
 import connectDb from "@/lib/db";
 import { User } from "@/lib/models/User";
 import { Waitlist } from "@/lib/models/Waitlist";
-import { LAUNCH_AT, isPreLaunch } from "@/lib/launch";
 import bcrypt from "bcryptjs";
 import { NextAuthOptions } from "next-auth";
 import type { Provider } from "next-auth/providers/index";
@@ -34,7 +33,6 @@ type DbUser = {
   isPro?: boolean;
   failedLoginAttempts?: number;
   lockedUntil?: Date | null;
-  preLaunchLockUntil?: Date | null;
 };
 
 // Split a Google display name ("Marwan Haj Mohammed") into first + surname,
@@ -179,17 +177,6 @@ providers.push(
         }
       }
 
-      // Pre-launch lock: correct password, but the account is held until
-      // launch. Throw so the login UI can show a specific "opens on launch
-      // day" message (surfaced via res.error). Clears itself once the date
-      // passes, so nothing to migrate at launch.
-      if (
-        user.preLaunchLockUntil &&
-        user.preLaunchLockUntil.getTime() > Date.now()
-      ) {
-        throw new Error("PRELAUNCH");
-      }
-
       return {
         id: user._id.toString(),
         email: user.email,
@@ -219,10 +206,9 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     // OAuth sign-in / sign-up gate. Existing users always sign in. New
     // Google/Apple users get an account created on the fly - self-serve
-    // sign-up is open at launch. Set INVITE_ONLY=true to fall back to the
-    // pre-launch behaviour, where new OAuth accounts are allowed only for
-    // emails invited off the waitlist (invitedAt set) and everyone else is
-    // bounced to /signup.
+    // sign-up is open. Set INVITE_ONLY=true to restrict new OAuth
+    // accounts to emails invited off the waitlist (invitedAt set);
+    // everyone else is bounced to /signup.
     async signIn({ user, account }) {
       if (!account) return false;
       if (account.provider === "credentials") return true;
@@ -231,18 +217,9 @@ export const authOptions: NextAuthOptions = {
       await connectDb();
       const existing = await User.findOne({ email })
         .collation(EMAIL_COLLATION)
-        .select("_id preLaunchLockUntil")
-        .lean<{ _id: unknown; preLaunchLockUntil?: Date }>();
-      if (existing) {
-        // Pre-launch lock applies to OAuth sign-in too.
-        if (
-          existing.preLaunchLockUntil &&
-          existing.preLaunchLockUntil.getTime() > Date.now()
-        ) {
-          return "/login?error=PreLaunch";
-        }
-        return true;
-      }
+        .select("_id")
+        .lean<{ _id: unknown }>();
+      if (existing) return true;
 
       // New user. In invite-only mode, require a waitlist invite; carry
       // the invited first name through for the name split.
@@ -256,17 +233,12 @@ export const authOptions: NextAuthOptions = {
         fallbackFirst = invited.firstname;
       }
 
-      // Pre-launch: still create the account (and waitlist it), but keep it
-      // locked and block this sign-in. After launch, the account is created
-      // unlocked and the sign-in proceeds.
-      const preLaunch = isPreLaunch();
       const { first, last } = splitName(user.name, fallbackFirst);
       try {
         await User.create({
           email,
           firstname: first,
           surname: last,
-          ...(preLaunch ? { preLaunchLockUntil: LAUNCH_AT } : {}),
         });
       } catch {
         // A concurrent sign-in (two tabs) may have created it already;
@@ -275,18 +247,6 @@ export const authOptions: NextAuthOptions = {
           .collation(EMAIL_COLLATION)
           .select("_id");
         if (!now) return "/login?error=OAuthCreateFailed";
-      }
-      if (preLaunch) {
-        try {
-          await Waitlist.updateOne(
-            { email },
-            { $setOnInsert: { email, firstname: first, source: "oauth" } },
-            { upsert: true },
-          );
-        } catch {
-          /* non-fatal */
-        }
-        return "/login?error=PreLaunch";
       }
       return true;
     },

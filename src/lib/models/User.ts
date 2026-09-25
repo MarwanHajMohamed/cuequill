@@ -11,11 +11,6 @@ export interface IUser extends Document {
   // shared rate-limiting infrastructure.
   failedLoginAttempts?: number;
   lockedUntil?: Date;
-  // Pre-launch lock: set at signup to the public launch date. While this
-  // is in the future the account exists but can't sign in (or auto-login).
-  // Cleared implicitly by time - once the date passes it no longer blocks.
-  // Accounts created without it (owner, comps, testers) are never gated.
-  preLaunchLockUntil?: Date;
   firstname: string;
   surname: string;
   timezone: string;
@@ -204,7 +199,6 @@ const UserSchema = new Schema<IUser>({
   password: { type: String, required: false, select: false },
   failedLoginAttempts: { type: Number, default: 0 },
   lockedUntil: { type: Date },
-  preLaunchLockUntil: { type: Date },
   firstname: { type: String, required: true },
   surname: { type: String },
   timezone: { type: String, default: null },

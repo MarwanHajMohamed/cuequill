@@ -41,7 +41,7 @@ export const CuequillLogo = ({ className = "" }: { className?: string }) => (
 // SiteHeader, so every marketing surface picks it up. Honours reduced-
 // motion by showing the message statically instead of scrolling.
 const PROMO_ITEMS = [
-  "Cuequill launches 25 September 2026",
+  "Cuequill is live",
   "Use code LAUNCH26 for 50% off your first 6 months",
 ];
 
@@ -71,15 +71,14 @@ export function AnnouncementBar() {
     <div className="pointer-events-auto w-full overflow-hidden border-b border-teal-400/20 bg-gradient-to-r from-teal-600/30 via-teal-500/20 to-emerald-500/30 backdrop-blur-md">
       {/* Single readable copy for screen readers; the marquee is decorative. */}
       <span className="sr-only">
-        Cuequill launches 25 September 2026. Use code LAUNCH26 for 50% off your
-        first 6 months.
+        Cuequill is live. Use code LAUNCH26 for 50% off your first 6 months.
       </span>
       <div className="relative flex h-9 items-center">
         {reduce ? (
           <div className="flex w-full items-center justify-center">
             <span className="px-6 text-[11.5px] font-medium text-teal-50 text-center">
-              Cuequill launches 25 September 2026 · Use code LAUNCH26 for 50% off
-              your first 6 months
+              Cuequill is live · Use code LAUNCH26 for 50% off your first 6
+              months
             </span>
           </div>
         ) : (
