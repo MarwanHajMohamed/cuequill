@@ -2,11 +2,11 @@
 //
 // Each page has a stable id (used to remember which tours a user has
 // seen) and an ordered list of steps. A step either points at an
-// element via a CSS selector (usually `[data-tour="…"]` on the target)
-// or omits the selector to render as a centred modal.
+// element via a CSS selector (usually `[data-tour="..."]` on the
+// target) or omits the selector to render as a centred modal.
 //
 // Adding a new page's tour is: pick an id, mark the target elements
-// with `data-tour="…"` in the JSX, list them here.
+// with `data-tour="..."` in the JSX, list them here.
 
 export type TourStep = {
   // CSS selector for the element to highlight. Omit for a centred
@@ -34,17 +34,17 @@ export const TOURS: Record<string, Tour> = {
     steps: [
       {
         title: "Welcome to Cuequill",
-        body: "This is your dashboard. It's the daily launchpad — the widgets here surface what changed since yesterday and what you should look at first. Let's walk through it.",
+        body: "This is your dashboard. It's the daily launchpad: the widgets here surface what changed since yesterday and what you should look at first. Let's walk through it.",
       },
       {
         element: '[data-tour="dash-glance"]',
         title: "At a glance",
-        body: "Today, this week, and month-to-date P/L. The tiles here are reorderable — drag or swap them in Settings → Dashboard.",
+        body: "Today, this week, and month-to-date P/L. Want to change what's on your dashboard or how it's laid out? Hit the Customize button at the top of the widgets area.",
       },
       {
         element: '[data-tour="dash-quillInsight"]',
         title: "Insight of the day",
-        body: "Quill AI reads your recent trades and picks one specific thing worth your attention — a leak, a streak, or a rule you broke. Refreshes once per local day.",
+        body: "Quill AI reads your recent trades and picks one specific thing worth your attention: a leak, a streak, or a rule you broke. Refreshes once per local day.",
       },
       {
         element: '[data-tour="dash-challenges"]',
@@ -54,7 +54,7 @@ export const TOURS: Record<string, Tour> = {
       {
         element: '[data-tour="dash-calendar"]',
         title: "The calendar",
-        body: "Your month at a glance — each day tinted by P/L. Tap any tile to drill into the trades that made up the number. There's a whole tour of the calendar page when you open it.",
+        body: "Your month at a glance, each day tinted by P/L. Tap any tile to drill into the trades that made up the number. There's a whole tour of the calendar page when you open it.",
       },
     ],
   },
@@ -64,7 +64,7 @@ export const TOURS: Record<string, Tour> = {
     steps: [
       {
         title: "Your trades",
-        body: "Every trade you've logged or imported lives here. This page is where you'll spend the most time — logging, editing, filtering.",
+        body: "Every trade you've logged or imported lives here. This page is where you'll spend the most time: logging, editing, filtering.",
       },
       {
         element: '[data-tour="trades-add"]',
@@ -74,7 +74,7 @@ export const TOURS: Record<string, Tour> = {
       {
         element: '[data-tour="trades-sync"]',
         title: "Sync from your broker",
-        body: "Pull the latest fills on demand — useful if you can't wait for the 6am morning sync. Import from a broker CSV lives in Settings → Import.",
+        body: "Pull the latest fills on demand: useful if you can't wait for the 6am morning sync. Import from a broker CSV lives in Settings > Import.",
       },
       {
         element: '[data-tour="trades-merge"]',
@@ -104,7 +104,7 @@ export const TOURS: Record<string, Tour> = {
       {
         element: '[data-tour="cal-share"]',
         title: "Share the view",
-        body: "One-tap shareable card of the current view — month, week or day. Handy for the group chat.",
+        body: "One-tap shareable card of the current view: month, week or day. Handy for the group chat.",
       },
       {
         title: "Market alerts",
@@ -128,7 +128,7 @@ export const TOURS: Record<string, Tour> = {
       {
         element: '[data-tour="chat-starters"]',
         title: "Starter prompts",
-        body: "Saved prompts you use often. Edit or add your own — they save per-account.",
+        body: "Saved prompts you use often. Edit or add your own, they save per-account.",
       },
     ],
   },
@@ -148,7 +148,7 @@ export const TOURS: Record<string, Tour> = {
       {
         element: '[data-tour="strat-list"]',
         title: "Your playbook",
-        body: "Click any card to open its detail page — description, examples, and the P/L / win-rate for every trade you've tagged with it.",
+        body: "Click any card to open its detail page: description, examples, and the P/L and win-rate for every trade you've tagged with it.",
       },
     ],
   },
@@ -163,7 +163,7 @@ export const TOURS: Record<string, Tour> = {
       {
         element: '[data-tour="rules-add"]',
         title: "Add a rule",
-        body: "Keep them concrete and testable — 'No trades in the first 15 minutes', 'Stop out at 30% loss'. Vague rules are hard to enforce.",
+        body: "Keep them concrete and testable: 'No trades in the first 15 minutes', 'Stop out at 30% loss'. Vague rules are hard to enforce.",
       },
     ],
   },
@@ -173,7 +173,7 @@ export const TOURS: Record<string, Tour> = {
     steps: [
       {
         title: "Goals",
-        body: "Targets for the month, quarter or year. Progress updates automatically from your trade log — no manual tracking.",
+        body: "Targets for the month, quarter or year. Progress updates automatically from your trade log, no manual tracking.",
       },
       {
         element: '[data-tour="goals-add"]',
@@ -193,7 +193,7 @@ export const TOURS: Record<string, Tour> = {
       {
         element: '[data-tour="aff-add"]',
         title: "Add an affirmation",
-        body: "Type one and hit enter. Tick each one off as you read it — miss a day and the streak resets.",
+        body: "Type one and hit enter. Tick each one off as you read it: miss a day and the streak resets.",
       },
     ],
   },
@@ -203,7 +203,7 @@ export const TOURS: Record<string, Tour> = {
     steps: [
       {
         title: "Settings",
-        body: "Preferences, billing, IBKR sync, exports, and — down at the bottom — a way to replay any of these tours.",
+        body: "Preferences, billing, IBKR sync, exports, and (down at the bottom) a way to replay any of these tours.",
       },
       {
         element: '[data-tour="settings-plan"]',

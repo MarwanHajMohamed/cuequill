@@ -50,7 +50,7 @@ export default function PageTour({ pageId }: { pageId: string }) {
           },
         })),
         onDestroyed: () => {
-          // Fires on completion AND on skip/close — either way we
+          // Fires on completion AND on skip/close - either way we
           // treat this page as seen so it doesn't nag next visit.
           fetch("/api/user/tutorial", {
             method: "POST",
@@ -81,7 +81,7 @@ export default function PageTour({ pageId }: { pageId: string }) {
           if (!cancelled) launch();
         }, 350);
       } catch {
-        /* offline / auth flap — silently skip */
+        /* offline / auth flap - silently skip */
       }
     })();
 

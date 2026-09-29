@@ -1,7 +1,7 @@
 "use client";
 
 // Small button that replays the current page's tour. Any page with a
-// mounted <PageTour /> is targetable — the button fires a global
+// mounted <PageTour /> is targetable - the button fires a global
 // `cuequill:start-tour` event which every PageTour listens for.
 //
 // Two variants:
