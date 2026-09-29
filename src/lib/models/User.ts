@@ -74,6 +74,13 @@ export interface IUser extends Document {
   // is active/trialing>`, so it stays true for comped accounts even with
   // no subscription, and flips false when a subscription lapses.
   isPro: boolean;
+  // First-run tour tracking. Set to an empty array at signup so newly-
+  // registered users see the coach-mark tour the first time they open
+  // each page; each pageId gets appended when the user completes or
+  // dismisses that page's tour. Left `undefined` on legacy accounts so
+  // existing users aren't ambushed on their next visit - they can opt
+  // back in through the "Show me around" button.
+  tutorialsSeen?: string[];
   // Admin comp: when true, the account is Pro regardless of billing. The
   // Stripe webhook never clears this - it only ORs it into isPro - so a
   // manually-granted account can't be revoked by a subscription event.
@@ -244,6 +251,7 @@ const UserSchema = new Schema<IUser>({
   },
   affirmationStreakXp: { type: Number, default: 0 },
   isPro: { type: Boolean, default: false },
+  tutorialsSeen: { type: [String], default: undefined },
   proManualOverride: { type: Boolean, default: false },
   // Indexed: the Stripe webhook finds the user by customer id on every
   // subscription event.

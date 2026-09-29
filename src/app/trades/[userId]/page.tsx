@@ -21,6 +21,7 @@ import Statistics from "./Statistics";
 import { AnimatePresence, motion } from "framer-motion";
 import { HeroSkeleton, TableSkeleton } from "@/components/Loaders";
 import CustomizeButton from "@/components/CustomizeButton";
+import PageTour from "@/components/PageTour";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
 
 import { fmtMoneyCompact } from "@/lib/helpers/fmt";
@@ -875,6 +876,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
 
   return (
     <>
+      <PageTour pageId="trades" />
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0 -z-10"
@@ -1423,6 +1425,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
               <div className="flex md:justify-between gap-2 mt-5 w-full max-w-[1500px]">
                 <div className="flex gap-2">
                   <button
+                    data-tour="trades-add"
                     className="inline-flex items-center justify-center gap-2 px-3 md:px-4 py-2 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition cursor-pointer text-[12px] md:text-[13px] font-medium w-9 h-9 md:w-auto md:h-auto"
                     onClick={() => {
                       setEditingTrade(null);
@@ -1433,6 +1436,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                     <span className="md:inline hidden">Add trade</span>
                   </button>
                   <button
+                    data-tour="trades-sync"
                     className={`inline-flex items-center justify-center gap-2 px-3 md:px-4 py-2 rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-500/25 transition text-[12px] md:text-[13px] font-medium w-9 h-9 md:w-auto md:h-auto ${
                       syncing
                         ? "cursor-not-allowed opacity-60"
@@ -1462,6 +1466,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                     <i className="fa-solid fa-list-check text-[11px]" />
                   </button>
                   <button
+                    data-tour="trades-merge"
                     type="button"
                     onClick={() => {
                       if (selectMode) exitSelectMode();

@@ -74,6 +74,10 @@ export async function POST(req: NextRequest) {
       surname,
       password: hashed,
       timezone,
+      // Opt this brand-new account into the first-run coach-mark tours.
+      // Existing accounts leave `tutorialsSeen` undefined and are not
+      // auto-toured - they can start one manually from Settings.
+      tutorialsSeen: [],
     });
   } catch (err) {
     // Unique-index violation from a concurrent registration of the same

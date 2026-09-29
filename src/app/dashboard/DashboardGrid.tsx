@@ -435,6 +435,7 @@ function SortableWidget({
       className={`relative h-full min-h-0 rounded-2xl border border-dashed border-white/20 bg-white/[0.02] p-2 flex flex-col gap-2 ${spanClass} ${
         isDragging ? "opacity-60 z-10 shadow-2xl" : ""
       }`}
+      data-tour={`dash-${id}`}
     >
       <div className="flex items-center justify-between gap-2 px-1">
         <button

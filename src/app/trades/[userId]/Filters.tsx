@@ -310,6 +310,7 @@ export default function Filters({
             half-faded at rest, full opacity on hover. Stays reachable
             without competing for attention with the trades table. ── */}
       <button
+        data-tour="trades-filters"
         onClick={() => setIsPanelOpen(true)}
         aria-label="Open filters"
         title="Filters"

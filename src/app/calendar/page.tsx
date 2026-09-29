@@ -40,6 +40,7 @@ import MonthlyShareCard, {
   type MonthlyShareStats,
 } from "@/components/MonthlyShareCard";
 import { useCardSkinPrefs } from "@/hooks/useCardSkinPrefs";
+import PageTour from "@/components/PageTour";
 
 import { fmtMoneyFull, fmtMoneySignedCompact } from "@/lib/helpers/fmt";
 type TradeEvent =
@@ -1014,6 +1015,7 @@ function Page() {
   // as small render helpers so the markup isn't duplicated per breakpoint.
   const shareButton = () => (
     <button
+      data-tour="cal-share"
       onClick={() => setShowMonthShare(true)}
       className="w-8 h-8 inline-flex items-center justify-center rounded-full border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/75 hover:text-white transition cursor-pointer"
       title={`Share this ${shareContext}'s P/L as an image`}
@@ -1066,6 +1068,7 @@ function Page() {
 
   return (
     <>
+      <PageTour pageId="calendar" />
       {/* Aurora - matches the dashboard / trades / settings hue. */}
       <div
         aria-hidden
@@ -1237,6 +1240,7 @@ function Page() {
               >
                 <div
                   ref={calendarColRef}
+                  data-tour="cal-grid"
                   className={`flex-1 min-w-0 relative md:h-auto ${
                     scrollMode ? "" : "h-full"
                   }`}

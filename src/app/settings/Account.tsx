@@ -591,6 +591,43 @@ const Account = () => {
         )}
       </div>
 
+      {/* Tour replay - lets returning users (or anyone who dismissed
+          the first-run coach marks) restart every page's tour. Fires
+          the POST that clears the seen list, then the next page visit
+          runs its tour from scratch. */}
+      <section className="mt-4 flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/[0.02] p-4 md:p-5">
+        <div>
+          <h3 className="text-[14px] font-semibold text-white">Show me around</h3>
+          <p className="text-[12px] text-white/45 mt-0.5">
+            Replay the first-run coach marks. The next page you visit will
+            walk you through what&apos;s on it.
+          </p>
+        </div>
+        <div>
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                await fetch("/api/user/tutorial", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ reset: true }),
+                });
+              } catch {
+                /* best-effort */
+              }
+              // Nudge whichever tour is mounted on the current page
+              // (Settings itself, once we mount one there).
+              window.dispatchEvent(new CustomEvent("cuequill:start-tour"));
+            }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-teal-500/25 bg-teal-500/10 text-teal-300 hover:bg-teal-500/20 transition text-[13px] font-medium cursor-pointer"
+          >
+            <i className="fa-regular fa-circle-question text-[11px]" />
+            Restart the tour
+          </button>
+        </div>
+      </section>
+
       {/* Danger zone: data portability + account erasure. */}
       <section className="mt-4 flex flex-col gap-4 rounded-2xl border border-red-500/20 bg-red-500/[0.03] p-4 md:p-5">
         <div>

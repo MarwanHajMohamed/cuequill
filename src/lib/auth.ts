@@ -239,6 +239,9 @@ export const authOptions: NextAuthOptions = {
           email,
           firstname: first,
           surname: last,
+          // Opt into first-run tours; existing OAuth users won't have this
+          // field and stay out of the auto-tour by design.
+          tutorialsSeen: [],
         });
       } catch {
         // A concurrent sign-in (two tabs) may have created it already;
