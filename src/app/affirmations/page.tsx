@@ -12,6 +12,7 @@ import {
   nextStreakMilestone,
 } from "@/lib/affirmationStreak";
 import { hapticTap } from "@/lib/haptics";
+import PageTour from "@/components/PageTour";
 
 function AffirmationsPage() {
   const today = format(new Date(), "yyyy-MM-dd");
@@ -93,6 +94,7 @@ function AffirmationsPage() {
 
   return (
     <div className="w-full flex justify-center min-h-screen">
+      <PageTour pageId="affirmations" />
       {/* Subtle aurora */}
       <div
         aria-hidden
@@ -134,7 +136,7 @@ function AffirmationsPage() {
         </header>
 
         {/* Add affirmation */}
-        <div className="mt-8 relative">
+        <div data-tour="aff-add" className="mt-8 relative">
           <input
             type="text"
             value={draft}

@@ -7,6 +7,7 @@ import IBKRTab from "./IBKRTab";
 import NotificationsTab from "./NotificationsTab";
 import PlanTab from "./PlanTab";
 import AppearanceTab from "./AppearanceTab";
+import PageTour from "@/components/PageTour";
 
 function Page() {
   const [selectedSetting, setSelectedSetting] = useState<string>("Account");
@@ -70,6 +71,7 @@ function Page() {
 
   return (
     <div className="w-full flex justify-center min-h-screen pb-24">
+      <PageTour pageId="settings" />
       {/* Aurora */}
       <div
         aria-hidden
@@ -95,6 +97,9 @@ function Page() {
               return (
                 <button
                   key={tab.title}
+                  data-tour={
+                    tab.title === "Plan" ? "settings-plan" : undefined
+                  }
                   onClick={() => setSelectedSetting(tab.title)}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-xl whitespace-nowrap text-left transition cursor-pointer text-[13px] font-medium ${
                     active

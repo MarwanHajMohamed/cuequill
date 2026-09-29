@@ -12,6 +12,7 @@ import { useStrategies, type StrategyDoc } from "@/hooks/useStrategies";
 import { SchematicPreview } from "@/components/SchematicEditor";
 import { FREE_STRATEGY_LIMIT } from "@/lib/strategyConstants";
 import { useToast } from "@/hooks/useToast";
+import PageTour from "@/components/PageTour";
 
 type Direction = "CALL" | "PUT";
 
@@ -131,6 +132,7 @@ function Page() {
 
   return (
     <div className="w-full flex justify-center min-h-screen pb-24">
+      <PageTour pageId="strategies" />
       {/* Aurora */}
       <div
         aria-hidden
@@ -218,7 +220,10 @@ function Page() {
         )}
 
         {/* Columns */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+        <div
+          data-tour="strat-list"
+          className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8"
+        >
           <Column
             direction="CALL"
             items={calls}
@@ -264,6 +269,7 @@ function Column({
           {direction}
         </h2>
         <button
+          data-tour="strat-add"
           type="button"
           onClick={onCreate}
           disabled={!canCreate || creating}

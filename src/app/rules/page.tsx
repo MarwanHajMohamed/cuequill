@@ -9,6 +9,7 @@ import React, { useEffect, useState } from "react";
 import { useRulesBoard, type Section } from "./useRulesBoard";
 import IconBtn from "./IconBtn";
 import ConfirmDialog from "./ConfirmDialog";
+import PageTour from "@/components/PageTour";
 
 function Page() {
   const {
@@ -27,6 +28,7 @@ function Page() {
 
   return (
     <div className="w-full flex justify-center min-h-screen pb-24">
+      <PageTour pageId="rules" />
       {/* Aurora */}
       <div
         aria-hidden
@@ -51,6 +53,7 @@ function Page() {
 
           {sections !== null && (
             <button
+              data-tour="rules-edit"
               onClick={() => setEditMode((v) => !v)}
               className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-[12px] font-medium transition cursor-pointer ${
                 editMode

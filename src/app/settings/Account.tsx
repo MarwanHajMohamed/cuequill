@@ -595,7 +595,10 @@ const Account = () => {
           the first-run coach marks) restart every page's tour. Fires
           the POST that clears the seen list, then the next page visit
           runs its tour from scratch. */}
-      <section className="mt-4 flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/[0.02] p-4 md:p-5">
+      <section
+        data-tour="settings-tour"
+        className="mt-4 flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/[0.02] p-4 md:p-5"
+      >
         <div>
           <h3 className="text-[14px] font-semibold text-white">Show me around</h3>
           <p className="text-[12px] text-white/45 mt-0.5">

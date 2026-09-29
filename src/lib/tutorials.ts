@@ -161,9 +161,9 @@ export const TOURS: Record<string, Tour> = {
         body: "The rules you trade by. Break one, and Quill will flag it in your insights.",
       },
       {
-        element: '[data-tour="rules-add"]',
-        title: "Add a rule",
-        body: "Keep them concrete and testable: 'No trades in the first 15 minutes', 'Stop out at 30% loss'. Vague rules are hard to enforce.",
+        element: '[data-tour="rules-edit"]',
+        title: "Edit your rules",
+        body: "Hit Edit to add sections and drop rules under each. Keep them concrete and testable: 'No trades in the first 15 minutes', 'Stop out at 30% loss'. Vague rules are hard to enforce.",
       },
     ],
   },

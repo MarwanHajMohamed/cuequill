@@ -19,6 +19,7 @@ import {
   type TaskRecurrence,
 } from "@/lib/goals";
 import { fmtMoneyCompact } from "@/lib/helpers/fmt";
+import PageTour from "@/components/PageTour";
 
 function formatValue(metric: GoalMetric, value: number): string {
   switch (metricUnit(metric)) {
@@ -358,6 +359,7 @@ function Page() {
 
   return (
     <div className="w-full flex justify-center min-h-screen pb-24">
+      <PageTour pageId="goals" />
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0 -z-10"
@@ -380,6 +382,7 @@ function Page() {
           </div>
           {!adding && (
             <button
+              data-tour="goals-add"
               onClick={() => setAdding(true)}
               className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-full border border-teal-400/40 bg-teal-500/15 text-teal-200 hover:bg-teal-500/25 transition text-[13px] font-medium cursor-pointer"
             >

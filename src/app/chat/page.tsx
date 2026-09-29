@@ -2,6 +2,7 @@
 
 import { withAuth } from "@/lib/withAuth";
 import ProGate from "@/components/ProGate";
+import PageTour from "@/components/PageTour";
 import { AnimatePresence, motion } from "framer-motion";
 import React, {
   createContext,
@@ -811,11 +812,13 @@ function Page() {
             Ask anything about your trades
           </h2>
         </div>
-        <PromptShortcuts
-          suggestions={suggestions}
-          onSend={send}
-          onSave={saveSuggestions}
-        />
+        <div data-tour="chat-starters" className="w-full">
+          <PromptShortcuts
+            suggestions={suggestions}
+            onSend={send}
+            onSave={saveSuggestions}
+          />
+        </div>
         <p className="text-[11px] text-white/30 leading-relaxed text-center md:text-left">
           Quill AI can make mistakes and does not give financial advice. It
           analyses your journal for your own review only.
@@ -831,6 +834,7 @@ function Page() {
        (used to open ViewTradeModal on click) to the Markdown <a>
        override deep inside MarkdownText. */
     <TradeChatContext.Provider value={tradeChat}>
+    <PageTour pageId="chat" />
     {/* The outer column is sized to EXACTLY the visible area (viewport
        minus the floating mobile nav, or full viewport on desktop)
        using `h-[…]` rather than `min-h-[…]`. That swap is load-
@@ -1073,6 +1077,7 @@ function Page() {
               <i className="fa-solid fa-paperclip text-[12px]" />
             </button>
             <textarea
+              data-tour="chat-composer"
               ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
