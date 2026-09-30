@@ -27,70 +27,6 @@ async function requirePro(): Promise<
 type RuleInput = { id?: string; title?: unknown; body?: unknown };
 type SectionInput = { id?: string; title?: unknown; rules?: unknown };
 
-// The default board seeded for a user on first visit. These are the same
-// rules the page used to hardcode - now they belong to the user and can be
-// renamed, reordered, moved, or deleted like anything else.
-function defaultSections() {
-  const make = (title: string, rules: { title: string; body: string }[]) => ({
-    id: randomUUID(),
-    title,
-    rules: rules.map((r) => ({ id: randomUUID(), ...r })),
-  });
-
-  return [
-    make("Trading windows", [
-      {
-        title: "Market hours",
-        body: "Opens 9:30 AM ET, closes 4:00 PM ET. Weekends are closed.",
-      },
-      {
-        title: "Skip the first 30 minutes",
-        body: "Never trade between 9:30 and 10:00 - opening candles are too volatile.",
-      },
-      {
-        title: "Premarket signals sells, not buys",
-        body: "Use premarket to flag exits, not entries.",
-      },
-      {
-        title: "PUTs at the open",
-        body: "Sell PUTs at 9:30 - price typically opens low and rallies.",
-      },
-      {
-        title: "Last call",
-        body: "Last entry is 3:59 PM. Anything after fills at the next 9:30 open.",
-      },
-      {
-        title: "SPY / QQQ extended close",
-        body: "These trade until 4:14 PM. Closing bell at 4:15 PM.",
-      },
-    ]),
-    make("Position rules", [
-      { title: "Start small", body: "Don't size into a setup you haven't proven." },
-      {
-        title: "10% per trade",
-        body: "Cap each entry at 10% of portfolio. Example: $500 portfolio → $50 per trade.",
-      },
-      { title: "2–4 trades per week", body: "More than that is noise, not edge." },
-      {
-        title: "Respect the timeframes",
-        body: "If the rule window says no, the answer is no.",
-      },
-      {
-        title: "Only buy fulfilled candles",
-        body: "Wait for the candle to close. Never act on a live wick.",
-      },
-      {
-        title: "Do not exit on a loss",
-        body: "Let the plan run, not your emotions.",
-      },
-      {
-        title: "No Fed days",
-        body: "Sit out FOMC and meeting dates - direction is unpredictable.",
-      },
-    ]),
-  ];
-}
-
 // Normalise whatever the client sends into the stored shape, dropping
 // anything malformed so a bad payload can't corrupt the board.
 function sanitize(sections: unknown) {
@@ -112,8 +48,10 @@ function sanitize(sections: unknown) {
     .filter((s) => s.title || s.rules.length);
 }
 
-// Get the user's board, seeding the defaults on first visit.
-export async function GET(_req: NextRequest) {
+// Get the user's board. New accounts start with no rules; the doc is
+// created lazily on the first PUT (the upsert below), so a fresh user
+// just gets an empty sections array back and adds their own from there.
+export async function GET() {
   const gate = await requirePro();
   if (!gate.ok) {
     return NextResponse.json({ error: gate.error }, { status: gate.status });
@@ -121,14 +59,8 @@ export async function GET(_req: NextRequest) {
   const { userId } = gate;
 
   try {
-    let board = await RulesBoard.findOne({ userId });
-    if (!board) {
-      board = await RulesBoard.create({
-        userId,
-        sections: defaultSections(),
-      });
-    }
-    return NextResponse.json({ sections: board.sections });
+    const board = await RulesBoard.findOne({ userId });
+    return NextResponse.json({ sections: board?.sections ?? [] });
   } catch (err) {
     const message =
       err instanceof Error ? err.message : "Failed to fetch rules";
