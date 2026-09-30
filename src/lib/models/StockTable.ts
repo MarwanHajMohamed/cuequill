@@ -2,7 +2,6 @@ import mongoose, { Schema, Document } from "mongoose";
 import type { StockRow } from "@/lib/stocksSeed";
 
 export type { StockRow } from "@/lib/stocksSeed";
-export { DEFAULT_STOCKS } from "@/lib/stocksSeed";
 
 // One document per user holds their entire Stocks/ETFs reference table.
 // The table is a short, hand-curated list the user edits inline, so a
