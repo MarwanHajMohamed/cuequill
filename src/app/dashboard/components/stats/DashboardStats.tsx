@@ -453,7 +453,9 @@ export default function DashboardStats({ userId }: { userId: string }) {
 
   if (isLoading || !trades) {
     return (
-      <div className={`${CARD_CLASS} text-white/40 text-sm py-16 text-center`}>
+      <div
+        className={`${CARD_CLASS} h-full flex items-center justify-center text-white/40 text-sm text-center`}
+      >
         Loading dashboard stats…
       </div>
     );
@@ -461,7 +463,9 @@ export default function DashboardStats({ userId }: { userId: string }) {
 
   if (trades.length === 0) {
     return (
-      <div className={`${CARD_CLASS} text-center text-white/40 text-sm py-16`}>
+      <div
+        className={`${CARD_CLASS} h-full flex items-center justify-center text-center text-white/40 text-sm`}
+      >
         You haven&apos;t made any trades yet. Add one to see your dashboard.
       </div>
     );
