@@ -101,7 +101,16 @@ export default function DayTradesModal({
     <AnimatePresence>
       <motion.div
         key="backdrop"
-        className="fixed inset-0 modal-scrim backdrop-blur-md flex items-center justify-center z-50 p-3 md:p-4"
+        className="fixed inset-0 modal-scrim backdrop-blur-md flex items-center justify-center z-50"
+        style={{
+          // Pad by the safe-area insets so the sheet never sits under the
+          // status bar / home indicator (the app draws full-bleed), with a
+          // small minimum gap everywhere else.
+          paddingTop: "max(env(safe-area-inset-top), 0.75rem)",
+          paddingBottom: "max(env(safe-area-inset-bottom), 0.75rem)",
+          paddingLeft: "max(env(safe-area-inset-left), 0.75rem)",
+          paddingRight: "max(env(safe-area-inset-right), 0.75rem)",
+        }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -114,7 +123,7 @@ export default function DayTradesModal({
           animate={{ y: 0, opacity: 1, scale: 1 }}
           exit={{ y: 14, opacity: 0, scale: 0.98 }}
           transition={{ type: "spring", stiffness: 380, damping: 32 }}
-          className="relative flex flex-col bg-[var(--background)] border border-white/10 rounded-3xl w-full max-w-md text-white max-h-[88vh] overflow-hidden shadow-[0_24px_80px_var(--shadow)]"
+          className="relative flex flex-col bg-[var(--background)] border border-white/10 rounded-3xl w-full max-w-md text-white max-h-full md:max-h-[85vh] overflow-hidden shadow-[0_24px_80px_var(--shadow)]"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Top accent hairline */}
