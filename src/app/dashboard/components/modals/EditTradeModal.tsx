@@ -248,7 +248,16 @@ export default function EditTradeModal({
   return (
     <>
       <motion.div
-        className="fixed inset-0 modal-scrim flex items-center justify-center z-50 py-3 px-3 md:p-0"
+        className="fixed inset-0 modal-scrim flex items-center justify-center z-50"
+        style={{
+          // Pad by the safe-area insets so the sheet never sits under the
+          // status bar / home indicator (the app draws full-bleed), with a
+          // small minimum gap everywhere else.
+          paddingTop: "max(env(safe-area-inset-top), 0.75rem)",
+          paddingBottom: "max(env(safe-area-inset-bottom), 0.75rem)",
+          paddingLeft: "max(env(safe-area-inset-left), 0.75rem)",
+          paddingRight: "max(env(safe-area-inset-right), 0.75rem)",
+        }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -257,7 +266,7 @@ export default function EditTradeModal({
       >
         <motion.div
           onClick={(e) => e.stopPropagation()}
-          className="relative flex flex-col bg-[var(--background)] border border-white/10 rounded-2xl md:w-[90%] md:max-w-lg w-full max-h-[calc(100dvh-1.5rem)] md:max-h-[90vh] overflow-hidden"
+          className="relative flex flex-col bg-[var(--background)] border border-white/10 rounded-2xl md:w-[90%] md:max-w-lg w-full max-h-full md:max-h-[90vh] overflow-hidden"
           initial={{ opacity: 0, scale: 0.96, y: 16 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: 16 }}
