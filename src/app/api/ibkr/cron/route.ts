@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import connectDb from "@/lib/db";
 import { User } from "@/lib/models/User";
-import { syncForUser } from "@/lib/ibkrSync";
+import { syncForUser, type SyncMode } from "@/lib/ibkrSync";
 import { isMarketOpenAt } from "@/lib/marketHolidays";
 
 // IBKR's Flex Web Service generates a statement on-demand, then we poll
@@ -37,15 +37,19 @@ function checkAuth(req: Request): { ok: boolean; reason: string } {
   return { ok: true, reason: "bearer" };
 }
 
-async function runSync() {
+async function runSync(mode: SyncMode) {
   await connectDb();
   // Auto-sync is Pro-only. Free users with IBKR creds saved still get
   // the manual import button in settings - they're just not in the
-  // morning job.
+  // scheduled job. Eligible = a token plus at least one Flex query (the
+  // Activity query, the Trade Confirmation query, or both).
   const users = await User.find({
     ibkrToken: { $exists: true, $ne: "" },
-    ibkrQueryId: { $exists: true, $ne: "" },
     isPro: true,
+    $or: [
+      { ibkrQueryId: { $exists: true, $ne: "" } },
+      { ibkrTradeConfirmQueryId: { $exists: true, $ne: "" } },
+    ],
   }).select("_id");
 
   const results: Array<{
@@ -64,7 +68,7 @@ async function runSync() {
 
   for (const user of users) {
     try {
-      const result = await syncForUser(user._id.toString());
+      const result = await syncForUser(user._id.toString(), mode);
       results.push({
         userId: user._id.toString(),
         status: "ok",
@@ -109,10 +113,11 @@ export async function GET(req: Request) {
     );
   }
 
-  // Opt-in market-hours guard for the intraday schedule (?intraday=1).
-  // When set, skip cheaply outside RTH so the every-15-min poll doesn't
-  // hammer IBKR's Flex service (and hit its rate limits) outside market hours or on
-  // holidays. The morning run omits the param and always executes.
+  // Opt-in market-hours guard for the hourly intraday schedule
+  // (?intraday=1). When set, skip cheaply outside RTH so the hourly poll
+  // doesn't hit IBKR's Flex service outside market hours or on holidays,
+  // and sync from the Trade Confirmation query (same-day fills). The daily
+  // run omits the param and uses the settled Activity query.
   const intraday = new URL(req.url).searchParams.get("intraday") === "1";
   if (intraday) {
     const nyNow = new Date(
@@ -123,7 +128,7 @@ export async function GET(req: Request) {
     }
   }
 
-  const result = await runSync();
+  const result = await runSync(intraday ? "intraday" : "daily");
   // Console logs show up in Vercel's function logs so you can debug what
   // the cron did at runtime.
   console.log("[cron/ibkr]", JSON.stringify(result));

@@ -3,12 +3,23 @@ import { User } from "@/lib/models/User";
 import Trade from "@/lib/models/Trade";
 import { matchFills, type NormalizedFill } from "@/lib/ibkr/match";
 import { getBrokerAdapter, DEFAULT_BROKER, type BrokerId } from "@/lib/brokers";
+import { fetchConfirmFills } from "@/lib/brokers/ibkr";
+
+// How a sync run sources its fills:
+//   • "daily"    - the nightly settled pull: Activity query + any same-day
+//                  confirmations, merged (dedupe reconciles the overlap).
+//   • "intraday" - the hourly same-day pull: Trade Confirmation query only
+//                  (the Activity query is T+1 and rate-limited, so it's
+//                  skipped here). No-op when no confirmation query is set.
+//   • "manual"   - user-triggered from settings; sources like "daily".
+export type SyncMode = "daily" | "intraday" | "manual";
 
 // Pull-sync for an auto-sync broker (e.g. IBKR): fetch the user's fills
 // via the broker adapter, then run the shared import pipeline. File
 // brokers (CSV upload) skip this and call `importFills` directly.
 export async function syncForUser(
   userId: string,
+  mode: SyncMode = "daily",
   brokerId: BrokerId = DEFAULT_BROKER,
 ): Promise<{
   inserted: number;
@@ -22,8 +33,46 @@ export async function syncForUser(
       `${adapter.label} doesn't support automatic sync. Upload an export file instead.`,
     );
   }
-  const fills = await adapter.fetchFills(userId);
-  return importFills(userId, fills);
+
+  // Non-IBKR pull brokers have a single source; sync mode doesn't apply.
+  if (brokerId !== "ibkr") {
+    const fills = await adapter.fetchFills(userId);
+    return importFills(userId, fills);
+  }
+
+  await connectDb();
+  const user = await User.findById(userId).select(
+    "ibkrQueryId ibkrTradeConfirmQueryId",
+  );
+  const hasActivity = !!user?.ibkrQueryId;
+  const hasConfirm = !!user?.ibkrTradeConfirmQueryId;
+
+  if (mode === "intraday") {
+    // Same-day only. Nothing to do (cheap no-op, no DB write) if the user
+    // hasn't set up a Trade Confirmation query or has no fills yet today.
+    if (!hasConfirm) return { inserted: 0, skipped: 0, fetched: 0, matched: 0 };
+    const confirm = await fetchConfirmFills(userId);
+    if (confirm.length === 0)
+      return { inserted: 0, skipped: 0, fetched: 0, matched: 0 };
+    return importFills(userId, confirm);
+  }
+
+  // daily / manual: settled Activity trades + same-day confirmations, merged.
+  if (!hasActivity && !hasConfirm) {
+    throw new Error("IBKR credentials not configured");
+  }
+  const activity = hasActivity ? await adapter.fetchFills(userId) : [];
+  let confirm: NormalizedFill[] = [];
+  if (hasConfirm) {
+    try {
+      confirm = await fetchConfirmFills(userId);
+    } catch {
+      // A confirmation-query hiccup shouldn't sink a run whose Activity
+      // pull already succeeded; the next run retries it.
+      confirm = [];
+    }
+  }
+  return importFills(userId, [...activity, ...confirm]);
 }
 
 // Shared, broker-agnostic pipeline: FIFO-match fills into round-trip

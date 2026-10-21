@@ -1,7 +1,17 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import connectDb from "@/lib/db";
+import { User } from "@/lib/models/User";
 import { syncForUser } from "@/lib/ibkrSync";
+
+export const maxDuration = 300;
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+// Manual resyncs are limited to one per 30 minutes per user. Enforced
+// server-side (not just the settings UI) so it holds regardless of client.
+const MANUAL_COOLDOWN_MS = 30 * 60 * 1000;
 
 // Manual sync triggered from the settings UI
 export async function POST() {
@@ -10,8 +20,30 @@ export async function POST() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  await connectDb();
+  const user = await User.findById(session.user.id).select("ibkrLastManualSync");
+  const last = user?.ibkrLastManualSync
+    ? new Date(user.ibkrLastManualSync).getTime()
+    : 0;
+  const elapsed = Date.now() - last;
+  if (last && elapsed < MANUAL_COOLDOWN_MS) {
+    const retryAfterMs = MANUAL_COOLDOWN_MS - elapsed;
+    return NextResponse.json(
+      {
+        error: `You can resync again in ${Math.ceil(retryAfterMs / 60000)} min. Manual syncs are limited to one every 30 minutes.`,
+        retryAfterMs,
+      },
+      { status: 429 },
+    );
+  }
+
   try {
-    const result = await syncForUser(session.user.id);
+    // Record the attempt up front so a long-running (or failing) sync still
+    // starts the cooldown and can't be hammered.
+    await User.findByIdAndUpdate(session.user.id, {
+      ibkrLastManualSync: new Date(),
+    });
+    const result = await syncForUser(session.user.id, "manual");
     return NextResponse.json({ success: true, ...result });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Sync failed";

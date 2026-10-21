@@ -7,24 +7,42 @@ import type { BrokerAdapter } from "./types";
 // Interactive Brokers adapter. Pulls a CSV from IBKR's Flex Statement
 // web service and maps its rows into broker-agnostic fills. This is the
 // only IBKR-specific code in the import pipeline.
+//
+// Two Flex query shapes are supported with one tolerant parser:
+//   • Activity Flex (the "Trades" section) - settles on T+1, carries
+//     realized P/L. Signed Quantity, TradePrice, IBCommission, Taxes.
+//   • Trade Confirmation Flex - reports SAME-DAY executions, so trades can
+//     be imported the day they're taken. Tends to use Price, a Buy/Sell
+//     column (unsigned Quantity), Commission and Tax.
+// Column names differ between the two, so each field reads whichever of
+// its known aliases is present.
 
 type CsvRow = {
   Symbol: string;
+  UnderlyingSymbol?: string;
   Strike: string;
   Expiry: string;
   "Put/Call": "C" | "P";
   Quantity: string;
-  TradePrice: string;
-  DateTime: string;
-  FifoPnlRealized: string;
+  // Direction on Trade Confirmation statements, where Quantity is unsigned.
+  "Buy/Sell"?: string;
+  // Activity uses TradePrice; Trade Confirmation uses Price.
+  TradePrice?: string;
+  Price?: string;
+  // Activity uses DateTime; Trade Confirmation may use "Date/Time".
+  DateTime?: string;
+  "Date/Time"?: string;
+  FifoPnlRealized?: string;
   TradeID?: string;
   // Commission/fees columns. Whichever the user includes in their Flex
   // query will be parsed; missing columns are treated as 0. IBKR
   // reports these as negative values (debits), so we always take the
-  // absolute amount.
+  // absolute amount. Activity: IBCommission + Taxes. Trade Confirmation:
+  // Commission + Tax.
   IBCommission?: string;
   Commission?: string;
   Taxes?: string;
+  Tax?: string;
 };
 
 // Parses IBKR commission/fee strings. Returns absolute value (IBKR
@@ -157,6 +175,71 @@ async function fetchIbkrCsv(token: string, queryId: string): Promise<string> {
   throw new Error("IBKR statement timed out after 50 seconds");
 }
 
+// Maps one IBKR CSV row (Activity or Trade Confirmation) into a
+// normalized fill, reading whichever column alias is present. Returns null
+// for rows that aren't equity-option trades (e.g. forex, or a blank line).
+// Exported for unit testing against both schemas.
+export function mapRowToFill(row: CsvRow): NormalizedFill | null {
+  // Non-option rows (forex etc.) carry a "." in the OCC symbol; skip them.
+  if (!row.Symbol || row.Symbol.includes(".")) return null;
+
+  const priceStr = row.TradePrice ?? row.Price;
+  const dateStr = row.DateTime ?? row["Date/Time"];
+  if (priceStr == null || !dateStr) return null;
+
+  // Quantity: Activity signs it; Trade Confirmation leaves it positive and
+  // puts the direction in Buy/Sell. Honour an explicit Buy/Sell when given.
+  const rawQty = parseInt(row.Quantity);
+  if (!Number.isFinite(rawQty) || rawQty === 0) return null;
+  const side = (row["Buy/Sell"] ?? "").trim().toUpperCase();
+  const signedQty = side.startsWith("S")
+    ? -Math.abs(rawQty)
+    : side.startsWith("B")
+      ? Math.abs(rawQty)
+      : rawQty;
+
+  // Prefer the dedicated underlying column; fall back to the OCC symbol's
+  // leading token (e.g. "SPY   251017C00600000" → "SPY").
+  const underlying = (row.UnderlyingSymbol || row.Symbol).split(" ")[0];
+
+  const realized = parseFloat(row.FifoPnlRealized ?? "");
+
+  return {
+    symbol: underlying,
+    option: row["Put/Call"] === "C" ? "CALL" : "PUT",
+    strike: parseFloat(row.Strike),
+    expiry: parseExpiry(row.Expiry),
+    signedQty,
+    price: parseFloat(priceStr),
+    time: parseDateTime(dateStr),
+    ...(Number.isFinite(realized) && { realizedPnl: realized }),
+    fee:
+      absFee(row.IBCommission ?? row.Commission) +
+      absFee(row.Taxes ?? row.Tax),
+    tradeId: row.TradeID,
+  };
+}
+
+function parseFillsCsv(csv: string): NormalizedFill[] {
+  const { data } = Papa.parse<CsvRow>(csv, {
+    header: true,
+    skipEmptyLines: true,
+  });
+  return data
+    .map(mapRowToFill)
+    .filter((f): f is NormalizedFill => f !== null);
+}
+
+// Fetch + parse one Flex query's CSV into fills.
+async function fetchFillsForQuery(
+  token: string,
+  queryId: string,
+): Promise<NormalizedFill[]> {
+  const csv = await fetchIbkrCsv(token, queryId);
+  return parseFillsCsv(csv);
+}
+
+// Activity Flex fills (the default pull: settled trades + realized P/L).
 async function fetchFills(userId: string): Promise<NormalizedFill[]> {
   await connectDb();
   const user = await User.findById(userId).select("ibkrToken ibkrQueryId");
@@ -165,29 +248,25 @@ async function fetchFills(userId: string): Promise<NormalizedFill[]> {
     throw new Error("IBKR credentials not configured");
   }
 
-  const csv = await fetchIbkrCsv(user.ibkrToken, user.ibkrQueryId);
+  return fetchFillsForQuery(user.ibkrToken, user.ibkrQueryId);
+}
 
-  const { data } = Papa.parse<CsvRow>(csv, {
-    header: true,
-    skipEmptyLines: true,
-  });
+// Trade Confirmation Flex fills (same-day executions). Returns [] when the
+// user hasn't configured a confirmation query, so callers can merge freely.
+export async function fetchConfirmFills(
+  userId: string,
+): Promise<NormalizedFill[]> {
+  await connectDb();
+  const user = await User.findById(userId).select(
+    "ibkrToken ibkrTradeConfirmQueryId",
+  );
 
-  const filteredData = data.filter((row) => !row.Symbol.includes("."));
+  if (!user?.ibkrToken) {
+    throw new Error("IBKR credentials not configured");
+  }
+  if (!user.ibkrTradeConfirmQueryId) return [];
 
-  // Map IBKR CSV rows into broker-agnostic fills. The shared matcher
-  // sorts, groups by contract, and produces trade drafts downstream.
-  return filteredData.map((row) => ({
-    symbol: row.Symbol.split(" ")[0],
-    option: row["Put/Call"] === "C" ? "CALL" : "PUT",
-    strike: parseFloat(row.Strike),
-    expiry: parseExpiry(row.Expiry),
-    signedQty: parseInt(row.Quantity),
-    price: parseFloat(row.TradePrice),
-    time: parseDateTime(row.DateTime),
-    realizedPnl: parseFloat(row.FifoPnlRealized),
-    fee: absFee(row.IBCommission ?? row.Commission) + absFee(row.Taxes),
-    tradeId: row.TradeID,
-  }));
+  return fetchFillsForQuery(user.ibkrToken, user.ibkrTradeConfirmQueryId);
 }
 
 

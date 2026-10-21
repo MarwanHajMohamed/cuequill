@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
 import { useIsPro } from "@/hooks/useIsPro";
 
-const COOLDOWN_MS = 15 * 60 * 1000;
+const COOLDOWN_MS = 30 * 60 * 1000;
 
 const inputClass =
   "w-full px-3 py-2 rounded-xl bg-white/[0.03] border border-white/10 text-[13px] text-white placeholder:text-white/40 focus:border-white/25 focus:outline-none transition";
@@ -41,8 +41,10 @@ export default function IBKRTab() {
   };
   const [token, setToken] = useState("");
   const [queryId, setQueryId] = useState("");
+  const [confirmQueryId, setConfirmQueryId] = useState("");
   const [hasToken, setHasToken] = useState(false);
   const [lastSync, setLastSync] = useState<string | null>(null);
+  const [lastManualSync, setLastManualSync] = useState<string | null>(null);
   const [lastInserted, setLastInserted] = useState<number | null>(null);
   const [lastSkipped, setLastSkipped] = useState<number | null>(null);
   const [saveStatus, setSaveStatus] = useState("");
@@ -68,8 +70,10 @@ export default function IBKRTab() {
       .then((r) => r.json())
       .then((data) => {
         setQueryId(data.ibkrQueryId ?? "");
+        setConfirmQueryId(data.ibkrTradeConfirmQueryId ?? "");
         setHasToken(data.hasToken ?? false);
         setLastSync(data.ibkrLastSync ?? null);
+        setLastManualSync(data.ibkrLastManualSync ?? null);
         setLastInserted(data.ibkrLastSyncInserted ?? null);
         setLastSkipped(data.ibkrLastSyncSkipped ?? null);
       });
@@ -81,10 +85,10 @@ export default function IBKRTab() {
   }, []);
 
   const cooldownMsLeft = useMemo(() => {
-    if (!lastSync) return 0;
-    const elapsed = now - new Date(lastSync).getTime();
+    if (!lastManualSync) return 0;
+    const elapsed = now - new Date(lastManualSync).getTime();
     return Math.max(0, COOLDOWN_MS - elapsed);
-  }, [lastSync, now]);
+  }, [lastManualSync, now]);
 
   const cooldownLabel = useMemo(() => {
     if (cooldownMsLeft <= 0) return "";
@@ -96,7 +100,10 @@ export default function IBKRTab() {
 
   const handleSave = async () => {
     setSaveStatus("Saving…");
-    const body: Record<string, string> = { ibkrQueryId: queryId };
+    const body: Record<string, string> = {
+      ibkrQueryId: queryId,
+      ibkrTradeConfirmQueryId: confirmQueryId,
+    };
     if (token) body.ibkrToken = token;
 
     const res = await fetch("/api/user/ibkr-settings", {
@@ -128,7 +135,9 @@ export default function IBKRTab() {
       setSyncStatus(
         `Done - ${data.inserted} trade${data.inserted !== 1 ? "s" : ""} imported`,
       );
-      setLastSync(new Date().toISOString());
+      const nowIso = new Date().toISOString();
+      setLastSync(nowIso);
+      setLastManualSync(nowIso);
       setLastInserted(data.inserted);
       // Force a re-fetch of the live imported list after a fresh
       // sync so the pill count reflects the new set, not whatever
@@ -140,6 +149,15 @@ export default function IBKRTab() {
       refreshTradeData();
       // If a panel was open, refresh; otherwise let user open it.
       if (importedOpen) loadImported();
+    } else if (res.status === 429) {
+      // Server-side 30-min limit. Sync the local cooldown to the server's
+      // remaining time so the button countdown matches.
+      if (typeof data.retryAfterMs === "number") {
+        setLastManualSync(
+          new Date(Date.now() - (COOLDOWN_MS - data.retryAfterMs)).toISOString(),
+        );
+      }
+      setSyncStatus(data.error ?? "Please wait before resyncing.");
     } else {
       setSyncStatus(`Error: ${data.error}`);
     }
@@ -226,7 +244,8 @@ export default function IBKRTab() {
   };
 
   const cooldownActive = cooldownMsLeft > 0;
-  const syncDisabled = syncing || !hasToken || !queryId || cooldownActive;
+  const syncDisabled =
+    syncing || !hasToken || (!queryId && !confirmQueryId) || cooldownActive;
 
   return (
     <div className="p-5 md:p-7 flex flex-col gap-6">
@@ -242,8 +261,10 @@ export default function IBKRTab() {
         </div>
         {isPro ? (
           <p className="text-[13px] md:text-[14px] text-white/70 leading-relaxed">
-            Trades import automatically every weekday at 10 PM UTC. You can also
-            trigger a sync manually below.
+            Trades import automatically: a same-day sync runs every hour during
+            market hours (when you add a Trade Confirmation query below), plus a
+            full settled sync each night. You can also trigger a sync manually
+            below.
           </p>
         ) : (
           <p className="text-[13px] md:text-[14px] text-white/70 leading-relaxed">
@@ -296,6 +317,18 @@ export default function IBKRTab() {
               <span className="text-white">CSV</span>.
             </>,
             <>Save the query and note the numeric Query ID shown next to it.</>,
+            <>
+              <span className="text-white">
+                Optional, for same-day imports:
+              </span>{" "}
+              also create a{" "}
+              <span className="text-white">Trade Confirmation Flex Query</span>{" "}
+              (Reports &rsaquo; Flex Queries) with the same Trades fields and{" "}
+              <span className="text-white">Period</span> set to{" "}
+              <span className="text-white">Today</span>. Note its Query ID for
+              the field below - it reports trades the day you take them, instead
+              of waiting for the next settled statement.
+            </>,
           ].map((step, i) => (
             <li key={i} className="flex gap-3">
               <span className="shrink-0 w-6 h-6 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center text-[11px] tabular-nums text-white/55 font-semibold">
@@ -345,6 +378,26 @@ export default function IBKRTab() {
           />
         </label>
 
+        <label className="flex flex-col gap-1.5">
+          <span className="text-[11px] tracking-[0.08em] text-white/45 font-medium flex items-center gap-2">
+            Trade Confirmation Query ID
+            <span className="text-white/35 tracking-normal normal-case font-normal">
+              optional - same-day
+            </span>
+          </span>
+          <input
+            className={inputClass}
+            type="text"
+            placeholder="e.g. 654321"
+            value={confirmQueryId}
+            onChange={(e) => setConfirmQueryId(e.target.value)}
+          />
+          <span className="text-[11px] text-white/40 leading-relaxed">
+            Reports trades the day you take them. The hourly auto-sync and
+            manual sync use it to pull same-day fills.
+          </span>
+        </label>
+
         <div className="flex items-center gap-3 flex-wrap">
           <button
             onClick={handleSave}
@@ -382,7 +435,7 @@ export default function IBKRTab() {
           </div>
         )}
         <div className="text-[11.5px] text-white/40">
-          IBKR limits requests to roughly one sync every 15 minutes per query.
+          Manual syncs are limited to one every 30 minutes.
         </div>
         <div className="flex items-center gap-3 flex-wrap">
           <button
