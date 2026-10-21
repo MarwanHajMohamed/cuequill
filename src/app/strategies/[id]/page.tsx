@@ -160,8 +160,8 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
       ]);
       toast(`${name} saved`);
       setMode("view");
-    } catch {
-      toast("Save failed");
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Save failed");
     } finally {
       setSaving(false);
     }
@@ -200,8 +200,8 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
       await queryClient.invalidateQueries({ queryKey: ["strategies"] });
       toast("Strategy deleted");
       router.replace("/strategies");
-    } catch {
-      toast("Delete failed");
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Delete failed");
     } finally {
       setSaving(false);
       setDelConfirm(false);

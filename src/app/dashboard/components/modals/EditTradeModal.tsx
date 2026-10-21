@@ -163,8 +163,8 @@ export default function EditTradeModal({
             : `Trade ${tradeData.symbol} added successfully!`,
         );
       }
-    } catch {
-      toast("Couldn't save trade. Please try again.");
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Couldn't save trade. Please try again.");
     } finally {
       setSaving(false);
     }

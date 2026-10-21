@@ -123,8 +123,8 @@ function Page() {
           ? `Imported ${n} · ${skipped} skipped (free limit)`
           : `Imported ${n} strateg${n === 1 ? "y" : "ies"}`,
       );
-    } catch {
-      toast("Import failed");
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Import failed");
     } finally {
       setImporting(false);
     }

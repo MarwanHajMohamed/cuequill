@@ -31,7 +31,16 @@ export function useSaveStocks() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ rows }),
       });
-      if (!res.ok) throw new Error("Failed to save stocks");
+      if (!res.ok) {
+        let message = "Failed to save stocks";
+        try {
+          const err = await res.json();
+          if (err?.error) message = err.error;
+        } catch {
+          /* non-JSON body - keep the generic message */
+        }
+        throw new Error(message);
+      }
       const data = await res.json();
       return data.rows as StockRow[];
     },

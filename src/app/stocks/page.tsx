@@ -71,8 +71,8 @@ export default function Page() {
     try {
       await save.mutateAsync(rows);
       toast("Stocks table saved");
-    } catch {
-      toast("Failed to save stocks table");
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Failed to save stocks table");
     }
   };
 

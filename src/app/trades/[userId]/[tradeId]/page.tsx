@@ -171,11 +171,21 @@ function TradeDetailPage() {
         fees: form.status === "OPEN" ? null : form.fees ?? null,
         timeExited: form.status === "OPEN" ? "" : form.timeExited ?? "",
       };
-      await fetch(`/api/trades/${tradeId}`, {
+      const res = await fetch(`/api/trades/${tradeId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+      if (!res.ok) {
+        let message = "Save failed";
+        try {
+          const data = await res.json();
+          if (data?.error) message = data.error;
+        } catch {
+          /* keep the generic message */
+        }
+        throw new Error(message);
+      }
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["trade", tradeId] }),
         queryClient.invalidateQueries({ queryKey: ["trades", userId] }),
@@ -185,8 +195,8 @@ function TradeDetailPage() {
       toast(`Trade ${form.symbol} saved`);
       hapticNotify("success");
       setEditing(false);
-    } catch {
-      toast("Save failed");
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Save failed");
     } finally {
       setSaving(false);
     }
@@ -196,13 +206,23 @@ function TradeDetailPage() {
     if (!tradeId) return;
     setSaving(true);
     try {
-      await fetch(`/api/trades/${tradeId}`, { method: "DELETE" });
+      const res = await fetch(`/api/trades/${tradeId}`, { method: "DELETE" });
+      if (!res.ok) {
+        let message = "Delete failed";
+        try {
+          const data = await res.json();
+          if (data?.error) message = data.error;
+        } catch {
+          /* keep the generic message */
+        }
+        throw new Error(message);
+      }
       await queryClient.invalidateQueries({ queryKey: ["trades", userId] });
       queryClient.invalidateQueries({ queryKey: ["challenges"] });
       toast("Trade deleted");
       router.replace(`/trades/${userId}`);
-    } catch {
-      toast("Delete failed");
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Delete failed");
     } finally {
       setSaving(false);
       setDelConfirm(false);

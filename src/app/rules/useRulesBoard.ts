@@ -41,9 +41,18 @@ export function useRulesBoard() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId, sections: next }),
         });
-        if (!res.ok) throw new Error("Request failed");
-      } catch {
-        toast("Failed to save changes");
+        if (!res.ok) {
+          let message = "Failed to save changes";
+          try {
+            const data = await res.json();
+            if (data?.error) message = data.error;
+          } catch {
+            /* keep the generic message */
+          }
+          throw new Error(message);
+        }
+      } catch (e) {
+        toast(e instanceof Error ? e.message : "Failed to save changes");
       }
     },
     [userId, toast]

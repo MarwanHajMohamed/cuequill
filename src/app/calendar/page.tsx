@@ -488,30 +488,35 @@ function Page() {
   }, [trades, displayedMonth]);
 
   const handleSaveTrade = async (trade: Trade): Promise<boolean> => {
-    try {
-      const res = trade._id
-        ? // UPDATE EXISTING TRADE
-          await fetch(`/api/trades/${trade._id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(trade),
-          })
-        : // CREATE NEW TRADE
-          await fetch("/api/trades", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ...trade, userId }),
-          });
+    const res = trade._id
+      ? // UPDATE EXISTING TRADE
+        await fetch(`/api/trades/${trade._id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(trade),
+        })
+      : // CREATE NEW TRADE
+        await fetch("/api/trades", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...trade, userId }),
+        });
 
-      if (!res.ok) return false;
-
-      await queryClient.invalidateQueries({ queryKey: ["trades", userId] });
-      setIsModalOpen(false);
-      setEditingTrade(null);
-      return true;
-    } catch {
-      return false;
+    if (!res.ok) {
+      let message = "Couldn't save trade. Please try again.";
+      try {
+        const data = await res.json();
+        if (data?.error) message = data.error;
+      } catch {
+        /* non-JSON error body - keep the generic message */
+      }
+      throw new Error(message);
     }
+
+    await queryClient.invalidateQueries({ queryKey: ["trades", userId] });
+    setIsModalOpen(false);
+    setEditingTrade(null);
+    return true;
   };
 
   const handleDeleteTrade = async (tradeId: string) => {

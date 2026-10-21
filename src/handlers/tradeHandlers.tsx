@@ -1,10 +1,10 @@
 import { Trade } from "@/app/types/Trades";
 import { QueryClient } from "@tanstack/react-query";
 
-// Persist a new or edited trade. Returns true only when the request actually
-// succeeds, so the caller can toast success/failure based on the real result.
-// The modal is closed (and edit state cleared) only on success - a failed save
-// keeps the form open so the user can retry.
+// Persist a new or edited trade. Resolves true on success; on failure it
+// THROWS an Error carrying the server's message so the caller can toast the
+// real reason (not a generic "couldn't save"). The modal is closed (and edit
+// state cleared) only on success - a failed save keeps the form open.
 export const handleSaveTrade = async (
   trade: Trade,
   userId: string,
@@ -12,32 +12,37 @@ export const handleSaveTrade = async (
   queryClient: QueryClient,
   setEditingTrade?: React.Dispatch<React.SetStateAction<Trade | null>>
 ): Promise<boolean> => {
-  try {
-    const res = trade._id
-      ? // UPDATE EXISTING TRADE
-        await fetch(`/api/trades/${trade._id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(trade),
-        })
-      : // CREATE NEW TRADE
-        await fetch("/api/trades", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...trade, userId }),
-        });
+  const res = trade._id
+    ? // UPDATE EXISTING TRADE
+      await fetch(`/api/trades/${trade._id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(trade),
+      })
+    : // CREATE NEW TRADE
+      await fetch("/api/trades", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...trade, userId }),
+      });
 
-    if (!res.ok) return false;
-
-    await queryClient.invalidateQueries({ queryKey: ["trades", userId] });
-    // Trade-based challenges progress with every save - refresh them live.
-    queryClient.invalidateQueries({ queryKey: ["challenges"] });
-    setIsModalOpen(false);
-    if (setEditingTrade) setEditingTrade(null);
-    return true;
-  } catch {
-    return false;
+  if (!res.ok) {
+    let message = "Couldn't save trade. Please try again.";
+    try {
+      const data = await res.json();
+      if (data?.error) message = data.error;
+    } catch {
+      /* non-JSON error body - keep the generic message */
+    }
+    throw new Error(message);
   }
+
+  await queryClient.invalidateQueries({ queryKey: ["trades", userId] });
+  // Trade-based challenges progress with every save - refresh them live.
+  queryClient.invalidateQueries({ queryKey: ["challenges"] });
+  setIsModalOpen(false);
+  if (setEditingTrade) setEditingTrade(null);
+  return true;
 };
 
 export const handleDeleteTrade = async (
