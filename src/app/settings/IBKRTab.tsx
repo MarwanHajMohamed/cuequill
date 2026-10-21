@@ -304,8 +304,8 @@ export default function IBKRTab() {
             </>,
             <>
               Under <span className="text-white">Trades</span>, select: Symbol,
-              Strike, Date/Time, Expiry, Put/Call, Quantity, Buy/Sell,
-              TradePrice, Realized P/L, TradeID,{" "}
+              UnderlyingSymbol, Strike, Date/Time, Expiry, Put/Call, Quantity,
+              Buy/Sell, TradePrice, TradeID,{" "}
               <span className="text-white">IBCommission</span>, and{" "}
               <span className="text-white">Taxes</span> (the last two let
               Cuequill populate fees automatically).
@@ -323,11 +323,18 @@ export default function IBKRTab() {
               </span>{" "}
               also create a{" "}
               <span className="text-white">Trade Confirmation Flex Query</span>{" "}
-              (Reports &rsaquo; Flex Queries) with the same Trades fields and{" "}
+              (Reports &rsaquo; Flex Queries) with the same trade details - note
+              it labels them{" "}
+              <span className="text-white">Price</span>,{" "}
+              <span className="text-white">Commission</span> and{" "}
+              <span className="text-white">Tax</span> (rather than TradePrice /
+              IBCommission / Taxes) - with{" "}
               <span className="text-white">Period</span> set to{" "}
-              <span className="text-white">Today</span>. Note its Query ID for
-              the field below - it reports trades the day you take them, instead
-              of waiting for the next settled statement.
+              <span className="text-white">Today</span> and{" "}
+              <span className="text-white">Format</span>{" "}
+              <span className="text-white">CSV</span>. Note its Query ID for the
+              field below - it reports trades the day you take them, instead of
+              waiting for the next settled statement.
             </>,
           ].map((step, i) => (
             <li key={i} className="flex gap-3">
