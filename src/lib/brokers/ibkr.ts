@@ -108,45 +108,56 @@ const IBKR_HEADERS = {
 
 async function fetchIbkrCsv(token: string, queryId: string): Promise<string> {
   const sendUrl = `https://gdcdyn.interactivebrokers.com/Universal/servlet/FlexStatementService.SendRequest?t=${token}&q=${queryId}&v=3`;
-  const sendRes = await fetch(sendUrl, { headers: IBKR_HEADERS });
-  const sendXml = await sendRes.text();
 
-  const status = extractXmlValue(sendXml, "Status");
-  if (status !== "Success") {
-    const errorMsg =
-      extractXmlValue(sendXml, "ErrorMessage") || "Unknown error";
-    const errorCode = extractXmlValue(sendXml, "ErrorCode");
+  // IBKR's Flex service very often answers the first SendRequest with a
+  // transient "try again shortly" code - the statement is still warming up
+  // on their side, or the query was requested a moment ago. These clear on
+  // their own, so retry a few times with a short delay before surfacing a
+  // rate-limit error. Codes per IBKR Flex docs:
+  //   1001               - statement can't be generated right now (busy /
+  //                        requested too recently)
+  //   1004               - statement still incomplete on IBKR's side
+  //   1018 / 1019 / 1020  - throttled, retry after a delay
+  //   1003 / 1011         - invalid or expired token  (NOT retryable)
+  //   1006                - invalid queryId            (NOT retryable)
+  const RETRY_CODES = new Set(["1001", "1004", "1018", "1019", "1020"]);
+  const SEND_ATTEMPTS = 4;
+  const SEND_DELAY_MS = 6000;
 
-    // IBKR uses similar "please try again shortly" wording for several
-    // distinct failures: a real rate limit, a half-generated statement
-    // still on their side, a bad token, a bad queryId, etc. Only the
-    // explicit wait-and-retry codes mean "this clears on its own" -
-    // everything else is a config problem the user needs to fix. Codes
-    // per IBKR Flex docs:
-    //   1001               - statement can't be generated right now
-    //                        (IBKR busy OR the query was requested too
-    //                        recently - Flex throttles frequent syncs)
-    //   1004               - statement still incomplete on IBKR's side
-    //   1018 / 1019 / 1020 - statement throttled, retry after delay
-    //   1003 / 1011        - invalid or expired token
-    //   1006               - invalid queryId
-    const RETRY_CODES = new Set(["1001", "1004", "1018", "1019", "1020"]);
-    if (RETRY_CODES.has(errorCode)) {
-      const stillGenerating = errorCode === "1001" || errorCode === "1004";
-      const err = new Error(
-        stillGenerating
-          ? "IBKR allows about one sync per day. It'll retry on the next daily run. Try again tomorrow."
-          : "IBKR is rate-limiting this query. Syncs are limited to about once a day. Try again later.",
+  let sendXml = "";
+  let status = "";
+  let lastCode = "";
+  let lastMsg = "";
+  for (let attempt = 0; attempt < SEND_ATTEMPTS; attempt++) {
+    if (attempt > 0) await new Promise((r) => setTimeout(r, SEND_DELAY_MS));
+
+    const sendRes = await fetch(sendUrl, { headers: IBKR_HEADERS });
+    sendXml = await sendRes.text();
+    status = extractXmlValue(sendXml, "Status");
+    if (status === "Success") break;
+
+    lastMsg = extractXmlValue(sendXml, "ErrorMessage") || "Unknown error";
+    lastCode = extractXmlValue(sendXml, "ErrorCode");
+
+    // Config problems (bad/expired token, bad queryId, …) won't clear on a
+    // retry - surface IBKR's exact message and code immediately so the user
+    // can act (e.g. regenerate the token in the IBKR portal).
+    if (!RETRY_CODES.has(lastCode)) {
+      throw new Error(
+        `IBKR request failed${lastCode ? ` (code ${lastCode})` : ""}: ${lastMsg}`,
       );
-      (err as Error & { code?: string }).code = "RATE_LIMITED";
-      throw err;
     }
+    // Transient - fall through and retry after the delay.
+  }
 
-    // Surface IBKR's exact message and code so the user can actually act
-    // on it (e.g. regenerate token in the IBKR portal when it's expired).
-    throw new Error(
-      `IBKR request failed${errorCode ? ` (code ${errorCode})` : ""}: ${errorMsg}`,
+  if (status !== "Success") {
+    // Still transient after all retries: Flex is genuinely busy or briefly
+    // throttling this query. It clears on its own in a few minutes.
+    const err = new Error(
+      "IBKR is still preparing this statement (it can take a minute) or is briefly rate-limiting Flex requests. Try again in a few minutes.",
     );
+    (err as Error & { code?: string }).code = "RATE_LIMITED";
+    throw err;
   }
 
   const referenceCode = extractXmlValue(sendXml, "ReferenceCode");

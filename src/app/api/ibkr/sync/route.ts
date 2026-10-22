@@ -46,6 +46,15 @@ export async function POST() {
     const result = await syncForUser(session.user.id, "manual");
     return NextResponse.json({ success: true, ...result });
   } catch (err) {
+    // A failed sync is often a transient IBKR "try again shortly" - don't
+    // lock the button for the full 30 min. Roll the cooldown back so only a
+    // short retry window remains (still spaced out enough not to hammer IBKR).
+    const retryWindowMs = 2 * 60 * 1000;
+    await User.findByIdAndUpdate(session.user.id, {
+      ibkrLastManualSync: new Date(
+        Date.now() - (MANUAL_COOLDOWN_MS - retryWindowMs),
+      ),
+    }).catch(() => {});
     const message = err instanceof Error ? err.message : "Sync failed";
     return NextResponse.json({ error: message }, { status: 500 });
   }
