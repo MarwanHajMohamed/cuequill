@@ -109,20 +109,34 @@ const IBKR_HEADERS = {
 async function fetchIbkrCsv(token: string, queryId: string): Promise<string> {
   const sendUrl = `https://gdcdyn.interactivebrokers.com/Universal/servlet/FlexStatementService.SendRequest?t=${token}&q=${queryId}&v=3`;
 
-  // IBKR's Flex service very often answers the first SendRequest with a
-  // transient "try again shortly" code - the statement is still warming up
-  // on their side, or the query was requested a moment ago. These clear on
-  // their own, so retry a few times with a short delay before surfacing a
-  // rate-limit error. Codes per IBKR Flex docs:
-  //   1001               - statement can't be generated right now (busy /
-  //                        requested too recently)
-  //   1004               - statement still incomplete on IBKR's side
-  //   1018 / 1019 / 1020  - throttled, retry after a delay
-  //   1003 / 1011         - invalid or expired token  (NOT retryable)
-  //   1006                - invalid queryId            (NOT retryable)
-  const RETRY_CODES = new Set(["1001", "1004", "1018", "1019", "1020"]);
-  const SEND_ATTEMPTS = 4;
-  const SEND_DELAY_MS = 6000;
+  // IBKR Flex SendRequest can answer with several distinct non-Success
+  // codes. We treat them differently:
+  //   1001 / 1004        - statement still being generated ("try again
+  //                        shortly"). Genuinely transient while warming up,
+  //                        so retry a few times with a short delay. BUT if
+  //                        it never clears, the query is likely being pulled
+  //                        too often (Flex caps how many times a query runs).
+  //   1018 / 1019 / 1020 - explicitly throttled. Retrying within seconds
+  //                        only makes it worse, so surface it immediately.
+  //   1003 / 1011        - invalid/expired token (not retryable)
+  //   1006               - invalid queryId        (not retryable)
+  const GENERATING_CODES = new Set(["1001", "1004"]);
+  const THROTTLE_CODES = new Set(["1018", "1019", "1020"]);
+  const SEND_ATTEMPTS = 3;
+  const SEND_DELAY_MS = 8000;
+
+  // Build an error that carries IBKR's own code + message so the user (and
+  // logs) can see exactly what Flex said, not a guess.
+  const rateLimited = (code: string, msg: string, kind: "throttle" | "busy") => {
+    const detail = `IBKR code ${code}${msg ? `: ${msg}` : ""}`;
+    const err = new Error(
+      kind === "throttle"
+        ? `IBKR is rate-limiting Flex requests (${detail}). Flex only lets a query run every few minutes - wait ~10 minutes, then try again.`
+        : `IBKR couldn't generate the statement (${detail}). Flex limits how many times a query runs - if this keeps happening, you've likely pulled it too many times today; wait a while (or until tomorrow) and retry. Also double-check the Query ID and that the token is still valid.`,
+    );
+    (err as Error & { code?: string }).code = "RATE_LIMITED";
+    return err;
+  };
 
   let sendXml = "";
   let status = "";
@@ -139,25 +153,25 @@ async function fetchIbkrCsv(token: string, queryId: string): Promise<string> {
     lastMsg = extractXmlValue(sendXml, "ErrorMessage") || "Unknown error";
     lastCode = extractXmlValue(sendXml, "ErrorCode");
 
+    // Explicit throttle - don't retry (it worsens it); report with the code.
+    if (THROTTLE_CODES.has(lastCode)) {
+      throw rateLimited(lastCode, lastMsg, "throttle");
+    }
     // Config problems (bad/expired token, bad queryId, …) won't clear on a
     // retry - surface IBKR's exact message and code immediately so the user
     // can act (e.g. regenerate the token in the IBKR portal).
-    if (!RETRY_CODES.has(lastCode)) {
+    if (!GENERATING_CODES.has(lastCode)) {
       throw new Error(
         `IBKR request failed${lastCode ? ` (code ${lastCode})` : ""}: ${lastMsg}`,
       );
     }
-    // Transient - fall through and retry after the delay.
+    // 1001 / 1004 - statement warming up; retry after the delay.
   }
 
   if (status !== "Success") {
-    // Still transient after all retries: Flex is genuinely busy or briefly
-    // throttling this query. It clears on its own in a few minutes.
-    const err = new Error(
-      "IBKR is still preparing this statement (it can take a minute) or is briefly rate-limiting Flex requests. Try again in a few minutes.",
-    );
-    (err as Error & { code?: string }).code = "RATE_LIMITED";
-    throw err;
+    // Never cleared after retries - busy, or (more likely when it happens
+    // every time) the query has been pulled too often. Include the code.
+    throw rateLimited(lastCode || "1001", lastMsg, "busy");
   }
 
   const referenceCode = extractXmlValue(sendXml, "ReferenceCode");
