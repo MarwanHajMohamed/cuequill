@@ -122,8 +122,12 @@ async function fetchIbkrCsv(token: string, queryId: string): Promise<string> {
   //   1006               - invalid queryId        (not retryable)
   const GENERATING_CODES = new Set(["1001", "1004"]);
   const THROTTLE_CODES = new Set(["1018", "1019", "1020"]);
-  const SEND_ATTEMPTS = 3;
-  const SEND_DELAY_MS = 8000;
+  // IBKR counts EVERY SendRequest against a per-query budget, so retrying
+  // aggressively on 1001 burns that budget and keeps the query throttled.
+  // Keep it to a single gentle retry after a longer pause - enough to clear
+  // a genuinely-momentary "warming up" 1001 without hammering the quota.
+  const SEND_ATTEMPTS = 2;
+  const SEND_DELAY_MS = 12000;
 
   // Build an error that carries IBKR's own code + message so the user (and
   // logs) can see exactly what Flex said, not a guess.
