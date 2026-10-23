@@ -31,10 +31,9 @@ export default function IBKRTab() {
   const { isPro } = useIsPro();
   const queryClient = useQueryClient();
 
-  // A sync or a fee backfill changes trades server-side (new rows, and
-  // commissions/fees written onto existing ones). The trades table is a
-  // cached React Query, so refresh it - otherwise net P/L keeps showing the
-  // pre-fee numbers until some other action happens to invalidate the cache.
+  // A sync adds trades server-side (new rows, with commissions/fees). The
+  // trades table is a cached React Query, so refresh it - otherwise net P/L
+  // keeps showing stale numbers until something else invalidates the cache.
   const refreshTradeData = () => {
     queryClient.invalidateQueries({ queryKey: ["trades"] });
     queryClient.invalidateQueries({ queryKey: ["challenges"] });
@@ -50,8 +49,6 @@ export default function IBKRTab() {
   const [saveStatus, setSaveStatus] = useState("");
   const [syncStatus, setSyncStatus] = useState("");
   const [syncing, setSyncing] = useState(false);
-  const [backfilling, setBackfilling] = useState(false);
-  const [backfillStatus, setBackfillStatus] = useState("");
   const [now, setNow] = useState(() => Date.now());
 
   // Last-imported viewer state
@@ -166,31 +163,6 @@ export default function IBKRTab() {
       setSyncStatus(data.error ?? "Please wait before resyncing.");
     } else {
       setSyncStatus(`Error: ${data.error}`);
-    }
-  };
-
-  const handleBackfill = async () => {
-    setBackfilling(true);
-    setBackfillStatus("Reading fills and matching fees…");
-    try {
-      const res = await fetch("/api/ibkr/backfill-fees", { method: "POST" });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Backfill failed");
-      setBackfillStatus(
-        data.updated > 0
-          ? `Filled fees on ${data.updated} trade${data.updated === 1 ? "" : "s"}.`
-          : data.scanned === 0
-            ? "No trades are missing fees."
-            : "No matching fills found. Widen the query period and try again.",
-      );
-      // Fees just changed on existing trades - refresh so net P/L updates.
-      if (data.updated > 0) refreshTradeData();
-    } catch (e) {
-      setBackfillStatus(
-        `Error: ${e instanceof Error ? e.message : "Backfill failed"}`,
-      );
-    } finally {
-      setBackfilling(false);
     }
   };
 
@@ -474,38 +446,6 @@ export default function IBKRTab() {
           {syncStatus && (
             <span className="text-[12px] text-white/60">{syncStatus}</span>
           )}
-        </div>
-
-        {/* Backfill fees - fill commissions/taxes on trades that are
-            missing them, by re-reading fills. Needs the Flex query to
-            include IBCommission/Taxes and to cover those trades' dates. */}
-        <div className="mt-1 flex flex-col gap-2">
-          <div className="text-[11.5px] text-white/40 max-w-md leading-relaxed">
-            Older trades imported before you added the commission columns may
-            have no fees. This re-reads your fills and fills them in - make sure
-            the query includes <span className="text-white/70">IBCommission</span>{" "}
-            and <span className="text-white/70">Taxes</span> and covers those
-            dates.
-          </div>
-          <div className="flex items-center gap-3 flex-wrap">
-            <button
-              onClick={handleBackfill}
-              disabled={backfilling || !hasToken || !queryId}
-              className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border transition text-[13px] font-medium ${
-                backfilling || !hasToken || !queryId
-                  ? "bg-white/[0.02] text-white/30 border-white/10 cursor-not-allowed"
-                  : "border-white/15 text-white/80 bg-white/[0.03] hover:bg-white/[0.06] hover:text-white cursor-pointer"
-              }`}
-            >
-              <i
-                className={`fa-solid fa-money-bill-wave text-[11px] ${backfilling ? "animate-pulse" : ""}`}
-              />
-              {backfilling ? "Backfilling…" : "Backfill missing fees"}
-            </button>
-            {backfillStatus && (
-              <span className="text-[12px] text-white/60">{backfillStatus}</span>
-            )}
-          </div>
         </div>
 
         {/* Imported-trades viewer. Once the live list has loaded we
