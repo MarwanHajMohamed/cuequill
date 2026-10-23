@@ -217,11 +217,9 @@ function BrokerLogo({
 
 // Small capability pill shown on each broker tile.
 function Tag({
-  icon,
   label,
   tone,
 }: {
-  icon: string;
   label: string;
   tone: "teal" | "slate";
 }) {
@@ -231,9 +229,8 @@ function Tag({
       : "bg-white/[0.04] text-white/55 border-white/10";
   return (
     <span
-      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border text-[9.5px] font-medium tracking-normal ${styles}`}
+      className={`inline-flex items-center px-1.5 py-0.5 rounded-full border text-[9.5px] font-medium tracking-normal ${styles}`}
     >
-      <i className={`fa-solid ${icon} text-[8px]`} />
       {label}
     </span>
   );
@@ -468,18 +465,8 @@ export default function BrokersTab() {
                       {s.label}
                     </div>
                     <div className="flex flex-wrap items-center gap-1">
-                      {s.autoSync && (
-                        <Tag
-                          icon="fa-rotate"
-                          label="Auto sync"
-                          tone="teal"
-                        />
-                      )}
-                      <Tag
-                        icon="fa-file-arrow-up"
-                        label="File upload"
-                        tone="slate"
-                      />
+                      {s.autoSync && <Tag label="Auto sync" tone="teal" />}
+                      <Tag label="File upload" tone="slate" />
                     </div>
                   </div>
                 </button>
