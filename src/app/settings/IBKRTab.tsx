@@ -4,6 +4,7 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
 import { useIsPro } from "@/hooks/useIsPro";
+import { useScrollLock } from "@/hooks/useScrollLock";
 
 const COOLDOWN_MS = 30 * 60 * 1000;
 
@@ -50,6 +51,10 @@ export default function IBKRTab() {
   const [syncStatus, setSyncStatus] = useState("");
   const [syncing, setSyncing] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+  // Setup-screenshot lightbox (click to enlarge, then click to zoom in).
+  const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(
+    null,
+  );
 
   // Last-imported viewer state
   const [importedOpen, setImportedOpen] = useState(false);
@@ -407,23 +412,31 @@ export default function IBKRTab() {
                 </span>
                 <span className="pt-0.5">{step.text}</span>
               </div>
-              {(step.img || step.placeholder) && (
-                <div className="ml-9 max-w-2xl rounded-xl border border-white/10 overflow-hidden bg-white/[0.02]">
-                  {step.img ? (
-                    // eslint-disable-next-line @next/next/no-img-element
+              {(step.img || step.placeholder) &&
+                (step.img ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setLightbox({ src: step.img!, alt: step.alt ?? "" })
+                    }
+                    aria-label="Enlarge screenshot"
+                    className="ml-9 max-w-2xl rounded-xl border border-white/10 overflow-hidden bg-white/[0.02] cursor-zoom-in block hover:border-white/25 transition"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={step.img}
                       alt={step.alt ?? ""}
                       loading="lazy"
                       className="w-full h-auto block"
                     />
-                  ) : (
+                  </button>
+                ) : (
+                  <div className="ml-9 max-w-2xl rounded-xl border border-white/10 overflow-hidden bg-white/[0.02]">
                     <div className="aspect-[16/9] flex items-center justify-center text-[11.5px] text-white/35 text-center px-4">
                       Screenshot coming soon
                     </div>
-                  )}
-                </div>
-              )}
+                  </div>
+                ))}
             </li>
           ))}
         </ol>
@@ -653,7 +666,100 @@ export default function IBKRTab() {
           );
         })()}
       </section>
+
+      <AnimatePresence>
+        {lightbox && (
+          <SetupLightbox
+            src={lightbox.src}
+            alt={lightbox.alt}
+            onClose={() => setLightbox(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
+  );
+}
+
+// Fullscreen viewer for the setup screenshots. Click the backdrop / X (or
+// Esc) to close. Click the image to zoom into that spot; click again to
+// zoom back out.
+function SetupLightbox({
+  src,
+  alt,
+  onClose,
+}: {
+  src: string;
+  alt: string;
+  onClose: () => void;
+}) {
+  useScrollLock();
+  const [zoomed, setZoomed] = useState(false);
+  const [origin, setOrigin] = useState({ x: 50, y: 50 });
+  const ZOOM = 2.5;
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  const handleImageClick = (e: React.MouseEvent<HTMLImageElement>) => {
+    if (zoomed) {
+      setZoomed(false);
+      return;
+    }
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setOrigin({ x, y });
+    setZoomed(true);
+  };
+
+  return (
+    <motion.div
+      className="fixed inset-0 z-[60] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.15 }}
+      onClick={onClose}
+    >
+      <button
+        type="button"
+        aria-label="Close"
+        onClick={onClose}
+        className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition flex items-center justify-center cursor-pointer z-10"
+      >
+        <i className="fa-solid fa-xmark text-[14px]" />
+      </button>
+
+      {/* Wrapper clips the zoom; sized to the fitted image. */}
+      <div
+        className="relative overflow-hidden rounded-lg max-w-[95vw] max-h-[90vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
+          alt={alt}
+          onClick={handleImageClick}
+          style={{
+            transform: zoomed ? `scale(${ZOOM})` : "scale(1)",
+            transformOrigin: `${origin.x}% ${origin.y}%`,
+          }}
+          className={`block max-w-[95vw] max-h-[90vh] w-auto h-auto select-none transition-transform duration-200 ${
+            zoomed ? "cursor-zoom-out" : "cursor-zoom-in"
+          }`}
+          draggable={false}
+        />
+      </div>
+
+      <div className="absolute bottom-4 inset-x-0 text-center text-[11.5px] text-white/50 pointer-events-none">
+        {zoomed ? "Click the image to zoom out" : "Click the image to zoom in"}
+      </div>
+    </motion.div>
   );
 }
 
