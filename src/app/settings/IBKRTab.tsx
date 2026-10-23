@@ -359,19 +359,42 @@ export default function IBKRTab() {
                     <span className="text-white">
                       Optional, for same-day imports:
                     </span>{" "}
-                    create a{" "}
+                    on the Flex Queries page, click the{" "}
+                    <span className="text-white">+</span> on the{" "}
                     <span className="text-white">
                       Trade Confirmation Flex Query
                     </span>{" "}
-                    the same way (<span className="text-white">Trades</span> &rsaquo;{" "}
-                    <span className="text-white">Execution</span> &rsaquo;{" "}
-                    <span className="text-white">Select All</span>, Format{" "}
-                    <span className="text-white">CSV</span>) and paste its Query ID
-                    into the Trade Confirmation field below. It reports trades the
-                    day you take them, instead of waiting for the next settled
-                    statement.
+                    panel. It reports trades the day you take them, instead of
+                    waiting for the next settled statement.
                   </>
                 ),
+                img: "/ibkr/tc-1-create.webp",
+                alt: "Create button on the Trade Confirmation Flex Query panel",
+              },
+              {
+                text: (
+                  <>
+                    In the Trade Confirmation dialog, choose{" "}
+                    <span className="text-white">Execution</span> and tick{" "}
+                    <span className="text-white">Select All</span>, then close it.
+                  </>
+                ),
+                img: "/ibkr/tc-2-execution.webp",
+                alt: "Trade Confirmation dialog with Execution and Select All checked",
+              },
+              {
+                text: (
+                  <>
+                    Set <span className="text-white">Format</span> to{" "}
+                    <span className="text-white">CSV</span> and{" "}
+                    <span className="text-white">Period</span> to{" "}
+                    <span className="text-white">Today</span>, then{" "}
+                    <span className="text-white">Save</span>. Copy its Query ID
+                    into the Trade Confirmation Query ID field below.
+                  </>
+                ),
+                img: "/ibkr/tc-3-csv-today.webp",
+                alt: "Trade Confirmation delivery configuration with CSV format and Today period",
               },
             ] as {
               text: React.ReactNode;
