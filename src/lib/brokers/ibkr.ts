@@ -106,7 +106,13 @@ const IBKR_HEADERS = {
   "User-Agent": "Java/1.8.0_192",
 };
 
-async function fetchIbkrCsv(token: string, queryId: string): Promise<string> {
+// `label` names which Flex query this is ("Activity" / "Trade Confirmation")
+// so every error says which one failed and which ID to go check.
+async function fetchIbkrCsv(
+  token: string,
+  queryId: string,
+  label: string,
+): Promise<string> {
   const sendUrl = `https://gdcdyn.interactivebrokers.com/Universal/servlet/FlexStatementService.SendRequest?t=${token}&q=${queryId}&v=3`;
 
   // IBKR Flex SendRequest can answer with several distinct non-Success
@@ -136,8 +142,8 @@ async function fetchIbkrCsv(token: string, queryId: string): Promise<string> {
     const detail = `IBKR code ${code}${msg ? `: ${msg}` : ""}`;
     const err = new Error(
       kind === "throttle"
-        ? `IBKR is rate-limiting Flex requests (${detail}). Flex only lets a query run every few minutes - wait ~10 minutes, then try again.`
-        : `IBKR couldn't generate the statement yet (${detail}). This is a temporary issue on IBKR's side, not a usage limit - wait a few minutes and try again. If it keeps happening for a while, double-check the Query ID and that the token is still valid.`,
+        ? `IBKR is rate-limiting Flex requests for your ${label} query (${detail}). Flex only lets a query run every few minutes - wait ~10 minutes, then try again.`
+        : `IBKR couldn't generate your ${label} statement yet (${detail}). This is a temporary issue on IBKR's side, not a usage limit - wait a few minutes and try again. If it keeps happening for a while, double-check this query's ID and that the token is still valid.`,
     );
     (err as Error & { code?: string }).code = "RATE_LIMITED";
     return err;
@@ -167,7 +173,7 @@ async function fetchIbkrCsv(token: string, queryId: string): Promise<string> {
     // can act (e.g. regenerate the token in the IBKR portal).
     if (!GENERATING_CODES.has(lastCode)) {
       throw new Error(
-        `IBKR request failed${lastCode ? ` (code ${lastCode})` : ""}: ${lastMsg}`,
+        `Your IBKR ${label} query failed${lastCode ? ` (code ${lastCode})` : ""}: ${lastMsg}`,
       );
     }
     // 1001 / 1004 - statement warming up; retry after the delay.
@@ -195,14 +201,14 @@ async function fetchIbkrCsv(token: string, queryId: string): Promise<string> {
       const errorMsg = extractXmlValue(body, "ErrorMessage") || "Unknown error";
       const errorCode = extractXmlValue(body, "ErrorCode");
       throw new Error(
-        `IBKR retrieval failed${errorCode ? ` (code ${errorCode})` : ""}: ${errorMsg}`,
+        `IBKR failed to deliver your ${label} statement${errorCode ? ` (code ${errorCode})` : ""}: ${errorMsg}`,
       );
     }
 
     return body;
   }
 
-  throw new Error("IBKR statement timed out after 50 seconds");
+  throw new Error(`Your IBKR ${label} statement timed out after 50 seconds`);
 }
 
 // Maps one IBKR CSV row (Activity or Trade Confirmation) into a
@@ -264,8 +270,9 @@ function parseFillsCsv(csv: string): NormalizedFill[] {
 async function fetchFillsForQuery(
   token: string,
   queryId: string,
+  label: string,
 ): Promise<NormalizedFill[]> {
-  const csv = await fetchIbkrCsv(token, queryId);
+  const csv = await fetchIbkrCsv(token, queryId, label);
   return parseFillsCsv(csv);
 }
 
@@ -278,7 +285,7 @@ async function fetchFills(userId: string): Promise<NormalizedFill[]> {
     throw new Error("IBKR credentials not configured");
   }
 
-  return fetchFillsForQuery(user.ibkrToken, user.ibkrQueryId);
+  return fetchFillsForQuery(user.ibkrToken, user.ibkrQueryId, "Activity");
 }
 
 // Trade Confirmation Flex fills (same-day executions). Returns [] when the
@@ -296,7 +303,22 @@ export async function fetchConfirmFills(
   }
   if (!user.ibkrTradeConfirmQueryId) return [];
 
-  return fetchFillsForQuery(user.ibkrToken, user.ibkrTradeConfirmQueryId);
+  try {
+    return await fetchFillsForQuery(
+      user.ibkrToken,
+      user.ibkrTradeConfirmQueryId,
+      "Trade Confirmation",
+    );
+  } catch (err) {
+    // A Trade Confirmation statement often can't be generated when there's
+    // nothing to report yet - no confirmations so far today, a no-trade day,
+    // or IBKR's nightly reset window. IBKR signals that as a transient "try
+    // again shortly" (our RATE_LIMITED), which for same-day data just means
+    // "nothing to import right now" - so return empty instead of failing the
+    // run. Real config problems (bad token / query ID) still throw.
+    if ((err as { code?: string }).code === "RATE_LIMITED") return [];
+    throw err;
+  }
 }
 
 
