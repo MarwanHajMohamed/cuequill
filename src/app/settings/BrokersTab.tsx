@@ -249,11 +249,18 @@ export default function BrokersTab() {
   // don't run at once.
   const [contentReady, setContentReady] = useState(false);
 
+  const [query, setQuery] = useState("");
+
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const q = query.trim().toLowerCase();
+  const filteredSources = q
+    ? SOURCES.filter((s) => s.label.toLowerCase().includes(q))
+    : SOURCES;
 
   const isError = status.toLowerCase().startsWith("error");
   const isSuccess = status.toLowerCase().startsWith("imported");
@@ -452,26 +459,68 @@ export default function BrokersTab() {
               </p>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-              {SOURCES.map((s) => (
+            {/* Search */}
+            <div className="relative max-w-xs">
+              <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-white/35" />
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search brokers"
+                className="w-full pl-8 pr-8 py-2 rounded-xl bg-white/[0.03] border border-white/10 text-[13px] text-white placeholder:text-white/40 focus:border-white/25 focus:outline-none transition"
+              />
+              {query && (
                 <button
-                  key={s.id}
-                  onClick={() => openSource(s)}
-                  className="group flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/20 transition px-3.5 py-3 text-left cursor-pointer"
+                  type="button"
+                  onClick={() => setQuery("")}
+                  aria-label="Clear search"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center text-white/35 hover:text-white transition cursor-pointer"
                 >
-                  <BrokerLogo logo={s.logo} layoutId={`broker-logo-${s.id}`} />
-                  <div className="min-w-0 flex flex-col gap-1.5">
-                    <div className="text-[13.5px] font-medium truncate">
-                      {s.label}
-                    </div>
-                    <div className="flex flex-wrap items-center gap-1">
-                      {s.autoSync && <Tag label="Auto sync" tone="teal" />}
-                      <Tag label="File upload" tone="slate" />
-                    </div>
-                  </div>
+                  <i className="fa-solid fa-xmark text-[11px]" />
                 </button>
-              ))}
+              )}
             </div>
+
+            {filteredSources.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                {filteredSources.map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => openSource(s)}
+                    className="group flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/20 transition px-3.5 py-3 text-left cursor-pointer"
+                  >
+                    <BrokerLogo logo={s.logo} layoutId={`broker-logo-${s.id}`} />
+                    <div className="min-w-0 flex flex-col gap-1.5">
+                      <div className="text-[13.5px] font-medium truncate">
+                        {s.label}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-1">
+                        {s.autoSync && <Tag label="Auto sync" tone="teal" />}
+                        <Tag label="File upload" tone="slate" />
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.02] px-5 py-8 text-center flex flex-col items-center gap-1.5">
+                <div className="text-[13.5px] font-medium text-white/80">
+                  No broker matches &ldquo;{query}&rdquo;
+                </div>
+                <div className="text-[12.5px] text-white/55 leading-relaxed max-w-sm">
+                  Don&apos;t see your broker? Email us at{" "}
+                  <a
+                    href={`mailto:info@cuequill.com?subject=${encodeURIComponent(
+                      `Add broker support: ${query}`,
+                    )}`}
+                    className="text-teal-300 hover:text-teal-200 underline-offset-4 hover:underline"
+                  >
+                    info@cuequill.com
+                  </a>{" "}
+                  and we&apos;ll look at adding it.
+                </div>
+              </div>
+            )}
           </motion.section>
         ) : (
           <section key="detail" className="flex flex-col gap-5">
