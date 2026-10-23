@@ -322,8 +322,6 @@ export default function IBKRTab() {
                     In the Trades dialog, choose{" "}
                     <span className="text-white">Execution</span> and tick{" "}
                     <span className="text-white">Select All</span>, then close it.
-                    (Cuequill reads whatever columns are present - Select All
-                    guarantees it gets prices, commissions and fees.)
                   </>
                 ),
                 img: "/ibkr/5-execution-select-all.webp",
