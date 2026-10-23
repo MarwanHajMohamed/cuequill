@@ -341,7 +341,8 @@ export default function IBKRTab() {
                     duplicates.)
                   </>
                 ),
-                placeholder: true,
+                img: "/ibkr/6-csv-period.webp",
+                alt: "Activity Flex Query delivery configuration with CSV format and Last 365 Calendar Days period",
               },
               {
                 text: (
