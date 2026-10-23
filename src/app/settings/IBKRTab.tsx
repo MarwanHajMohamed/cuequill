@@ -114,9 +114,15 @@ export default function IBKRTab() {
 
     if (res.ok) {
       setSaveStatus("Saved");
+      const willHaveToken = hasToken || !!token;
       if (token) {
         setHasToken(true);
         setToken("");
+      }
+      // Like TradeZella: once connected (token + at least one query), pull
+      // history right away instead of making the user click "Sync now".
+      if (willHaveToken && (queryId || confirmQueryId)) {
+        handleSync();
       }
     } else {
       setSaveStatus("Error saving");
@@ -289,52 +295,54 @@ export default function IBKRTab() {
         <ol className="flex flex-col gap-2.5 text-[13px] text-white/75 leading-relaxed">
           {[
             <>
-              In IBKR Account Management, open{" "}
+              In IBKR, open{" "}
               <span className="text-white">
                 Performance &amp; Reports &rsaquo; Flex Queries &rsaquo; Flex Web
                 Service Configuration
-              </span>{" "}
-              and generate a token.
+              </span>
+              , enable the service, and generate a token. Set the{" "}
+              <span className="text-white">activation period to 1 year</span> - a
+              shorter period expires and breaks the sync.
             </>,
             <>
-              Go to{" "}
-              <span className="text-white">Reports &rsaquo; Flex Queries</span>{" "}
-              and create a new{" "}
-              <span className="text-white">Activity Flex Query</span>.
+              Still under <span className="text-white">Flex Queries</span>, create
+              a new <span className="text-white">Activity Flex Query</span> (name
+              it anything, e.g. &ldquo;Cuequill&rdquo;).
             </>,
             <>
-              Under <span className="text-white">Trades</span>, select: Symbol,
-              UnderlyingSymbol, Strike, Date/Time, Expiry, Put/Call, Quantity,
-              Buy/Sell, TradePrice, TradeID,{" "}
-              <span className="text-white">IBCommission</span>, and{" "}
-              <span className="text-white">Taxes</span> (the last two let
-              Cuequill populate fees automatically).
+              Open the <span className="text-white">Trades</span> section, choose{" "}
+              <span className="text-white">Executions</span>, and click{" "}
+              <span className="text-white">Select All</span>. (Cuequill reads
+              whatever columns are present - Select All guarantees it gets prices,
+              commissions and fees.)
             </>,
             <>
-              Set <span className="text-white">Period</span> to{" "}
-              <span className="text-white">Last Business Day</span> and{" "}
-              <span className="text-white">Format</span> to{" "}
-              <span className="text-white">CSV</span>.
+              Set <span className="text-white">Format</span> to{" "}
+              <span className="text-white">CSV</span> with{" "}
+              <span className="text-white">column headers</span> enabled, and{" "}
+              <span className="text-white">Period</span> to{" "}
+              <span className="text-white">Last 365 Days</span> (imports your past
+              year on the first sync; later syncs add new trades and skip
+              duplicates). Leave other settings at their defaults.
             </>,
-            <>Save the query and note the numeric Query ID shown next to it.</>,
+            <>
+              Save the query, then open its{" "}
+              <span className="text-white">info (i)</span> icon to copy the
+              numeric <span className="text-white">Query ID</span>. Paste the
+              token and Query ID into Credentials below and Save.
+            </>,
             <>
               <span className="text-white">
                 Optional, for same-day imports:
               </span>{" "}
-              also create a{" "}
+              create a{" "}
               <span className="text-white">Trade Confirmation Flex Query</span>{" "}
-              (Reports &rsaquo; Flex Queries) with the same trade details - note
-              it labels them{" "}
-              <span className="text-white">Price</span>,{" "}
-              <span className="text-white">Commission</span> and{" "}
-              <span className="text-white">Tax</span> (rather than TradePrice /
-              IBCommission / Taxes) - with{" "}
-              <span className="text-white">Period</span> set to{" "}
-              <span className="text-white">Today</span> and{" "}
-              <span className="text-white">Format</span>{" "}
-              <span className="text-white">CSV</span>. Note its Query ID for the
-              field below - it reports trades the day you take them, instead of
-              waiting for the next settled statement.
+              the same way (<span className="text-white">Trades</span> &rsaquo;{" "}
+              <span className="text-white">Executions</span> &rsaquo;{" "}
+              <span className="text-white">Select All</span>, Format{" "}
+              <span className="text-white">CSV</span>) and copy its Query ID into
+              the Trade Confirmation field below. It reports trades the day you
+              take them, instead of waiting for the next settled statement.
             </>,
           ].map((step, i) => (
             <li key={i} className="flex gap-3">
