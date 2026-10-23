@@ -109,13 +109,12 @@ function Page() {
             })}
           </nav>
 
-          {/* Desktop divider between the tab rail and the content. Sticky +
-              fixed height so it stays in view (spanning the screen minus the
-              top/bottom margins) while the content scrolls. */}
+          {/* Desktop divider between the tab rail and the content. Stretches
+              to the content column's height (not the viewport) so short tabs
+              don't overshoot the page and force an empty scroll. */}
           <div
             aria-hidden
-            className="hidden md:block w-px shrink-0 self-start sticky top-12 bg-white/10"
-            style={{ height: "calc(100dvh - 6rem)" }}
+            className="hidden md:block w-px shrink-0 self-stretch bg-white/10"
           />
 
           {/* Content - sits on the page (no card). On mobile a top border
