@@ -1,6 +1,6 @@
 "use client";
-import React, { useRef, useState } from "react";
-import { LayoutGroup, motion } from "framer-motion";
+import React, { useEffect, useRef, useState } from "react";
+import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import { useQueryClient } from "@tanstack/react-query";
 import IBKRTab from "./IBKRTab";
@@ -153,20 +153,29 @@ function BrokerLogo({
   logo,
   size = 44,
   layoutId,
+  onSlideComplete,
 }: {
   logo: ImportSource["logo"];
   size?: number;
   // When set, the tile logo and the detail-header logo share a layoutId so
   // Framer slides the mark between the two positions on open / back.
   layoutId?: string;
+  // Fires when the shared-layout slide finishes (used to reveal the detail
+  // body only after the logo has settled).
+  onSlideComplete?: () => void;
 }) {
   const style = { width: size, height: size } as React.CSSProperties;
+  const common = {
+    layoutId,
+    transition: { layout: { duration: 0.34, ease: [0.4, 0, 0.2, 1] } },
+    onLayoutAnimationComplete: onSlideComplete,
+  } as const;
   if (logo.img) {
     // Fill the tile edge-to-edge with the logo asset (each already carries its
     // own background).
     return (
       <motion.div
-        layoutId={layoutId}
+        {...common}
         className="shrink-0 rounded-xl overflow-hidden"
         style={style}
       >
@@ -178,7 +187,7 @@ function BrokerLogo({
   if (logo.node) {
     return (
       <motion.div
-        layoutId={layoutId}
+        {...common}
         className="shrink-0 rounded-xl overflow-hidden flex items-center justify-center"
         style={{ ...style, background: logo.bg, color: logo.fg ?? "#fff" }}
       >
@@ -188,7 +197,7 @@ function BrokerLogo({
   }
   return (
     <motion.div
-      layoutId={layoutId}
+      {...common}
       className="shrink-0 rounded-xl flex items-center justify-center font-bold"
       style={{
         ...style,
@@ -238,6 +247,10 @@ export default function BrokersTab() {
   const [selected, setSelected] = useState<ImportSource | null>(null);
   // Detail sub-view: "upload" (file import) or "autosync" (IBKR Flex sync).
   const [view, setView] = useState<"upload" | "autosync">("upload");
+  // Gate the detail body (header text, tabs, panel) until the logo has
+  // finished sliding from its tile into the header, so the two animations
+  // don't run at once.
+  const [contentReady, setContentReady] = useState(false);
 
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState("");
@@ -250,12 +263,27 @@ export default function BrokersTab() {
 
   const openSource = (s: ImportSource) => {
     setSelected(s);
+    setContentReady(false);
     // Auto-sync brokers open on their sync tab (the headline feature);
     // everyone else only has file upload.
     setView(s.autoSync ? "autosync" : "upload");
     setFile(null);
     setStatus("");
   };
+
+  const backToGrid = () => {
+    setSelected(null);
+    setContentReady(false);
+  };
+
+  // Safety net: if the logo's layout-complete callback never fires (e.g.
+  // reduced motion, or the layout animation is skipped), reveal the body
+  // anyway shortly after opening.
+  useEffect(() => {
+    if (!selected || contentReady) return;
+    const t = setTimeout(() => setContentReady(true), 480);
+    return () => clearTimeout(t);
+  }, [selected, contentReady]);
 
   const pickFile = (f: File | null) => {
     if (!f) return;
@@ -459,17 +487,13 @@ export default function BrokersTab() {
             </div>
           </motion.section>
         ) : (
-          <motion.section
-            key="detail"
-            className="flex flex-col gap-5"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.18 }}
-          >
-            {/* Selected-broker header */}
+          <section key="detail" className="flex flex-col gap-5">
+            {/* Selected-broker header. The logo is always mounted so it can
+                slide in from its tile; the back button + text reveal only
+                once that slide finishes (contentReady). */}
             <div className="flex items-center gap-3">
               <button
-                onClick={() => setSelected(null)}
+                onClick={backToGrid}
                 aria-label="Back to brokers"
                 className="shrink-0 w-8 h-8 rounded-full border border-white/10 bg-white/[0.03] text-white/60 hover:text-white hover:bg-white/[0.06] transition flex items-center justify-center cursor-pointer"
               >
@@ -479,54 +503,97 @@ export default function BrokersTab() {
                 logo={selected.logo}
                 size={40}
                 layoutId={`broker-logo-${selected.id}`}
+                onSlideComplete={() => setContentReady(true)}
               />
-              <div className="min-w-0">
-                <div className="text-[15px] font-semibold truncate">
-                  {selected.label}
-                </div>
-                <div className="text-[12px] text-white/50 truncate">
-                  {selected.blurb}
-                </div>
-              </div>
+              <AnimatePresence>
+                {contentReady && (
+                  <motion.div
+                    className="min-w-0"
+                    initial={{ opacity: 0, x: -6 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.22, ease: "easeOut" }}
+                  >
+                    <div className="text-[15px] font-semibold truncate">
+                      {selected.label}
+                    </div>
+                    <div className="text-[12px] text-white/50 truncate">
+                      {selected.blurb}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
-            {/* Sub-tabs (only when the broker supports more than one source) */}
-            {selected.autoSync && (
-              <div className="flex items-center gap-1 p-1 rounded-xl border border-white/10 bg-white/[0.02] self-start">
-                <button
-                  type="button"
-                  onClick={() => setView("autosync")}
-                  className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-[12.5px] font-medium transition cursor-pointer ${
-                    view === "autosync"
-                      ? "bg-teal-500/15 text-teal-300 border border-teal-500/25"
-                      : "border border-transparent text-white/60 hover:text-white"
-                  }`}
+            {/* Body: sub-tabs + panel, revealed after the logo settles. */}
+            <AnimatePresence>
+              {contentReady && (
+                <motion.div
+                  className="flex flex-col gap-5"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.25, ease: "easeOut" }}
                 >
-                  <i className="fa-solid fa-rotate text-[11px]" />
-                  Auto sync
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setView("upload")}
-                  className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-[12.5px] font-medium transition cursor-pointer ${
-                    view === "upload"
-                      ? "bg-teal-500/15 text-teal-300 border border-teal-500/25"
-                      : "border border-transparent text-white/60 hover:text-white"
-                  }`}
-                >
-                  <i className="fa-solid fa-file-arrow-up text-[11px]" />
-                  File upload
-                </button>
-              </div>
-            )}
+                  {/* Sub-tabs - only when the broker supports more than one
+                      source. A shared-layout pill slides under the active
+                      tab when switching. */}
+                  {selected.autoSync && (
+                    <div className="relative flex items-center gap-0.5 p-0.5 rounded-full border border-white/10 bg-white/[0.02] self-start">
+                      {(
+                        [
+                          { id: "autosync", label: "Auto sync" },
+                          { id: "upload", label: "File upload" },
+                        ] as const
+                      ).map((t) => {
+                        const active = view === t.id;
+                        return (
+                          <button
+                            key={t.id}
+                            type="button"
+                            onClick={() => setView(t.id)}
+                            className={`relative px-3 py-1 rounded-full text-[12px] font-medium transition cursor-pointer ${
+                              active
+                                ? "text-teal-300"
+                                : "text-white/55 hover:text-white"
+                            }`}
+                          >
+                            {active && (
+                              <motion.span
+                                layoutId="brokers-subtab-pill"
+                                className="absolute inset-0 rounded-full bg-teal-500/15 border border-teal-500/25"
+                                transition={{
+                                  type: "spring",
+                                  stiffness: 500,
+                                  damping: 36,
+                                }}
+                              />
+                            )}
+                            <span className="relative z-10">{t.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
 
-            {/* Panel */}
-            {selected.autoSync && view === "autosync" ? (
-              <IBKRTab embedded />
-            ) : (
-              UploadPanel
-            )}
-          </motion.section>
+                  {/* Panel - cross-fades when switching sub-tabs. */}
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.div
+                      key={selected.autoSync ? view : "upload"}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      transition={{ duration: 0.16, ease: "easeOut" }}
+                    >
+                      {selected.autoSync && view === "autosync" ? (
+                        <IBKRTab embedded />
+                      ) : (
+                        UploadPanel
+                      )}
+                    </motion.div>
+                  </AnimatePresence>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </section>
         )}
       </LayoutGroup>
     </div>
