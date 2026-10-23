@@ -1,9 +1,8 @@
 "use client";
 import { withAuth } from "@/lib/withAuth";
 import React, { useEffect, useState } from "react";
-import TradesTab from "./TradesTab";
+import BrokersTab from "./BrokersTab";
 import Account from "./Account";
-import IBKRTab from "./IBKRTab";
 import NotificationsTab from "./NotificationsTab";
 import PlanTab from "./PlanTab";
 import AppearanceTab from "./AppearanceTab";
@@ -33,8 +32,7 @@ function Page() {
         "Account",
         "Appearance",
         "Plan",
-        "Trades",
-        "IBKR auto-sync",
+        "Brokers",
         "Notifications",
       ];
       const match = titles.find(
@@ -53,14 +51,9 @@ function Page() {
     },
     { title: "Plan", icon: "fa-solid fa-crown", content: <PlanTab /> },
     {
-      title: "Trades",
-      icon: "fa-solid fa-file-import",
-      content: <TradesTab />,
-    },
-    {
-      title: "IBKR auto-sync",
-      icon: "fa-solid fa-rotate",
-      content: <IBKRTab />,
+      title: "Brokers",
+      icon: "fa-solid fa-building-columns",
+      content: <BrokersTab />,
     },
     {
       title: "Notifications",

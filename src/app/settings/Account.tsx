@@ -8,6 +8,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import ProTag from "@/components/ProTag";
 import { useProfile } from "@/hooks/useProfile";
 import { clearAccent } from "@/hooks/useAccent";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { useToast } from "@/hooks/useToast";
+import { useScrollLock } from "@/hooks/useScrollLock";
+import { handleDeleteAllTrades } from "@/handlers/tradeHandlers";
 import { setDisplayCurrency, fmtMoneyFull } from "@/lib/helpers/fmt";
 
 const CURRENCIES = [
@@ -52,6 +56,8 @@ const Account = () => {
   const { data: session, update } = useSession();
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
+  const toast = useToast();
+  const [simulated] = useLocalStorage<boolean>("simulated", false);
 
   // Identity
   const [firstname, setFirstname] = useState<string>("");
@@ -81,6 +87,22 @@ const Account = () => {
   const [deleteText, setDeleteText] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [dangerError, setDangerError] = useState<string | null>(null);
+
+  // Delete all trades (moved here from the old Trades tab). Keeps its own
+  // typed confirmation, separate from account deletion.
+  const [delAllOpen, setDelAllOpen] = useState(false);
+  const [delAllText, setDelAllText] = useState("");
+  const canDeleteTrades = delAllText.trim().toLowerCase() === "delete";
+  const userId = session?.user?.id;
+  useScrollLock(delAllOpen);
+  useEffect(() => {
+    if (!delAllOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setDelAllOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [delAllOpen]);
 
   const handleExport = async () => {
     setDangerError(null);
@@ -636,8 +658,8 @@ const Account = () => {
         <div>
           <h3 className="text-[14px] font-semibold text-white">Danger zone</h3>
           <p className="text-[12px] text-white/45 mt-0.5">
-            Download everything we hold about you, or permanently delete your
-            account.
+            Download everything we hold about you, clear your trade journal, or
+            permanently delete your account.
           </p>
         </div>
 
@@ -654,6 +676,18 @@ const Account = () => {
               } text-[11px]`}
             />
             {exporting ? "Preparing…" : "Export my data"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setDelAllText("");
+              setDelAllOpen(true);
+            }}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full border border-red-500/30 bg-red-500/10 text-red-300 hover:bg-red-500/20 transition text-[13px] font-medium cursor-pointer"
+          >
+            <i className="fa-solid fa-trash-can text-[11px]" />
+            Delete all trades
           </button>
 
           {!confirmDelete && (
@@ -725,6 +759,75 @@ const Account = () => {
           </span>
         )}
       </section>
+
+      {/* Delete-all-trades confirmation */}
+      {delAllOpen && (
+        <div
+          className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-[60] p-4"
+          onClick={() => setDelAllOpen(false)}
+        >
+          <div
+            className="flex flex-col gap-5 bg-[var(--surface)] border border-white/10 items-center p-6 md:p-7 rounded-2xl w-full max-w-md text-white text-center shadow-[0_20px_80px_var(--shadow)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-12 h-12 rounded-full bg-red-500/15 border border-red-500/25 flex items-center justify-center">
+              <i className="fa-solid fa-triangle-exclamation text-red-300 text-lg" />
+            </div>
+            <div className="flex flex-col gap-1">
+              <div className="text-lg font-semibold">Delete all trades?</div>
+              <div className="text-[13px] text-white/55 leading-relaxed">
+                This permanently removes every{" "}
+                {simulated ? "simulated" : "live"} trade in this journal. The
+                action can&apos;t be undone.
+              </div>
+            </div>
+            <label className="w-full flex flex-col gap-1.5 text-left">
+              <span className="text-[11px] tracking-[0.08em] text-white/45 font-medium">
+                Type &quot;delete&quot; to confirm
+              </span>
+              <input
+                autoFocus
+                type="text"
+                value={delAllText}
+                onChange={(e) => setDelAllText(e.target.value)}
+                placeholder="delete"
+                className="w-full px-3 py-2 rounded-xl bg-white/[0.03] border border-white/10 text-[14px] text-white placeholder:text-white/30 focus:border-red-500/40 focus:outline-none transition"
+              />
+            </label>
+            <div className="flex gap-2 w-full">
+              <button
+                type="button"
+                className="flex-1 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/80 hover:bg-white/[0.06] hover:text-white transition cursor-pointer text-[13px]"
+                onClick={() => setDelAllOpen(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={!canDeleteTrades}
+                className={`flex-1 px-4 py-2 rounded-full border transition text-[13px] font-medium ${
+                  canDeleteTrades
+                    ? "bg-red-500/15 text-red-300 border-red-500/25 hover:bg-red-500/25 cursor-pointer"
+                    : "bg-white/[0.02] text-white/30 border-white/10 cursor-not-allowed"
+                }`}
+                onClick={() => {
+                  if (!canDeleteTrades || !userId) return;
+                  handleDeleteAllTrades(
+                    userId,
+                    simulated,
+                    setDelAllOpen,
+                    toast,
+                    queryClient,
+                  );
+                  setDelAllText("");
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </form>
   );
 };

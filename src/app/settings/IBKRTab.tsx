@@ -28,7 +28,7 @@ type ImportedTrade = {
   hasDuplicate?: boolean;
 };
 
-export default function IBKRTab() {
+export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
   const { isPro } = useIsPro();
   const queryClient = useQueryClient();
 
@@ -231,7 +231,9 @@ export default function IBKRTab() {
     syncing || !hasToken || (!queryId && !confirmQueryId) || cooldownActive;
 
   return (
-    <div className="p-5 md:p-7 flex flex-col gap-6">
+    <div
+      className={`flex flex-col gap-6 ${embedded ? "" : "p-5 md:p-7"}`}
+    >
       {/* Intro */}
       <section className="flex flex-col gap-2">
         <div className="text-[11px] tracking-[0.1em] text-teal-400/80 font-medium flex items-center gap-2">
