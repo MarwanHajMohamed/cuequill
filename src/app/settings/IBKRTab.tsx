@@ -334,9 +334,7 @@ export default function IBKRTab() {
                     <span className="text-white">CSV</span> and{" "}
                     <span className="text-white">Period</span> to{" "}
                     <span className="text-white">Last 365 Days</span>, then{" "}
-                    <span className="text-white">Save</span>. (Imports your past
-                    year on the first sync; later syncs add new trades and skip
-                    duplicates.)
+                    <span className="text-white">Save</span>.
                   </>
                 ),
                 img: "/ibkr/6-csv-period.webp",
