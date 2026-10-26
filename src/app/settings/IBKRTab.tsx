@@ -226,6 +226,34 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
     }
   };
 
+  // Undo the entire last sync (delete every trade it inserted). Used to
+  // roll back an import that slipped duplicates past the dedupe.
+  const [undoing, setUndoing] = useState(false);
+  const [confirmUndo, setConfirmUndo] = useState(false);
+  const handleUndoImport = async () => {
+    setUndoing(true);
+    setImportedError("");
+    try {
+      const r = await fetch("/api/ibkr/last-imported", { method: "DELETE" });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error ?? "Undo failed");
+      setImportedTrades([]);
+      setHaveLoadedImported(true);
+      setLastInserted(0);
+      setLastSkipped(0);
+      setConfirmUndo(false);
+      // The removed trades need to leave the table / net P/L too.
+      refreshTradeData();
+      setSyncStatus(
+        `Removed ${d.deleted} imported trade${d.deleted !== 1 ? "s" : ""} from the last sync.`,
+      );
+    } catch (e) {
+      setImportedError(e instanceof Error ? e.message : "Undo failed");
+    } finally {
+      setUndoing(false);
+    }
+  };
+
   const cooldownActive = cooldownMsLeft > 0;
   const syncDisabled =
     syncing || !hasToken || (!queryId && !confirmQueryId) || cooldownActive;
@@ -642,6 +670,55 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
                                 : "s"}
                             </span>
                           )}
+                        </div>
+
+                        {/* Undo the whole import - removes exactly the trades
+                            this sync added, leaving everything logged before
+                            it in place. */}
+                        <div className="mb-3 flex flex-col gap-2 rounded-xl border border-amber-500/25 bg-amber-500/[0.06] p-3">
+                          <div className="text-[12px] text-white/70 leading-relaxed">
+                            Added duplicates? Undo this import to delete the{" "}
+                            {importedTrades.length} trade
+                            {importedTrades.length === 1 ? "" : "s"} it added.
+                            Trades you logged before this sync aren&apos;t
+                            touched.
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {!confirmUndo ? (
+                              <button
+                                type="button"
+                                onClick={() => setConfirmUndo(true)}
+                                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-200 hover:bg-amber-500/20 transition text-[12.5px] font-medium cursor-pointer"
+                              >
+                                <i className="fa-solid fa-rotate-left text-[11px]" />
+                                Undo this import
+                              </button>
+                            ) : (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={handleUndoImport}
+                                  disabled={undoing}
+                                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-red-500/30 bg-red-500/15 text-red-200 hover:bg-red-500/25 transition text-[12.5px] font-medium cursor-pointer disabled:opacity-50"
+                                >
+                                  <i
+                                    className={`fa-solid ${undoing ? "fa-circle-notch animate-spin" : "fa-trash-can"} text-[11px]`}
+                                  />
+                                  {undoing
+                                    ? "Removing…"
+                                    : `Yes, remove ${importedTrades.length}`}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setConfirmUndo(false)}
+                                  disabled={undoing}
+                                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] transition text-[12.5px] font-medium cursor-pointer disabled:opacity-50"
+                                >
+                                  Cancel
+                                </button>
+                              </>
+                            )}
+                          </div>
                         </div>
                         <div className="flex flex-col gap-1.5">
                           {importedTrades.map((t) => (

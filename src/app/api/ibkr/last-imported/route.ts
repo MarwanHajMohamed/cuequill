@@ -88,3 +88,39 @@ export async function GET() {
     lastSync: user?.ibkrLastSync ?? null,
   });
 }
+
+// Undo the most recent sync: delete exactly the trades it inserted
+// (tracked in ibkrLastSyncTradeIds), scoped to this user. This reverses
+// a bad import - e.g. one that slipped duplicates past the dedupe -
+// without touching anything the user logged beforehand. Idempotent: once
+// the tracked list is cleared, a second call deletes nothing.
+export async function DELETE() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  await connectDb();
+  const user = await User.findById(session.user.id).select(
+    "ibkrLastSyncTradeIds",
+  );
+  const ids = (user?.ibkrLastSyncTradeIds ?? []) as unknown[];
+  if (ids.length === 0) {
+    return NextResponse.json({ deleted: 0 });
+  }
+
+  // Scope the delete to this user's own trades as a safety belt - only
+  // the last sync's inserts, never anything else.
+  const res = await Trade.deleteMany({
+    _id: { $in: ids },
+    userID: session.user.id,
+  });
+
+  await User.findByIdAndUpdate(session.user.id, {
+    ibkrLastSyncTradeIds: [],
+    ibkrLastSyncInserted: 0,
+    ibkrLastSyncSkipped: 0,
+  });
+
+  return NextResponse.json({ deleted: res.deletedCount ?? 0 });
+}
