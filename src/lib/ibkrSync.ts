@@ -7,26 +7,16 @@ import {
   type TradeDraft,
 } from "@/lib/ibkr/match";
 import { getBrokerAdapter, DEFAULT_BROKER, type BrokerId } from "@/lib/brokers";
-import { fetchConfirmFills } from "@/lib/brokers/ibkr";
 
 // A matched trade draft with its owner attached, ready to insert.
 type PlannedTrade = TradeDraft & { userID: string };
 
-// How a sync run sources its fills:
-//   • "daily"    - the nightly settled pull: Activity query + any same-day
-//                  confirmations, merged (dedupe reconciles the overlap).
-//   • "intraday" - the hourly same-day pull: Trade Confirmation query only
-//                  (the Activity query is T+1 and rate-limited, so it's
-//                  skipped here). No-op when no confirmation query is set.
-//   • "manual"   - user-triggered from settings; sources like "daily".
-export type SyncMode = "daily" | "intraday" | "manual";
-
 // Pull-sync for an auto-sync broker (e.g. IBKR): fetch the user's fills
-// via the broker adapter, then run the shared import pipeline. File
-// brokers (CSV upload) skip this and call `importFills` directly.
+// via the broker adapter (the IBKR Activity Flex query), then run the
+// shared import pipeline. File brokers (CSV upload) skip this and call
+// `importFills` directly.
 export async function syncForUser(
   userId: string,
-  mode: SyncMode = "daily",
   brokerId: BrokerId = DEFAULT_BROKER,
 ): Promise<{
   inserted: number;
@@ -34,20 +24,15 @@ export async function syncForUser(
   fetched?: number;
   matched?: number;
 }> {
-  const fills = await fetchSyncFills(userId, mode, brokerId);
-  // Intraday is a cheap hourly poll; skip the DB write entirely when the
-  // same-day query returned nothing (the common case outside active days).
-  if (mode === "intraday" && fills.length === 0) {
-    return { inserted: 0, skipped: 0, fetched: 0, matched: 0 };
-  }
+  const fills = await fetchSyncFills(userId, brokerId);
   return importFills(userId, fills);
 }
 
-// Source the fills a sync run should import, by mode. Pure fetch - no
-// writes - so it's shared by the live sync and the preview path.
+// Source the fills a sync run should import. Pure fetch - no writes - so
+// it's shared by the live sync and the preview path. For IBKR this is the
+// Activity Flex query (the adapter reads the user's token + query id).
 async function fetchSyncFills(
   userId: string,
-  mode: SyncMode,
   brokerId: BrokerId,
 ): Promise<NormalizedFill[]> {
   const adapter = getBrokerAdapter(brokerId);
@@ -56,41 +41,7 @@ async function fetchSyncFills(
       `${adapter.label} doesn't support automatic sync. Upload an export file instead.`,
     );
   }
-
-  // Non-IBKR pull brokers have a single source; sync mode doesn't apply.
-  if (brokerId !== "ibkr") {
-    return adapter.fetchFills(userId);
-  }
-
-  await connectDb();
-  const user = await User.findById(userId).select(
-    "ibkrQueryId ibkrTradeConfirmQueryId",
-  );
-  const hasActivity = !!user?.ibkrQueryId;
-  const hasConfirm = !!user?.ibkrTradeConfirmQueryId;
-
-  if (mode === "intraday") {
-    // Same-day only, from the Trade Confirmation query.
-    if (!hasConfirm) return [];
-    return fetchConfirmFills(userId);
-  }
-
-  // daily / manual: settled Activity trades + same-day confirmations, merged.
-  if (!hasActivity && !hasConfirm) {
-    throw new Error("IBKR credentials not configured");
-  }
-  const activity = hasActivity ? await adapter.fetchFills(userId) : [];
-  let confirm: NormalizedFill[] = [];
-  if (hasConfirm) {
-    try {
-      confirm = await fetchConfirmFills(userId);
-    } catch {
-      // A confirmation-query hiccup shouldn't sink a run whose Activity
-      // pull already succeeded; the next run retries it.
-      confirm = [];
-    }
-  }
-  return [...activity, ...confirm];
+  return adapter.fetchFills(userId);
 }
 
 // Work out what importing these fills WOULD do - FIFO-match into trades,
@@ -231,7 +182,6 @@ export async function importFills(
 // doesn't have to hit IBKR again (avoiding a fresh rate-limit / 1001).
 export async function previewSyncForUser(
   userId: string,
-  mode: SyncMode = "manual",
   brokerId: BrokerId = DEFAULT_BROKER,
 ): Promise<{
   fetched: number;
@@ -239,7 +189,7 @@ export async function previewSyncForUser(
   skipped: number;
   trades: PlannedTrade[];
 }> {
-  const fills = await fetchSyncFills(userId, mode, brokerId);
+  const fills = await fetchSyncFills(userId, brokerId);
   const plan = await computeImportPlan(userId, fills);
 
   await User.findByIdAndUpdate(userId, {

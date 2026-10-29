@@ -34,11 +34,6 @@ export interface IUser extends Document {
   cardSkin?: string;
   ibkrToken: string;
   ibkrQueryId: string;
-  // Optional second Flex query: a Trade Confirmation query, which reports
-  // SAME-DAY executions (the Activity query only settles on T+1). When set,
-  // the hourly intraday sync pulls from it so trades appear the day they're
-  // taken; the daily run still uses the Activity query for settled accuracy.
-  ibkrTradeConfirmQueryId?: string;
   ibkrLastSync: Date;
   // Last time the user ran a MANUAL sync from settings, tracked apart from
   // ibkrLastSync (which the cron also writes) so auto-syncs don't eat into
@@ -234,7 +229,6 @@ const UserSchema = new Schema<IUser>({
   cardSkin: { type: String, default: "midnight" },
   ibkrToken: { type: String },
   ibkrQueryId: { type: String },
-  ibkrTradeConfirmQueryId: { type: String },
   ibkrLastSync: { type: Date },
   ibkrLastManualSync: { type: Date },
   ibkrLastSyncInserted: { type: Number },

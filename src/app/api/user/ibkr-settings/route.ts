@@ -12,12 +12,11 @@ export async function GET() {
 
   await connectDb();
   const user = await User.findById(session.user.id).select(
-    "ibkrQueryId ibkrTradeConfirmQueryId ibkrLastSync ibkrLastManualSync ibkrToken ibkrLastSyncInserted ibkrLastSyncSkipped"
+    "ibkrQueryId ibkrLastSync ibkrLastManualSync ibkrToken ibkrLastSyncInserted ibkrLastSyncSkipped"
   );
 
   return NextResponse.json({
     ibkrQueryId: user?.ibkrQueryId ?? "",
-    ibkrTradeConfirmQueryId: user?.ibkrTradeConfirmQueryId ?? "",
     ibkrLastSync: user?.ibkrLastSync ?? null,
     ibkrLastManualSync: user?.ibkrLastManualSync ?? null,
     ibkrLastSyncInserted: user?.ibkrLastSyncInserted ?? null,
@@ -32,13 +31,12 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { ibkrToken, ibkrQueryId, ibkrTradeConfirmQueryId } = await req.json();
+  const { ibkrToken, ibkrQueryId } = await req.json();
 
   await connectDb();
   await User.findByIdAndUpdate(session.user.id, {
     ...(ibkrToken !== undefined && { ibkrToken }),
     ...(ibkrQueryId !== undefined && { ibkrQueryId }),
-    ...(ibkrTradeConfirmQueryId !== undefined && { ibkrTradeConfirmQueryId }),
   });
 
   return NextResponse.json({ success: true });

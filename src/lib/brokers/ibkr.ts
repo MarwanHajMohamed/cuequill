@@ -288,40 +288,6 @@ async function fetchFills(userId: string): Promise<NormalizedFill[]> {
   return fetchFillsForQuery(user.ibkrToken, user.ibkrQueryId, "Activity");
 }
 
-// Trade Confirmation Flex fills (same-day executions). Returns [] when the
-// user hasn't configured a confirmation query, so callers can merge freely.
-export async function fetchConfirmFills(
-  userId: string,
-): Promise<NormalizedFill[]> {
-  await connectDb();
-  const user = await User.findById(userId).select(
-    "ibkrToken ibkrTradeConfirmQueryId",
-  );
-
-  if (!user?.ibkrToken) {
-    throw new Error("IBKR credentials not configured");
-  }
-  if (!user.ibkrTradeConfirmQueryId) return [];
-
-  try {
-    return await fetchFillsForQuery(
-      user.ibkrToken,
-      user.ibkrTradeConfirmQueryId,
-      "Trade Confirmation",
-    );
-  } catch (err) {
-    // A Trade Confirmation statement often can't be generated when there's
-    // nothing to report yet - no confirmations so far today, a no-trade day,
-    // or IBKR's nightly reset window. IBKR signals that as a transient "try
-    // again shortly" (our RATE_LIMITED), which for same-day data just means
-    // "nothing to import right now" - so return empty instead of failing the
-    // run. Real config problems (bad token / query ID) still throw.
-    if ((err as { code?: string }).code === "RATE_LIMITED") return [];
-    throw err;
-  }
-}
-
-
 export const ibkrAdapter: BrokerAdapter = {
   id: "ibkr",
   label: "Interactive Brokers",

@@ -41,7 +41,6 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
   };
   const [token, setToken] = useState("");
   const [queryId, setQueryId] = useState("");
-  const [confirmQueryId, setConfirmQueryId] = useState("");
   const [hasToken, setHasToken] = useState(false);
   const [lastSync, setLastSync] = useState<string | null>(null);
   const [lastManualSync, setLastManualSync] = useState<string | null>(null);
@@ -82,7 +81,6 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
       .then((r) => r.json())
       .then((data) => {
         setQueryId(data.ibkrQueryId ?? "");
-        setConfirmQueryId(data.ibkrTradeConfirmQueryId ?? "");
         setHasToken(data.hasToken ?? false);
         setLastSync(data.ibkrLastSync ?? null);
         setLastManualSync(data.ibkrLastManualSync ?? null);
@@ -114,7 +112,6 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
     setSaveStatus("Saving…");
     const body: Record<string, string> = {
       ibkrQueryId: queryId,
-      ibkrTradeConfirmQueryId: confirmQueryId,
     };
     if (token) body.ibkrToken = token;
 
@@ -131,9 +128,9 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
         setHasToken(true);
         setToken("");
       }
-      // Like TradeZella: once connected (token + at least one query), pull
-      // history right away instead of making the user click "Sync now".
-      if (willHaveToken && (queryId || confirmQueryId)) {
+      // Like TradeZella: once connected (token + query), check for history
+      // right away instead of making the user click "Sync now".
+      if (willHaveToken && queryId) {
         handleSync();
       }
     } else {
@@ -170,7 +167,7 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
         setSyncStatus("No new trades - everything IBKR returned is already in your journal.");
       } else if ((data.fetched ?? 0) === 0) {
         setSyncStatus(
-          "IBKR returned no trades. Same-day trades need a working Trade Confirmation query; settled trades appear via the Activity query the next business day.",
+          "IBKR returned no trades. The Activity Flex query settles on T+1, so trades usually appear the next business day after they're taken.",
         );
       } else {
         setSyncStatus("No new trades to import.");
@@ -307,8 +304,7 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
   };
 
   const cooldownActive = cooldownMsLeft > 0;
-  const syncDisabled =
-    syncing || !hasToken || (!queryId && !confirmQueryId) || cooldownActive;
+  const syncDisabled = syncing || !hasToken || !queryId || cooldownActive;
 
   return (
     <div
@@ -326,10 +322,8 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
         </div>
         {isPro ? (
           <p className="text-[13px] md:text-[14px] text-white/70 leading-relaxed">
-            Trades import automatically: a same-day sync runs every hour during
-            market hours (when you add a Trade Confirmation query below), plus a
-            full settled sync each night. You can also trigger a sync manually
-            below.
+            Trades import automatically each night from your IBKR Activity Flex
+            query. You can also check for new trades manually below.
           </p>
         ) : (
           <p className="text-[13px] md:text-[14px] text-white/70 leading-relaxed">
@@ -437,49 +431,6 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
                   </>
                 ),
               },
-              {
-                text: (
-                  <>
-                    <span className="text-white">
-                      Optional, for same-day imports:
-                    </span>{" "}
-                    on the Flex Queries page, click the{" "}
-                    <span className="text-white">+</span> on the{" "}
-                    <span className="text-white">
-                      Trade Confirmation Flex Query
-                    </span>{" "}
-                    panel. It reports trades the day you take them, instead of
-                    waiting for the next settled statement.
-                  </>
-                ),
-                img: "/ibkr/tc-1-create.webp",
-                alt: "Create button on the Trade Confirmation Flex Query panel",
-              },
-              {
-                text: (
-                  <>
-                    In the Trade Confirmation dialog, choose{" "}
-                    <span className="text-white">Execution</span> and tick{" "}
-                    <span className="text-white">Select All</span>, then close it.
-                  </>
-                ),
-                img: "/ibkr/tc-2-execution.webp",
-                alt: "Trade Confirmation dialog with Execution and Select All checked",
-              },
-              {
-                text: (
-                  <>
-                    Set <span className="text-white">Format</span> to{" "}
-                    <span className="text-white">CSV</span> and{" "}
-                    <span className="text-white">Period</span> to{" "}
-                    <span className="text-white">Today</span>, then{" "}
-                    <span className="text-white">Save</span>. Copy its Query ID
-                    into the Trade Confirmation Query ID field below.
-                  </>
-                ),
-                img: "/ibkr/tc-3-csv-today.webp",
-                alt: "Trade Confirmation delivery configuration with CSV format and Today period",
-              },
             ] as {
               text: React.ReactNode;
               img?: string;
@@ -560,26 +511,6 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
             value={queryId}
             onChange={(e) => setQueryId(e.target.value)}
           />
-        </label>
-
-        <label className="flex flex-col gap-1.5">
-          <span className="text-[11px] tracking-[0.08em] text-white/45 font-medium flex items-center gap-2">
-            Trade Confirmation Query ID
-            <span className="text-white/35 tracking-normal normal-case font-normal">
-              optional - same-day
-            </span>
-          </span>
-          <input
-            className={inputClass}
-            type="text"
-            placeholder="e.g. 654321"
-            value={confirmQueryId}
-            onChange={(e) => setConfirmQueryId(e.target.value)}
-          />
-          <span className="text-[11px] text-white/40 leading-relaxed">
-            Reports trades the day you take them. The hourly auto-sync and
-            manual sync use it to pull same-day fills.
-          </span>
         </label>
 
         <div className="flex items-center gap-3 flex-wrap">

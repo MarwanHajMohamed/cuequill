@@ -47,7 +47,7 @@ export async function POST() {
     await User.findByIdAndUpdate(session.user.id, {
       ibkrLastManualSync: new Date(),
     });
-    const result = await previewSyncForUser(session.user.id, "manual");
+    const result = await previewSyncForUser(session.user.id);
     return NextResponse.json({ success: true, preview: true, ...result });
   } catch (err) {
     // A failed sync is often a transient IBKR "try again shortly" - don't

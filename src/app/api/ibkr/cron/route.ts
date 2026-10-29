@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import connectDb from "@/lib/db";
 import { User } from "@/lib/models/User";
-import { syncForUser, type SyncMode } from "@/lib/ibkrSync";
-import { isMarketOpenAt } from "@/lib/marketHolidays";
+import { syncForUser } from "@/lib/ibkrSync";
 
 // IBKR's Flex Web Service generates a statement on-demand, then we poll
 // (up to ~50s) until it's ready. The default Vercel function timeout is
@@ -37,19 +36,15 @@ function checkAuth(req: Request): { ok: boolean; reason: string } {
   return { ok: true, reason: "bearer" };
 }
 
-async function runSync(mode: SyncMode) {
+async function runSync() {
   await connectDb();
   // Auto-sync is Pro-only. Free users with IBKR creds saved still get
   // the manual import button in settings - they're just not in the
-  // scheduled job. Eligible = a token plus at least one Flex query (the
-  // Activity query, the Trade Confirmation query, or both).
+  // scheduled job. Eligible = a token plus the Activity Flex query.
   const users = await User.find({
     ibkrToken: { $exists: true, $ne: "" },
     isPro: true,
-    $or: [
-      { ibkrQueryId: { $exists: true, $ne: "" } },
-      { ibkrTradeConfirmQueryId: { $exists: true, $ne: "" } },
-    ],
+    ibkrQueryId: { $exists: true, $ne: "" },
   }).select("_id");
 
   const results: Array<{
@@ -68,7 +63,7 @@ async function runSync(mode: SyncMode) {
 
   for (const user of users) {
     try {
-      const result = await syncForUser(user._id.toString(), mode);
+      const result = await syncForUser(user._id.toString());
       results.push({
         userId: user._id.toString(),
         status: "ok",
@@ -113,22 +108,7 @@ export async function GET(req: Request) {
     );
   }
 
-  // Opt-in market-hours guard for the hourly intraday schedule
-  // (?intraday=1). When set, skip cheaply outside RTH so the hourly poll
-  // doesn't hit IBKR's Flex service outside market hours or on holidays,
-  // and sync from the Trade Confirmation query (same-day fills). The daily
-  // run omits the param and uses the settled Activity query.
-  const intraday = new URL(req.url).searchParams.get("intraday") === "1";
-  if (intraday) {
-    const nyNow = new Date(
-      new Date().toLocaleString("en-US", { timeZone: "America/New_York" }),
-    );
-    if (!isMarketOpenAt(nyNow)) {
-      return NextResponse.json({ skipped: true, reason: "market closed" });
-    }
-  }
-
-  const result = await runSync(intraday ? "intraday" : "daily");
+  const result = await runSync();
   // Console logs show up in Vercel's function logs so you can debug what
   // the cron did at runtime.
   console.log("[cron/ibkr]", JSON.stringify(result));
