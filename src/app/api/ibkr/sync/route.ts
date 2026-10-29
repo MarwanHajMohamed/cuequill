@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import connectDb from "@/lib/db";
 import { User } from "@/lib/models/User";
-import { syncForUser } from "@/lib/ibkrSync";
+import { previewSyncForUser } from "@/lib/ibkrSync";
 
 export const maxDuration = 300;
 export const runtime = "nodejs";
@@ -13,7 +13,11 @@ export const dynamic = "force-dynamic";
 // server-side (not just the settings UI) so it holds regardless of client.
 const MANUAL_COOLDOWN_MS = 30 * 60 * 1000;
 
-// Manual sync triggered from the settings UI
+// Manual sync triggered from the settings UI. This PREVIEWS only: it
+// fetches from IBKR, matches + dedupes, and returns the trades it WOULD
+// import (stashed server-side) without writing anything. The client then
+// confirms via /api/ibkr/sync/commit. Because it hits IBKR, the 30-min
+// manual cooldown applies here (the commit step does not touch IBKR).
 export async function POST() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
@@ -43,8 +47,8 @@ export async function POST() {
     await User.findByIdAndUpdate(session.user.id, {
       ibkrLastManualSync: new Date(),
     });
-    const result = await syncForUser(session.user.id, "manual");
-    return NextResponse.json({ success: true, ...result });
+    const result = await previewSyncForUser(session.user.id, "manual");
+    return NextResponse.json({ success: true, preview: true, ...result });
   } catch (err) {
     // A failed sync is often a transient IBKR "try again shortly" - don't
     // lock the button for the full 30 min. Roll the cooldown back so only a

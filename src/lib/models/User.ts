@@ -55,6 +55,12 @@ export interface IUser extends Document {
   // client shows a "new trades imported automatically" pop-up on the
   // next login. Updated once the user dismisses or opens the notice.
   ibkrLastSyncSeenAt?: Date;
+  // Staged import awaiting the user's confirmation. A manual sync now
+  // PREVIEWS (fetch + match + dedupe) and stashes the would-be-new trade
+  // drafts here; nothing is written to the journal until the user confirms,
+  // at which point these are inserted and the stash is cleared.
+  ibkrPendingImport?: unknown[];
+  ibkrPendingSkipped?: number;
   // Tickers the user tracks on the earnings calendar.
   watchlist: string[];
   // User-authored trading affirmations (Pro). Empty by default; users
@@ -237,6 +243,8 @@ const UserSchema = new Schema<IUser>({
     { type: Schema.Types.ObjectId, ref: "Trade", default: [] },
   ],
   ibkrLastSyncSeenAt: { type: Date },
+  ibkrPendingImport: { type: [mongoose.Schema.Types.Mixed], default: undefined },
+  ibkrPendingSkipped: { type: Number },
   watchlist: { type: [String], default: [] },
   affirmations: { type: [String], default: [] },
   affirmationsRead: {

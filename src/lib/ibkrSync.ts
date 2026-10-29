@@ -1,9 +1,16 @@
 import connectDb from "@/lib/db";
 import { User } from "@/lib/models/User";
 import Trade from "@/lib/models/Trade";
-import { matchFills, type NormalizedFill } from "@/lib/ibkr/match";
+import {
+  matchFills,
+  type NormalizedFill,
+  type TradeDraft,
+} from "@/lib/ibkr/match";
 import { getBrokerAdapter, DEFAULT_BROKER, type BrokerId } from "@/lib/brokers";
 import { fetchConfirmFills } from "@/lib/brokers/ibkr";
+
+// A matched trade draft with its owner attached, ready to insert.
+type PlannedTrade = TradeDraft & { userID: string };
 
 // How a sync run sources its fills:
 //   • "daily"    - the nightly settled pull: Activity query + any same-day
@@ -27,6 +34,22 @@ export async function syncForUser(
   fetched?: number;
   matched?: number;
 }> {
+  const fills = await fetchSyncFills(userId, mode, brokerId);
+  // Intraday is a cheap hourly poll; skip the DB write entirely when the
+  // same-day query returned nothing (the common case outside active days).
+  if (mode === "intraday" && fills.length === 0) {
+    return { inserted: 0, skipped: 0, fetched: 0, matched: 0 };
+  }
+  return importFills(userId, fills);
+}
+
+// Source the fills a sync run should import, by mode. Pure fetch - no
+// writes - so it's shared by the live sync and the preview path.
+async function fetchSyncFills(
+  userId: string,
+  mode: SyncMode,
+  brokerId: BrokerId,
+): Promise<NormalizedFill[]> {
   const adapter = getBrokerAdapter(brokerId);
   if (!adapter.fetchFills) {
     throw new Error(
@@ -36,8 +59,7 @@ export async function syncForUser(
 
   // Non-IBKR pull brokers have a single source; sync mode doesn't apply.
   if (brokerId !== "ibkr") {
-    const fills = await adapter.fetchFills(userId);
-    return importFills(userId, fills);
+    return adapter.fetchFills(userId);
   }
 
   await connectDb();
@@ -48,13 +70,9 @@ export async function syncForUser(
   const hasConfirm = !!user?.ibkrTradeConfirmQueryId;
 
   if (mode === "intraday") {
-    // Same-day only. Nothing to do (cheap no-op, no DB write) if the user
-    // hasn't set up a Trade Confirmation query or has no fills yet today.
-    if (!hasConfirm) return { inserted: 0, skipped: 0, fetched: 0, matched: 0 };
-    const confirm = await fetchConfirmFills(userId);
-    if (confirm.length === 0)
-      return { inserted: 0, skipped: 0, fetched: 0, matched: 0 };
-    return importFills(userId, confirm);
+    // Same-day only, from the Trade Confirmation query.
+    if (!hasConfirm) return [];
+    return fetchConfirmFills(userId);
   }
 
   // daily / manual: settled Activity trades + same-day confirmations, merged.
@@ -72,37 +90,31 @@ export async function syncForUser(
       confirm = [];
     }
   }
-  return importFills(userId, [...activity, ...confirm]);
+  return [...activity, ...confirm];
 }
 
-// Shared, broker-agnostic pipeline: FIFO-match fills into round-trip
-// trades, dedupe against existing trades, insert the new ones, and
-// record what this run did so the settings UI can show / undo the last
-// import. Used by both the pull sync above and file uploads.
-export async function importFills(
+// Work out what importing these fills WOULD do - FIFO-match into trades,
+// then dedupe against the user's existing trades - without writing
+// anything. Returns the trades that would be newly inserted plus counts.
+// Shared by the live import and the preview.
+async function computeImportPlan(
   userId: string,
   fills: NormalizedFill[],
 ): Promise<{
-  inserted: number;
-  skipped: number;
+  newTrades: PlannedTrade[];
   fetched: number;
   matched: number;
+  skipped: number;
 }> {
   await connectDb();
 
-  const trades = matchFills(fills).map((draft) => ({
+  const trades: PlannedTrade[] = matchFills(fills).map((draft) => ({
     ...draft,
     userID: userId,
   }));
 
   if (trades.length === 0) {
-    await User.findByIdAndUpdate(userId, {
-      ibkrLastSync: new Date(),
-      ibkrLastSyncInserted: 0,
-      ibkrLastSyncSkipped: 0,
-      ibkrLastSyncTradeIds: [],
-    });
-    return { inserted: 0, skipped: 0, fetched: fills.length, matched: 0 };
+    return { newTrades: [], fetched: fills.length, matched: 0, skipped: 0 };
   }
 
   // Dedupe pass 1: by ibkrTradeId (fast, for trades imported via this sync).
@@ -114,39 +126,34 @@ export async function importFills(
         .then((docs) => new Set(docs.map((d) => d.ibkrTradeId)))
     : new Set<string>();
 
-  // Dedupe pass 2: by natural key, using the calendar DAY (not exact
-  // timestamps). Manual entries store dateBought/dateClosed as midnight
-  // UTC, while IBKR-imported trades have real intraday timestamps. Both
-  // refer to the same real-world trade if symbol+qty+strike+option match
-  // and the buy/sell fall on the same trading day.
-  //
-  // We use a counter map (multiset) so that if a user legitimately has
-  // multiple trades on the same contract on the same day, only that many
-  // imports are skipped - the rest are still inserted.
+  // Dedupe pass 2: by a RELAXED natural key - the contract plus the day it
+  // was opened (symbol + option + strike + entry-day). We deliberately
+  // DON'T key on quantity or the close date: a hand-logged trade is entered
+  // approximately (IBKR splits fills FIFO so quantities differ, and the
+  // close date a user types rarely matches IBKR's exact settlement day), so
+  // keying on those made the dedupe miss hand-logged trades and re-import
+  // them as duplicates. This is safe because the user has confirmed they
+  // never open two separate positions on the same contract on the same day;
+  // the multiset counter below still lets any such case through if it arose.
   const dayPart = (d: Date | null | undefined) =>
     d ? new Date(d).toISOString().split("T")[0] : "";
   const naturalKey = (t: {
     symbol: string;
-    qty: number;
     strike: number;
     option: string;
     dateBought: Date;
-    dateClosed?: Date | null;
-  }) =>
-    `${t.symbol}|${t.qty}|${t.strike}|${t.option}|${dayPart(t.dateBought)}|${dayPart(t.dateClosed)}`;
+  }) => `${t.symbol}|${t.option}|${t.strike}|${dayPart(t.dateBought)}`;
 
   const existingByUser = await Trade.find({ userID: userId })
-    .select("symbol qty strike option dateBought dateClosed")
+    .select("symbol strike option dateBought")
     .lean();
   const existingCounts = new Map<string, number>();
   for (const d of existingByUser) {
     const k = naturalKey({
       symbol: d.symbol,
-      qty: d.qty,
       strike: d.strike,
       option: d.option,
       dateBought: d.dateBought,
-      dateClosed: d.dateClosed,
     });
     existingCounts.set(k, (existingCounts.get(k) ?? 0) + 1);
   }
@@ -162,13 +169,29 @@ export async function importFills(
     return true;
   });
 
+  return {
+    newTrades,
+    fetched: fills.length,
+    matched: trades.length,
+    skipped: trades.length - newTrades.length,
+  };
+}
+
+// Insert a set of already-planned trades and record the run so the
+// settings UI can show / undo it.
+async function commitTrades(
+  userId: string,
+  newTrades: PlannedTrade[],
+  skipped: number,
+): Promise<number> {
+  await connectDb();
+
   let insertedIds: unknown[] = [];
   if (newTrades.length > 0) {
     const inserted = await Trade.insertMany(newTrades);
     insertedIds = inserted.map((d) => d._id);
   }
 
-  const skipped = trades.length - newTrades.length;
   await User.findByIdAndUpdate(userId, {
     ibkrLastSync: new Date(),
     ibkrLastSyncInserted: newTrades.length,
@@ -176,12 +199,82 @@ export async function importFills(
     ibkrLastSyncTradeIds: insertedIds,
   });
 
+  return newTrades.length;
+}
+
+// Shared, broker-agnostic pipeline: match + dedupe + insert in one shot.
+// Used by the auto-sync cron and by file uploads (which import directly,
+// without the manual preview/confirm step).
+export async function importFills(
+  userId: string,
+  fills: NormalizedFill[],
+): Promise<{
+  inserted: number;
+  skipped: number;
+  fetched: number;
+  matched: number;
+}> {
+  const plan = await computeImportPlan(userId, fills);
+  await commitTrades(userId, plan.newTrades, plan.skipped);
   return {
-    inserted: newTrades.length,
-    skipped,
-    fetched: fills.length,
-    matched: trades.length,
+    inserted: plan.newTrades.length,
+    skipped: plan.skipped,
+    fetched: plan.fetched,
+    matched: plan.matched,
   };
+}
+
+// Preview a manual sync: fetch + match + dedupe, then STASH the would-be-new
+// trades on the user instead of inserting them. The user reviews the plan
+// and confirms (commitPendingImport) before anything is written - so a bad
+// match can't silently flood the journal. Stashing also means confirming
+// doesn't have to hit IBKR again (avoiding a fresh rate-limit / 1001).
+export async function previewSyncForUser(
+  userId: string,
+  mode: SyncMode = "manual",
+  brokerId: BrokerId = DEFAULT_BROKER,
+): Promise<{
+  fetched: number;
+  matched: number;
+  skipped: number;
+  trades: PlannedTrade[];
+}> {
+  const fills = await fetchSyncFills(userId, mode, brokerId);
+  const plan = await computeImportPlan(userId, fills);
+
+  await User.findByIdAndUpdate(userId, {
+    ibkrPendingImport: plan.newTrades,
+    ibkrPendingSkipped: plan.skipped,
+  });
+
+  return {
+    fetched: plan.fetched,
+    matched: plan.matched,
+    skipped: plan.skipped,
+    trades: plan.newTrades,
+  };
+}
+
+// Commit the trades staged by the last preview. No IBKR call - it inserts
+// exactly what the user saw and confirmed, then clears the stash.
+export async function commitPendingImport(
+  userId: string,
+): Promise<{ inserted: number; skipped: number }> {
+  await connectDb();
+  const user = await User.findById(userId).select(
+    "ibkrPendingImport ibkrPendingSkipped",
+  );
+  const pending = (user?.ibkrPendingImport ?? []) as PlannedTrade[];
+  const skipped = user?.ibkrPendingSkipped ?? 0;
+
+  const inserted = await commitTrades(userId, pending, skipped);
+
+  await User.findByIdAndUpdate(userId, {
+    ibkrPendingImport: [],
+    ibkrPendingSkipped: 0,
+  });
+
+  return { inserted, skipped };
 }
 
 // Backfill commissions/taxes onto existing trades that have no fees, by
