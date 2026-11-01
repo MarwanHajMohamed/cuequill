@@ -6,13 +6,7 @@ import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useTrades } from "@/hooks/useTrades";
 import { withAuth } from "@/lib/withAuth";
 import { useQueryClient } from "@tanstack/react-query";
-import React, {
-  use,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react";
+import React, { use, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import NotesModal from "../NotesModal";
 import ImportedTradesModal from "../ImportedTradesModal";
@@ -27,6 +21,7 @@ import Statistics from "./Statistics";
 import { AnimatePresence, motion } from "framer-motion";
 import { HeroSkeleton, TableSkeleton } from "@/components/Loaders";
 import CustomizeButton from "@/components/CustomizeButton";
+import PageTour from "@/components/PageTour";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
 
 import { fmtMoneyCompact } from "@/lib/helpers/fmt";
@@ -37,12 +32,14 @@ type TradeColumnKey =
   | "option"
   | "status"
   | "netpl"
+  | "rmultiple"
   | "change"
   | "contractPrice"
   | "qty"
   | "strike"
   | "dateBought"
   | "expiryDate"
+  | "dateClosed"
   | "closingContractPrice"
   | "strategy"
   | "notes";
@@ -52,12 +49,14 @@ const DEFAULT_COLUMN_ORDER: TradeColumnKey[] = [
   "option",
   "status",
   "netpl",
+  "rmultiple",
   "change",
   "contractPrice",
   "qty",
   "strike",
   "dateBought",
   "expiryDate",
+  "dateClosed",
   "closingContractPrice",
   "strategy",
   "notes",
@@ -68,16 +67,122 @@ const COLUMN_LABELS: Record<TradeColumnKey, string> = {
   option: "PUT/CALL",
   status: "Status",
   netpl: "Net P/L",
+  rmultiple: "R",
   change: "Change %",
-  contractPrice: "Contract price",
+  contractPrice: "Entry price",
   qty: "Qty",
   strike: "Strike",
   dateBought: "Date bought",
   expiryDate: "Expiry date",
-  closingContractPrice: "Closing contract price",
+  dateClosed: "Date closed",
+  closingContractPrice: "Exit price",
   strategy: "Strategy",
   notes: "Notes",
 };
+
+// Columns whose values are numbers - right-aligned with tabular figures,
+// and sorted numerically.
+const NUMERIC_COLUMNS = new Set<TradeColumnKey>([
+  "netpl",
+  "rmultiple",
+  "change",
+  "contractPrice",
+  "qty",
+  "strike",
+  "closingContractPrice",
+]);
+
+// Page-size options for the trades table.
+const PAGE_SIZES = [15, 25, 50, 100];
+
+// Lowest possible return: a long option can lose at most its full premium
+// (−100%). Used as the "off" position of the return-% filter slider.
+const RETURN_MIN = -100;
+
+// Realized return of a closed trade as a % of the premium paid
+// (net P/L ÷ cost basis, where cost = entry premium × contracts × 100).
+// Returns null for open trades or a zero/unknown cost basis so they can be
+// excluded from the return filter cleanly.
+function tradeReturnPct(t: Trade): number | null {
+  const closed = t.status === "WIN" || t.status === "LOSS";
+  if (!closed) return null;
+  const cost = (t.contractPrice ?? 0) * (t.qty ?? 0) * 100;
+  if (!Number.isFinite(cost) || cost <= 0) return null;
+  return (tradeNetPL(t) / cost) * 100;
+}
+
+// R-multiple: net P/L expressed in units of risk. For a long option the
+// premium paid is the most that can be lost, so risk = entry premium ×
+// contracts × 100. +1R means the trade made back what was risked; −1R is a
+// full loss. Null for open trades or an unknown cost basis.
+function tradeRMultiple(t: Trade): number | null {
+  const closed = t.status === "WIN" || t.status === "LOSS";
+  if (!closed) return null;
+  const risk = (t.contractPrice ?? 0) * (t.qty ?? 0) * 100;
+  if (!Number.isFinite(risk) || risk <= 0) return null;
+  return tradeNetPL(t) / risk;
+}
+
+// Comparable value for a column when sorting. Returns `{ missing }` so
+// the comparator can push nullish rows to the end regardless of sort
+// direction - using a sentinel like `-Infinity` only stays at the
+// bottom when the column is desc, so ascending clicks were surfacing
+// every open trade at the top.
+type SortValue = { missing: boolean; value: number | string };
+const present = (value: number | string): SortValue => ({
+  missing: false,
+  value,
+});
+const missing: SortValue = { missing: true, value: 0 };
+
+function sortValue(key: TradeColumnKey, t: Trade): SortValue {
+  const closed = t.status === "WIN" || t.status === "LOSS";
+  switch (key) {
+    case "symbol":
+      return present(t.symbol ?? "");
+    case "option":
+      return present(t.option ?? "");
+    case "status":
+      return present(t.status ?? "");
+    case "strategy":
+      return present(t.strategy ?? "");
+    case "netpl":
+      return closed ? present(tradeNetPL(t)) : missing;
+    case "rmultiple": {
+      const r = tradeRMultiple(t);
+      return r == null ? missing : present(r);
+    }
+    case "change":
+      return closed && t.contractPrice && t.closingContractPrice != null
+        ? present(
+            ((t.closingContractPrice - t.contractPrice) / t.contractPrice) *
+              100,
+          )
+        : missing;
+    case "contractPrice":
+      return t.contractPrice == null ? missing : present(t.contractPrice);
+    case "qty":
+      return t.qty == null ? missing : present(t.qty);
+    case "strike":
+      return t.strike == null || t.strike === 0 ? missing : present(t.strike);
+    case "closingContractPrice":
+      return closed && t.closingContractPrice != null
+        ? present(t.closingContractPrice)
+        : missing;
+    case "dateBought":
+      return present(new Date(t.dateBought).getTime());
+    case "expiryDate":
+      return present(new Date(t.expiryDate).getTime());
+    case "dateClosed":
+      return closed && t.dateClosed
+        ? present(new Date(t.dateClosed).getTime())
+        : missing;
+    case "notes":
+      return present(t.notes ? 1 : 0);
+    default:
+      return present("");
+  }
+}
 
 // Reconcile a stored order with the known columns: keep the saved order,
 // drop unknown keys, and append any columns added since (so a new release
@@ -113,6 +218,14 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
   const [symbol, setSymbol] = useState<string>("All");
   const [filter, setFilter] = useState<"All" | "Win" | "Loss">("All");
   const [option, setOption] = useState<"All" | "CALL" | "PUT">("All");
+  const [tag, setTag] = useState<string>("All");
+  // Realized return-% window a trade must fall within to show. minReturn at
+  // RETURN_MIN = no lower bound; maxReturn at Infinity = no upper bound
+  // (clamped to the slider ceiling in the UI).
+  const [minReturn, setMinReturn] = useState<number>(RETURN_MIN);
+  const [maxReturn, setMaxReturn] = useState<number>(
+    Number.POSITIVE_INFINITY,
+  );
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -125,17 +238,47 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
   const [syncing, setSyncing] = useState<boolean>(false);
   const [showImported, setShowImported] = useState<boolean>(false);
   const [isFiltersOpen, setIsFiltersOpen] = useState<boolean>(false);
-  const tradesPerPage = 15;
+  const [pageSize, setPageSize] = useLocalStorage<number>(
+    "trades:pageSize",
+    15,
+  );
+  const tradesPerPage = pageSize;
+
+  // ── Sorting ────────────────────────────────────────────────────────
+  const [sortKey, setSortKey] = useState<TradeColumnKey | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  // A drag on a header shouldn't also register as a sort click.
+  const suppressSortClick = useRef(false);
+  const handleSort = (key: TradeColumnKey) => {
+    setCurrentPage(1);
+    setPageDir(1);
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      // Numbers and dates read best high-to-low first; text A→Z.
+      setSortDir(
+        NUMERIC_COLUMNS.has(key) ||
+          key === "dateBought" ||
+          key === "expiryDate" ||
+          key === "dateClosed"
+          ? "desc"
+          : "asc",
+      );
+    }
+  };
+
+  // Inline per-row delete confirmation (hover actions).
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // ── Merge state ────────────────────────────────────────────────────
   // Selection mode: shows a checkbox column and turns row clicks into
   // toggles instead of navigation. Rows can only be merged if they
   // share the same contract (symbol/side/strike/expiry-day), the same
-  // open/closed bucket, and the same simulated flag — that's the same
+  // open/closed bucket, and the same simulated flag - that's the same
   // validation the server enforces.
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [mergeConfirmOpen, setMergeConfirmOpen] = useState(false);
   const [merging, setMerging] = useState(false);
   // Snapshot of the most recent merge, kept in memory long enough for
   // the user to click Undo. `originals` is the exact array of docs
@@ -147,61 +290,23 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
     count: number;
   } | null>(null);
   const [undoing, setUndoing] = useState(false);
-  // Position of the Siri ring that wraps the currently merging rows.
-  // Measured from data-trade-id attributes on the rendered <tr>s so
-  // the ring hugs the exact vertical span, even when rows aren't
-  // adjacent. Recomputed on merge/select changes and resize.
   const tableWrapRef = useRef<HTMLDivElement | null>(null);
-  const [siriBox, setSiriBox] = useState<{
-    top: number;
-    left: number;
+  // Slide-up merge animation. When a merge starts we measure each selected
+  // row's position and record, per row, how far it must travel up to reach the
+  // topmost selected row. The lower selected rows then slide up into the top
+  // one (and fade) to symbolise them merging, just before the merge commits.
+  const [mergeOffsets, setMergeOffsets] = useState<Record<string, number>>({});
+  const [topSelectedId, setTopSelectedId] = useState<string | null>(null);
+  // A one-shot particle burst fired around the merged row once rows collapse.
+  // Carries the row's box so sparks spawn across its width; `key` re-mounts
+  // the burst component so repeated merges re-trigger it.
+  const [particleBurst, setParticleBurst] = useState<{
+    x: number;
+    y: number;
     width: number;
     height: number;
+    key: number;
   } | null>(null);
-  useLayoutEffect(() => {
-    if (!merging || selectedIds.size === 0 || !tableWrapRef.current) {
-      setSiriBox(null);
-      return;
-    }
-    const wrap = tableWrapRef.current;
-    const measure = () => {
-      const wrapRect = wrap.getBoundingClientRect();
-      let top = Infinity;
-      let bottom = -Infinity;
-      for (const id of selectedIds) {
-        const el = wrap.querySelector<HTMLElement>(`[data-trade-id="${id}"]`);
-        if (!el) continue;
-        const r = el.getBoundingClientRect();
-        if (r.top < top) top = r.top;
-        if (r.bottom > bottom) bottom = r.bottom;
-      }
-      const table = wrap.querySelector("table");
-      if (!table || !Number.isFinite(top) || !Number.isFinite(bottom)) {
-        setSiriBox(null);
-        return;
-      }
-      const tRect = table.getBoundingClientRect();
-      // Pad the ring slightly outside the rows so it reads as a halo
-      // rather than a tight border on the row hairlines.
-      const PAD = 4;
-      setSiriBox({
-        top: top - wrapRect.top + wrap.scrollTop - PAD,
-        left: tRect.left - wrapRect.left + wrap.scrollLeft - PAD,
-        width: tRect.width + PAD * 2,
-        height: bottom - top + PAD * 2,
-      });
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(wrap);
-    window.addEventListener("resize", measure);
-    window.addEventListener("scroll", measure, true);
-    return () => {
-      ro.disconnect();
-      window.removeEventListener("resize", measure);
-      window.removeEventListener("scroll", measure, true);
-    };
-  }, [merging, selectedIds]);
   // Auto-dismiss the undo pill after ~20s so it doesn't linger
   // forever. Any new merge replaces the previous snapshot outright.
   useEffect(() => {
@@ -238,40 +343,133 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
       setUndoing(false);
     }
   };
-  const handleMergeConfirm = async () => {
+  // Duration of the slide-up animation, kept in sync with the transition on
+  // the merging rows (see the row style below).
+  const MERGE_ANIM_MS = 380;
+  const handleMerge = async () => {
     if (merging) return;
     const ids = Array.from(selectedIds);
     if (ids.length < 2) return;
+
+    const key = ["trades", userId, simulated] as const;
+    const snapshot = queryClient.getQueryData<Trade[]>(key);
+    const selectedTrades = (snapshot ?? []).filter((t) =>
+      ids.includes(t._id ?? ""),
+    );
+    if (selectedTrades.length < 2) return;
+
     setMerging(true);
-    try {
-      const res = await fetch("/api/trades/merge", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast(`Merge failed: ${data.error ?? "Unknown error"}`);
-        return;
+
+    // Measure each selected row and record how far it must travel up to land
+    // on the topmost selected row, plus the burst box (the top row's rect).
+    const wrap = tableWrapRef.current;
+    const offsets: Record<string, number> = {};
+    let topId: string | null = null;
+    let burst: { x: number; y: number; width: number; height: number } | null =
+      null;
+    if (wrap) {
+      const tops: Record<string, number> = {};
+      let minTop = Infinity;
+      for (const id of ids) {
+        const el = wrap.querySelector<HTMLElement>(`[data-trade-id="${id}"]`);
+        if (!el) continue;
+        const t = el.getBoundingClientRect().top;
+        tops[id] = t;
+        if (t < minTop) {
+          minTop = t;
+          topId = id;
+        }
       }
-      toast(`Merged ${ids.length} trades into one.`);
-      setMergeConfirmOpen(false);
-      exitSelectMode();
-      const mergedId: string | undefined = data?.trade?._id;
-      const originals: unknown[] = Array.isArray(data?.originals)
-        ? data.originals
-        : [];
-      if (mergedId && originals.length >= 2) {
-        setLastMerge({ mergedId, originals, count: ids.length });
+      for (const id of ids) {
+        if (tops[id] != null) offsets[id] = minTop - tops[id];
       }
-      await queryClient.invalidateQueries({ queryKey: ["trades", userId] });
-    } catch (err) {
-      toast(
-        `Merge failed: ${err instanceof Error ? err.message : "Unknown error"}`,
-      );
-    } finally {
-      setMerging(false);
+      if (topId) {
+        const topEl = wrap.querySelector<HTMLElement>(
+          `[data-trade-id="${topId}"]`,
+        );
+        if (topEl) {
+          const wr = wrap.getBoundingClientRect();
+          const tr = topEl.getBoundingClientRect();
+          burst = {
+            x: tr.left - wr.left + wrap.scrollLeft,
+            y: tr.top - wr.top + wrap.scrollTop,
+            width: tr.width,
+            height: tr.height,
+          };
+        }
+      }
     }
+
+    // Play the slide-up: lower rows collapse into the top row and fade.
+    setMergeOffsets(offsets);
+    setTopSelectedId(topId);
+    await new Promise((r) => setTimeout(r, MERGE_ANIM_MS));
+
+    // Burst particles around the merged row, then swap the cache CLIENT-SIDE:
+    // remove the originals and drop in a locally-computed merged row. No
+    // waiting on the network - the server merge runs in the background below.
+    if (burst) setParticleBurst({ ...burst, key: Date.now() });
+    const optimistic = computeMergedTrade(selectedTrades);
+    // Keep the merged row where the merge happened: drop the extra selected
+    // rows and replace the topmost selected row (the one the others slid into)
+    // in place, rather than prepending to the top of the list.
+    const anchorId = topId ?? ids[0];
+    queryClient.setQueryData<Trade[]>(key, (prev) => {
+      if (!prev) return prev;
+      const out: Trade[] = [];
+      for (const t of prev) {
+        const id = t._id ?? "";
+        if (id === anchorId) out.push(optimistic);
+        else if (ids.includes(id)) continue; // the other legs are absorbed
+        else out.push(t);
+      }
+      return out;
+    });
+    exitSelectMode();
+    setMerging(false);
+    setMergeOffsets({});
+    setTopSelectedId(null);
+    toast(`Merged ${ids.length} trades into one.`);
+
+    // Background: commit on the server, then reconcile with canonical data.
+    // If it fails, roll the cache back to the pre-merge snapshot.
+    void (async () => {
+      try {
+        const res = await fetch("/api/trades/merge", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ids }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error ?? "Unknown error");
+        const realRow = data?.trade as Trade | undefined;
+        const mergedId: string | undefined = realRow?._id;
+        const originals: unknown[] = Array.isArray(data?.originals)
+          ? data.originals
+          : [];
+        if (mergedId && originals.length >= 2) {
+          setLastMerge({ mergedId, originals, count: ids.length });
+        }
+        // Swap the optimistic temp row for the real merged doc IN PLACE, so
+        // the row keeps its position instead of jumping when a refetch would
+        // reorder it. No invalidate - the optimistic row already mirrors the
+        // server's math, so only the id/timestamps change.
+        if (realRow?._id) {
+          queryClient.setQueryData<Trade[]>(key, (prev) =>
+            (prev ?? []).map((t) =>
+              t._id === optimistic._id ? realRow : t,
+            ),
+          );
+        }
+      } catch (err) {
+        // Put the original rows back exactly as they were.
+        if (snapshot) queryClient.setQueryData(key, snapshot);
+        else queryClient.invalidateQueries({ queryKey: ["trades", userId] });
+        toast(
+          `Merge failed: ${err instanceof Error ? err.message : "Unknown error"}`,
+        );
+      }
+    })();
   };
   const exitSelectMode = () => {
     setSelectMode(false);
@@ -397,9 +595,95 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
   // Reset back to page 1 whenever any filter changes. Without this,
   // narrowing a list while on page 17 leaves you stranded past the end
   // of the new results and the table looks empty.
+  // Upper bound for the return-% slider: the best realized return in the
+  // journal, rounded up to a tidy step (min 100%) so the thumb has room.
+  const returnMax =
+    Math.ceil(
+      Math.max(100, ...(trades ?? []).map((t) => tradeReturnPct(t) ?? 0)) / 50,
+    ) * 50;
+
   useEffect(() => {
     setCurrentPage(1);
-  }, [filter, strategy, symbol, option, startDate, endDate]);
+  }, [
+    filter,
+    strategy,
+    symbol,
+    option,
+    tag,
+    minReturn,
+    maxReturn,
+    startDate,
+    endDate,
+  ]);
+
+  // Memoised so scroll-driven re-renders (the floating header) don't
+  // recompute the whole filter/sort each frame.
+  const filteredTrades = useMemo(
+    () =>
+      trades?.filter((trade) => {
+        if (filter === "Win" && trade.status !== "WIN") return false;
+        if (filter === "Loss" && trade.status !== "LOSS") return false;
+        if (strategy !== "All" && trade.strategy !== strategy) return false;
+        if (symbol !== "All" && trade.symbol !== symbol) return false;
+        if (option !== "All" && trade.option !== option) return false;
+        if (tag !== "All" && !(trade.tags ?? []).includes(tag)) return false;
+
+        // Return-% window: each bound is only active when moved off its
+        // extreme. Trades with no realized return (open, or unknown cost) are
+        // excluded once either bound is engaged.
+        if (minReturn > RETURN_MIN || maxReturn < returnMax) {
+          const r = tradeReturnPct(trade);
+          if (r == null) return false;
+          if (minReturn > RETURN_MIN && r < minReturn) return false;
+          if (maxReturn < returnMax && r > maxReturn) return false;
+        }
+
+        // Date range matches on the trade's EXIT date for closed trades
+        // and ENTRY date for open ones - same convention used by the
+        // calendar, monthly stats, and P/L attribution.
+        const isClosed = trade.status === "WIN" || trade.status === "LOSS";
+        const tradeDateStr =
+          isClosed && trade.dateClosed ? trade.dateClosed : trade.dateBought;
+        const tradeDate = new Date(tradeDateStr);
+        const from = startDate ? new Date(startDate) : null;
+        const to = endDate ? new Date(endDate + "T23:59:59") : null;
+        if (from && tradeDate < from) return false;
+        if (to && tradeDate > to) return false;
+        return true;
+      }),
+    [
+      trades,
+      filter,
+      strategy,
+      symbol,
+      option,
+      tag,
+      minReturn,
+      maxReturn,
+      returnMax,
+      startDate,
+      endDate,
+    ],
+  );
+
+  const sortedTrades = useMemo(() => {
+    if (!filteredTrades) return filteredTrades;
+    if (!sortKey) return filteredTrades;
+    const dir = sortDir === "asc" ? 1 : -1;
+    return [...filteredTrades].sort((a, b) => {
+      const va = sortValue(sortKey, a);
+      const vb = sortValue(sortKey, b);
+      // Missing rows always land at the bottom, regardless of direction.
+      if (va.missing && !vb.missing) return 1;
+      if (!va.missing && vb.missing) return -1;
+      if (va.missing && vb.missing) return 0;
+      const cmp =
+        typeof va.value === "number" && typeof vb.value === "number"
+          ? va.value - vb.value
+          : String(va.value).localeCompare(String(vb.value));
+      return cmp * dir;
+    });
+  }, [filteredTrades, sortKey, sortDir]);
 
   if (isLoading)
     return (
@@ -445,6 +729,14 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
   const symbols = [
     "All",
     ...Array.from(new Set(trades?.map((trade: Trade) => trade.symbol) || [])),
+  ];
+
+  // Distinct tags across all trades (for the tag filter). Sorted A→Z.
+  const tags = [
+    "All",
+    ...Array.from(
+      new Set((trades ?? []).flatMap((t) => t.tags ?? [])),
+    ).sort((a, b) => a.localeCompare(b)),
   ];
 
   const calcChange = (newPrice: number, oldPrice: number) => {
@@ -496,6 +788,16 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
             {fmtMoneyCompact(tradeNetPL(trade))}
           </span>
         );
+      case "rmultiple": {
+        const r = tradeRMultiple(trade);
+        if (r == null) return "-";
+        return (
+          <span className={r >= 0 ? "text-green-500" : "text-red-500"}>
+            {r < 0 ? "−" : ""}
+            {Math.abs(r).toFixed(2)}R
+          </span>
+        );
+      }
       case "change": {
         if (!isClosed) return "-";
         const pct = Number(
@@ -524,10 +826,15 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
         return new Date(trade.dateBought).toLocaleDateString("en-GB");
       case "expiryDate":
         return new Date(trade.expiryDate).toLocaleDateString("en-GB");
+      case "dateClosed":
+        // Open trades have no close date - ignore any stale value on the row.
+        return isClosed && trade.dateClosed
+          ? new Date(trade.dateClosed).toLocaleDateString("en-GB")
+          : "-";
       case "closingContractPrice":
-        return trade.closingContractPrice === null
-          ? "-"
-          : trade.closingContractPrice;
+        return isClosed && trade.closingContractPrice != null
+          ? trade.closingContractPrice
+          : "-";
       case "strategy":
         return trade.strategy;
       case "notes":
@@ -557,45 +864,10 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
     }
   };
 
-  const filteredTrades =
-    trades &&
-    trades.filter((trade) => {
-      // Filter by status
-      if (filter === "Win" && trade.status !== "WIN") return false;
-      if (filter === "Loss" && trade.status !== "LOSS") return false;
-
-      // Filter by strategy
-      if (strategy !== "All" && trade.strategy !== strategy) return false;
-
-      // Filter by symbol
-      if (symbol !== "All" && trade.symbol !== symbol) return false;
-
-      // Filter by option
-      if (option !== "All" && trade.option !== option) return false;
-
-      // Date range matches on the trade's EXIT date for closed trades
-      // and ENTRY date for open ones - same convention used by the
-      // calendar, monthly stats, and P/L attribution. This keeps WTD /
-      // MTD / YTD totals consistent across every section of the page.
-      const isClosed = trade.status === "WIN" || trade.status === "LOSS";
-      const tradeDateStr =
-        isClosed && trade.dateClosed ? trade.dateClosed : trade.dateBought;
-      const tradeDate = new Date(tradeDateStr);
-      const from = startDate ? new Date(startDate) : null;
-      // Use inclusive end-of-day for `to` so a trade closed at 3:55pm on
-      // the end date isn't excluded by midnight comparison.
-      const to = endDate ? new Date(endDate + "T23:59:59") : null;
-
-      if (from && tradeDate < from) return false;
-      if (to && tradeDate > to) return false;
-
-      return true;
-    });
-
   // Pagination controls
   const indexOfLastTrade = currentPage * tradesPerPage;
   const indexOfFirstTrade = indexOfLastTrade - tradesPerPage;
-  const currentTrades = filteredTrades?.slice(
+  const currentTrades = sortedTrades?.slice(
     indexOfFirstTrade,
     indexOfLastTrade,
   );
@@ -604,6 +876,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
 
   return (
     <>
+      <PageTour pageId="trades" />
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0 -z-10"
@@ -654,6 +927,15 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
               option={option}
               setOption={setOption}
               symbols={symbols}
+              tag={tag}
+              setTag={setTag}
+              tags={tags}
+              minReturn={minReturn}
+              setMinReturn={setMinReturn}
+              maxReturn={maxReturn}
+              setMaxReturn={setMaxReturn}
+              returnMin={RETURN_MIN}
+              returnMax={returnMax}
               startDate={startDate}
               setStartDate={setStartDate}
               endDate={endDate}
@@ -812,16 +1094,14 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
               ref={tableWrapRef}
               className="relative w-full max-w-[1500px] rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md overflow-x-auto max-[1130px]:mt-0 mt-3 p-2 md:p-3"
             >
-              {siriBox && (
-                <div
-                  className="siri-ring absolute z-10"
-                  style={{
-                    top: siriBox.top,
-                    left: siriBox.left,
-                    width: siriBox.width,
-                    height: siriBox.height,
-                  }}
-                  aria-hidden
+              {particleBurst && (
+                <MergeParticles
+                  key={particleBurst.key}
+                  x={particleBurst.x}
+                  y={particleBurst.y}
+                  width={particleBurst.width}
+                  height={particleBurst.height}
+                  onDone={() => setParticleBurst(null)}
                 />
               )}
               {filteredTrades?.length === 0 ? (
@@ -829,11 +1109,10 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                   No trades match the current filters.
                 </div>
               ) : (
-                <>
                   <table className="border-collapse table-auto min-w-full">
                     <thead>
                       <tr>
-                        {/* Fixed quick-edit column — sits outside the
+                        {/* Fixed quick-edit column - sits outside the
                             user-customisable column set so it can't be
                             reordered or hidden. */}
                         <th
@@ -850,6 +1129,8 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                           const isDragging = draggingKey === key;
                           const isDragOver =
                             dragOverKey === key && draggingKey !== key;
+                          const numeric = NUMERIC_COLUMNS.has(key);
+                          const sorted = sortKey === key;
                           return (
                             <th
                               key={key}
@@ -887,19 +1168,52 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                                 dragKey.current = null;
                                 setDragOverKey(null);
                                 setDraggingKey(null);
+                                // A drag just fired - swallow the click that
+                                // some browsers dispatch right after.
+                                suppressSortClick.current = true;
+                                setTimeout(() => {
+                                  suppressSortClick.current = false;
+                                }, 0);
                               }}
-                              className={`${ci === 0 ? "pl-1 pr-1 md:pr-1.5" : "px-1 md:px-1.5"} py-2 whitespace-nowrap md:text-[11px] text-[10px] text-left tracking-[0.04em] font-medium cursor-grab active:cursor-grabbing select-none transition ${
+                              onClick={() => {
+                                if (suppressSortClick.current) return;
+                                handleSort(key);
+                              }}
+                              title={`Sort by ${COLUMN_LABELS[key]}`}
+                              className={`${ci === 0 ? "pl-1 pr-1 md:pr-1.5" : "px-1 md:px-1.5"} py-2 whitespace-nowrap md:text-[11px] text-[10px] ${numeric ? "text-right" : "text-left"} tracking-[0.04em] font-medium cursor-pointer active:cursor-grabbing select-none transition ${
                                 isDragging
                                   ? "bg-white/[0.06] text-white"
                                   : isDragOver
                                     ? "text-white bg-teal-500/10"
-                                    : "text-white/40 hover:text-white/70"
+                                    : sorted
+                                      ? "text-white/80"
+                                      : "text-white/40 hover:text-white/70"
                               }`}
                             >
-                              {COLUMN_LABELS[key]}
+                              <span
+                                className={`inline-flex items-center gap-1 ${
+                                  numeric ? "flex-row-reverse" : ""
+                                }`}
+                              >
+                                {COLUMN_LABELS[key]}
+                                {sorted && (
+                                  <i
+                                    className={`fa-solid ${
+                                      sortDir === "asc"
+                                        ? "fa-arrow-up"
+                                        : "fa-arrow-down"
+                                    } text-[8px] text-teal-300`}
+                                  />
+                                )}
+                              </span>
                             </th>
                           );
                         })}
+                        {/* Trailing actions column (hover cluster). */}
+                        <th
+                          className="pr-2 md:pr-3 pl-0 py-2 w-16"
+                          aria-label="Actions"
+                        />
                       </tr>
                     </thead>
                     <AnimatePresence
@@ -947,10 +1261,30 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                             !!seed &&
                             !isSelected &&
                             !isMergeableWithSeed(seed, trade);
+                          // Once a merge is confirmed, the selected rows slide
+                          // up toward the topmost selected row and the lower
+                          // ones fade, so they visibly collapse into one. Gated
+                          // on topSelectedId (set only after the server merges)
+                          // so it never fires optimistically.
+                          const mergingRow =
+                            topSelectedId != null && isSelected;
+                          const isTopSelected = tradeId === topSelectedId;
                           return (
                             <tr
                               key={index}
                               data-trade-id={tradeId}
+                              style={
+                                mergingRow
+                                  ? {
+                                      transform: `translateY(${mergeOffsets[tradeId] ?? 0}px)`,
+                                      opacity: isTopSelected ? 1 : 0,
+                                      transition: `transform ${MERGE_ANIM_MS}ms cubic-bezier(0.4,0,0.2,1), opacity ${MERGE_ANIM_MS}ms ease`,
+                                      position: "relative",
+                                      zIndex: isTopSelected ? 2 : 1,
+                                      pointerEvents: "none",
+                                    }
+                                  : undefined
+                              }
                               className={`group text-xs md:text-[13.5px] border-t border-white/[0.06] transition cursor-pointer ${
                                 isSelected
                                   ? "bg-teal-500/[0.08] hover:bg-teal-500/[0.12]"
@@ -968,7 +1302,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                                 router.push(`/trades/${userId}/${trade._id}`);
                               }}
                             >
-                              {/* Pencil icon — quick-edit modal. Stops
+                              {/* Pencil icon - quick-edit modal. Stops
                                 propagation so the row's row-click
                                 navigation doesn't fire. */}
                               <td className="pl-2 md:pl-3 pr-0 py-1 w-7 align-middle">
@@ -1006,7 +1340,11 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                                 <td
                                   key={key}
                                   className={`${ci === 0 ? "pl-1 pr-1 md:pr-1.5" : "px-1 md:px-1.5"} py-1 whitespace-nowrap transition ${
-                                    key === "notes" ? "text-center" : ""
+                                    key === "notes"
+                                      ? "text-center"
+                                      : NUMERIC_COLUMNS.has(key)
+                                        ? "text-right tabular-nums"
+                                        : ""
                                   } ${
                                     draggingKey === key
                                       ? "bg-white/[0.06]"
@@ -1019,19 +1357,75 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                                   {renderCell(key, trade)}
                                 </td>
                               ))}
+                              {/* Hover actions - favourite + delete (with an
+                                  inline confirm). Hidden until the row is
+                                  hovered; stops propagation so the row-click
+                                  navigation doesn't fire. */}
+                              <td className="pr-2 md:pr-3 pl-0 py-1 w-16 align-middle text-right">
+                                <div className="inline-flex items-center justify-end gap-0.5">
+                                  {confirmDeleteId === tradeId ? (
+                                    <>
+                                      <button
+                                        type="button"
+                                        aria-label="Confirm delete"
+                                        title="Confirm delete"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleDeleteTrade(
+                                            tradeId,
+                                            userId,
+                                            setIsModalOpen,
+                                            setEditingTrade,
+                                            queryClient,
+                                          );
+                                          setConfirmDeleteId(null);
+                                        }}
+                                        className="w-7 h-7 rounded-md inline-flex items-center justify-center text-red-300 hover:text-white hover:bg-red-500/20 transition cursor-pointer"
+                                      >
+                                        <i className="fa-solid fa-check text-[11px]" />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        aria-label="Cancel delete"
+                                        title="Cancel"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setConfirmDeleteId(null);
+                                        }}
+                                        className="w-7 h-7 rounded-md inline-flex items-center justify-center text-white/50 hover:text-white hover:bg-white/[0.08] transition cursor-pointer"
+                                      >
+                                        <i className="fa-solid fa-xmark text-[11px]" />
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      aria-label="Delete trade"
+                                      title="Delete"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setConfirmDeleteId(tradeId);
+                                      }}
+                                      className="w-7 h-7 rounded-md inline-flex items-center justify-center text-white/30 opacity-0 group-hover:opacity-100 hover:text-red-300 hover:bg-red-500/15 transition cursor-pointer"
+                                    >
+                                      <i className="fa-solid fa-trash text-[11px]" />
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
                             </tr>
                           );
                         })}
                       </motion.tbody>
                     </AnimatePresence>
                   </table>
-                </>
               )}
             </div>
             {filteredTrades?.length !== 0 && (
               <div className="flex md:justify-between gap-2 mt-5 w-full max-w-[1500px]">
                 <div className="flex gap-2">
                   <button
+                    data-tour="trades-add"
                     className="inline-flex items-center justify-center gap-2 px-3 md:px-4 py-2 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition cursor-pointer text-[12px] md:text-[13px] font-medium w-9 h-9 md:w-auto md:h-auto"
                     onClick={() => {
                       setEditingTrade(null);
@@ -1042,6 +1436,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                     <span className="md:inline hidden">Add trade</span>
                   </button>
                   <button
+                    data-tour="trades-sync"
                     className={`inline-flex items-center justify-center gap-2 px-3 md:px-4 py-2 rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-500/25 transition text-[12px] md:text-[13px] font-medium w-9 h-9 md:w-auto md:h-auto ${
                       syncing
                         ? "cursor-not-allowed opacity-60"
@@ -1071,6 +1466,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                     <i className="fa-solid fa-list-check text-[11px]" />
                   </button>
                   <button
+                    data-tour="trades-merge"
                     type="button"
                     onClick={() => {
                       if (selectMode) exitSelectMode();
@@ -1093,6 +1489,26 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                       {selectMode ? "Cancel merge" : "Merge trades"}
                     </span>
                   </button>
+                </div>
+
+                {/* Rows-per-page control */}
+                <div className="hidden md:flex items-center gap-2">
+                  <span className="text-[12px] text-white/45">Rows</span>
+                  <select
+                    value={pageSize}
+                    onChange={(e) => {
+                      setPageSize(Number(e.target.value));
+                      setCurrentPage(1);
+                      setPageDir(1);
+                    }}
+                    className="px-2.5 py-1.5 text-[12.5px] bg-white/[0.03] rounded-lg border border-white/10 focus:border-white/25 focus:outline-none transition cursor-pointer"
+                  >
+                    {PAGE_SIZES.map((n) => (
+                      <option key={n} value={n}>
+                        {n}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
             )}
@@ -1233,32 +1649,6 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
       {/* Floating merge action bar + inline confirm popover */}
       {selectMode && selectedIds.size > 0 && (
         <div className="fixed left-1/2 -translate-x-1/2 bottom-[calc(env(safe-area-inset-bottom)+100px)] md:bottom-8 z-[55] flex flex-col md:items-start gap-2 pointer-events-none">
-          {mergeConfirmOpen && (
-            <div className="pointer-events-auto flex items-center gap-2 px-3 py-2 rounded-full bg-[var(--surface,#141419)]/95 border border-white/15 shadow-[0_12px_40px_var(--shadow,rgba(0,0,0,0.5))] backdrop-blur-md">
-              <span className="text-[12.5px] text-white/80 font-medium">
-                Merge {selectedIds.size}?
-              </span>
-              <button
-                type="button"
-                onClick={() => setMergeConfirmOpen(false)}
-                disabled={merging}
-                className="px-2.5 py-1 rounded-full text-[12px] text-white/70 hover:text-white hover:bg-white/[0.08] transition cursor-pointer disabled:opacity-50"
-              >
-                No
-              </button>
-              <button
-                type="button"
-                onClick={handleMergeConfirm}
-                disabled={merging}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-teal-500/25 text-teal-200 border border-teal-500/40 hover:bg-teal-500/35 transition text-[12px] font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {merging && (
-                  <i className="fa-solid fa-spinner animate-spin text-[10px]" />
-                )}
-                Yes
-              </button>
-            </div>
-          )}
           <div className="pointer-events-auto flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2 md:py-2.5 rounded-full bg-[var(--surface,#141419)]/95 border border-white/15 shadow-[0_20px_60px_var(--shadow,rgba(0,0,0,0.6))] backdrop-blur-md">
             <button
               type="button"
@@ -1272,10 +1662,14 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
             <button
               type="button"
               disabled={selectedIds.size < 2 || merging}
-              onClick={() => setMergeConfirmOpen((v) => !v)}
+              onClick={handleMerge}
               className="shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-3 md:px-3.5 py-1.5 rounded-full bg-teal-500/25 text-teal-200 border border-teal-500/40 hover:bg-teal-500/35 transition text-[12.5px] md:text-[13px] font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              <i className="fa-solid fa-object-group text-[11px]" />
+              {merging ? (
+                <i className="fa-solid fa-spinner animate-spin text-[11px]" />
+              ) : (
+                <i className="fa-solid fa-object-group text-[11px]" />
+              )}
               Merge {selectedIds.size}
             </button>
           </div>
@@ -1294,6 +1688,157 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
       )}
     </>
   );
+}
+
+// A one-shot burst of accent-coloured sparks that spawn ALONG the merged
+// row's width (not from a single centre point) and fly outward. Positioned
+// absolutely over the row inside the table wrap; the parent re-mounts it (via
+// key) for each merge and clears it when `onDone` fires.
+function MergeParticles({
+  x,
+  y,
+  width,
+  height,
+  onDone,
+}: {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  onDone: () => void;
+}) {
+  const parts = useMemo(() => {
+    const N = 24;
+    return Array.from({ length: N }).map(() => {
+      // Spread the origin across the whole row so the burst hugs the row
+      // rather than erupting from its middle.
+      const startX = Math.random() * width;
+      const startY = height / 2 + (Math.random() - 0.5) * height * 0.7;
+      const angle = Math.random() * Math.PI * 2;
+      const dist = 16 + Math.random() * 34;
+      return {
+        startX,
+        startY,
+        dx: Math.cos(angle) * dist,
+        dy: Math.sin(angle) * dist,
+        size: 2.5 + Math.random() * 3,
+        duration: 0.5 + Math.random() * 0.4,
+      };
+    });
+  }, [width, height]);
+
+  useEffect(() => {
+    const t = setTimeout(onDone, 1000);
+    return () => clearTimeout(t);
+  }, [onDone]);
+
+  return (
+    <div
+      className="pointer-events-none absolute z-20"
+      style={{ left: x, top: y, width, height }}
+      aria-hidden
+    >
+      {parts.map((p, i) => (
+        <motion.span
+          key={i}
+          className="absolute rounded-full"
+          style={{
+            left: p.startX,
+            top: p.startY,
+            width: p.size,
+            height: p.size,
+            marginLeft: -p.size / 2,
+            marginTop: -p.size / 2,
+            background: "var(--color-teal-300)",
+            boxShadow: "0 0 6px var(--color-teal-400)",
+          }}
+          initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
+          animate={{ x: p.dx, y: p.dy, opacity: 0, scale: 0.2 }}
+          transition={{ duration: p.duration, ease: "easeOut" }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// Client-side mirror of the server merge (src/app/api/trades/merge/route.ts):
+// qty summed, entry/exit prices weighted-avg'd by qty, fees/P/L summed,
+// earliest entry / latest exit preserved. Produces an optimistic row (with a
+// temporary id) shown instantly; the server's canonical row replaces it once
+// the background merge resolves.
+function computeMergedTrade(trades: Trade[]): Trade {
+  const round2 = (n: number) => Math.round(n * 100) / 100;
+  const round4 = (n: number) => Math.round(n * 10000) / 10000;
+  const wavg = (pick: (t: Trade) => number | null | undefined) => {
+    let num = 0;
+    let den = 0;
+    for (const t of trades) {
+      const v = pick(t);
+      if (v == null || Number.isNaN(v)) continue;
+      const q = t.qty || 0;
+      num += Number(v) * q;
+      den += q;
+    }
+    return den > 0 ? num / den : 0;
+  };
+  const byEntry = [...trades].sort(
+    (a, b) =>
+      new Date(a.dateBought).getTime() - new Date(b.dateBought).getTime(),
+  );
+  const firstWith = <T,>(pick: (t: Trade) => T | undefined | null) => {
+    for (const t of byEntry) {
+      const v = pick(t);
+      if (v != null && v !== "") return v;
+    }
+    return undefined;
+  };
+
+  const first = trades[0];
+  const allClosed = trades.every(
+    (t) => t.status === "WIN" || t.status === "LOSS",
+  );
+  const dateBought = new Date(
+    Math.min(...trades.map((t) => new Date(t.dateBought).getTime())),
+  ).toISOString();
+
+  const base: Trade = {
+    _id: `optimistic-${Date.now()}`,
+    symbol: first.symbol,
+    option: first.option,
+    strike: first.strike,
+    expiryDate: first.expiryDate,
+    dateBought,
+    dateClosed: "",
+    contractPrice: round4(wavg((t) => t.contractPrice)),
+    qty: trades.reduce((s, t) => s + (t.qty || 0), 0),
+    fees: round2(trades.reduce((s, t) => s + (t.fees || 0), 0)),
+    simulated: first.simulated,
+    favourite: trades.some((t) => !!t.favourite),
+    strategy: firstWith((t) => t.strategy) ?? "Other",
+    notes: firstWith((t) => t.notes) ?? "",
+    tags: Array.from(
+      new Set(trades.flatMap((t) => (Array.isArray(t.tags) ? t.tags : []))),
+    ),
+    status: "OPEN",
+  };
+
+  if (allClosed) {
+    const profitLoss = round2(
+      trades.reduce((s, t) => s + (t.profitLoss || 0), 0),
+    );
+    base.closingContractPrice = round4(wavg((t) => t.closingContractPrice));
+    base.profitLoss = profitLoss;
+    base.dateClosed = new Date(
+      Math.max(
+        ...trades.map((t) =>
+          new Date(t.dateClosed || t.dateBought).getTime(),
+        ),
+      ),
+    ).toISOString();
+    base.status = profitLoss >= 0 ? "WIN" : "LOSS";
+  }
+
+  return base;
 }
 
 export default withAuth(Page);

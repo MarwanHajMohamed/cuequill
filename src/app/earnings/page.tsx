@@ -97,7 +97,7 @@ function EarningsPage() {
   };
 
   return (
-    <div className="w-full flex flex-col md:items-start min-h-screen pb-24">
+    <div className="w-full flex justify-center min-h-screen pb-24">
       {/* Aurora wash, same as the other app surfaces. */}
       <div
         aria-hidden
@@ -108,7 +108,17 @@ function EarningsPage() {
         }}
       />
 
-      <div className="w-full px-4 md:px-6 pt-24 md:pt-8 flex flex-col gap-6">
+      <div className="w-full max-w-[1500px] px-5 md:px-8 pt-24 md:pt-12 flex flex-col gap-6">
+        {/* Header */}
+        <div>
+          <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight">
+            Earnings
+          </h1>
+          <p className="mt-1.5 text-[13px] md:text-sm text-white/55 max-w-xl">
+            Upcoming earnings dates for the tickers on your watchlist.
+          </p>
+        </div>
+
         {/* Watchlist editor */}
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md p-4 md:p-5">
           <div className="flex items-center justify-between gap-3 mb-3">
@@ -168,7 +178,7 @@ function EarningsPage() {
         </div>
 
         <div className="grid lg:grid-cols-[1.6fr_1fr] gap-6 items-start">
-          {/* Calendar — reuses AnimatedCalendar so it gets the same swipe
+          {/* Calendar - reuses AnimatedCalendar so it gets the same swipe
               gestures and month-change animation as the trade calendar. */}
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-5">
             <AnimatedCalendar
@@ -248,7 +258,7 @@ function EarningsPage() {
                         <div className="text-[13px] tabular-nums text-white/75">
                           {e.epsEstimate != null
                             ? `$${e.epsEstimate.toFixed(2)}`
-                            : "—"}
+                            : "-"}
                         </div>
                       </div>
                     </motion.div>

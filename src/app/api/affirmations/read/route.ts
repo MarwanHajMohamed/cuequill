@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import connectDb from "@/lib/db";
+import { getProStatus } from "@/lib/pro";
 import { User } from "@/lib/models/User";
+import {
+  advanceStreak,
+  streakXpBetween,
+  EMPTY_STREAK,
+  type AffirmationStreak,
+} from "@/lib/affirmationStreak";
 
 export const runtime = "nodejs";
 
@@ -12,9 +17,17 @@ const MAX_TEXTS = 100;
 // yyyy-MM-dd `date` string (supplied by the client's local clock, same
 // as before) so the state resets daily and syncs across devices.
 export async function PUT(req: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  // Affirmations are Pro-only; enforce server-side (the client blur is
+  // cosmetic). 401 = signed out, 403 = signed in but not Pro.
+  const { userId, isPro } = await getProStatus();
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!isPro) {
+    return NextResponse.json(
+      { error: "Pro membership required" },
+      { status: 403 },
+    );
   }
 
   let body: unknown;
@@ -41,6 +54,42 @@ export async function PUT(req: Request) {
 
   const affirmationsRead = { date, texts };
   await connectDb();
-  await User.findByIdAndUpdate(session.user.id, { affirmationsRead });
-  return NextResponse.json({ read: affirmationsRead });
+
+  // Load the current affirmations + streak to decide whether today counts as
+  // complete (all current affirmations read) and, if so, advance the streak.
+  const user = await User.findById(userId)
+    .select("affirmations affirmationStreak affirmationStreakXp")
+    .lean<{
+      affirmations?: string[];
+      affirmationStreak?: AffirmationStreak;
+      affirmationStreakXp?: number;
+    }>();
+
+  const affirmations = user?.affirmations ?? [];
+  const readSet = new Set(texts);
+  const allRead =
+    !!date &&
+    affirmations.length > 0 &&
+    affirmations.every((a) => readSet.has(a));
+
+  let streak = user?.affirmationStreak ?? EMPTY_STREAK;
+  if (allRead) streak = advanceStreak(streak, date);
+
+  // Award progressive streak XP for any milestone the best-ever streak has
+  // newly crossed. Keyed off `longest` (monotonic) and a high-water mark so
+  // each milestone pays exactly once and can't be farmed by rebuilding.
+  const prevXpMark = user?.affirmationStreakXp ?? 0;
+  const xpGained = streakXpBetween(prevXpMark, streak.longest);
+
+  const update: Record<string, unknown> = {
+    $set: { affirmationsRead, affirmationStreak: streak },
+  };
+  if (xpGained > 0) {
+    update.$inc = { xp: xpGained };
+    (update.$set as Record<string, unknown>).affirmationStreakXp =
+      streak.longest;
+  }
+  await User.findByIdAndUpdate(userId, update);
+
+  return NextResponse.json({ read: affirmationsRead, streak, xpGained });
 }

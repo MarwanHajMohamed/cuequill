@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import React, { useEffect, useMemo, useState } from "react";
+import { Skeleton } from "@/components/Loaders";
 import { useStocks, useSaveStocks, type StockRow } from "@/hooks/useStocks";
 import { useToast } from "@/hooks/useToast";
 
@@ -70,13 +71,13 @@ export default function Page() {
     try {
       await save.mutateAsync(rows);
       toast("Stocks table saved");
-    } catch {
-      toast("Failed to save stocks table");
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Failed to save stocks table");
     }
   };
 
   return (
-    <div className="w-full flex flex-col md:items-start min-h-screen pb-16">
+    <div className="w-full flex justify-center min-h-screen pb-24">
       {/* Aurora */}
       <div
         aria-hidden
@@ -87,7 +88,15 @@ export default function Page() {
         }}
       />
 
-      <div className="w-full max-w-[1500px] mt-30 md:mt-10 px-5 md:px-10">
+      <div className="w-full max-w-[1500px] px-5 md:px-8 pt-24 md:pt-12 flex flex-col">
+        {/* Header */}
+        <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight">
+          Stocks &amp; ETFs
+        </h1>
+        <p className="mt-1.5 text-[13px] md:text-sm text-white/55 max-w-xl">
+          Your watchlist of tickers and the levels you care about.
+        </p>
+
         {/* Toolbar - search on the left, add/save on the right. */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -190,7 +199,7 @@ export default function Page() {
                         onChange={(e) =>
                           updateCell(item.id, "cost", e.target.value)
                         }
-                        placeholder="—"
+                        placeholder="-"
                         className={CELL_INPUT}
                       />
                     </td>
@@ -200,7 +209,7 @@ export default function Page() {
                         onChange={(e) =>
                           updateCell(item.id, "volume", e.target.value)
                         }
-                        placeholder="—"
+                        placeholder="-"
                         className={CELL_INPUT}
                       />
                     </td>
@@ -210,7 +219,7 @@ export default function Page() {
                         onChange={(e) =>
                           updateCell(item.id, "distance", e.target.value)
                         }
-                        placeholder="—"
+                        placeholder="-"
                         className={CELL_INPUT}
                       />
                     </td>
@@ -230,8 +239,10 @@ export default function Page() {
             </table>
 
             {isLoading && rows.length === 0 && (
-              <div className="py-10 text-center text-[13px] text-white/40">
-                Loading…
+              <div className="flex flex-col gap-2 py-3">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <Skeleton key={i} className="h-11 w-full" delay={i * 0.04} />
+                ))}
               </div>
             )}
             {!isLoading && rows.length === 0 && (

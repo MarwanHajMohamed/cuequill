@@ -17,7 +17,7 @@ import { useEffect } from "react";
  * list modal is still animating out under AnimatePresence while the trade
  * modal mounts on top). A naive per-instance save/restore lets the second
  * modal capture the ALREADY-LOCKED styles as its "previous" and then restore
- * them on close — leaving the whole page stuck unscrollable. By saving the
+ * them on close - leaving the whole page stuck unscrollable. By saving the
  * original page state only on the 0→1 transition and restoring only on 1→0,
  * any amount of overlap is safe.
  */
@@ -67,8 +67,15 @@ function releaseLock() {
   window.scrollTo(0, y);
 }
 
-export function useScrollLock() {
+/**
+ * @param active Whether the lock should be engaged. Defaults to true so a
+ *   modal that is only mounted while open can call `useScrollLock()` with no
+ *   args. Pass the open/visible flag for overlays that stay mounted and toggle
+ *   (e.g. the mobile nav drawer) so the lock tracks their visibility.
+ */
+export function useScrollLock(active: boolean = true) {
   useEffect(() => {
+    if (!active) return;
     lockCount += 1;
     if (lockCount === 1) applyLock();
 
@@ -76,5 +83,5 @@ export function useScrollLock() {
       lockCount = Math.max(0, lockCount - 1);
       if (lockCount === 0) releaseLock();
     };
-  }, []);
+  }, [active]);
 }

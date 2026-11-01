@@ -18,6 +18,10 @@ import { withAuth } from "@/lib/withAuth";
 import RichNotesEditor from "@/components/RichNotesEditor";
 import { Skeleton } from "@/components/Loaders";
 import TradeShareModal from "@/components/TradeShareModal";
+import { useScrollLock } from "@/hooks/useScrollLock";
+import { tradeNetPL } from "@/lib/helpers/tradeNet";
+import { fmtMoneyFull } from "@/lib/helpers/fmt";
+import { hapticNotify } from "@/lib/haptics";
 
 // Full-page trade editor. Trade fields live on the left, the rich
 // notes editor lives on the right. Replaces the row-click → modal
@@ -34,8 +38,8 @@ function fetchTrade(id: string): Promise<Trade> {
 // Coerce a stored date into the `yyyy-MM-dd` a <DateField> expects.
 // Stored values arrive as ISO timestamps (local midnight persisted as
 // UTC), so slicing on "T" would read the UTC day and drift back one day
-// in zones ahead of UTC. Convert through the local zone instead — the
-// same thing the trades table does with toLocaleDateString — while
+// in zones ahead of UTC. Convert through the local zone instead - the
+// same thing the trades table does with toLocaleDateString - while
 // passing through values the user has already edited to plain dates.
 function toDateInput(value?: string): string {
   if (!value) return "";
@@ -63,6 +67,14 @@ function TradeDetailPage() {
   const [saving, setSaving] = useState(false);
   const [delConfirm, setDelConfirm] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  // The page opens as a read-only summary; the Edit button reveals the
+  // editable fields (and the notes editor). Deep-link ?edit=1 opens straight
+  // into edit mode (used right after creating a trade).
+  const [editing, setEditing] = useState(false);
+
+  // Share modal locks scroll itself (via ShareImageModal); cover the
+  // delete-confirmation dialog here.
+  useScrollLock(delConfirm);
 
   useEffect(() => {
     if (trade) {
@@ -70,6 +82,26 @@ function TradeDetailPage() {
       setNotes(trade.notes ?? "");
     }
   }, [trade]);
+
+  // Open directly in edit mode when arrived via ?edit=1 (e.g. straight after
+  // creating a trade), then clear the flag so a refresh reopens read-only.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const sp = new URLSearchParams(window.location.search);
+    if (sp.get("edit") === "1") {
+      setEditing(true);
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
+
+  // Discard edits and return to the read-only summary.
+  const handleCancel = () => {
+    if (trade) {
+      setForm(trade);
+      setNotes(trade.notes ?? "");
+    }
+    setEditing(false);
+  };
 
   const dirty = useMemo(() => {
     if (!form || !trade) return false;
@@ -85,7 +117,13 @@ function TradeDetailPage() {
   const { data: userStrategies = [] } = useStrategies();
   const strategies = useMemo<string[]>(() => {
     const names = userStrategies
-      .filter((s) => !form?.option || s.direction === form.option)
+      // "BOTH" strategies apply to either side, so they match any option.
+      .filter(
+        (s) =>
+          !form?.option ||
+          s.direction === form.option ||
+          s.direction === "BOTH",
+      )
       .map((s) => s.name);
     // Keep the trade's saved strategy in the list even if it has since
     // been renamed/deleted, so the field doesn't silently flip.
@@ -133,18 +171,32 @@ function TradeDetailPage() {
         fees: form.status === "OPEN" ? null : form.fees ?? null,
         timeExited: form.status === "OPEN" ? "" : form.timeExited ?? "",
       };
-      await fetch(`/api/trades/${tradeId}`, {
+      const res = await fetch(`/api/trades/${tradeId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+      if (!res.ok) {
+        let message = "Save failed";
+        try {
+          const data = await res.json();
+          if (data?.error) message = data.error;
+        } catch {
+          /* keep the generic message */
+        }
+        throw new Error(message);
+      }
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["trade", tradeId] }),
         queryClient.invalidateQueries({ queryKey: ["trades", userId] }),
       ]);
+      // Refresh trade-based challenge progress live.
+      queryClient.invalidateQueries({ queryKey: ["challenges"] });
       toast(`Trade ${form.symbol} saved`);
-    } catch {
-      toast("Save failed");
+      hapticNotify("success");
+      setEditing(false);
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Save failed");
     } finally {
       setSaving(false);
     }
@@ -154,12 +206,23 @@ function TradeDetailPage() {
     if (!tradeId) return;
     setSaving(true);
     try {
-      await fetch(`/api/trades/${tradeId}`, { method: "DELETE" });
+      const res = await fetch(`/api/trades/${tradeId}`, { method: "DELETE" });
+      if (!res.ok) {
+        let message = "Delete failed";
+        try {
+          const data = await res.json();
+          if (data?.error) message = data.error;
+        } catch {
+          /* keep the generic message */
+        }
+        throw new Error(message);
+      }
       await queryClient.invalidateQueries({ queryKey: ["trades", userId] });
+      queryClient.invalidateQueries({ queryKey: ["challenges"] });
       toast("Trade deleted");
       router.replace(`/trades/${userId}`);
-    } catch {
-      toast("Delete failed");
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Delete failed");
     } finally {
       setSaving(false);
       setDelConfirm(false);
@@ -200,7 +263,7 @@ function TradeDetailPage() {
 
   return (
     <div className="w-full px-4 md:px-8 pt-24 md:pt-8 pb-6 flex flex-col gap-4 md:h-[100dvh]">
-      {/* One container — trade fields on the left, the wider notes
+      {/* One container - trade fields on the left, the wider notes
           editor on the right, filling the viewport height. A
           full-width action row pins to the bottom of the card. */}
       <div className="md:flex-1 md:min-h-0 flex flex-col">
@@ -208,9 +271,10 @@ function TradeDetailPage() {
            take all the extra width. The left fields sit bare on the page;
            only the notes editor keeps its own card. */}
        <div className="flex-1 min-h-0 grid grid-cols-1 gap-5 md:gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,1.7fr)] xl:grid-cols-[440px_minmax(0,1fr)]">
-        {/* LEFT — Trade fields, no container */}
+        {/* LEFT - Trade fields, no container */}
         <div className="md:overflow-y-auto thin-scroll md:py-1 md:pr-1 flex flex-col gap-4">
-          {/* Top row — back chevron + symbol input */}
+          {/* Top row - back chevron + (symbol input while editing / Edit
+              button while viewing) */}
           <div className="flex items-center gap-2.5">
             <Link
               href={`/trades/${userId}`}
@@ -219,18 +283,38 @@ function TradeDetailPage() {
             >
               <i className="fa-solid fa-chevron-left text-[13px]" />
             </Link>
-            <input
-              type="text"
-              value={form.symbol}
-              onChange={(e) => setField("symbol", e.target.value.toUpperCase())}
-              placeholder="e.g. SPY"
-              autoCapitalize="characters"
-              autoCorrect="off"
-              spellCheck={false}
-              className="flex-1 min-w-0 px-2.5 py-1.5 text-[15px] font-semibold text-white bg-white/[0.03] rounded-lg border border-white/10 focus:border-white/25 focus:outline-none transition uppercase placeholder:normal-case placeholder:font-normal placeholder:text-white/30"
-            />
+            {editing ? (
+              <input
+                type="text"
+                value={form.symbol}
+                onChange={(e) =>
+                  setField("symbol", e.target.value.toUpperCase())
+                }
+                placeholder="e.g. SPY"
+                autoCapitalize="characters"
+                autoCorrect="off"
+                spellCheck={false}
+                className="flex-1 min-w-0 px-2.5 py-1.5 text-[15px] font-semibold text-white bg-white/[0.03] rounded-lg border border-white/10 focus:border-white/25 focus:outline-none transition uppercase placeholder:normal-case placeholder:font-normal placeholder:text-white/30"
+              />
+            ) : (
+              <>
+                <div className="flex-1" />
+                <button
+                  type="button"
+                  onClick={() => setEditing(true)}
+                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-white/12 bg-white/[0.03] text-white/80 hover:bg-white/[0.06] hover:text-white transition text-[12.5px] font-medium cursor-pointer"
+                >
+                  <i className="fa-solid fa-pen text-[10px]" />
+                  Edit
+                </button>
+              </>
+            )}
           </div>
 
+          {!editing && <TradeSummary trade={form} />}
+
+          {editing && (
+          <>
           {/* Direction */}
           <div className="flex flex-col gap-3">
             <div className="flex flex-col gap-1.5">
@@ -263,7 +347,7 @@ function TradeDetailPage() {
               </div>
             </div>
 
-            {/* Status — on its own line below Direction */}
+            {/* Status - on its own line below Direction */}
             <div className="flex flex-col gap-1.5">
               <Label>Status</Label>
               <div className="grid grid-cols-3 gap-1.5">
@@ -417,41 +501,52 @@ function TradeDetailPage() {
               Mark as simulated
             </span>
           </label>
+          </>
+          )}
 
         </div>
 
-        {/* RIGHT — Notes editor fills the panel */}
+        {/* RIGHT - Notes: editable while editing, read-only otherwise */}
         <div className="flex flex-col min-h-0">
-          <RichNotesEditor
-            value={notes}
-            onChange={setNotes}
-            className="flex-1 min-h-[55vh] md:min-h-0 h-full w-full"
-          />
+          {editing ? (
+            <RichNotesEditor
+              value={notes}
+              onChange={setNotes}
+              className="flex-1 min-h-[55vh] md:min-h-0 h-full w-full"
+            />
+          ) : (
+            <ReadOnlyNotes html={notes} />
+          )}
         </div>
        </div>
 
-        {/* Actions — full-width row pinned to the bottom */}
-        <div className="shrink-0 pt-3 mt-1 flex items-center justify-between gap-2 border-t border-white/10">
+        {/* Actions - full-width row pinned to the bottom */}
+        <div className="shrink-0 pt-3 mt-1 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={!dirty || saving}
-              className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border transition text-[12.5px] font-medium ${
-                dirty && !saving
-                  ? "bg-teal-500/15 text-teal-300 border-teal-500/30 hover:bg-teal-500/25 cursor-pointer"
-                  : "bg-white/[0.02] text-white/30 border-white/10 cursor-not-allowed"
-              }`}
-            >
-              <i className="fa-solid fa-check text-[11px]" />
-              {saving ? "Saving…" : dirty ? "Save changes" : "Saved"}
-            </button>
-            <Link
-              href={`/trades/${userId}`}
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[12.5px] font-medium cursor-pointer"
-            >
-              Cancel
-            </Link>
+            {editing && (
+              <>
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={!dirty || saving}
+                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border transition text-[12.5px] font-medium ${
+                    dirty && !saving
+                      ? "bg-teal-500/15 text-teal-300 border-teal-500/30 hover:bg-teal-500/25 cursor-pointer"
+                      : "bg-white/[0.02] text-white/30 border-white/10 cursor-not-allowed"
+                  }`}
+                >
+                  <i className="fa-solid fa-check text-[11px]" />
+                  {saving ? "Saving…" : dirty ? "Save changes" : "Saved"}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[12.5px] font-medium cursor-pointer"
+                >
+                  Cancel
+                </button>
+              </>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -519,6 +614,261 @@ function TradeDetailPage() {
 }
 
 export default withAuth(TradeDetailPage);
+
+// ─── Read-only summary ─────────────────────────────────────────────
+
+// The default (non-editing) left panel: identity, a Net P/L hero with
+// return% and R-multiple, and a grid of the trade's stats.
+function TradeSummary({ trade }: { trade: Trade }) {
+  const isClosed = trade.status === "WIN" || trade.status === "LOSS";
+  const net = tradeNetPL(trade);
+  const cost = (trade.contractPrice ?? 0) * (trade.qty ?? 0) * 100;
+  const hasCost = Number.isFinite(cost) && cost > 0;
+  const returnPct = isClosed && hasCost ? (net / cost) * 100 : null;
+  const rMultiple = isClosed && hasCost ? net / cost : null;
+  const change =
+    isClosed &&
+    trade.contractPrice &&
+    trade.closingContractPrice != null
+      ? ((trade.closingContractPrice - trade.contractPrice) /
+          trade.contractPrice) *
+        100
+      : null;
+  const heldDays =
+    isClosed && trade.dateClosed
+      ? Math.max(
+          0,
+          Math.round(
+            (new Date(trade.dateClosed).getTime() -
+              new Date(trade.dateBought).getTime()) /
+              86_400_000,
+          ),
+        )
+      : null;
+
+  const isCall = trade.option === "CALL";
+  const dateStr = (v?: string | null) =>
+    v ? new Date(v).toLocaleDateString("en-GB") : "-";
+  // Stored as "HH:MM" (24h); show as-is, or a dash when not recorded.
+  const timeStr = (v?: string | null) => (v && v.trim() ? v : "-");
+  const signed = (n: number, suffix = "", digits = 2) =>
+    `${n >= 0 ? "" : "−"}${Math.abs(n).toFixed(digits)}${suffix}`;
+
+  const optionChip = isCall
+    ? "bg-green-500/15 text-green-400 border-green-500/30"
+    : "bg-red-500/15 text-red-400 border-red-500/30";
+  const statusChip =
+    trade.status === "OPEN"
+      ? "bg-blue-500/15 text-blue-300 border-blue-500/30"
+      : trade.status === "WIN"
+        ? "bg-green-500/15 text-green-400 border-green-500/30"
+        : "bg-red-500/15 text-red-400 border-red-500/30";
+  const plColor = !isClosed
+    ? "text-white/50"
+    : net >= 0
+      ? "text-green-400"
+      : "text-red-400";
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Identity */}
+      <div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-2xl font-bold tracking-tight">
+            {trade.symbol}
+          </span>
+          <span
+            className={`px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide border ${optionChip}`}
+          >
+            {trade.option}
+          </span>
+          <span
+            className={`px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide border ${statusChip}`}
+          >
+            {trade.status}
+          </span>
+          {trade.simulated && (
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide border bg-orange-500/10 text-orange-300 border-orange-500/30">
+              SIM
+            </span>
+          )}
+        </div>
+        <div className="mt-1.5 text-[12px] text-white/45 tabular-nums">
+          ${trade.strike} strike · {trade.qty} contract
+          {trade.qty === 1 ? "" : "s"}
+        </div>
+      </div>
+
+      {/* Net P/L hero */}
+      <div>
+        <div className="text-[11px] text-white/40">Net P/L</div>
+        <div
+          className={`mt-1 text-[26px] font-semibold tabular-nums ${plColor}`}
+        >
+          {isClosed ? fmtMoneyFull(net) : "Open"}
+        </div>
+        {isClosed && (returnPct != null || rMultiple != null) && (
+          <div className="mt-1.5 flex items-center gap-3 text-[12.5px] tabular-nums">
+            {returnPct != null && (
+              <span
+                className={returnPct >= 0 ? "text-green-400" : "text-red-400"}
+              >
+                {signed(returnPct, "%", 1)} return
+              </span>
+            )}
+            {rMultiple != null && (
+              <span
+                className={rMultiple >= 0 ? "text-green-400" : "text-red-400"}
+              >
+                {signed(rMultiple, "R")}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Entry */}
+      <Section title="Entry">
+        <StatTile
+          label="Entry price"
+          value={trade.contractPrice != null ? `$${trade.contractPrice}` : "-"}
+        />
+        <StatTile label="Cost basis" value={hasCost ? fmtMoneyFull(cost) : "-"} />
+        <StatTile label="Date" value={dateStr(trade.dateBought)} />
+        <StatTile label="Time" value={timeStr(trade.timeEntered)} />
+      </Section>
+
+      {/* Exit - only meaningful once the trade is closed */}
+      {isClosed && (
+        <Section title="Exit">
+          <StatTile
+            label="Exit price"
+            value={
+              trade.closingContractPrice != null
+                ? `$${trade.closingContractPrice}`
+                : "-"
+            }
+          />
+          <StatTile
+            label="Change"
+            value={change != null ? signed(change, "%", 0) : "-"}
+            tone={change == null ? undefined : change >= 0 ? "up" : "down"}
+          />
+          <StatTile label="Date" value={dateStr(trade.dateClosed)} />
+          <StatTile label="Time" value={timeStr(trade.timeExited)} />
+          <StatTile
+            label="Held"
+            value={heldDays != null ? `${heldDays}d` : "-"}
+          />
+          <StatTile
+            label="Fees"
+            value={trade.fees != null ? fmtMoneyFull(trade.fees) : "-"}
+          />
+        </Section>
+      )}
+
+      {/* Details */}
+      <Section title="Details">
+        <StatTile label="Expiry" value={dateStr(trade.expiryDate)} />
+        {!isClosed && (
+          <StatTile
+            label="Fees"
+            value={trade.fees != null ? fmtMoneyFull(trade.fees) : "-"}
+          />
+        )}
+        <StatTile
+          label="Strategy"
+          value={trade.strategy || "-"}
+          className="col-span-2"
+        />
+      </Section>
+
+      {/* Tags */}
+      {(trade.tags?.length ?? 0) > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {trade.tags!.map((t) => (
+            <span
+              key={t}
+              className="px-2 py-0.5 rounded-full text-[11px] border border-white/15 bg-white/[0.05] text-white/70"
+            >
+              {t}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StatTile({
+  label,
+  value,
+  tone,
+  className = "",
+}: {
+  label: string;
+  value: React.ReactNode;
+  tone?: "up" | "down";
+  className?: string;
+}) {
+  const color =
+    tone === "up"
+      ? "text-green-400"
+      : tone === "down"
+        ? "text-red-400"
+        : "text-white/85";
+  return (
+    <div className={`min-w-0 ${className}`}>
+      <div className="text-[11px] text-white/40">{label}</div>
+      <div
+        className={`mt-0.5 text-[14px] font-medium tabular-nums truncate ${color}`}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
+
+// Grouped block of stats with a small sentence-case heading and a hairline
+// rule, so the summary reads as sections (Entry / Exit / Details) rather
+// than one long grid.
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="text-[11px] text-white/40 border-b border-white/[0.08] pb-1.5">
+        {title}
+      </div>
+      <div className="grid grid-cols-2 gap-x-6 gap-y-3.5">{children}</div>
+    </div>
+  );
+}
+
+// Read-only render of the stored notes HTML (shown when not editing). The
+// notes are the user's own content, displayed back to them.
+function ReadOnlyNotes({ html }: { html: string }) {
+  const hasContent = !!html && html.replace(/<[^>]*>/g, "").trim().length > 0;
+  return (
+    <div className="flex flex-col min-h-0 h-full">
+      <div className="text-[11px] text-white/45 mb-2">Notes</div>
+      {hasContent ? (
+        <div
+          className="flex-1 min-h-[40vh] md:min-h-0 overflow-y-auto thin-scroll rounded-2xl border border-white/10 bg-white/[0.02] p-4 text-[14px] leading-relaxed text-white/85 break-words [&_img]:max-w-full [&_img]:rounded-lg [&_a]:text-teal-300 [&_a]:underline [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
+      ) : (
+        <div className="flex-1 min-h-[40vh] md:min-h-0 rounded-2xl border border-dashed border-white/10 bg-white/[0.01] flex items-center justify-center text-[13px] text-white/35">
+          No notes yet
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ─── Form primitives ───────────────────────────────────────────────
 

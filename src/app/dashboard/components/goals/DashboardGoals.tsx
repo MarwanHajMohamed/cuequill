@@ -46,12 +46,12 @@ function MetricRow({ g }: { g: Goal }) {
         <span className="text-[11.5px] text-white/55 tabular-nums shrink-0">
           {g.metric && g.current != null
             ? formatValue(g.metric, g.current)
-            : "—"}
+            : "-"}
           <span className="text-white/30">
             {" / "}
             {g.metric && g.target != null
               ? formatValue(g.metric, g.target)
-              : "—"}
+              : "-"}
           </span>
         </span>
       </div>
@@ -65,7 +65,7 @@ function MetricRow({ g }: { g: Goal }) {
   );
 }
 
-// A task row — checkable inline straight from the dashboard.
+// A task row - checkable inline straight from the dashboard.
 function TaskRow({ g }: { g: Goal }) {
   const { update } = useGoalMutations();
   return (
@@ -186,7 +186,7 @@ export default function DashboardGoals() {
           <div className="divide-y divide-white/[0.06]">{sections}</div>
         ) : (
           <div className="px-5 py-8 text-[12.5px] text-white/45 text-center">
-            No goals or tasks yet — add them on the Goals page.
+            No goals or tasks yet - add them on the Goals page.
           </div>
         )}
       </div>

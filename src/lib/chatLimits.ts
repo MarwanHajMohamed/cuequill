@@ -1,7 +1,7 @@
 // Per-user fair-use limits for Quill AI. These protect the shared Gemini
 // key from a single user monopolising rate limits or running up cost:
 //   - a daily message cap (the primary abuse guard), and
-//   - a monthly token budget (a backstop for pathological usage — each
+//   - a monthly token budget (a backstop for pathological usage - each
 //     request ships the user's full trade context, so tokens matter more
 //     than raw message count).
 // Both are env-overridable so they can be tuned without a code change.

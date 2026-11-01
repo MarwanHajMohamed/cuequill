@@ -70,7 +70,9 @@ export async function POST(req: NextRequest) {
     // Stamp userId onto the subscription so the webhook can recover the
     // owner even if the customer-id link hasn't persisted yet.
     subscription_data: { metadata: { userId: user._id.toString() } },
-    success_url: `${APP_URL}/pricing?checkout=success`,
+    // Land on the Plan tab in settings so the just-purchased subscription
+    // (PlanTab reconciles live from Stripe on mount) is shown right away.
+    success_url: `${APP_URL}/settings?checkout=success`,
     cancel_url: `${APP_URL}/pricing?checkout=cancelled`,
   });
 

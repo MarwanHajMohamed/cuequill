@@ -14,7 +14,9 @@ export default function DashboardQuillInsight() {
   const generatedAt = data?.generatedAt ? new Date(data.generatedAt) : null;
 
   return (
-    <section className={`${CARD_CLASS_BASE} flex flex-col gap-3 h-full`}>
+    <section
+      className={`${CARD_CLASS_BASE} flex flex-col gap-3 h-full overflow-hidden`}
+    >
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-sm md:text-base font-semibold inline-flex items-center gap-2">
           <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-300 border border-teal-500/25 text-[10px] tracking-[0.08em] font-medium">
@@ -76,12 +78,16 @@ export default function DashboardQuillInsight() {
         </div>
       ) : (
         <>
-          <p className="flex-1 text-[13.5px] md:text-sm leading-relaxed text-white/85">
+          <p className="flex-1 min-h-0 overflow-y-auto chat-scroll pr-1 text-[13.5px] md:text-sm leading-relaxed text-white/85">
             {data?.insight}
           </p>
           <div className="flex items-center justify-between gap-2 mt-auto pt-1">
             <Link
-              href="/chat"
+              href={`/chat?draft=${encodeURIComponent(
+                data?.insight
+                  ? `About today's insight: "${data.insight}" - can you expand on this and suggest what I should do about it?`
+                  : "",
+              )}`}
               className="text-[12px] font-medium text-teal-300 hover:text-teal-200 transition"
             >
               Ask Quill <i className="fa-solid fa-arrow-right text-[10px]" />

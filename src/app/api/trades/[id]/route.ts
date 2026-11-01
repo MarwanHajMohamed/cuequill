@@ -5,7 +5,7 @@ import connectDB from "@/lib/db";
 import Trade from "@/lib/models/Trade";
 
 // Resolve the authenticated user's id, the requested trade id, and the
-// existing Trade doc — and short-circuit with the right HTTP error if
+// existing Trade doc - and short-circuit with the right HTTP error if
 // the user isn't logged in, the trade doesn't exist, or the trade
 // belongs to someone else. Centralized so GET / PATCH / DELETE all
 // enforce the same ownership boundary.
@@ -21,7 +21,7 @@ async function requireOwnedTrade(id: string): Promise<
     };
   }
   await connectDB();
-  // Only select the fields needed for the ownership check — keeps the
+  // Only select the fields needed for the ownership check - keeps the
   // payload lean and avoids leaking notes/etc. on a 403 path.
   const trade = await Trade.findById(id, { _id: 1, userID: 1 }).lean<{
     _id: unknown;

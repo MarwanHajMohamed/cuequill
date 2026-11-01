@@ -8,10 +8,10 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // Per-account dashboard customisation:
-//   • layout       — ordered enabled widget ids for the widget grid
-//   • glanceTiles  — ordered enabled stat-tile ids inside "At a glance"
-//   • widgetSizes  — { [widgetId]: 1 | 2 } column span per widget
-//   • widgetRows   — { [widgetId]: 1 | 2 } row span per widget
+//   • layout       - ordered enabled widget ids for the widget grid
+//   • glanceTiles  - ordered enabled stat-tile ids inside "At a glance"
+//   • widgetSizes  - { [widgetId]: 1 | 2 } column span per widget
+//   • widgetRows   - { [widgetId]: 1 | 2 } row span per widget
 //
 //   GET → { layout, glanceTiles, widgetSizes, widgetRows }
 //   PUT { layout?, glanceTiles?, widgetSizes?, widgetRows? } → persists
@@ -58,7 +58,7 @@ export async function GET() {
 
   await connectDb();
   const user = await User.findById(session.user.id).select(
-    "dashboardLayout dashboardGlanceTiles dashboardWidgetSizes dashboardWidgetRows isPro dashInsightMigrated",
+    "dashboardLayout dashboardGlanceTiles dashboardWidgetSizes dashboardWidgetRows simDashboardLayout simDashboardWidgetSizes simDashboardWidgetRows isPro dashInsightMigrated dashBalanceMigrated dashChallengesMigrated",
   );
   if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -68,7 +68,7 @@ export async function GET() {
 
   // One-time migration: drop the "Insight of the day" widget into an
   // existing PRO user's saved layout (right after "At a glance"). Only runs
-  // once — the flag means we never re-add it if they later remove it. Users
+  // once - the flag means we never re-add it if they later remove it. Users
   // with no custom layout already get it from the client default.
   if (user.isPro && !user.dashInsightMigrated) {
     if (
@@ -84,7 +84,50 @@ export async function GET() {
     }
     user.dashInsightMigrated = true;
     await user.save().catch(() => {
-      /* best-effort — still return the migrated layout in-memory */
+      /* best-effort - still return the migrated layout in-memory */
+    });
+  }
+
+  // One-time migration: add the "Balance" widget to an existing saved
+  // layout (after "equity", or "glance"). Runs once for every user - it's
+  // not Pro-gated - and the flag stops us re-adding it after a removal.
+  // Users with no custom layout already get it from the client default.
+  if (!user.dashBalanceMigrated) {
+    if (
+      Array.isArray(layout) &&
+      layout.length > 0 &&
+      !layout.includes("balance")
+    ) {
+      const next = [...layout];
+      const anchor = next.indexOf("equity");
+      const at = anchor >= 0 ? anchor + 1 : next.indexOf("glance") + 1;
+      next.splice(at > 0 ? at : next.length, 0, "balance");
+      layout = next;
+      user.dashboardLayout = next;
+    }
+    user.dashBalanceMigrated = true;
+    await user.save().catch(() => {
+      /* best-effort - still return the migrated layout in-memory */
+    });
+  }
+
+  // One-time migration: add the "Challenges" widget to an existing layout
+  // (after "balance", or at the end). Runs once for every user.
+  if (!user.dashChallengesMigrated) {
+    if (
+      Array.isArray(layout) &&
+      layout.length > 0 &&
+      !layout.includes("challenges")
+    ) {
+      const next = [...layout];
+      const anchor = next.indexOf("balance");
+      next.splice(anchor >= 0 ? anchor + 1 : next.length, 0, "challenges");
+      layout = next;
+      user.dashboardLayout = next;
+    }
+    user.dashChallengesMigrated = true;
+    await user.save().catch(() => {
+      /* best-effort - still return the migrated layout in-memory */
     });
   }
 
@@ -93,6 +136,10 @@ export async function GET() {
     glanceTiles: user.dashboardGlanceTiles ?? null,
     widgetSizes: user.dashboardWidgetSizes ?? null,
     widgetRows: user.dashboardWidgetRows ?? null,
+    // Separate saved layout for simulated (paper) mode.
+    simLayout: user.simDashboardLayout ?? null,
+    simWidgetSizes: user.simDashboardWidgetSizes ?? null,
+    simWidgetRows: user.simDashboardWidgetRows ?? null,
   });
 }
 
@@ -109,11 +156,22 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { layout, glanceTiles, widgetSizes, widgetRows } = (body ?? {}) as {
+  const {
+    layout,
+    glanceTiles,
+    widgetSizes,
+    widgetRows,
+    simLayout,
+    simWidgetSizes,
+    simWidgetRows,
+  } = (body ?? {}) as {
     layout?: unknown;
     glanceTiles?: unknown;
     widgetSizes?: unknown;
     widgetRows?: unknown;
+    simLayout?: unknown;
+    simWidgetSizes?: unknown;
+    simWidgetRows?: unknown;
   };
 
   const update: {
@@ -121,6 +179,9 @@ export async function PUT(req: NextRequest) {
     dashboardGlanceTiles?: string[];
     dashboardWidgetSizes?: Record<string, number>;
     dashboardWidgetRows?: Record<string, number>;
+    simDashboardLayout?: string[];
+    simDashboardWidgetSizes?: Record<string, number>;
+    simDashboardWidgetRows?: Record<string, number>;
   } = {};
 
   if (layout !== undefined) {
@@ -159,6 +220,33 @@ export async function PUT(req: NextRequest) {
     }
     update.dashboardWidgetRows = widgetRows;
   }
+  if (simLayout !== undefined) {
+    if (!isIdArray(simLayout)) {
+      return NextResponse.json(
+        { error: "simLayout must be an array of ids" },
+        { status: 400 },
+      );
+    }
+    update.simDashboardLayout = simLayout;
+  }
+  if (simWidgetSizes !== undefined) {
+    if (!isSizeMap(simWidgetSizes)) {
+      return NextResponse.json(
+        { error: "simWidgetSizes must be a map of id → 1|2" },
+        { status: 400 },
+      );
+    }
+    update.simDashboardWidgetSizes = simWidgetSizes;
+  }
+  if (simWidgetRows !== undefined) {
+    if (!isRowMap(simWidgetRows)) {
+      return NextResponse.json(
+        { error: "simWidgetRows must be a map of id → 1|2|3" },
+        { status: 400 },
+      );
+    }
+    update.simDashboardWidgetRows = simWidgetRows;
+  }
 
   if (Object.keys(update).length === 0) {
     return NextResponse.json(
@@ -171,7 +259,7 @@ export async function PUT(req: NextRequest) {
   const user = await User.findByIdAndUpdate(session.user.id, update, {
     new: true,
   }).select(
-    "dashboardLayout dashboardGlanceTiles dashboardWidgetSizes dashboardWidgetRows",
+    "dashboardLayout dashboardGlanceTiles dashboardWidgetSizes dashboardWidgetRows simDashboardLayout simDashboardWidgetSizes simDashboardWidgetRows",
   );
   if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -182,5 +270,8 @@ export async function PUT(req: NextRequest) {
     glanceTiles: user.dashboardGlanceTiles ?? null,
     widgetSizes: user.dashboardWidgetSizes ?? null,
     widgetRows: user.dashboardWidgetRows ?? null,
+    simLayout: user.simDashboardLayout ?? null,
+    simWidgetSizes: user.simDashboardWidgetSizes ?? null,
+    simWidgetRows: user.simDashboardWidgetRows ?? null,
   });
 }

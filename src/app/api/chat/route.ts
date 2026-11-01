@@ -12,11 +12,14 @@ import {
   buildStrategiesContext,
   buildGoalsContext,
   buildDateContext,
+  computeQueryStats,
   type LeanTrade,
   type LeanRulesBoard,
   type LeanStrategy,
   type LeanGoal,
+  type QueryStatsFilter,
 } from "@/lib/quillContext";
+import { getQuillModel } from "@/lib/quillCache";
 import mongoose from "mongoose";
 import {
   GoogleGenerativeAI,
@@ -39,7 +42,7 @@ export const maxDuration = 60;
 // POST /api/chat
 // Body: { messages: [{ role, text, images? }, ...] }
 // The last message may carry image data URLs (screenshots the user
-// attached — e.g. a broker fill to log). Streams Gemini's response as
+// attached - e.g. a broker fill to log). Streams Gemini's response as
 // text/plain chunks (the client just appends them).
 //
 // Free-tier setup:
@@ -79,13 +82,16 @@ export async function POST(req: Request) {
   // immediately for stale JWTs.
   await connectDb();
   const proCheck = await User.findById(session.user.id)
-    .select("isPro chatDailyDate chatDailyCount chatMonth chatMonthTokens")
+    .select(
+      "isPro chatDailyDate chatDailyCount chatMonth chatMonthTokens bonusChatMessages",
+    )
     .lean<{
       isPro?: boolean;
       chatDailyDate?: string;
       chatDailyCount?: number;
       chatMonth?: string;
       chatMonthTokens?: number;
+      bonusChatMessages?: number;
     }>();
   if (!proCheck?.isPro) {
     return new Response("Pro membership required", { status: 403 });
@@ -99,9 +105,12 @@ export async function POST(req: Request) {
   const usedToday = proCheck.chatDailyDate === today ? proCheck.chatDailyCount ?? 0 : 0;
   const usedMonthTokens =
     proCheck.chatMonth === month ? proCheck.chatMonthTokens ?? 0 : 0;
-  if (usedToday >= DAILY_MESSAGE_LIMIT) {
+  const bonusMessages = proCheck.bonusChatMessages ?? 0;
+  // Over the daily cap? Fall back to the bonus pool earned from challenges.
+  const overDailyLimit = usedToday >= DAILY_MESSAGE_LIMIT;
+  if (overDailyLimit && bonusMessages <= 0) {
     return new Response(
-      `You've reached today's Quill AI limit of ${DAILY_MESSAGE_LIMIT} messages. It resets at midnight UTC — check back then.`,
+      `You've reached today's Quill AI limit of ${DAILY_MESSAGE_LIMIT} messages. It resets at midnight UTC. Check back then.`,
       { status: 429 },
     );
   }
@@ -150,11 +159,29 @@ export async function POST(req: Request) {
     >,
   ]);
 
+  // The row list is capped for token size, but every aggregate (breakdown
+  // tables, key metrics, strategy/goal analysis) and query_stats must be
+  // EXACT over the whole journal. Load every non-simulated trade once when
+  // the cap is hit and reuse it for the rest of the turn; under the cap the
+  // snapshot IS the whole journal, so skip the extra query.
+  let allTradesPromise: Promise<LeanTrade[]> | null = null;
+  const getAllTrades = (): Promise<LeanTrade[]> => {
+    if (trades.length < 1000) return Promise.resolve(trades);
+    if (!allTradesPromise) {
+      allTradesPromise = Trade.find({ userID: userId, simulated: false })
+        .sort({ dateBought: -1 })
+        .lean() as unknown as Promise<LeanTrade[]>;
+    }
+    return allTradesPromise;
+  };
+  const allTrades = await getAllTrades();
+
   const context = [
-    buildTradeContext(trades),
+    // Row list capped to `trades`; aggregates span `allTrades`.
+    buildTradeContext(trades, allTrades),
     buildRulesContext(rulesBoard),
-    buildStrategiesContext(strategies, trades),
-    buildGoalsContext(goals, trades),
+    buildStrategiesContext(strategies, allTrades),
+    buildGoalsContext(goals, allTrades),
   ]
     .filter(Boolean)
     .join("\n\n");
@@ -165,21 +192,36 @@ export async function POST(req: Request) {
   const userTz = session.user.timezone || "America/New_York";
   const dateBlock = buildDateContext(userTz);
 
+  // Valid trade ids for this user - used to strip any trade:// card the model
+  // emits for an id that isn't actually in the snapshot (hallucination guard).
+  const validTradeIds = new Set(trades.map((t) => String(t._id)));
+
   // ── Build Gemini request ────────────────────────────────────────────
   const genAI = new GoogleGenerativeAI(apiKey);
-  const TOOLS = [ADD_TRADE_TOOL, EDIT_TRADE_TOOL, DELETE_TRADE_TOOL];
-  const model = genAI.getGenerativeModel({
-    model: "gemini-2.5-flash",
-    systemInstruction: SYSTEM_PROMPT(
-      session.user.firstname ?? "trader",
-      context,
-      dateBlock,
-    ),
-    tools: [{ functionDeclarations: TOOLS }],
+  const TOOLS = [
+    ADD_TRADE_TOOL,
+    EDIT_TRADE_TOOL,
+    DELETE_TRADE_TOOL,
+    QUERY_STATS_TOOL,
+  ];
+  const systemInstruction = SYSTEM_PROMPT(
+    session.user.firstname ?? "trader",
+    context,
+    dateBlock,
+  );
+  // Reuses (or creates) a Gemini context cache for the big, stable system
+  // instruction so multi-turn chats don't re-bill it each message. Falls back
+  // to an uncached model automatically on any caching problem.
+  const model = await getQuillModel({
+    genAI,
+    apiKey,
+    userId: session.user.id,
+    systemInstruction,
+    tools: TOOLS,
   });
 
   // Convert our message history into Gemini's format. The last message
-  // is the new prompt; earlier ones become chat history (text only —
+  // is the new prompt; earlier ones become chat history (text only -
   // attached images aren't persisted, so history stays lightweight).
   const last = messages[messages.length - 1];
   const history = messages.slice(0, -1).map((m) => ({
@@ -198,10 +240,9 @@ export async function POST(req: Request) {
   lastParts.push(...imageParts);
   if (lastParts.length === 0) lastParts.push({ text: "" });
 
-  const chat = model.startChat({
-    history,
-    tools: [{ functionDeclarations: TOOLS }],
-  });
+  // Tools live on the model (or its context cache), so they don't need to be
+  // repeated here.
+  const chat = model.startChat({ history });
 
   // ── Stream the response back ────────────────────────────────────────
   // Sentinel emitted at the end of any response that touched the trades
@@ -209,18 +250,55 @@ export async function POST(req: Request) {
   // A null byte won't appear in Gemini's natural-language output.
   const REFRESH_SENTINEL = "[[CUEQUILL_REFRESH_TRADES]]";
   const encoder = new TextEncoder();
+  // Drop any trade card the model emits for an id not in the snapshot, so a
+  // hallucinated id never renders as a broken card. Cards look like
+  // "[trade-card](trade://<id>)".
+  const CARD_RE = /\[[^\]]*\]\(trade:\/\/([^)]+)\)/g;
+  const sanitizeCards = (s: string): string =>
+    s.replace(CARD_RE, (full, id: string) =>
+      validTradeIds.has(id.trim()) ? full : "",
+    );
+
   const stream = new ReadableStream({
     async start(controller) {
+      // Stream text through a small buffer so a card link is never split
+      // across chunks when we sanitise it: we hold back only from an open
+      // "[" that hasn't closed with ")" yet, so normal prose still streams
+      // token-by-token.
+      let buf = "";
+      const flush = (final: boolean) => {
+        if (final) {
+          if (buf) controller.enqueue(encoder.encode(sanitizeCards(buf)));
+          buf = "";
+          return;
+        }
+        const open = buf.lastIndexOf("[");
+        const safeUpto =
+          open === -1
+            ? buf.length
+            : buf.indexOf(")", open) === -1
+              ? open
+              : buf.length;
+        if (safeUpto > 0) {
+          controller.enqueue(encoder.encode(sanitizeCards(buf.slice(0, safeUpto))));
+          buf = buf.slice(safeUpto);
+        }
+      };
+
       const drainStream = async (
         result: Awaited<ReturnType<typeof chat.sendMessageStream>>,
       ): Promise<FunctionCall[]> => {
         const collected: FunctionCall[] = [];
         for await (const chunk of result.stream) {
           const text = chunk.text();
-          if (text) controller.enqueue(encoder.encode(text));
+          if (text) {
+            buf += text;
+            flush(false);
+          }
           const fc = chunk.functionCalls();
           if (fc && fc.length) collected.push(...fc);
         }
+        flush(true);
         return collected;
       };
 
@@ -279,6 +357,18 @@ export async function POST(req: Request) {
               fnResponses.push({
                 functionResponse: { name: call.name, response: res },
               });
+            } else if (call.name === "query_stats") {
+              // Read-only: exact aggregates over the user's ENTIRE journal
+              // (not just the capped row snapshot). No DB write, so it never
+              // sets touchedTrades.
+              const allTrades = await getAllTrades();
+              const res = computeQueryStats(
+                allTrades,
+                (call.args ?? {}) as QueryStatsFilter,
+              );
+              fnResponses.push({
+                functionResponse: { name: call.name, response: res },
+              });
             } else {
               fnResponses.push({
                 functionResponse: {
@@ -311,6 +401,8 @@ export async function POST(req: Request) {
               chatMonth: month,
               chatMonthTokens: usedMonthTokens + totalTokens,
             },
+            // This turn ran on the bonus pool - spend one.
+            ...(overDailyLimit ? { $inc: { bonusChatMessages: -1 } } : {}),
           });
         } catch {
           /* usage accounting is best-effort */
@@ -538,6 +630,23 @@ const EDIT_TRADE_TOOL: FunctionDeclaration = {
         type: SchemaType.STRING,
         description: "Free-text notes (replaces any existing notes).",
       },
+      addTags: {
+        type: SchemaType.ARRAY,
+        items: { type: SchemaType.STRING },
+        description:
+          "Tags to ADD to the trade (appended to any it already has, deduped). Use this for tagging - e.g. add 'A+ Setup'. Preferred over `tags` because it won't wipe existing tags.",
+      },
+      removeTags: {
+        type: SchemaType.ARRAY,
+        items: { type: SchemaType.STRING },
+        description: "Tags to REMOVE from the trade (case-insensitive).",
+      },
+      tags: {
+        type: SchemaType.ARRAY,
+        items: { type: SchemaType.STRING },
+        description:
+          "REPLACE the trade's entire tag list with exactly these tags. Only use when the user explicitly wants to overwrite all tags; otherwise use addTags/removeTags.",
+      },
       favourite: {
         type: SchemaType.BOOLEAN,
         description: "Flag the trade as a favourite.",
@@ -563,8 +672,32 @@ type EditTradeArgs = {
   fees?: number;
   strategy?: string;
   notes?: string;
+  addTags?: string[];
+  removeTags?: string[];
+  tags?: string[];
   favourite?: boolean;
 };
+
+// Tag guardrails: keep the list tidy so a bulk tagging run can't bloat a
+// document. Free text, deduped case-insensitively (first spelling wins).
+const MAX_TAGS = 30;
+const MAX_TAG_LEN = 40;
+function normalizeTags(list: unknown): string[] {
+  if (!Array.isArray(list)) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const raw of list) {
+    if (typeof raw !== "string") continue;
+    const s = raw.trim().slice(0, MAX_TAG_LEN);
+    if (!s) continue;
+    const key = s.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(s);
+    if (out.length >= MAX_TAGS) break;
+  }
+  return out;
+}
 
 async function executeEditTrade(
   userId: string,
@@ -664,6 +797,25 @@ async function executeEditTrade(
   if (a.notes !== undefined) patch.notes = String(a.notes);
   if (a.favourite !== undefined) patch.favourite = !!a.favourite;
 
+  // Tags: `tags` replaces the whole list; otherwise addTags/removeTags mutate
+  // the existing set. Add/remove is the common path (e.g. tag a batch of
+  // trades) and won't clobber tags the user already applied.
+  if (a.tags !== undefined) {
+    patch.tags = normalizeTags(a.tags);
+  } else if (a.addTags !== undefined || a.removeTags !== undefined) {
+    const current: string[] = Array.isArray(existing.tags)
+      ? existing.tags
+      : [];
+    const remove = new Set(
+      normalizeTags(a.removeTags).map((t) => t.toLowerCase()),
+    );
+    const merged = normalizeTags([
+      ...current.filter((t) => !remove.has(t.toLowerCase())),
+      ...normalizeTags(a.addTags),
+    ]);
+    patch.tags = merged;
+  }
+
   if (Object.keys(patch).length === 0) {
     return { ok: false, error: "No fields to update" };
   }
@@ -692,6 +844,7 @@ async function executeEditTrade(
         fees: updated?.fees,
         strategy: updated?.strategy,
         notes: updated?.notes,
+        tags: updated?.tags,
         favourite: updated?.favourite,
       },
     };
@@ -715,10 +868,63 @@ const DELETE_TRADE_TOOL: FunctionDeclaration = {
       id: {
         type: SchemaType.STRING,
         description:
-          "The 24-char Mongo ObjectId of the trade to delete — copy it from the [id:…] tag in the TRADER SNAPSHOT.",
+          "The 24-char Mongo ObjectId of the trade to delete - copy it from the [id:…] tag in the TRADER SNAPSHOT.",
       },
     },
     required: ["id"],
+  },
+};
+
+// ── Tool: query_stats (read-only) ──────────────────────────────────────
+
+const QUERY_STATS_TOOL: FunctionDeclaration = {
+  name: "query_stats",
+  description:
+    "Compute EXACT performance stats for a slice of the user's trades (win rate, net P/L, expectancy, profit factor, payoff, avg win/loss, best/worst, max drawdown). This runs over the user's ENTIRE journal - including trades older than the row snapshot below - so use it for any total or count that must be complete, and always prefer it over counting or adding up rows yourself when the user asks for a specific number - e.g. 'win rate on NVDA', 'net P/L in July', 'how do my Monday trades do', 'net P/L all time'. All filters are optional and combined with AND. Omit a filter to include everything on that dimension (omit everything for lifetime totals). Returns numbers you can quote directly.",
+  parameters: {
+    type: SchemaType.OBJECT,
+    properties: {
+      symbol: {
+        type: SchemaType.STRING,
+        description: "Ticker to filter to, uppercase (e.g. NVDA). Omit for all.",
+      },
+      strategy: {
+        type: SchemaType.STRING,
+        description:
+          "Exact strategy name to filter to (as shown in the snapshot). Omit for all.",
+      },
+      tag: {
+        type: SchemaType.STRING,
+        description: "A single tag to filter to. Omit for all.",
+      },
+      option: {
+        type: SchemaType.STRING,
+        description: "CALL or PUT. Omit for both.",
+        enum: ["CALL", "PUT"],
+        format: "enum",
+      },
+      status: {
+        type: SchemaType.STRING,
+        description: "WIN, LOSS, or OPEN. Omit for all statuses.",
+        enum: ["WIN", "LOSS", "OPEN"],
+        format: "enum",
+      },
+      startDate: {
+        type: SchemaType.STRING,
+        description:
+          "Inclusive start date YYYY-MM-DD. Matches a trade's exit day (or entry day if still open).",
+      },
+      endDate: {
+        type: SchemaType.STRING,
+        description: "Inclusive end date YYYY-MM-DD.",
+      },
+      weekday: {
+        type: SchemaType.STRING,
+        description:
+          "Entry weekday name to filter to, e.g. 'Monday'. Omit for all days.",
+      },
+    },
+    required: [],
   },
 };
 
@@ -784,12 +990,15 @@ trading journal and powered by Google Gemini.
 
 Your job:
 - Answer questions about their trading history, strategies, P/L, win rate,
-  streaks, and patterns. The TRADER SNAPSHOT below contains the FULL list
-  of their recent trades (up to 1000 entries, newest first), each with
-  entry + exit dates, prices, status, strategy, and net P/L - plus
-  pre-computed weekly and monthly aggregates. Use it as the source of
-  truth. You CAN compare arbitrary weeks, months, or symbols directly
-  from this data.
+  streaks, and patterns. The TRADER SNAPSHOT below lists their most recent
+  trades (up to 1000, newest first), each with entry + exit dates, prices,
+  status, strategy, and net P/L - plus pre-computed weekly and monthly
+  aggregates. Use it as the source of truth for individual trades. You CAN
+  compare arbitrary weeks, months, or symbols directly from this data.
+  If the user has more than 1000 trades, older ones aren't listed here -
+  for any lifetime or complete total/count, call query_stats (it computes
+  over the ENTIRE journal, not just this snapshot) rather than summing the
+  visible rows.
 - Hold them to their own plan. The snapshot may also include their written
   TRADING RULES, their documented STRATEGIES, and their GOALS. When it's
   relevant, check trades against their rules ("this one broke your 'no
@@ -802,7 +1011,7 @@ If the user asks for a review of their week/month (or says "review my
 week"), give a short, structured debrief: headline P/L and record for the
 period, what went well, the biggest mistake or leak you can see in the
 data, any rule they broke, and where they stand on their goals. Finish with
-one concrete thing to focus on next. Keep it tight and specific — cite real
+one concrete thing to focus on next. Keep it tight and specific - cite real
 trades (as cards) where useful.
 
 SCREENSHOTS & IMAGES
@@ -821,13 +1030,13 @@ trade card by emitting a Markdown link of the form:
 
 on its own line. The chat UI replaces this link with a styled card
 that shows the ticker, option (CALL/PUT), status, strike × qty,
-entry → exit dates, net P/L, and strategy — all pulled from the
+entry → exit dates, net P/L, and strategy - all pulled from the
 authoritative trade data. You do NOT need to write any of those
 details in prose; the card renders them. Just emit the card link,
 one per trade you're showing.
 
 The "[id:…]" tag in the snapshot is the source for <id>. The id must
-appear ONLY inside a trade:// link's href — NEVER as plain text. The
+appear ONLY inside a trade:// link's href - NEVER as plain text. The
 visible link text MUST be the literal word "trade-card" (the UI
 ignores it, but Markdown requires non-empty link text).
 
@@ -837,14 +1046,14 @@ Format rules:
 - Do NOT wrap the cards in a Markdown list (no leading "-" or "*").
   The cards stand on their own.
 - Do NOT write the trade's ticker, option, status, P/L, strike,
-  dates, or strategy as prose next to the card — the card already
+  dates, or strategy as prose next to the card - the card already
   shows all of that.
 - A short intro sentence BEFORE the cards and a short takeaway sentence
   or two AFTER the cards is welcome when the user asked an analytical
   question. Keep prose minimal between cards.
 - When you mention a ticker INLINE in flowing prose (not as a card),
   just write the symbol as plain text. Do not use a trade:// link
-  for inline references — those would render as a card mid-sentence.
+  for inline references - those would render as a card mid-sentence.
 
 Example:
 
@@ -856,7 +1065,7 @@ Your last 3 NVDA losses:
 
 [trade-card](trade://507f1f77bcf86cd799439013)
 
-All three were on First Red Opening Candle — might be worth backing off
+All three were on First Red Opening Candle - might be worth backing off
 that setup until you see two greens in a row.
 
 If you genuinely don't have an id for a trade you're describing (rare),
@@ -868,12 +1077,54 @@ STYLE & ANALYSIS
 - Surface observations the user might miss: drawdowns, repeated mistakes,
   oversized losses, strategies underperforming.
 - Stay concise. Bullet points and short paragraphs over prose walls.
-- Never make up trades, P/L, or stats. If the snapshot doesn't show it, say so.
+- Never make up trades, P/L, or stats. For an individual trade the snapshot
+  doesn't show, say so - but for totals/counts over a period or the whole
+  journal, call query_stats (it sees every trade, even beyond the snapshot)
+  before saying you don't have it.
+- The KEY METRICS block and any query_stats result are pre-computed and exact -
+  quote them as-is. Don't re-derive expectancy, profit factor, win rate, etc.
+  by hand from the row list; use those numbers or call query_stats.
 - This is journaling and analysis only - do NOT give personalized investment
   advice, trade recommendations, or predictions.
 
+TAGS & GROUP-LEVEL REQUESTS
+Every trade row ends with "tags:…" showing the labels currently on that
+trade ("-" means none). You CAN tag and untag trades - use edit_trade with
+addTags / removeTags.
+
+Win rate, expectancy, profit factor, payoff, drawdown, etc. are GROUP
+metrics: they describe a SET of trades (a strategy, a symbol, a tag, a
+weekday, a date range), never a single trade. One closed trade on its own
+is simply a win or a loss - it has no "win rate". So when a request phrases
+a per-trade action in terms of a group metric, translate it into "find the
+qualifying GROUPS, then act on every trade in them". Do NOT refuse it and
+do NOT ask the user for trade ids - you already have every id in the
+snapshot.
+
+Example - "tag every trade with a 90%+ win rate as 'A+ Setup'":
+  1. Decide the grouping. Default to STRATEGY (the usual meaning of a
+     "setup"). If it's genuinely unclear whether they mean by strategy,
+     symbol, or an existing tag, ask one short clarifying question first.
+  2. Find the groups that meet the threshold. The snapshot's per-strategy
+     and per-tag breakdowns already list each group's win rate; read the
+     qualifying ones from there, or call query_stats per candidate group
+     to be exact.
+  3. For EVERY trade belonging to a qualifying group, call edit_trade with
+     addTags:["A+ Setup"]. Use the ids from the snapshot; make one
+     edit_trade call per trade (they can run in the same round).
+  4. Confirm a brief summary: which groups qualified and how many trades
+     you tagged.
+
 TOOLS
-You have three tools available:
+You have four tools available:
+
+- query_stats(...) - compute EXACT stats for any slice of the journal (by
+  symbol, strategy, tag, option, status, date range, or weekday). ALWAYS use
+  this when the user asks for a specific number ("what's my win rate on NVDA",
+  "net P/L in July", "how do Mondays do") instead of counting or summing the
+  rows yourself - your mental arithmetic over the row list is error-prone, the
+  tool is exact. It's read-only and instant; call it freely, even several times
+  to compare slices. Quote the numbers it returns directly.
 
 - add_trade(...) - log a NEW open options trade in the user's journal.
   Call this when the user clearly says they took a trade (e.g. "I just
@@ -896,10 +1147,13 @@ You have three tools available:
 - edit_trade(id, ...fields) - update an EXISTING trade. Use this to
   close a trade (set status=WIN/LOSS, plus closingContractPrice,
   dateClosed, and profitLoss), fix a typo (e.g. wrong strike), change
-  strategy, add/replace notes, or flag a favourite. The id MUST come
-  from the "[id:…]" tag at the start of a trade row in the TRADER
-  SNAPSHOT. Only pass the fields you want to change - anything you omit
-  stays the same. If multiple trades could match what the user
+  strategy, add/replace notes, TAG a trade (addTags / removeTags), or
+  flag a favourite. The id MUST come from the "[id:…]" tag at the start
+  of a trade row in the TRADER SNAPSHOT. Only pass the fields you want
+  to change - anything you omit stays the same. To tag trades, pass
+  addTags (e.g. ["A+ Setup"]); this appends without wiping existing
+  tags. Use removeTags to untag. Only use the "tags" field (full
+  replace) when the user explicitly wants to overwrite every tag. If multiple trades could match what the user
   described, ASK which one (read out a few candidates with date +
   symbol + qty so they can pick). For status=WIN/LOSS, if the user
   gave a closing price but no P/L, compute net P/L as

@@ -21,9 +21,11 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [trades, setTrades] = useState<Trade[]>([]);
   const notifiedTrades = useRef<Set<string>>(new Set());
 
+  // Toasts persist until the user dismisses them with the X (no auto-hide),
+  // so an error can't vanish before it's read. A new toast replaces the
+  // current one.
   const showToast = useCallback((msg: string) => {
     setMessage(msg);
-    setTimeout(() => setMessage(null), 3000);
   }, []);
 
   useEffect(() => {

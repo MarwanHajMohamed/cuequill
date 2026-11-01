@@ -2,9 +2,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
+import { useQueryClient } from "@tanstack/react-query";
 import { useIsPro } from "@/hooks/useIsPro";
+import { useScrollLock } from "@/hooks/useScrollLock";
 
-const COOLDOWN_MS = 15 * 60 * 1000;
+const COOLDOWN_MS = 30 * 60 * 1000;
 
 const inputClass =
   "w-full px-3 py-2 rounded-xl bg-white/[0.03] border border-white/10 text-[13px] text-white placeholder:text-white/40 focus:border-white/25 focus:outline-none transition";
@@ -26,18 +28,42 @@ type ImportedTrade = {
   hasDuplicate?: boolean;
 };
 
-export default function IBKRTab() {
+export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
   const { isPro } = useIsPro();
+  const queryClient = useQueryClient();
+
+  // A sync adds trades server-side (new rows, with commissions/fees). The
+  // trades table is a cached React Query, so refresh it - otherwise net P/L
+  // keeps showing stale numbers until something else invalidates the cache.
+  const refreshTradeData = () => {
+    queryClient.invalidateQueries({ queryKey: ["trades"] });
+    queryClient.invalidateQueries({ queryKey: ["challenges"] });
+  };
   const [token, setToken] = useState("");
   const [queryId, setQueryId] = useState("");
   const [hasToken, setHasToken] = useState(false);
   const [lastSync, setLastSync] = useState<string | null>(null);
+  const [lastManualSync, setLastManualSync] = useState<string | null>(null);
   const [lastInserted, setLastInserted] = useState<number | null>(null);
   const [lastSkipped, setLastSkipped] = useState<number | null>(null);
   const [saveStatus, setSaveStatus] = useState("");
   const [syncStatus, setSyncStatus] = useState("");
   const [syncing, setSyncing] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+  // Setup-screenshot lightbox (click to enlarge, then click to zoom in).
+  const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(
+    null,
+  );
+
+  // Preview (dry-run) of a manual sync: what it WOULD import, pending the
+  // user's confirmation. Null when there's nothing staged.
+  const [preview, setPreview] = useState<{
+    fetched: number;
+    matched: number;
+    skipped: number;
+    trades: ImportedTrade[];
+  } | null>(null);
+  const [committing, setCommitting] = useState(false);
 
   // Last-imported viewer state
   const [importedOpen, setImportedOpen] = useState(false);
@@ -57,6 +83,7 @@ export default function IBKRTab() {
         setQueryId(data.ibkrQueryId ?? "");
         setHasToken(data.hasToken ?? false);
         setLastSync(data.ibkrLastSync ?? null);
+        setLastManualSync(data.ibkrLastManualSync ?? null);
         setLastInserted(data.ibkrLastSyncInserted ?? null);
         setLastSkipped(data.ibkrLastSyncSkipped ?? null);
       });
@@ -68,10 +95,10 @@ export default function IBKRTab() {
   }, []);
 
   const cooldownMsLeft = useMemo(() => {
-    if (!lastSync) return 0;
-    const elapsed = now - new Date(lastSync).getTime();
+    if (!lastManualSync) return 0;
+    const elapsed = now - new Date(lastManualSync).getTime();
     return Math.max(0, COOLDOWN_MS - elapsed);
-  }, [lastSync, now]);
+  }, [lastManualSync, now]);
 
   const cooldownLabel = useMemo(() => {
     if (cooldownMsLeft <= 0) return "";
@@ -83,7 +110,9 @@ export default function IBKRTab() {
 
   const handleSave = async () => {
     setSaveStatus("Saving…");
-    const body: Record<string, string> = { ibkrQueryId: queryId };
+    const body: Record<string, string> = {
+      ibkrQueryId: queryId,
+    };
     if (token) body.ibkrToken = token;
 
     const res = await fetch("/api/user/ibkr-settings", {
@@ -94,40 +123,101 @@ export default function IBKRTab() {
 
     if (res.ok) {
       setSaveStatus("Saved");
+      const willHaveToken = hasToken || !!token;
       if (token) {
         setHasToken(true);
         setToken("");
+      }
+      // Like TradeZella: once connected (token + query), check for history
+      // right away instead of making the user click "Sync now".
+      if (willHaveToken && queryId) {
+        handleSync();
       }
     } else {
       setSaveStatus("Error saving");
     }
   };
 
+  // Step 1: preview. Fetch from IBKR and show what WOULD be imported; the
+  // user confirms before anything is written.
   const handleSync = async () => {
     setSyncing(true);
-    setSyncStatus("Syncing with IBKR…");
+    setSyncStatus("Checking IBKR for new trades…");
+    setPreview(null);
 
     const res = await fetch("/api/ibkr/sync", { method: "POST" });
     const data = await res.json();
 
     setSyncing(false);
     if (res.ok) {
-      setSyncStatus(
-        `Done - ${data.inserted} trade${data.inserted !== 1 ? "s" : ""} imported`,
-      );
-      setLastSync(new Date().toISOString());
-      setLastInserted(data.inserted);
-      // Force a re-fetch of the live imported list after a fresh
-      // sync so the pill count reflects the new set, not whatever
-      // was left over from the previous sync.
-      setImportedTrades([]);
-      setHaveLoadedImported(false);
-      setLastSkipped(data.skipped);
-      // If a panel was open, refresh; otherwise let user open it.
-      if (importedOpen) loadImported();
+      const nowIso = new Date().toISOString();
+      setLastManualSync(nowIso);
+      const trades: ImportedTrade[] = data.trades ?? [];
+      setPreview({
+        fetched: data.fetched ?? 0,
+        matched: data.matched ?? 0,
+        skipped: data.skipped ?? 0,
+        trades,
+      });
+      if (trades.length > 0) {
+        setSyncStatus(
+          `${trades.length} new trade${trades.length !== 1 ? "s" : ""} found - review below and confirm.`,
+        );
+      } else if ((data.matched ?? 0) > 0) {
+        setSyncStatus("No new trades - everything IBKR returned is already in your journal.");
+      } else if ((data.fetched ?? 0) === 0) {
+        setSyncStatus(
+          "IBKR returned no trades. The Activity Flex query settles on T+1, so trades usually appear the next business day after they're taken.",
+        );
+      } else {
+        setSyncStatus("No new trades to import.");
+      }
+    } else if (res.status === 429) {
+      // Server-side 30-min limit. Sync the local cooldown to the server's
+      // remaining time so the button countdown matches.
+      if (typeof data.retryAfterMs === "number") {
+        setLastManualSync(
+          new Date(Date.now() - (COOLDOWN_MS - data.retryAfterMs)).toISOString(),
+        );
+      }
+      setSyncStatus(data.error ?? "Please wait before resyncing.");
     } else {
       setSyncStatus(`Error: ${data.error}`);
     }
+  };
+
+  // Step 2: confirm. Insert exactly the previewed trades (no IBKR call).
+  const handleConfirmImport = async () => {
+    setCommitting(true);
+    try {
+      const res = await fetch("/api/ibkr/sync/commit", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Import failed");
+      const nowIso = new Date().toISOString();
+      setLastSync(nowIso);
+      setLastInserted(data.inserted);
+      setLastSkipped(data.skipped);
+      setPreview(null);
+      setSyncStatus(
+        `Done - ${data.inserted} trade${data.inserted !== 1 ? "s" : ""} imported.`,
+      );
+      // Refresh the live imported list + the trades table / net P/L.
+      setImportedTrades([]);
+      setHaveLoadedImported(false);
+      refreshTradeData();
+      if (importedOpen) loadImported();
+    } catch (e) {
+      setSyncStatus(
+        `Error: ${e instanceof Error ? e.message : "Import failed"}`,
+      );
+    } finally {
+      setCommitting(false);
+    }
+  };
+
+  const handleCancelPreview = () => {
+    setPreview(null);
+    setSyncStatus("Import cancelled - nothing was added.");
   };
 
   const loadImported = async () => {
@@ -149,7 +239,7 @@ export default function IBKRTab() {
 
   // Fetch the live imported-trades list once we know a sync has ever
   // inserted rows. This is what makes the pill count and the
-  // expander agree — using the historical ibkrLastSyncInserted alone
+  // expander agree - using the historical ibkrLastSyncInserted alone
   // would show a count for docs that have since been deleted or
   // merged.
   useEffect(() => {
@@ -185,11 +275,41 @@ export default function IBKRTab() {
     }
   };
 
+  // Undo the entire last sync (delete every trade it inserted). Used to
+  // roll back an import that slipped duplicates past the dedupe.
+  const [undoing, setUndoing] = useState(false);
+  const [confirmUndo, setConfirmUndo] = useState(false);
+  const handleUndoImport = async () => {
+    setUndoing(true);
+    setImportedError("");
+    try {
+      const r = await fetch("/api/ibkr/last-imported", { method: "DELETE" });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error ?? "Undo failed");
+      setImportedTrades([]);
+      setHaveLoadedImported(true);
+      setLastInserted(0);
+      setLastSkipped(0);
+      setConfirmUndo(false);
+      // The removed trades need to leave the table / net P/L too.
+      refreshTradeData();
+      setSyncStatus(
+        `Removed ${d.deleted} imported trade${d.deleted !== 1 ? "s" : ""} from the last sync.`,
+      );
+    } catch (e) {
+      setImportedError(e instanceof Error ? e.message : "Undo failed");
+    } finally {
+      setUndoing(false);
+    }
+  };
+
   const cooldownActive = cooldownMsLeft > 0;
   const syncDisabled = syncing || !hasToken || !queryId || cooldownActive;
 
   return (
-    <div className="p-5 md:p-7 flex flex-col gap-6">
+    <div
+      className={`flex flex-col gap-6 ${embedded ? "" : "p-5 md:p-7"}`}
+    >
       {/* Intro */}
       <section className="flex flex-col gap-2">
         <div className="text-[11px] tracking-[0.1em] text-teal-400/80 font-medium flex items-center gap-2">
@@ -202,12 +322,12 @@ export default function IBKRTab() {
         </div>
         {isPro ? (
           <p className="text-[13px] md:text-[14px] text-white/70 leading-relaxed">
-            Trades import automatically every weekday at 10 PM UTC. You can also
-            trigger a sync manually below.
+            Trades import automatically each night from your IBKR Activity Flex
+            query. You can also check for new trades manually below.
           </p>
         ) : (
           <p className="text-[13px] md:text-[14px] text-white/70 leading-relaxed">
-            Nightly auto-sync is a Pro feature. You can still import manually
+            Morning auto-sync is a Pro feature. You can still import manually
             below as often as you like.{" "}
             <Link
               href="/pricing"
@@ -225,43 +345,131 @@ export default function IBKRTab() {
         <div className="text-[11px] tracking-[0.1em] text-white/45 font-medium">
           Setup
         </div>
-        <ol className="flex flex-col gap-2.5 text-[13px] text-white/75 leading-relaxed">
-          {[
-            <>
-              In IBKR Account Management, open{" "}
-              <span className="text-white">
-                Performance &amp; Reports &rsaquo; Flex Queries &rsaquo; Flex Web
-                Service Configuration
-              </span>{" "}
-              and generate a token.
-            </>,
-            <>
-              Go to{" "}
-              <span className="text-white">Reports &rsaquo; Flex Queries</span>{" "}
-              and create a new{" "}
-              <span className="text-white">Activity Flex Query</span>.
-            </>,
-            <>
-              Under <span className="text-white">Trades</span>, select: Symbol,
-              Strike, Date/Time, Expiry, Put/Call, Quantity, Buy/Sell,
-              TradePrice, Realized P/L, TradeID,{" "}
-              <span className="text-white">IBCommission</span>, and{" "}
-              <span className="text-white">Taxes</span> (the last two let
-              Cuequill populate fees automatically).
-            </>,
-            <>
-              Set <span className="text-white">Period</span> to{" "}
-              <span className="text-white">Last Business Day</span> and{" "}
-              <span className="text-white">Format</span> to{" "}
-              <span className="text-white">CSV</span>.
-            </>,
-            <>Save the query and note the numeric Query ID shown next to it.</>,
-          ].map((step, i) => (
-            <li key={i} className="flex gap-3">
-              <span className="shrink-0 w-6 h-6 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center text-[11px] tabular-nums text-white/55 font-semibold">
-                {i + 1}
-              </span>
-              <span className="pt-0.5">{step}</span>
+        <ol className="flex flex-col gap-5 text-[13px] text-white/75 leading-relaxed">
+          {(
+            [
+              {
+                text: (
+                  <>
+                    In IBKR, open{" "}
+                    <span className="text-white">
+                      Performance &amp; Reports &rsaquo; Flex Queries
+                    </span>
+                    . First enable the{" "}
+                    <span className="text-white">Flex Web Service</span> and
+                    generate a token - set the{" "}
+                    <span className="text-white">activation period to 1 year</span>{" "}
+                    so it doesn&apos;t expire and break the sync.
+                  </>
+                ),
+                img: "/ibkr/1-flex-queries.webp",
+                alt: "IBKR Performance & Reports menu with Flex Queries selected",
+              },
+              {
+                text: (
+                  <>
+                    In the{" "}
+                    <span className="text-white">Activity Flex Query</span> panel,
+                    click the <span className="text-white">+</span> (Create).
+                  </>
+                ),
+                img: "/ibkr/2-create-activity.webp",
+                alt: "Create button on the Activity Flex Query panel",
+              },
+              {
+                text: (
+                  <>
+                    Give it a{" "}
+                    <span className="text-white">Query Name</span> (anything, e.g.
+                    &ldquo;Cuequill&rdquo;).
+                  </>
+                ),
+                img: "/ibkr/3-query-name.webp",
+                alt: "Query Name field filled in with Cuequill",
+              },
+              {
+                text: (
+                  <>
+                    Scroll the <span className="text-white">Sections</span> list
+                    and open <span className="text-white">Trades</span>.
+                  </>
+                ),
+                img: "/ibkr/4-trades-section.webp",
+                alt: "Trades section in the Flex Query sections list",
+              },
+              {
+                text: (
+                  <>
+                    In the Trades dialog, choose{" "}
+                    <span className="text-white">Execution</span> and tick{" "}
+                    <span className="text-white">Select All</span>, then close it.
+                  </>
+                ),
+                img: "/ibkr/5-execution-select-all.webp",
+                alt: "Trades dialog with Execution and Select All checked",
+              },
+              {
+                text: (
+                  <>
+                    Set <span className="text-white">Format</span> to{" "}
+                    <span className="text-white">CSV</span> and{" "}
+                    <span className="text-white">Period</span> to{" "}
+                    <span className="text-white">Last 365 Days</span>, then{" "}
+                    <span className="text-white">Save</span>.
+                  </>
+                ),
+                img: "/ibkr/6-csv-period.webp",
+                alt: "Activity Flex Query delivery configuration with CSV format and Last 365 Calendar Days period",
+              },
+              {
+                text: (
+                  <>
+                    Open the query&apos;s{" "}
+                    <span className="text-white">info (i)</span> icon to copy the
+                    numeric <span className="text-white">Query ID</span>. Paste it
+                    and the token into Credentials below and Save.
+                  </>
+                ),
+              },
+            ] as {
+              text: React.ReactNode;
+              img?: string;
+              alt?: string;
+              placeholder?: boolean;
+            }[]
+          ).map((step, i) => (
+            <li key={i} className="flex flex-col gap-2.5">
+              <div className="flex gap-3">
+                <span className="shrink-0 w-6 h-6 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center text-[11px] tabular-nums text-white/55 font-semibold">
+                  {i + 1}
+                </span>
+                <span className="pt-0.5">{step.text}</span>
+              </div>
+              {(step.img || step.placeholder) &&
+                (step.img ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setLightbox({ src: step.img!, alt: step.alt ?? "" })
+                    }
+                    aria-label="Enlarge screenshot"
+                    className="ml-9 max-w-2xl rounded-xl border border-white/10 overflow-hidden bg-white/[0.02] cursor-zoom-in block hover:border-white/25 transition"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={step.img}
+                      alt={step.alt ?? ""}
+                      loading="lazy"
+                      className="w-full h-auto block"
+                    />
+                  </button>
+                ) : (
+                  <div className="ml-9 max-w-2xl rounded-xl border border-white/10 overflow-hidden bg-white/[0.02]">
+                    <div className="aspect-[16/9] flex items-center justify-center text-[11.5px] text-white/35 text-center px-4">
+                      Screenshot coming soon
+                    </div>
+                  </div>
+                ))}
             </li>
           ))}
         </ol>
@@ -342,7 +550,7 @@ export default function IBKRTab() {
           </div>
         )}
         <div className="text-[11.5px] text-white/40">
-          IBKR limits requests to roughly one sync every 15 minutes per query.
+          Manual syncs are limited to one every 30 minutes.
         </div>
         <div className="flex items-center gap-3 flex-wrap">
           <button
@@ -358,21 +566,70 @@ export default function IBKRTab() {
               className={`fa-solid fa-rotate text-[11px] ${syncing ? "animate-spin" : ""}`}
             />
             {syncing
-              ? "Syncing…"
+              ? "Checking…"
               : cooldownActive
                 ? `Wait ${cooldownLabel}`
-                : "Sync now"}
+                : "Check for new trades"}
           </button>
           {syncStatus && (
             <span className="text-[12px] text-white/60">{syncStatus}</span>
           )}
         </div>
 
+        {/* Preview: what the sync WOULD import, pending confirmation.
+            Nothing is written until the user clicks Import. */}
+        {preview && preview.trades.length > 0 && (
+          <div className="mt-1 flex flex-col gap-3 rounded-2xl border border-indigo-500/25 bg-indigo-500/[0.06] p-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-[13px] font-medium text-white">
+                Ready to import {preview.trades.length} trade
+                {preview.trades.length === 1 ? "" : "s"}
+              </div>
+              {preview.skipped > 0 && (
+                <span className="text-[11px] text-white/45">
+                  {preview.skipped} already in your journal
+                </span>
+              )}
+            </div>
+            <div className="text-[11.5px] text-white/50 leading-relaxed">
+              Review these below. Nothing is added until you confirm.
+            </div>
+            <div className="flex flex-col gap-1.5 max-h-80 overflow-y-auto pr-1">
+              {preview.trades.map((t, i) => (
+                <PreviewRow key={i} trade={t} />
+              ))}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleConfirmImport}
+                disabled={committing}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-teal-500/25 bg-teal-500/15 text-teal-200 hover:bg-teal-500/25 transition text-[13px] font-medium cursor-pointer disabled:opacity-50"
+              >
+                <i
+                  className={`fa-solid ${committing ? "fa-circle-notch animate-spin" : "fa-check"} text-[11px]`}
+                />
+                {committing
+                  ? "Importing…"
+                  : `Import ${preview.trades.length} trade${preview.trades.length === 1 ? "" : "s"}`}
+              </button>
+              <button
+                type="button"
+                onClick={handleCancelPreview}
+                disabled={committing}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] transition text-[13px] font-medium cursor-pointer disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Imported-trades viewer. Once the live list has loaded we
             use its length for the pill count; before that we fall
             back to the historical ibkrLastSyncInserted so the button
             still appears while the fetch is in flight. Hidden
-            entirely once we've confirmed nothing remains — either
+            entirely once we've confirmed nothing remains - either
             the sync was empty, or the user deleted / merged the
             imports away since. */}
         {(() => {
@@ -446,6 +703,55 @@ export default function IBKRTab() {
                             </span>
                           )}
                         </div>
+
+                        {/* Undo the whole import - removes exactly the trades
+                            this sync added, leaving everything logged before
+                            it in place. */}
+                        <div className="mb-3 flex flex-col gap-2 rounded-xl border border-amber-500/25 bg-amber-500/[0.06] p-3">
+                          <div className="text-[12px] text-white/70 leading-relaxed">
+                            Added duplicates? Undo this import to delete the{" "}
+                            {importedTrades.length} trade
+                            {importedTrades.length === 1 ? "" : "s"} it added.
+                            Trades you logged before this sync aren&apos;t
+                            touched.
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {!confirmUndo ? (
+                              <button
+                                type="button"
+                                onClick={() => setConfirmUndo(true)}
+                                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-200 hover:bg-amber-500/20 transition text-[12.5px] font-medium cursor-pointer"
+                              >
+                                <i className="fa-solid fa-rotate-left text-[11px]" />
+                                Undo this import
+                              </button>
+                            ) : (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={handleUndoImport}
+                                  disabled={undoing}
+                                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-red-500/30 bg-red-500/15 text-red-200 hover:bg-red-500/25 transition text-[12.5px] font-medium cursor-pointer disabled:opacity-50"
+                                >
+                                  <i
+                                    className={`fa-solid ${undoing ? "fa-circle-notch animate-spin" : "fa-trash-can"} text-[11px]`}
+                                  />
+                                  {undoing
+                                    ? "Removing…"
+                                    : `Yes, remove ${importedTrades.length}`}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setConfirmUndo(false)}
+                                  disabled={undoing}
+                                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] transition text-[12.5px] font-medium cursor-pointer disabled:opacity-50"
+                                >
+                                  Cancel
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
                         <div className="flex flex-col gap-1.5">
                           {importedTrades.map((t) => (
                             <ImportedRow
@@ -471,7 +777,164 @@ export default function IBKRTab() {
           );
         })()}
       </section>
+
+      <AnimatePresence>
+        {lightbox && (
+          <SetupLightbox
+            src={lightbox.src}
+            alt={lightbox.alt}
+            onClose={() => setLightbox(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
+  );
+}
+
+// Read-only row for a trade staged in the sync preview (not yet imported).
+// Like ImportedRow but with no delete action and no stored id.
+function PreviewRow({ trade }: { trade: ImportedTrade }) {
+  const isCall = trade.option === "CALL";
+  const net = (trade.profitLoss ?? 0) - (trade.fees ?? 0);
+  const day = (iso: string | null | undefined) =>
+    iso
+      ? new Date(iso).toLocaleDateString(undefined, {
+          month: "short",
+          day: "numeric",
+        })
+      : "-";
+
+  return (
+    <div className="flex items-center gap-3 px-3 py-2 rounded-xl border border-white/10 bg-white/[0.02]">
+      <span
+        className={`shrink-0 inline-flex items-center justify-center w-12 text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full border ${
+          isCall
+            ? "bg-green-500/10 text-green-300 border-green-500/25"
+            : "bg-red-500/10 text-red-300 border-red-500/25"
+        }`}
+      >
+        {trade.option}
+      </span>
+
+      <div className="flex flex-col min-w-0 flex-1">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-[13.5px] font-semibold text-white truncate">
+            {trade.symbol}
+          </span>
+          <span className="text-[11.5px] text-white/45 tabular-nums">
+            {trade.strike} × {trade.qty}
+          </span>
+        </div>
+        <div className="text-[10.5px] text-white/40 tabular-nums">
+          {day(trade.dateBought)}
+          {trade.dateClosed ? ` › ${day(trade.dateClosed)}` : " · open"}
+        </div>
+      </div>
+
+      <div className="shrink-0 text-right">
+        <div
+          className={`text-[13px] font-semibold tabular-nums ${
+            trade.status === "OPEN"
+              ? "text-white/50"
+              : net >= 0
+                ? "text-green-300"
+                : "text-red-300"
+          }`}
+        >
+          {trade.status === "OPEN"
+            ? "-"
+            : `${net >= 0 ? "+" : "−"}$${Math.abs(net).toFixed(2)}`}
+        </div>
+        {trade.fees ? (
+          <div className="text-[9.5px] text-white/35 tabular-nums">
+            fees ${trade.fees.toFixed(2)}
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+// Fullscreen viewer for the setup screenshots. Click the backdrop / X (or
+// Esc) to close. Click the image to zoom into that spot; click again to
+// zoom back out.
+function SetupLightbox({
+  src,
+  alt,
+  onClose,
+}: {
+  src: string;
+  alt: string;
+  onClose: () => void;
+}) {
+  useScrollLock();
+  const [zoomed, setZoomed] = useState(false);
+  const [origin, setOrigin] = useState({ x: 50, y: 50 });
+  const ZOOM = 2.5;
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  const handleImageClick = (e: React.MouseEvent<HTMLImageElement>) => {
+    if (zoomed) {
+      setZoomed(false);
+      return;
+    }
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setOrigin({ x, y });
+    setZoomed(true);
+  };
+
+  return (
+    <motion.div
+      className="fixed inset-0 z-[60] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.15 }}
+      onClick={onClose}
+    >
+      <button
+        type="button"
+        aria-label="Close"
+        onClick={onClose}
+        className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition flex items-center justify-center cursor-pointer z-10"
+      >
+        <i className="fa-solid fa-xmark text-[14px]" />
+      </button>
+
+      {/* Wrapper clips the zoom; sized to the fitted image. */}
+      <div
+        className="relative overflow-hidden rounded-lg max-w-[95vw] max-h-[90vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
+          alt={alt}
+          onClick={handleImageClick}
+          style={{
+            transform: zoomed ? `scale(${ZOOM})` : "scale(1)",
+            transformOrigin: `${origin.x}% ${origin.y}%`,
+          }}
+          className={`block max-w-[95vw] max-h-[90vh] w-auto h-auto select-none transition-transform duration-200 ${
+            zoomed ? "cursor-zoom-out" : "cursor-zoom-in"
+          }`}
+          draggable={false}
+        />
+      </div>
+
+      <div className="absolute bottom-4 inset-x-0 text-center text-[11.5px] text-white/50 pointer-events-none">
+        {zoomed ? "Click the image to zoom out" : "Click the image to zoom in"}
+      </div>
+    </motion.div>
   );
 }
 
@@ -488,7 +951,7 @@ function ImportedRow({
   const net =
     (trade.profitLoss ?? 0) - (trade.fees ?? 0);
   const day = (iso: string | null | undefined) =>
-    iso ? new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "—";
+    iso ? new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "-";
 
   return (
     <div
@@ -544,7 +1007,7 @@ function ImportedRow({
           }`}
         >
           {trade.status === "OPEN"
-            ? "—"
+            ? "-"
             : `${net >= 0 ? "+" : "−"}$${Math.abs(net).toFixed(2)}`}
         </div>
         {trade.fees ? (

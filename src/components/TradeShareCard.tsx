@@ -1,6 +1,14 @@
 import React, { forwardRef } from "react";
+import { DM_Mono } from "next/font/google";
 import { Trade } from "@/app/types/Trades";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
+import { type CardSkin, skinById } from "@/lib/cardSkins";
+
+// The app-wide typeface (DM Mono), so the exported card matches the site.
+const shareFont = DM_Mono({
+  subsets: ["latin"],
+  weight: ["300", "400", "500"],
+});
 
 // A self-contained, always-dark share card for a single trade. Brand +
 // date on top, symbol and hold window on the left, Net P/L and return %
@@ -9,10 +17,10 @@ import { tradeNetPL } from "@/lib/helpers/tradeNet";
 //
 // Every colour is hard-coded (not Tailwind `white`/opacity utilities or
 // theme vars) because the app remaps --color-white and the surface vars
-// in light mode — the exported image must look identical in any theme.
+// in light mode - the exported image must look identical in any theme.
 
 export const CARD_W = 600;
-export const CARD_H = 300;
+export const CARD_H = 220;
 
 const fmtMoneySigned = (n: number) => {
   const sign = n >= 0 ? "+" : "-";
@@ -29,22 +37,11 @@ const fmtMoneySigned = (n: number) => {
   return `${sign}$${body}`;
 };
 
-const fmtPrice = (n?: number | null) =>
-  n == null
-    ? "—"
-    : `$${n.toLocaleString(undefined, {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      })}`;
-
 const parseDate = (v?: string | null): Date | null => {
   if (!v) return null;
   const d = new Date(v);
   return Number.isNaN(d.getTime()) ? null : d;
 };
-
-const fmtShort = (d: Date) =>
-  d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
 const fmtLong = (d: Date) =>
   d.toLocaleDateString("en-US", {
@@ -64,17 +61,19 @@ export function tradeReturnPct(t: Trade): number | null {
   return ((t.closingContractPrice - t.contractPrice) / t.contractPrice) * 100;
 }
 
-const INK = "#f4f4f5";
-const MUTED = "#8a94a3";
-const HAIR = "rgba(255,255,255,0.08)";
-const TEAL = "#5eead4";
-const TEAL_SOLID = "#2dd4bf";
-const RED = "#f87171";
-// Dark base used to punch the quill's inner line/dot through the mark.
-const LOGO_INNER = "#0c141b";
+const TradeShareCard = forwardRef<
+  HTMLDivElement,
+  { trade: Trade; skin?: CardSkin }
+>(function TradeShareCard({ trade, skin: skinProp }, ref) {
+    const skin = skinProp ?? skinById(null);
+    const INK = skin.ink;
+    const MUTED = skin.muted;
+    const HAIR = skin.hair;
+    const TEAL = skin.accent;
+    const TEAL_SOLID = skin.accentSolid;
+    const RED = skin.red;
+    const LOGO_INNER = skin.logoInner;
 
-const TradeShareCard = forwardRef<HTMLDivElement, { trade: Trade }>(
-  function TradeShareCard({ trade }, ref) {
     const outcome: ShareOutcome =
       trade.status === "WIN" || trade.status === "LOSS"
         ? trade.status
@@ -87,30 +86,7 @@ const TradeShareCard = forwardRef<HTMLDivElement, { trade: Trade }>(
 
     const bought = parseDate(trade.dateBought);
     const closed = parseDate(trade.dateClosed);
-    const dateCorner = closed ?? bought;
-    const heldDays =
-      bought && closed
-        ? Math.max(
-            0,
-            Math.round(
-              (closed.getTime() - bought.getTime()) / 86_400_000,
-            ),
-          )
-        : null;
-
-    const subtitle = isClosed
-      ? bought && closed
-        ? `${fmtShort(bought)} → ${fmtShort(closed)}${
-            heldDays != null
-              ? ` · ${heldDays} ${heldDays === 1 ? "day" : "days"} held`
-              : ""
-          }`
-        : bought
-          ? `Closed ${fmtShort(bought)}`
-          : ""
-      : bought
-        ? `Opened ${fmtShort(bought)}`
-        : "";
+    const dateCorner = isClosed ? (closed ?? bought) : bought;
 
     return (
       <div
@@ -119,12 +95,10 @@ const TradeShareCard = forwardRef<HTMLDivElement, { trade: Trade }>(
           width: CARD_W,
           height: CARD_H,
           boxSizing: "border-box",
-          fontFamily:
-            "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-          // Dark navy-teal base with a soft teal glow in the top-right.
-          background:
-            "radial-gradient(90% 130% at 88% 0%, rgba(45,212,191,0.18) 0%, rgba(10,15,20,0) 55%), " +
-            "linear-gradient(155deg, #0f1a20 0%, #0b1116 55%, #090c10 100%)",
+          fontFamily: shareFont.style.fontFamily,
+          // Skin-defined base + glow. Captured to PNG so it's always a
+          // literal colour (identical in any app theme).
+          background: skin.bg,
           borderRadius: 22,
           border: `1px solid ${HAIR}`,
           overflow: "hidden",
@@ -132,7 +106,6 @@ const TradeShareCard = forwardRef<HTMLDivElement, { trade: Trade }>(
           position: "relative",
           display: "flex",
           flexDirection: "column",
-          justifyContent: "space-between",
           padding: "26px 30px",
         }}
       >
@@ -164,11 +137,12 @@ const TradeShareCard = forwardRef<HTMLDivElement, { trade: Trade }>(
           )}
         </div>
 
-        {/* Middle: symbol + hold window / Net P/L + % */}
+        {/* Middle: symbol left / Net P/L + % right */}
         <div
           style={{
+            flex: 1,
             display: "flex",
-            alignItems: "flex-start",
+            alignItems: "center",
             justifyContent: "space-between",
             gap: 20,
           }}
@@ -182,20 +156,8 @@ const TradeShareCard = forwardRef<HTMLDivElement, { trade: Trade }>(
                 lineHeight: 1,
               }}
             >
-              {trade.symbol || "—"}
+              {trade.symbol || "-"}
             </div>
-            {subtitle && (
-              <div
-                style={{
-                  marginTop: 12,
-                  fontSize: 15,
-                  color: MUTED,
-                  lineHeight: 1.35,
-                }}
-              >
-                {subtitle}
-              </div>
-            )}
           </div>
 
           <div style={{ textAlign: "right", flexShrink: 0 }}>
@@ -236,52 +198,12 @@ const TradeShareCard = forwardRef<HTMLDivElement, { trade: Trade }>(
             )}
           </div>
         </div>
-
-        {/* Stat tiles */}
-        <div style={{ display: "flex", gap: 12 }}>
-          <Stat label="Entry" value={fmtPrice(trade.contractPrice)} />
-          <Stat
-            label="Exit"
-            value={isClosed ? fmtPrice(trade.closingContractPrice) : "—"}
-          />
-          <Stat label="Qty" value={trade.qty != null ? `${trade.qty}` : "—"} />
-        </div>
       </div>
     );
   },
 );
 
 export default TradeShareCard;
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div
-      style={{
-        flex: 1,
-        minWidth: 0,
-        background: "rgba(255,255,255,0.035)",
-        border: `1px solid ${HAIR}`,
-        borderRadius: 14,
-        padding: "12px 10px 13px",
-        textAlign: "center",
-      }}
-    >
-      <div style={{ fontSize: 12, color: MUTED, marginBottom: 5 }}>{label}</div>
-      <div
-        style={{
-          fontSize: 18,
-          fontWeight: 600,
-          color: INK,
-          whiteSpace: "nowrap",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-        }}
-      >
-        {value}
-      </div>
-    </div>
-  );
-}
 
 // The actual Cuequill quill mark (from the marketing logo), inlined so
 // the capture doesn't depend on an external asset or icon font. The

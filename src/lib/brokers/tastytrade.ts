@@ -65,7 +65,7 @@ function parseFills(content: string): NormalizedFill[] {
       "Instrument Type",
       "Instrument-Type",
     ]).toLowerCase();
-    // Options only — this app's Trade model is option-centric.
+    // Options only - this app's Trade model is option-centric.
     if (instrument && !instrument.includes("option")) continue;
 
     const action = field(row, lower, ["Action"]).toUpperCase();

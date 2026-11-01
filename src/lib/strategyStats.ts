@@ -205,5 +205,5 @@ export function strategyStatsSummary(name: string, s: StrategyStats): string {
       `biggest leak: ${s.leak.label} ${s.leak.dimension} (${s.leak.n} trades, ${s.leak.winRate.toFixed(0)}% win, ${money(s.leak.net)})`,
     );
   }
-  return `    · ${name} performance — ${parts.join("; ")}.`;
+  return `    · ${name} performance - ${parts.join("; ")}.`;
 }

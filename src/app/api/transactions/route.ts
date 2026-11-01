@@ -2,37 +2,45 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import connectDb from "@/lib/db";
+import mongoose from "mongoose";
 import { Transaction } from "@/lib/models/Transaction";
-import { BalanceEvent } from "@/app/types/Transactions";
 
-// Authenticated-user scoped — both handlers ignore any client-supplied
+// Authenticated-user scoped - both handlers ignore any client-supplied
 // userId and use session.user.id instead.
 
-export async function GET() {
+type TxLean = {
+  _id: mongoose.Types.ObjectId;
+  date: Date;
+  amount: number;
+  type: "DEPOSIT" | "WITHDRAW" | "ADJUST";
+  simulated?: boolean;
+};
+
+export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   await connectDb();
 
-  const transactions = await Transaction.find({ userID: session.user.id });
+  // Simulated (paper) transactions are a separate ledger from real money.
+  const simulated = req.nextUrl.searchParams.get("simulated") === "true";
 
-  const events: BalanceEvent[] = [];
+  const transactions = await Transaction.find({
+    userID: session.user.id,
+    // Legacy rows predate the field; treat missing as real (false).
+    simulated: simulated ? true : { $ne: true },
+  })
+    .sort({ date: 1 })
+    .lean<TxLean[]>();
 
-  for (const t of transactions) {
-    events.push({
-      date: t.date,
-      amount: t.amount,
-      type: t.type,
-    });
-  }
-
-  events.sort((a, b) => a.date.getTime() - b.date.getTime());
-
-  const timeline = events.map((e) => ({
-    date: e.date,
-    amount: e.amount,
-    type: e.type,
+  // `_id` is included so the balance page can list and delete entries.
+  const timeline = transactions.map((t) => ({
+    _id: t._id.toString(),
+    date: t.date,
+    amount: t.amount,
+    type: t.type,
+    simulated: !!t.simulated,
   }));
 
   return NextResponse.json(timeline);
@@ -46,7 +54,7 @@ export async function POST(req: NextRequest) {
   await connectDb();
 
   try {
-    const { type, amount, date } = await req.json();
+    const { type, amount, date, simulated } = await req.json();
 
     if (!type || typeof amount !== "number" || !date) {
       return NextResponse.json(
@@ -55,41 +63,28 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (type !== "DEPOSIT" && type !== "WITHDRAW") {
+    if (type !== "DEPOSIT" && type !== "WITHDRAW" && type !== "ADJUST") {
       return NextResponse.json(
         { error: "Invalid transaction type" },
         { status: 400 }
       );
     }
 
-    // Calculate current balance — use the authenticated user.
-    const transactions = await Transaction.find({ userID: session.user.id });
-
-    let currentBalance = 0;
-    for (const t of transactions) {
-      currentBalance += t.type === "DEPOSIT" ? t.amount : -t.amount;
-    }
-
-    if (type === "WITHDRAW" && amount > currentBalance) {
-      return NextResponse.json(
-        { error: "Insufficient balance" },
-        { status: 400 }
-      );
-    }
-
+    // No cash-only "insufficient balance" gate: the running balance now
+    // includes realized trade P/L, so trading gains can fund a withdrawal
+    // and the timeline is recomputed chronologically on the client anyway.
+    // ADJUST (reconciliation) keeps its sign - it's the +/- correction that
+    // snaps the balance to the actual figure; deposits/withdrawals are stored
+    // as a positive magnitude.
     const transaction = await Transaction.create({
       userID: session.user.id,
       type,
-      amount,
+      amount: type === "ADJUST" ? amount : Math.abs(amount),
       date: new Date(date),
+      simulated: !!simulated,
     });
 
-    const newBalance =
-      type === "DEPOSIT" ? currentBalance + amount : currentBalance - amount;
-    return NextResponse.json(
-      { transaction, balance: newBalance },
-      { status: 201 }
-    );
+    return NextResponse.json({ transaction }, { status: 201 });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });

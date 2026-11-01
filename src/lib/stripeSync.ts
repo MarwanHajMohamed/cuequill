@@ -20,7 +20,16 @@ export async function syncSubscriptionToUser(
   const user =
     (await User.findOne({ stripeCustomerId: customerId })) ??
     (sub.metadata?.userId ? await User.findById(sub.metadata.userId) : null);
-  if (!user) return;
+  if (!user) {
+    // No matching user - the customer id on the event doesn't match any
+    // stored stripeCustomerId and the subscription carries no userId
+    // metadata. Common when the webhook is firing in a different mode
+    // (test vs live) than the customer was created in. Log so it's visible.
+    console.warn(
+      `[stripeSync] no user for customer ${customerId} / sub ${sub.id} (status ${sub.status})`,
+    );
+    return;
+  }
 
   // `current_period_end` moved from the subscription to its items in
   // newer Stripe API versions; read defensively from either so we don't

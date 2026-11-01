@@ -102,6 +102,8 @@ export default function DashboardEquity({ userId }: { userId: string }) {
                 fontSize: 11,
                 color: "var(--foreground)",
               }}
+              itemStyle={{ color: "var(--foreground)" }}
+              labelStyle={{ color: "var(--foreground)" }}
               labelFormatter={(_, payload) => payload?.[0]?.payload?.date ?? ""}
               formatter={(v: number) => [
                 `${fmtMoneySignedCompact(v)}`,

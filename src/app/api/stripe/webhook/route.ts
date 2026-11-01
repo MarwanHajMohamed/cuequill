@@ -6,7 +6,7 @@ import { syncSubscriptionToUser } from "@/lib/stripeSync";
 
 // Stripe calls this endpoint directly (no user session). Authenticity is
 // established by verifying the signature against STRIPE_WEBHOOK_SECRET, so
-// the raw request body is required — never parse it as JSON first.
+// the raw request body is required - never parse it as JSON first.
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -38,6 +38,12 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Visible in the Vercel function logs so you can confirm deliveries are
+  // arriving and being verified (livemode flags test vs live keys).
+  console.log(
+    `[stripe/webhook] received ${event.type} (livemode=${event.livemode})`,
+  );
+
   try {
     await connectDb();
 
@@ -54,6 +60,19 @@ export async function POST(req: NextRequest) {
               : s.subscription.id;
           const sub = await stripe.subscriptions.retrieve(subId);
           await syncSubscriptionToUser(sub);
+
+          // Cycle switch: this checkout created a new subscription to
+          // replace an old one (see /api/stripe/switch-checkout). Cancel
+          // the old subscription now that the new one is paid, so the
+          // customer isn't billed on two plans.
+          const switchFrom = s.metadata?.switchFrom;
+          if (switchFrom && switchFrom !== subId) {
+            try {
+              await stripe.subscriptions.cancel(switchFrom);
+            } catch (err) {
+              console.error("[stripe/webhook] cancel old sub failed", err);
+            }
+          }
         }
         break;
       }

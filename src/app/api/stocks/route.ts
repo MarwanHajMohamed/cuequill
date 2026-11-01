@@ -2,9 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import connectDb from "@/lib/db";
-import StockTable, { DEFAULT_STOCKS } from "@/lib/models/StockTable";
+import StockTable from "@/lib/models/StockTable";
 import type { StockRow } from "@/lib/stocksSeed";
-import mongoose from "mongoose";
 import { randomUUID } from "crypto";
 
 async function requireAuth() {
@@ -39,25 +38,12 @@ export async function GET() {
   }
   await connectDb();
 
-  let table = await StockTable.findOne({ userId: auth.userId }).lean<{
+  // New users start from an empty table. The doc is created lazily on
+  // the first PUT (see below), so a fresh account just gets an empty
+  // rows array back and can add symbols from there.
+  const table = await StockTable.findOne({ userId: auth.userId }).lean<{
     rows: StockRow[];
   } | null>();
-
-  // First visit: seed the user's table from the shared default list so
-  // they start from the curated set rather than an empty grid.
-  if (!table) {
-    const seeded = DEFAULT_STOCKS.map((s) => ({ ...s, id: randomUUID() }));
-    await StockTable.create({
-      userId: new mongoose.Types.ObjectId(auth.userId),
-      rows: seeded,
-    }).catch(() => {
-      // A concurrent first-load race can hit the unique index; ignore
-      // and fall through to re-read below.
-    });
-    table = await StockTable.findOne({ userId: auth.userId }).lean<{
-      rows: StockRow[];
-    } | null>();
-  }
 
   return NextResponse.json({ rows: table?.rows ?? [] });
 }

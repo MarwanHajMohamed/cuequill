@@ -1,21 +1,21 @@
 import React, { forwardRef } from "react";
+import { DM_Mono } from "next/font/google";
+import { type CardSkin, skinById } from "@/lib/cardSkins";
 
-// A self-contained, always-dark share card for a month's performance —
+// Match the app's typeface (DM Mono) so the exported card reads as Cuequill.
+const dmMono = DM_Mono({
+  subsets: ["latin"],
+  weight: ["300", "400", "500"],
+});
+
+// A self-contained, always-dark share card for a month's performance -
 // same visual language as TradeShareCard (brand top-left, hero Net P/L on
 // the right, stat tiles beneath) so trade and month shares feel like one
 // family. Every colour is hard-coded because the app remaps theme vars in
 // light mode; the exported PNG must look identical in any theme.
 
 export const CARD_W = 600;
-export const CARD_H = 300;
-
-const INK = "#f4f4f5";
-const MUTED = "#8a94a3";
-const HAIR = "rgba(255,255,255,0.08)";
-const TEAL = "#5eead4";
-const TEAL_SOLID = "#2dd4bf";
-const RED = "#f87171";
-const LOGO_INNER = "#0c141b";
+export const CARD_H = 250;
 
 const fmtMoneySigned = (n: number) => {
   const sign = n >= 0 ? "+" : "-";
@@ -38,14 +38,29 @@ export type MonthlyShareStats = {
   wins: number;
   losses: number;
   winRate: number | null; // 0-100, null when nothing closed
+  // Optional period overrides so the same card can present a week or a year,
+  // not just a month. All default to the month presentation.
+  title?: string; // big headline (defaults to monthName)
+  periodLabel?: string; // header-right label (defaults to `${monthName} ${year}`)
+  periodNoun?: string; // "month" | "week" | "year" - used in "N trades this ___"
 };
 
-const MonthlyShareCard = forwardRef<HTMLDivElement, { stats: MonthlyShareStats }>(
-  function MonthlyShareCard({ stats }, ref) {
+const MonthlyShareCard = forwardRef<
+  HTMLDivElement,
+  { stats: MonthlyShareStats; skin?: CardSkin }
+>(function MonthlyShareCard({ stats, skin: skinProp }, ref) {
+    const skin = skinProp ?? skinById(null);
+    const INK = skin.ink;
+    const MUTED = skin.muted;
+    const HAIR = skin.hair;
+    const TEAL = skin.accent;
+    const TEAL_SOLID = skin.accentSolid;
+    const RED = skin.red;
+    const LOGO_INNER = skin.logoInner;
+
     const hasClosed = stats.closed > 0;
     const positive = stats.netPL >= 0;
     const accent = !hasClosed ? TEAL : positive ? TEAL : RED;
-    const record = `${stats.wins}W – ${stats.losses}L`;
 
     return (
       <div
@@ -54,11 +69,8 @@ const MonthlyShareCard = forwardRef<HTMLDivElement, { stats: MonthlyShareStats }
           width: CARD_W,
           height: CARD_H,
           boxSizing: "border-box",
-          fontFamily:
-            "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-          background:
-            "radial-gradient(90% 130% at 88% 0%, rgba(45,212,191,0.18) 0%, rgba(10,15,20,0) 55%), " +
-            "linear-gradient(155deg, #0f1a20 0%, #0b1116 55%, #090c10 100%)",
+          fontFamily: dmMono.style.fontFamily,
+          background: skin.bg,
           borderRadius: 22,
           border: `1px solid ${HAIR}`,
           overflow: "hidden",
@@ -91,40 +103,41 @@ const MonthlyShareCard = forwardRef<HTMLDivElement, { stats: MonthlyShareStats }
               Cuequill
             </span>
           </div>
-          <span style={{ fontSize: 13, color: MUTED }}>
-            {stats.monthName} {stats.year}
-          </span>
         </div>
 
-        {/* Middle: month title / Net P/L + win rate */}
+        {/* Middle: title + Net P/L, the two focal points. Centered in the
+            space left by the removed stat tiles. */}
         <div
           style={{
+            flex: 1,
             display: "flex",
-            alignItems: "flex-start",
+            alignItems: "center",
             justifyContent: "space-between",
             gap: 20,
           }}
         >
-          <div style={{ minWidth: 0, maxWidth: 300 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div
               style={{
                 fontSize: 44,
                 fontWeight: 700,
                 letterSpacing: "-0.02em",
-                lineHeight: 1,
+                lineHeight: 1.05,
+                overflowWrap: "break-word",
               }}
             >
-              {stats.monthName}
+              {stats.title ?? stats.monthName}
             </div>
             <div
               style={{
                 marginTop: 12,
-                fontSize: 15,
+                fontSize: 14,
                 color: MUTED,
                 lineHeight: 1.35,
               }}
             >
-              {stats.trades} {stats.trades === 1 ? "trade" : "trades"} this month
+              {stats.trades} {stats.trades === 1 ? "trade" : "trades"} this{" "}
+              {stats.periodNoun ?? "month"}
             </div>
           </div>
 
@@ -142,20 +155,21 @@ const MonthlyShareCard = forwardRef<HTMLDivElement, { stats: MonthlyShareStats }
             <div
               style={{
                 marginTop: 4,
-                fontSize: 44,
+                fontSize: 46,
                 fontWeight: 700,
                 letterSpacing: "-0.02em",
-                lineHeight: 1,
+                lineHeight: 1.05,
                 color: accent,
+                whiteSpace: "nowrap",
               }}
             >
-              {hasClosed ? fmtMoneySigned(stats.netPL) : "—"}
+              {hasClosed ? fmtMoneySigned(stats.netPL) : "-"}
             </div>
             {stats.winRate != null && (
               <div
                 style={{
-                  marginTop: 6,
-                  fontSize: 16,
+                  marginTop: 8,
+                  fontSize: 17,
                   fontWeight: 600,
                   color: accent,
                 }}
@@ -165,49 +179,12 @@ const MonthlyShareCard = forwardRef<HTMLDivElement, { stats: MonthlyShareStats }
             )}
           </div>
         </div>
-
-        {/* Stat tiles */}
-        <div style={{ display: "flex", gap: 12 }}>
-          <Stat label="Trades" value={`${stats.trades}`} />
-          <Stat label="Closed" value={`${stats.closed}`} />
-          <Stat label="Record" value={record} />
-        </div>
       </div>
     );
   },
 );
 
 export default MonthlyShareCard;
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div
-      style={{
-        flex: 1,
-        minWidth: 0,
-        background: "rgba(255,255,255,0.035)",
-        border: `1px solid ${HAIR}`,
-        borderRadius: 14,
-        padding: "12px 10px 13px",
-        textAlign: "center",
-      }}
-    >
-      <div style={{ fontSize: 12, color: MUTED, marginBottom: 5 }}>{label}</div>
-      <div
-        style={{
-          fontSize: 18,
-          fontWeight: 600,
-          color: INK,
-          whiteSpace: "nowrap",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-        }}
-      >
-        {value}
-      </div>
-    </div>
-  );
-}
 
 // Inlined Cuequill quill mark so the capture doesn't depend on an external
 // asset or icon font.

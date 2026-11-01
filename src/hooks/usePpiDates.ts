@@ -1,13 +1,14 @@
 import { useMemo } from "react";
-import { PPI_RELEASE_DATES } from "@/lib/ppiDates";
+import { useEconDates } from "./useEconDates";
 
 /**
  * US PPI (Producer Price Index) release dates as a Set of "yyyy-MM-dd".
  *
- * Mirrors useCpiDates: the dates are a fixed, locally-known schedule (from
- * the BLS release calendar in lib/ppiDates), so they render instantly and
- * work offline — no fetch required.
+ * Backed by /api/econ-dates (FRED), which keeps the schedule current
+ * automatically; the local BLS list in lib/ppiDates is the instant/offline
+ * fallback used until the fetch resolves (and whenever it can't).
  */
 export function usePpiDates(): Set<string> {
-  return useMemo(() => new Set(PPI_RELEASE_DATES), []);
+  const { ppi } = useEconDates();
+  return useMemo(() => new Set(ppi), [ppi]);
 }

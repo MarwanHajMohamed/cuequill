@@ -12,12 +12,13 @@ export async function GET() {
 
   await connectDb();
   const user = await User.findById(session.user.id).select(
-    "ibkrQueryId ibkrLastSync ibkrToken ibkrLastSyncInserted ibkrLastSyncSkipped"
+    "ibkrQueryId ibkrLastSync ibkrLastManualSync ibkrToken ibkrLastSyncInserted ibkrLastSyncSkipped"
   );
 
   return NextResponse.json({
     ibkrQueryId: user?.ibkrQueryId ?? "",
     ibkrLastSync: user?.ibkrLastSync ?? null,
+    ibkrLastManualSync: user?.ibkrLastManualSync ?? null,
     ibkrLastSyncInserted: user?.ibkrLastSyncInserted ?? null,
     ibkrLastSyncSkipped: user?.ibkrLastSyncSkipped ?? null,
     hasToken: !!user?.ibkrToken,

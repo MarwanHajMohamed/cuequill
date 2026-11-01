@@ -3,6 +3,7 @@ import GoogleProvider from "next-auth/providers/google";
 import AppleProvider from "next-auth/providers/apple";
 import connectDb from "@/lib/db";
 import { User } from "@/lib/models/User";
+import { Waitlist } from "@/lib/models/Waitlist";
 import bcrypt from "bcryptjs";
 import { NextAuthOptions } from "next-auth";
 import type { Provider } from "next-auth/providers/index";
@@ -27,12 +28,25 @@ type DbUser = {
   firstname: string;
   surname: string;
   email: string;
-  password: string;
+  password?: string; // absent for OAuth-only (e.g. Google) accounts
   timezone: string;
   isPro?: boolean;
   failedLoginAttempts?: number;
   lockedUntil?: Date | null;
 };
+
+// Split a Google display name ("Marwan Haj Mohammed") into first + surname,
+// falling back to the waitlist first name (or a neutral default) when Google
+// doesn't share a name.
+function splitName(
+  name: string | null | undefined,
+  fallbackFirst?: string,
+): { first: string; last: string } {
+  const n = (name ?? "").trim();
+  if (!n) return { first: fallbackFirst?.trim() || "Trader", last: "" };
+  const parts = n.split(/\s+/);
+  return { first: parts[0], last: parts.slice(1).join(" ") };
+}
 
 // How long a token's isPro value is trusted before the jwt callback
 // re-reads it from the DB. Bounds how long a membership change can lag
@@ -49,7 +63,7 @@ const LOCKOUT_MS = 15 * 60 * 1000;
 // `bcrypt.compare` against this takes roughly the same time as a
 // real comparison, so an attacker can't distinguish "no such user"
 // from "user exists, wrong password" via response timing. The value
-// itself is public — it just needs to be a syntactically-valid
+// itself is public - it just needs to be a syntactically-valid
 // bcrypt hash so the compare doesn't short-circuit.
 const DUMMY_HASH =
   "$2b$12$abcdefghijklmnopqrstuu4Xr4rBQY7HGGN4kZbFXOAcgc1eZ.GXG";
@@ -61,7 +75,7 @@ const EMAIL_COLLATION = { locale: "en", strength: 2 } as const;
 
 // Providers are built at module load and filtered so Google/Apple
 // only appear when their credentials are configured. That way you
-// can ship Apple later without a code change — just drop the env
+// can ship Apple later without a code change - just drop the env
 // vars in.
 const providers: Provider[] = [];
 
@@ -115,6 +129,13 @@ providers.push(
         return null;
       }
 
+      // OAuth-only account (signed up with Google, no password set). Burn a
+      // compare cycle for timing parity and reject - they must use Google.
+      if (!user.password) {
+        await bcrypt.compare(password, DUMMY_HASH);
+        return null;
+      }
+
       // Account locked from a prior burst of bad guesses. Throwing
       // (rather than returning null) surfaces the specific code to
       // the client via res.error so the login UI can show a
@@ -140,7 +161,7 @@ providers.push(
         } catch (e) {
           if (e instanceof Error && e.message === "ACCOUNT_LOCKED") throw e;
           // Failing to record a bad attempt shouldn't turn into a
-          // login-side error — worst case, one attempt isn't
+          // login-side error - worst case, one attempt isn't
           // counted.
         }
         return null;
@@ -183,10 +204,11 @@ export const authOptions: NextAuthOptions = {
   },
   secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
-    // Gate OAuth sign-ins to users already on the platform. The
-    // app is invite-only; letting a Google user auto-create an
-    // account would side-step the waitlist funnel. Unknown OAuth
-    // emails get redirected to /signup with a reason param.
+    // OAuth sign-in / sign-up gate. Existing users always sign in. New
+    // Google/Apple users get an account created on the fly - self-serve
+    // sign-up is open. Set INVITE_ONLY=true to restrict new OAuth
+    // accounts to emails invited off the waitlist (invitedAt set);
+    // everyone else is bounced to /signup.
     async signIn({ user, account }) {
       if (!account) return false;
       if (account.provider === "credentials") return true;
@@ -195,8 +217,40 @@ export const authOptions: NextAuthOptions = {
       await connectDb();
       const existing = await User.findOne({ email })
         .collation(EMAIL_COLLATION)
-        .select("_id");
-      if (!existing) return "/signup?reason=oauth-not-invited";
+        .select("_id")
+        .lean<{ _id: unknown }>();
+      if (existing) return true;
+
+      // New user. In invite-only mode, require a waitlist invite; carry
+      // the invited first name through for the name split.
+      let fallbackFirst: string | undefined;
+      if (process.env.INVITE_ONLY === "true") {
+        const invited = await Waitlist.findOne({ email })
+          .collation(EMAIL_COLLATION)
+          .select("invitedAt firstname")
+          .lean<{ invitedAt?: Date; firstname?: string }>();
+        if (!invited?.invitedAt) return "/signup?reason=oauth-not-invited";
+        fallbackFirst = invited.firstname;
+      }
+
+      const { first, last } = splitName(user.name, fallbackFirst);
+      try {
+        await User.create({
+          email,
+          firstname: first,
+          surname: last,
+          // Opt into first-run tours; existing OAuth users won't have this
+          // field and stay out of the auto-tour by design.
+          tutorialsSeen: [],
+        });
+      } catch {
+        // A concurrent sign-in (two tabs) may have created it already;
+        // treat an existing row as success, otherwise fail the flow.
+        const now = await User.findOne({ email })
+          .collation(EMAIL_COLLATION)
+          .select("_id");
+        if (!now) return "/login?error=OAuthCreateFailed";
+      }
       return true;
     },
     async jwt({ token, user, account, trigger, session }) {
@@ -212,7 +266,7 @@ export const authOptions: NextAuthOptions = {
       }
       // OAuth sign-in: the provider hands us profile data keyed on
       // *their* id. Re-hydrate from the DB user (guaranteed to exist
-      // — the signIn callback rejected the flow otherwise) so
+      // - the signIn callback rejected the flow otherwise) so
       // token.id matches the credentials path and downstream code
       // can rely on session.user.id being a Mongo ObjectId string.
       if (user && account && account.provider !== "credentials") {
@@ -239,7 +293,7 @@ export const authOptions: NextAuthOptions = {
         }
       }
       // Profile updates from /api/user/profile flow back through
-      // session.update({ ... }) — propagate them onto the JWT so
+      // session.update({ ... }) - propagate them onto the JWT so
       // future useSession() reads see the new values.
       if (trigger === "update" && session) {
         if (session.timezone !== undefined) token.timezone = session.timezone;

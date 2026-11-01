@@ -4,7 +4,26 @@ import { useSession, signOut } from "next-auth/react";
 import React, { useEffect, useMemo, useState } from "react";
 import { GroupBase, InputProps, components } from "react-select";
 import TimezoneSelect, { type ITimezone } from "react-timezone-select";
+import { useQueryClient } from "@tanstack/react-query";
 import ProTag from "@/components/ProTag";
+import { useProfile } from "@/hooks/useProfile";
+import { clearAccent } from "@/hooks/useAccent";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { useToast } from "@/hooks/useToast";
+import { useScrollLock } from "@/hooks/useScrollLock";
+import { handleDeleteAllTrades } from "@/handlers/tradeHandlers";
+import { setDisplayCurrency, fmtMoneyFull } from "@/lib/helpers/fmt";
+
+const CURRENCIES = [
+  ["USD", "US Dollar ($)"],
+  ["GBP", "British Pound (£)"],
+  ["EUR", "Euro (€)"],
+  ["CAD", "Canadian Dollar ($)"],
+  ["AUD", "Australian Dollar ($)"],
+  ["JPY", "Japanese Yen (¥)"],
+  ["CHF", "Swiss Franc"],
+  ["INR", "Indian Rupee (₹)"],
+] as const;
 
 const Field = ({
   label,
@@ -35,11 +54,20 @@ type SaveState =
 
 const Account = () => {
   const { data: session, update } = useSession();
+  const { data: profile } = useProfile();
+  const queryClient = useQueryClient();
+  const toast = useToast();
+  const [simulated] = useLocalStorage<boolean>("simulated", false);
 
   // Identity
   const [firstname, setFirstname] = useState<string>("");
   const [surname, setSurname] = useState<string>("");
   const [email, setEmail] = useState<string>("");
+
+  // Preferences (hydrated from the profile endpoint)
+  const [currency, setCurrency] = useState("USD");
+  const [startingBalance, setStartingBalance] = useState("");
+  const [riskPerTrade, setRiskPerTrade] = useState("");
 
   // Password (only sent if newPassword is non-empty)
   const [currentPassword, setCurrentPassword] = useState("");
@@ -59,6 +87,22 @@ const Account = () => {
   const [deleteText, setDeleteText] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [dangerError, setDangerError] = useState<string | null>(null);
+
+  // Delete all trades (moved here from the old Trades tab). Keeps its own
+  // typed confirmation, separate from account deletion.
+  const [delAllOpen, setDelAllOpen] = useState(false);
+  const [delAllText, setDelAllText] = useState("");
+  const canDeleteTrades = delAllText.trim().toLowerCase() === "delete";
+  const userId = session?.user?.id;
+  useScrollLock(delAllOpen);
+  useEffect(() => {
+    if (!delAllOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setDelAllOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [delAllOpen]);
 
   const handleExport = async () => {
     setDangerError(null);
@@ -96,7 +140,9 @@ const Account = () => {
         const data = await res.json().catch(() => ({}));
         throw new Error(data?.error ?? "Deletion failed. Please try again.");
       }
-      // Account is gone — sign out and return to the marketing site.
+      // Account is gone - clear the accent so the marketing site is neutral,
+      // then sign out and return to it.
+      clearAccent();
       await signOut({ callbackUrl: "/" });
     } catch (e) {
       setDangerError(e instanceof Error ? e.message : "Deletion failed.");
@@ -116,6 +162,18 @@ const Account = () => {
     setSelectedTimezone({ value: tz, label: tz });
   }, [session]);
 
+  // Hydrate preferences from the profile endpoint.
+  useEffect(() => {
+    if (!profile) return;
+    setCurrency(profile.currency ?? "USD");
+    setStartingBalance(
+      profile.startingBalance != null ? String(profile.startingBalance) : "",
+    );
+    setRiskPerTrade(
+      profile.riskPerTrade != null ? String(profile.riskPerTrade) : "",
+    );
+  }, [profile]);
+
   // Has anything actually changed? Disable Save until something does.
   const identityDirty = useMemo(() => {
     if (!session?.user) return false;
@@ -127,7 +185,26 @@ const Account = () => {
   }, [firstname, surname, email, session]);
 
   const passwordDirty = newPassword.length > 0;
-  const dirty = identityDirty || passwordDirty;
+
+  const prefDirty = useMemo(() => {
+    if (!profile) return false;
+    const startNum = startingBalance === "" ? 0 : Number(startingBalance);
+    const riskStr = riskPerTrade === "" ? "" : String(Number(riskPerTrade));
+    const profileRisk =
+      profile.riskPerTrade != null ? String(profile.riskPerTrade) : "";
+    return (
+      currency !== (profile.currency ?? "USD") ||
+      startNum !== (profile.startingBalance ?? 0) ||
+      riskStr !== profileRisk
+    );
+  }, [
+    profile,
+    currency,
+    startingBalance,
+    riskPerTrade,
+  ]);
+
+  const dirty = identityDirty || passwordDirty || prefDirty;
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -160,13 +237,18 @@ const Account = () => {
 
     setSave({ kind: "saving" });
 
-    const body: Record<string, string> = {};
+    const body: Record<string, unknown> = {};
     if (firstname !== session?.user?.firstname) body.firstname = firstname;
     if (surname !== session?.user?.surname) body.surname = surname;
     if (email !== session?.user?.email) body.email = email;
     if (passwordDirty) {
       body.currentPassword = currentPassword;
       body.newPassword = newPassword;
+    }
+    if (prefDirty) {
+      body.currency = currency;
+      body.startingBalance = startingBalance === "" ? 0 : Number(startingBalance);
+      body.riskPerTrade = riskPerTrade === "" ? null : Number(riskPerTrade);
     }
 
     try {
@@ -193,6 +275,12 @@ const Account = () => {
           email: data.email,
         });
       }
+      // Apply preference side-effects: swap the money symbol app-wide and
+      // refresh anything that reads the profile (nav avatar, balance).
+      if (prefDirty) {
+        setDisplayCurrency(currency);
+        queryClient.invalidateQueries({ queryKey: ["profile"] });
+      }
       // Clear password fields after a successful change.
       setCurrentPassword("");
       setNewPassword("");
@@ -215,6 +303,15 @@ const Account = () => {
     setCurrentPassword("");
     setNewPassword("");
     setConfirmPassword("");
+    if (profile) {
+      setCurrency(profile.currency ?? "USD");
+      setStartingBalance(
+        profile.startingBalance != null ? String(profile.startingBalance) : "",
+      );
+      setRiskPerTrade(
+        profile.riskPerTrade != null ? String(profile.riskPerTrade) : "",
+      );
+    }
     setSave({ kind: "idle" });
   };
 
@@ -235,6 +332,23 @@ const Account = () => {
     props: InputProps<ITimezone, boolean, GroupBase<ITimezone>>,
   ) => <components.Input {...props} readOnly />;
 
+  // Turn risk% + starting balance into a concrete per-trade figure.
+  const riskHint = (() => {
+    const bal = Number(startingBalance);
+    const risk = Number(riskPerTrade);
+    if (
+      startingBalance !== "" &&
+      riskPerTrade !== "" &&
+      Number.isFinite(bal) &&
+      Number.isFinite(risk) &&
+      bal > 0 &&
+      risk > 0
+    ) {
+      return `≈ ${fmtMoneyFull((bal * risk) / 100)} risked per trade`;
+    }
+    return "Percent of account risked per trade.";
+  })();
+
   return (
     <form onSubmit={handleSave} className="p-5 md:p-7 flex flex-col gap-7">
       {/* Identity */}
@@ -242,6 +356,23 @@ const Account = () => {
         {session?.user?.isPro && (
           <div>
             <ProTag />
+          </div>
+        )}
+        {profile && (
+          <div className="text-[12px] text-white/45">
+            <span className="text-white/70">
+              {profile.isPro ? "Pro" : "Free"}
+            </span>{" "}
+            plan · Member since{" "}
+            {new Date(profile.memberSince).toLocaleDateString(undefined, {
+              month: "long",
+              year: "numeric",
+            })}
+            {profile.isPro &&
+              profile.stripeCurrentPeriodEnd &&
+              ` · ${profile.stripeCancelAtPeriodEnd ? "cancels" : "renews"} ${new Date(
+                profile.stripeCurrentPeriodEnd,
+              ).toLocaleDateString()}`}
           </div>
         )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl">
@@ -384,6 +515,64 @@ const Account = () => {
         </Field>
       </section>
 
+      <div className="h-px bg-white/10" />
+
+      {/* Preferences */}
+      <section className="flex flex-col gap-5">
+        <div className="text-[11px] tracking-[0.1em] text-white/45 font-medium">
+          Preferences
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl">
+          <Field
+            label="Display currency"
+            hint="Symbol only, amounts aren't converted."
+          >
+            <select
+              className={`${inputClass} cursor-pointer`}
+              value={currency}
+              onChange={(e) => setCurrency(e.target.value)}
+            >
+              {CURRENCIES.map(([code, label]) => (
+                <option
+                  key={code}
+                  value={code}
+                  className="bg-[var(--surface-2)] text-white"
+                >
+                  {label}
+                </option>
+              ))}
+            </select>
+          </Field>
+
+          <Field
+            label="Starting balance"
+            hint="Opening balance the Balance page builds on."
+          >
+            <input
+              className={inputClass}
+              type="number"
+              inputMode="decimal"
+              placeholder="0.00"
+              value={startingBalance}
+              onChange={(e) => setStartingBalance(e.target.value)}
+            />
+          </Field>
+
+          <Field label="Risk per trade (%)" hint={riskHint}>
+            <input
+              className={inputClass}
+              type="number"
+              inputMode="decimal"
+              placeholder="e.g. 1"
+              value={riskPerTrade}
+              onChange={(e) => setRiskPerTrade(e.target.value)}
+            />
+          </Field>
+        </div>
+
+      </section>
+
       {/* Footer */}
       <div className="flex items-center gap-3 flex-wrap">
         <button
@@ -424,13 +613,53 @@ const Account = () => {
         )}
       </div>
 
+      {/* Tour replay - lets returning users (or anyone who dismissed
+          the first-run coach marks) restart every page's tour. Fires
+          the POST that clears the seen list, then the next page visit
+          runs its tour from scratch. */}
+      <section
+        data-tour="settings-tour"
+        className="mt-4 flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/[0.02] p-4 md:p-5"
+      >
+        <div>
+          <h3 className="text-[14px] font-semibold text-white">Show me around</h3>
+          <p className="text-[12px] text-white/45 mt-0.5">
+            Replay the first-run coach marks. The next page you visit will
+            walk you through what&apos;s on it.
+          </p>
+        </div>
+        <div>
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                await fetch("/api/user/tutorial", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ reset: true }),
+                });
+              } catch {
+                /* best-effort */
+              }
+              // Nudge whichever tour is mounted on the current page
+              // (Settings itself, once we mount one there).
+              window.dispatchEvent(new CustomEvent("cuequill:start-tour"));
+            }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-teal-500/25 bg-teal-500/10 text-teal-300 hover:bg-teal-500/20 transition text-[13px] font-medium cursor-pointer"
+          >
+            <i className="fa-regular fa-circle-question text-[11px]" />
+            Restart the tour
+          </button>
+        </div>
+      </section>
+
       {/* Danger zone: data portability + account erasure. */}
       <section className="mt-4 flex flex-col gap-4 rounded-2xl border border-red-500/20 bg-red-500/[0.03] p-4 md:p-5">
         <div>
           <h3 className="text-[14px] font-semibold text-white">Danger zone</h3>
           <p className="text-[12px] text-white/45 mt-0.5">
-            Download everything we hold about you, or permanently delete your
-            account.
+            Download everything we hold about you, clear your trade journal, or
+            permanently delete your account.
           </p>
         </div>
 
@@ -447,6 +676,18 @@ const Account = () => {
               } text-[11px]`}
             />
             {exporting ? "Preparing…" : "Export my data"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setDelAllText("");
+              setDelAllOpen(true);
+            }}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full border border-red-500/30 bg-red-500/10 text-red-300 hover:bg-red-500/20 transition text-[13px] font-medium cursor-pointer"
+          >
+            <i className="fa-solid fa-trash-can text-[11px]" />
+            Delete all trades
           </button>
 
           {!confirmDelete && (
@@ -518,6 +759,75 @@ const Account = () => {
           </span>
         )}
       </section>
+
+      {/* Delete-all-trades confirmation */}
+      {delAllOpen && (
+        <div
+          className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-[60] p-4"
+          onClick={() => setDelAllOpen(false)}
+        >
+          <div
+            className="flex flex-col gap-5 bg-[var(--surface)] border border-white/10 items-center p-6 md:p-7 rounded-2xl w-full max-w-md text-white text-center shadow-[0_20px_80px_var(--shadow)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-12 h-12 rounded-full bg-red-500/15 border border-red-500/25 flex items-center justify-center">
+              <i className="fa-solid fa-triangle-exclamation text-red-300 text-lg" />
+            </div>
+            <div className="flex flex-col gap-1">
+              <div className="text-lg font-semibold">Delete all trades?</div>
+              <div className="text-[13px] text-white/55 leading-relaxed">
+                This permanently removes every{" "}
+                {simulated ? "simulated" : "live"} trade in this journal. The
+                action can&apos;t be undone.
+              </div>
+            </div>
+            <label className="w-full flex flex-col gap-1.5 text-left">
+              <span className="text-[11px] tracking-[0.08em] text-white/45 font-medium">
+                Type &quot;delete&quot; to confirm
+              </span>
+              <input
+                autoFocus
+                type="text"
+                value={delAllText}
+                onChange={(e) => setDelAllText(e.target.value)}
+                placeholder="delete"
+                className="w-full px-3 py-2 rounded-xl bg-white/[0.03] border border-white/10 text-[14px] text-white placeholder:text-white/30 focus:border-red-500/40 focus:outline-none transition"
+              />
+            </label>
+            <div className="flex gap-2 w-full">
+              <button
+                type="button"
+                className="flex-1 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/80 hover:bg-white/[0.06] hover:text-white transition cursor-pointer text-[13px]"
+                onClick={() => setDelAllOpen(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={!canDeleteTrades}
+                className={`flex-1 px-4 py-2 rounded-full border transition text-[13px] font-medium ${
+                  canDeleteTrades
+                    ? "bg-red-500/15 text-red-300 border-red-500/25 hover:bg-red-500/25 cursor-pointer"
+                    : "bg-white/[0.02] text-white/30 border-white/10 cursor-not-allowed"
+                }`}
+                onClick={() => {
+                  if (!canDeleteTrades || !userId) return;
+                  handleDeleteAllTrades(
+                    userId,
+                    simulated,
+                    setDelAllOpen,
+                    toast,
+                    queryClient,
+                  );
+                  setDelAllText("");
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </form>
   );
 };

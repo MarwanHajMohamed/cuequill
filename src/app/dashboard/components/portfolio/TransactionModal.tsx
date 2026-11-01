@@ -1,6 +1,7 @@
 "use client";
 
 import { useToast } from "@/hooks/useToast";
+import { useScrollLock } from "@/hooks/useScrollLock";
 import { format } from "date-fns";
 import React, { useState } from "react";
 
@@ -17,6 +18,8 @@ export default function TransactionModal({ type, userId, onClose }: Props) {
     format(today, "yyyy-MM-dd")
   );
   const [loading, setLoading] = useState(false);
+
+  useScrollLock();
 
   const toast = useToast();
 
@@ -38,13 +41,26 @@ export default function TransactionModal({ type, userId, onClose }: Props) {
         }),
       });
 
-      if (!res.ok) throw new Error("Failed to save transaction");
+      if (!res.ok) {
+        let message = "Failed to save transaction";
+        try {
+          const data = await res.json();
+          if (data?.error) message = data.error;
+        } catch {
+          /* keep the generic message */
+        }
+        throw new Error(message);
+      }
       toast("Deposit successfull!");
 
       onClose();
     } catch (error) {
       console.error(error);
-      alert("Something went wrong. Please try again.");
+      toast(
+        error instanceof Error
+          ? error.message
+          : "Something went wrong. Please try again.",
+      );
     } finally {
       setLoading(false);
     }

@@ -1,8 +1,8 @@
 "use client";
 
 import { withAuth } from "@/lib/withAuth";
+import { Skeleton } from "@/components/Loaders";
 import ProGate from "@/components/ProGate";
-import { motion } from "framer-motion";
 import { useState } from "react";
 import { useGoals, useGoalMutations, type Goal } from "@/hooks/useGoals";
 import {
@@ -19,6 +19,7 @@ import {
   type TaskRecurrence,
 } from "@/lib/goals";
 import { fmtMoneyCompact } from "@/lib/helpers/fmt";
+import PageTour from "@/components/PageTour";
 
 function formatValue(metric: GoalMetric, value: number): string {
   switch (metricUnit(metric)) {
@@ -288,10 +289,10 @@ function MetricGoalCard({ g }: { g: Goal }) {
           <span className="text-white/70 tabular-nums">
             {g.metric && g.current != null
               ? formatValue(g.metric, g.current)
-              : "—"}
+              : "-"}
             <span className="text-white/35">
               {" "}
-              / {g.metric && g.target != null ? formatValue(g.metric, g.target) : "—"}
+              / {g.metric && g.target != null ? formatValue(g.metric, g.target) : "-"}
             </span>
           </span>
           <span className="text-white/45 tabular-nums">{pct}%</span>
@@ -357,7 +358,8 @@ function Page() {
   const manualGoals = goals.filter((g) => g.kind === "manual");
 
   return (
-    <div className="w-full flex flex-col md:items-start min-h-screen pb-16">
+    <div className="w-full flex justify-center min-h-screen pb-24">
+      <PageTour pageId="goals" />
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0 -z-10"
@@ -367,15 +369,10 @@ function Page() {
         }}
       />
 
-      <div className="w-full max-w-[1000px] mt-28 md:mt-10 px-5 md:px-10">
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="flex items-center justify-between gap-3"
-        >
+      <div className="w-full max-w-[1500px] px-5 md:px-8 pt-24 md:pt-12 flex flex-col">
+        <div className="flex items-center justify-between gap-3">
           <div>
-            <h1 className="text-[26px] md:text-[32px] font-medium tracking-tight">
+            <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight">
               Goals
             </h1>
             <p className="text-[13px] text-white/55 mt-1">
@@ -385,6 +382,7 @@ function Page() {
           </div>
           {!adding && (
             <button
+              data-tour="goals-add"
               onClick={() => setAdding(true)}
               className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-full border border-teal-400/40 bg-teal-500/15 text-teal-200 hover:bg-teal-500/25 transition text-[13px] font-medium cursor-pointer"
             >
@@ -392,7 +390,7 @@ function Page() {
               New goal
             </button>
           )}
-        </motion.div>
+        </div>
 
         {adding && (
           <div className="mt-5">
@@ -401,8 +399,14 @@ function Page() {
         )}
 
         {isLoading ? (
-          <div className="mt-10 text-center text-[13px] text-white/40">
-            Loading…
+          <div className="mt-8 flex flex-col gap-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton
+                key={i}
+                className="h-[92px] rounded-2xl"
+                delay={i * 0.05}
+              />
+            ))}
           </div>
         ) : goals.length === 0 && !adding ? (
           <div className="mt-10 rounded-2xl border border-white/10 bg-white/[0.03] py-12 text-center">

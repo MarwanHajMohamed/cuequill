@@ -10,10 +10,17 @@ import React, {
   useTransition,
 } from "react";
 import { signOut, useSession } from "next-auth/react";
+import { useProfile } from "@/hooks/useProfile";
+import { useChallenges } from "@/hooks/useChallenges";
+import { useScrollLock } from "@/hooks/useScrollLock";
+import { clearAccent } from "@/hooks/useAccent";
+import { avatarGradient } from "@/lib/avatarColors";
+import { avatarFrameRing } from "@/lib/avatarFrames";
 import {
   motion,
   AnimatePresence,
   useMotionValue,
+  useDragControls,
   animate as motionAnimate,
   PanInfo,
 } from "framer-motion";
@@ -21,6 +28,33 @@ import ThemeToggle from "@/components/ThemeToggle";
 import TimezoneDisplay from "@/helpers/TimezoneDisplay";
 import ProTag from "@/components/ProTag";
 import { isMarketOpenAt } from "@/lib/marketHolidays";
+import { useSidebar } from "./SidebarContext";
+import { hapticTap } from "@/lib/haptics";
+
+// Small chevron button that collapses / expands the desktop sidebar.
+function CollapseToggle({
+  collapsed,
+  onClick,
+}: {
+  collapsed: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+      title={collapsed ? "Expand" : "Collapse"}
+      className="shrink-0 w-7 h-7 inline-flex items-center justify-center rounded-lg text-white/45 hover:text-white hover:bg-white/[0.06] transition cursor-pointer"
+    >
+      <i
+        className={`fa-solid ${
+          collapsed ? "fa-chevron-right" : "fa-chevron-left"
+        } text-[11px]`}
+      />
+    </button>
+  );
+}
 
 const CuequillLogo = ({ className = "" }: { className?: string }) => (
   <svg
@@ -47,6 +81,33 @@ const CuequillLogo = ({ className = "" }: { className?: string }) => (
   </svg>
 );
 
+// Small accent notification badge (e.g. unclaimed reward count). `corner`
+// absolutely pins it to the top-right of a relatively-positioned icon; the
+// default flows inline (used at the end of an expanded nav row). Uses literal
+// dark ink so it stays readable on the accent fill in both themes.
+function NavCountBadge({
+  count,
+  corner = false,
+}: {
+  count: number;
+  corner?: boolean;
+}) {
+  if (count <= 0) return null;
+  const label = count > 9 ? "9+" : String(count);
+  return (
+    <span
+      aria-label={`${count} unclaimed`}
+      className={
+        corner
+          ? "absolute -top-1.5 -right-1.5 w-[17px] h-[17px] rounded-full bg-teal-500/30 backdrop-blur-md border border-white/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.4)] text-[9px] font-bold text-white flex items-center justify-center leading-none tabular-nums ring-2 ring-[var(--background)]"
+          : "ml-auto w-[18px] h-[18px] rounded-full bg-teal-500/30 backdrop-blur-md border border-white/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.4)] text-[10px] font-bold text-white inline-flex items-center justify-center leading-none tabular-nums"
+      }
+    >
+      {label}
+    </span>
+  );
+}
+
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname() ?? "";
@@ -57,6 +118,7 @@ export default function Navbar() {
   // rendering the next route.
   const [isNavPending, startTransition] = useTransition();
   const activePath = pendingPath ?? pathname;
+  const { collapsed, toggle } = useSidebar();
   const { data: session } = useSession();
   const userId = session?.user?.id;
   const userFullName = session?.user
@@ -66,6 +128,14 @@ export default function Navbar() {
     userFullName[0]?.toUpperCase() ??
     session?.user?.email?.[0]?.toUpperCase() ??
     "U";
+  const { data: profile } = useProfile();
+  const avatarGrad = avatarGradient(profile?.avatarColor);
+  const avatarRing = avatarFrameRing(profile?.avatarFrame);
+  // Unclaimed challenge rewards - surfaced as a badge on the Challenges nav
+  // item (and, on mobile where Challenges lives inside "More", on the More
+  // tab too) so it's visible from anywhere in the app.
+  const { data: challengeData } = useChallenges();
+  const unclaimedRewards = challengeData?.claimable ?? 0;
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   // Persistent pill: one element whose position/width is animated via
@@ -90,7 +160,7 @@ export default function Navbar() {
   // Flips true after the first commit. The bar DOM only exists once
   // currentTime is set (the component returns null before that), so the
   // measurement effects below key off `mounted` to re-run against the
-  // real DOM — otherwise the active pill never measures on a fresh load
+  // real DOM - otherwise the active pill never measures on a fresh load
   // (activeKey doesn't change, so the effect wouldn't re-fire) and stays
   // invisible until you navigate elsewhere.
   const [mounted, setMounted] = useState(false);
@@ -108,6 +178,9 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   // Mobile "More" bottom sheet replaces the old slide-in side drawer.
   const [openMore, setOpenMore] = useState(false);
+  // Drag-to-dismiss for the More sheet - only the handle/header starts a
+  // drag (via dragControls) so the scrollable body still scrolls freely.
+  const moreDragControls = useDragControls();
   const [simulated, setSimulated] = useState<boolean>(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("simulated") === "true";
@@ -138,6 +211,16 @@ export default function Navbar() {
 
   const navigate = (slug: string) => {
     const href = hrefFor(slug);
+    // A light tap on navigation gives the native shell a real app feel
+    // (no-op on web).
+    hapticTap("light");
+    // Pressing Quill AI always opens a fresh chat. When already on /chat,
+    // router.push to the same path is a no-op and wouldn't remount the
+    // page, so signal it to reset instead.
+    if (href === "/chat" && pathname === "/chat") {
+      window.dispatchEvent(new Event("cuequill:new-chat"));
+      return;
+    }
     // Update the optimistic active path synchronously so the pill
     // animates the moment the click registers.
     setPendingPath(href);
@@ -187,7 +270,7 @@ export default function Navbar() {
 
   // Secondary destinations shown in the bottom-sheet "More" menu.
   // Quill AI (chat) lives in the bottom tab bar, so it's not repeated here.
-  const moreItems = [
+  const moreItemsAll = [
     {
       icon: "fa-regular fa-circle-check",
       label: "Affirmations",
@@ -197,6 +280,21 @@ export default function Navbar() {
       icon: "fa-solid fa-bullseye",
       label: "Goals",
       slug: "goals",
+    },
+    {
+      icon: "fa-solid fa-trophy",
+      label: "Challenges",
+      slug: "challenges",
+    },
+    {
+      icon: "fa-solid fa-award",
+      label: "Trophies",
+      slug: "trophies",
+    },
+    {
+      icon: "fa-solid fa-ranking-star",
+      label: "Leaderboard",
+      slug: "leaderboard",
     },
     {
       icon: "fa-solid fa-bezier-curve",
@@ -210,6 +308,8 @@ export default function Navbar() {
       slug: "earnings",
     },
     { icon: "fa-solid fa-list-check", label: "Rules", slug: "rules" },
+    { icon: "fa-solid fa-file-arrow-down", label: "Reports", slug: "reports" },
+    { icon: "fa-solid fa-wallet", label: "Balance", slug: "balance" },
     { icon: "fa-solid fa-tag", label: "Plans & pricing", slug: "pricing" },
     { icon: "fa-solid fa-gear", label: "Settings", slug: "settings" },
   ];
@@ -218,7 +318,7 @@ export default function Navbar() {
   // an unlabeled divider line. Each former group member is now its own
   // top-level nav item.
   type NavLink = { icon: string; label: string; slug: string };
-  const navSections: NavLink[][] = [
+  const navSectionsAll: NavLink[][] = [
     [
       { icon: "fa-solid fa-house", label: "Dashboard", slug: "/" },
       {
@@ -238,6 +338,16 @@ export default function Navbar() {
         label: "Calendar",
         slug: "calendar",
       },
+      {
+        icon: "fa-solid fa-file-arrow-down",
+        label: "Reports",
+        slug: "reports",
+      },
+      {
+        icon: "fa-solid fa-wallet",
+        label: "Balance",
+        slug: "balance",
+      },
     ],
     [
       {
@@ -250,6 +360,13 @@ export default function Navbar() {
     ],
     [
       { icon: "fa-solid fa-bullseye", label: "Goals", slug: "goals" },
+      { icon: "fa-solid fa-trophy", label: "Challenges", slug: "challenges" },
+      { icon: "fa-solid fa-award", label: "Trophies", slug: "trophies" },
+      {
+        icon: "fa-solid fa-ranking-star",
+        label: "Leaderboard",
+        slug: "leaderboard",
+      },
       { icon: "fa-solid fa-list-check", label: "Rules", slug: "rules" },
       {
         icon: "fa-regular fa-circle-check",
@@ -258,6 +375,25 @@ export default function Navbar() {
       },
     ],
   ];
+
+  // Simulated (paper) trading is a sandbox for practising trades - the
+  // progression, competitive and reporting surfaces don't apply to it, so
+  // hide them while simulated mode is on.
+  const SIM_HIDDEN_SLUGS = new Set([
+    "goals",
+    "challenges",
+    "trophies",
+    "leaderboard",
+    "reports",
+  ]);
+  const moreItems = simulated
+    ? moreItemsAll.filter((m) => !SIM_HIDDEN_SLUGS.has(m.slug))
+    : moreItemsAll;
+  const navSections = simulated
+    ? navSectionsAll
+        .map((s) => s.filter((i) => !SIM_HIDDEN_SLUGS.has(i.slug)))
+        .filter((s) => s.length > 0)
+    : navSectionsAll;
 
   /* ---------------- EFFECTS ---------------- */
 
@@ -275,17 +411,10 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    if (openMore) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [openMore]);
+  // Lock background scroll while the mobile "More" sheet is open. Uses the
+  // shared ref-counted lock (handles <html>/iOS and won't clobber other
+  // modals' locks) instead of poking body.style directly.
+  useScrollLock(openMore);
 
   // Which key in itemRefs is currently active? Computed from activePath
   // so the measurement effect re-runs as soon as a click optimistically
@@ -510,24 +639,39 @@ export default function Navbar() {
             </span>
           </Link>
 
-          <div
-            className={`pointer-events-auto flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border ${
-              marketOpen
-                ? "bg-green-500/10 text-green-400 border-green-500/20"
-                : "bg-red-500/10 text-red-400 border-red-500/20"
-            }`}
-          >
-            <span className="relative flex w-1.5 h-1.5">
-              {marketOpen && (
-                <span className="absolute inset-0 rounded-full bg-green-400 animate-ping opacity-75" />
-              )}
-              <span
-                className={`relative inline-flex w-1.5 h-1.5 rounded-full ${
-                  marketOpen ? "bg-green-400" : "bg-red-400"
-                }`}
-              />
-            </span>
-            <span>{marketOpen ? "Open" : "Closed"}</span>
+          <div className="pointer-events-auto flex items-center gap-2">
+            <div
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border ${
+                marketOpen
+                  ? "bg-green-500/10 text-green-400 border-green-500/20"
+                  : "bg-red-500/10 text-red-400 border-red-500/20"
+              }`}
+            >
+              <span className="relative flex w-1.5 h-1.5">
+                {marketOpen && (
+                  <span className="absolute inset-0 rounded-full bg-green-400 animate-ping opacity-75" />
+                )}
+                <span
+                  className={`relative inline-flex w-1.5 h-1.5 rounded-full ${
+                    marketOpen ? "bg-green-400" : "bg-red-400"
+                  }`}
+                />
+              </span>
+              <span>{marketOpen ? "Open" : "Closed"}</span>
+            </div>
+            {/* Account avatar - taps through to settings on mobile. */}
+            <Link
+              href="/settings"
+              prefetch
+              onClick={(e) => {
+                e.preventDefault();
+                navigate("settings");
+              }}
+              aria-label="Account"
+              className={`w-8 h-8 shrink-0 rounded-full bg-gradient-to-br ${avatarGrad} ${avatarRing} border border-white/15 flex items-center justify-center text-[12px] font-semibold text-white`}
+            >
+              {userInitial}
+            </Link>
           </div>
         </div>
 
@@ -563,13 +707,21 @@ export default function Navbar() {
         {/* -------- DESKTOP NAV -------- */}
         <div
           ref={desktopBarRef}
-          className="hidden md:flex flex-col fixed left-4 top-4 bottom-4 z-50 w-[228px] px-3 py-4 bg-white/[0.03] backdrop-blur-md rounded-3xl border border-white/10 shadow-[0_2px_24px_var(--shadow-soft)]"
+          className={`hidden md:flex flex-col fixed left-4 top-4 bottom-4 z-50 py-4 bg-white/[0.03] backdrop-blur-md rounded-3xl border border-white/10 shadow-[0_2px_24px_var(--shadow-soft)] transition-[width] duration-300 ease-out ${
+            collapsed ? "w-[60px] px-2" : "w-[228px] px-3"
+          }`}
         >
           {/* Active state is a per-item highlight in the vertical sidebar
               (no sliding pill). */}
 
-          {/* BRAND + market status */}
-          <div className="flex items-center justify-between gap-2 pl-1">
+          {/* BRAND + market status + collapse toggle */}
+          <div
+            className={`flex gap-2 ${
+              collapsed
+                ? "flex-col items-center"
+                : "items-center justify-between pl-1"
+            }`}
+          >
             <Link
               ref={(el) => {
                 itemRefs.current["__brand__"] = el;
@@ -584,27 +736,36 @@ export default function Navbar() {
               aria-label="Cuequill - dashboard"
             >
               <CuequillLogo className="h-7 w-auto" />
-              <span className="text-[15px] font-semibold tracking-tight">
-                Cuequill
-              </span>
+              {!collapsed && (
+                <span className="text-[15px] font-semibold tracking-tight">
+                  Cuequill
+                </span>
+              )}
             </Link>
 
-            {/* Market status - compact */}
-            <div
-              className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border ${
-                marketOpen
-                  ? "bg-green-500/10 text-green-400 border-green-500/20"
-                  : "bg-red-500/10 text-red-400 border-red-500/20"
-              }`}
-              title={marketOpen ? "US market open" : "US market closed"}
-            >
-              <span
-                className={`w-1 h-1 rounded-full ${
-                  marketOpen ? "bg-green-400 animate-pulse" : "bg-red-400"
-                }`}
-              />
-              <span>{marketOpen ? "Open" : "Closed"}</span>
-            </div>
+            {collapsed ? (
+              <CollapseToggle collapsed={collapsed} onClick={toggle} />
+            ) : (
+              <div className="flex items-center gap-1.5">
+                {/* Market status - compact */}
+                <div
+                  className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border ${
+                    marketOpen
+                      ? "bg-green-500/10 text-green-400 border-green-500/20"
+                      : "bg-red-500/10 text-red-400 border-red-500/20"
+                  }`}
+                  title={marketOpen ? "US market open" : "US market closed"}
+                >
+                  <span
+                    className={`w-1 h-1 rounded-full ${
+                      marketOpen ? "bg-green-400 animate-pulse" : "bg-red-400"
+                    }`}
+                  />
+                  <span>{marketOpen ? "Open" : "Closed"}</span>
+                </div>
+                <CollapseToggle collapsed={collapsed} onClick={toggle} />
+              </div>
+            )}
           </div>
 
           {/* NAV - a flat list of links, sections split by a plain divider */}
@@ -619,6 +780,8 @@ export default function Navbar() {
                 )}
                 {section.map((item) => {
                   const active = isActive(item.slug);
+                  const badge =
+                    item.slug === "challenges" ? unclaimedRewards : 0;
                   return (
                     <Link
                       key={item.slug}
@@ -628,16 +791,25 @@ export default function Navbar() {
                         e.preventDefault();
                         navigate(item.slug);
                       }}
-                      className={`flex items-center gap-3 px-3 py-2 rounded-xl cursor-pointer transition-colors ${
+                      title={collapsed ? item.label : undefined}
+                      className={`flex items-center rounded-xl cursor-pointer transition-colors ${
+                        collapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2"
+                      } ${
                         active
                           ? "bg-white/[0.08] text-white"
                           : "text-white/60 hover:bg-white/5 hover:text-white"
                       }`}
                     >
-                      <i
-                        className={`${item.icon} w-4 text-center text-[13px]`}
-                      />
-                      <span>{item.label}</span>
+                      <span className="relative flex items-center justify-center">
+                        <i
+                          className={`${item.icon} w-4 text-center text-[13px]`}
+                        />
+                        {collapsed && (
+                          <NavCountBadge count={badge} corner />
+                        )}
+                      </span>
+                      {!collapsed && <span>{item.label}</span>}
+                      {!collapsed && <NavCountBadge count={badge} />}
                     </Link>
                   );
                 })}
@@ -651,23 +823,36 @@ export default function Navbar() {
             <div ref={dropdownRef} className="relative">
               <button
                 onClick={() => setOpen((o) => !o)}
-                className="w-full flex items-center gap-2.5 px-2 py-2 rounded-xl hover:bg-white/[0.06] transition cursor-pointer"
+                className={`w-full flex items-center rounded-xl hover:bg-white/[0.06] transition cursor-pointer ${
+                  collapsed ? "justify-center px-0 py-2" : "gap-2.5 px-2 py-2"
+                }`}
                 aria-label="account menu"
+                title={collapsed ? userFullName || "Account" : undefined}
               >
-                <div className="w-8 h-8 shrink-0 rounded-full bg-gradient-to-br from-teal-500/80 to-emerald-600/80 border border-white/15 flex items-center justify-center text-[12.5px] font-semibold text-white">
+                <div className={`w-8 h-8 shrink-0 rounded-full bg-gradient-to-br ${avatarGrad} ${avatarRing} border border-white/15 flex items-center justify-center text-[12.5px] font-semibold text-white`}>
                   {userInitial}
                 </div>
-                <div className="min-w-0 flex-1 text-left">
-                  <div className="text-[12.5px] font-medium truncate leading-tight">
-                    {userFullName || "Account"}
-                  </div>
-                  {session?.user?.email && (
-                    <div className="text-[10.5px] text-white/45 truncate leading-tight">
-                      {session.user.email}
+                {!collapsed && (
+                  <>
+                    <div className="min-w-0 flex-1 text-left">
+                      <div className="text-[12.5px] font-medium truncate leading-tight">
+                        {userFullName || "Account"}
+                      </div>
+                      {profile?.equippedTitle ? (
+                        <div className="text-[10.5px] text-teal-300/80 truncate leading-tight">
+                          {profile.equippedTitle}
+                        </div>
+                      ) : (
+                        session?.user?.email && (
+                          <div className="text-[10.5px] text-white/45 truncate leading-tight">
+                            {session.user.email}
+                          </div>
+                        )
+                      )}
                     </div>
-                  )}
-                </div>
-                <i className="fa-solid fa-ellipsis-vertical text-[11px] text-white/40" />
+                    <i className="fa-solid fa-ellipsis-vertical text-[11px] text-white/40" />
+                  </>
+                )}
               </button>
 
               <AnimatePresence>
@@ -682,7 +867,7 @@ export default function Navbar() {
                     {/* Identity header */}
                     {session?.user && (
                       <div className="px-4 py-3.5 border-b border-white/10 flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500/80 to-emerald-600/80 border border-white/15 flex items-center justify-center text-[14px] font-semibold shrink-0">
+                        <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${avatarGrad} ${avatarRing} border border-white/15 flex items-center justify-center text-[14px] font-semibold shrink-0`}>
                           {userInitial}
                         </div>
                         <div className="min-w-0 flex-1">
@@ -696,6 +881,12 @@ export default function Navbar() {
                               <ProTag className="shrink-0" />
                             )}
                           </div>
+                          {profile?.equippedTitle && (
+                            <div className="text-[10.5px] text-teal-300/80 truncate leading-tight mt-0.5 inline-flex items-center gap-1">
+                              <i className="fa-solid fa-tag text-[8px]" />
+                              {profile.equippedTitle}
+                            </div>
+                          )}
                           {session.user.email && (
                             <div className="text-[11px] text-white/50 truncate leading-tight mt-0.5">
                               {session.user.email}
@@ -769,7 +960,10 @@ export default function Navbar() {
                     <div className="p-2 border-t border-white/[0.06]">
                       <button
                         className="group w-full flex items-center gap-3 px-2.5 py-2 text-left text-[13px] rounded-lg cursor-pointer text-white/75 hover:bg-red-500/[0.08] hover:text-red-200 transition"
-                        onClick={() => signOut({ callbackUrl: "/" })}
+                        onClick={() => {
+                          clearAccent();
+                          signOut({ callbackUrl: "/" });
+                        }}
                       >
                         <i className="fa-solid fa-right-from-bracket w-4 text-center text-white/55 group-hover:text-red-300 transition" />
                         <span>Sign out</span>
@@ -898,13 +1092,16 @@ export default function Navbar() {
             onClick={() => setOpenMore((v) => !v)}
             className="relative flex flex-col items-center justify-center flex-1 py-2 cursor-pointer"
           >
-            <i
-              className={`relative fa-solid fa-ellipsis text-[15px] transition-colors ${
-                activeBottomKey === "__more__"
-                  ? "text-teal-300"
-                  : "text-white/55"
-              }`}
-            />
+            <span className="relative inline-flex items-center justify-center">
+              <i
+                className={`relative fa-solid fa-ellipsis text-[15px] transition-colors ${
+                  activeBottomKey === "__more__"
+                    ? "text-teal-300"
+                    : "text-white/55"
+                }`}
+              />
+              <NavCountBadge count={unclaimedRewards} corner />
+            </span>
             <span
               className={`relative text-[10px] mt-0.5 transition-colors ${
                 activeBottomKey === "__more__"
@@ -927,30 +1124,52 @@ export default function Navbar() {
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", stiffness: 380, damping: 36 }}
-            className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-[var(--surface-2)] border-t border-white/10 rounded-t-3xl shadow-[0_-12px_40px_var(--shadow)]"
+            drag="y"
+            dragListener={false}
+            dragControls={moreDragControls}
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={{ top: 0, bottom: 0.5 }}
+            onDragEnd={(_, info: PanInfo) => {
+              // Dismiss on a decisive downward swipe.
+              if (info.offset.y > 100 || info.velocity.y > 500) {
+                setOpenMore(false);
+              }
+            }}
+            className="md:hidden fixed bottom-0 inset-x-0 z-50 max-h-[70vh] flex flex-col overflow-hidden bg-[var(--surface-2)] border-t border-white/10 rounded-t-3xl shadow-[0_-12px_40px_var(--shadow)]"
             style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
           >
-            {/* Grab handle */}
-            <div className="flex justify-center pt-2">
-              <span className="w-10 h-1 rounded-full bg-white/20" />
+            {/* Grab handle + header double as the drag grip; the body below
+                scrolls independently. */}
+            <div
+              onPointerDown={(e) => moreDragControls.start(e)}
+              style={{ touchAction: "none" }}
+              className="shrink-0 cursor-grab active:cursor-grabbing"
+            >
+              <div className="flex justify-center pt-2">
+                <span className="w-10 h-1 rounded-full bg-white/20" />
+              </div>
+
+              <div className="px-4 pt-3 pb-3 flex items-center justify-between">
+                <span className="text-[11px] tracking-[0.1em] text-white/40 font-medium">
+                  more
+                </span>
+                <button
+                  aria-label="close"
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={() => setOpenMore(false)}
+                  className="w-8 h-8 rounded-full hover:bg-white/5 flex items-center justify-center text-white/60 hover:text-white transition"
+                >
+                  <i className="fa-solid fa-xmark text-[13px]" />
+                </button>
+              </div>
             </div>
 
-            <div className="px-4 pt-3 pb-4 flex items-center justify-between">
-              <span className="text-[11px] tracking-[0.1em] text-white/40 font-medium">
-                more
-              </span>
-              <button
-                aria-label="close"
-                onClick={() => setOpenMore(false)}
-                className="w-8 h-8 rounded-full hover:bg-white/5 flex items-center justify-center text-white/60 hover:text-white transition"
-              >
-                <i className="fa-solid fa-xmark text-[13px]" />
-              </button>
-            </div>
-
+            <div className="overflow-y-auto flex-1 min-h-0">
             <div className="px-3 pb-3 grid grid-cols-1 gap-1">
               {moreItems.map((item) => {
                 const active = isActive(item.slug);
+                const badge =
+                  item.slug === "challenges" ? unclaimedRewards : 0;
                 return (
                   <Link
                     key={item.slug}
@@ -972,61 +1191,58 @@ export default function Navbar() {
                     <span className="text-[14px] font-medium">
                       {item.label}
                     </span>
+                    <NavCountBadge count={badge} />
                   </Link>
                 );
               })}
             </div>
 
-            <div className="mx-4 mb-3 p-3 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-between">
-              <div className="flex flex-col">
-                <span className="text-[13px] text-white/85 font-medium">
-                  appearance
+            {/* Compact toggles - side by side to save vertical space. */}
+            <div className="mx-4 mb-3 grid grid-cols-2 gap-2">
+              <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-between gap-2">
+                <span className="text-[12.5px] text-white/85 font-medium">
+                  Appearance
                 </span>
-                <span className="text-[11px] text-white/45">
-                  light or dark theme
-                </span>
+                <ThemeToggle />
               </div>
-              <ThemeToggle />
-            </div>
-
-            <div className="mx-4 mb-3 p-3 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-between">
-              <div className="flex flex-col">
-                <span className="text-[13px] text-white/85 font-medium">
-                  simulated trading
+              <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-between gap-2">
+                <span className="text-[12.5px] text-white/85 font-medium">
+                  Simulated
                 </span>
-                <span className="text-[11px] text-white/45">
-                  use paper-trade data
-                </span>
-              </div>
-              <label className="inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={simulated}
-                  onChange={(e) => {
-                    setSimulated(e.target.checked);
-                    window.location.reload();
-                  }}
-                  className="sr-only peer"
-                />
-                <div
-                  className="relative w-10 h-5 bg-white/10 rounded-full peer
+                <label className="inline-flex items-center cursor-pointer shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={simulated}
+                    onChange={(e) => {
+                      setSimulated(e.target.checked);
+                      window.location.reload();
+                    }}
+                    className="sr-only peer"
+                  />
+                  <div
+                    className="relative w-10 h-5 bg-white/10 rounded-full peer
                       peer-checked:after:translate-x-full
                       after:content-[''] after:absolute after:top-[2px]
                       after:start-[2px] after:bg-white after:rounded-full
                       after:h-4 after:w-4 after:transition-all
                       peer-checked:bg-teal-500"
-                />
-              </label>
+                  />
+                </label>
+              </div>
             </div>
 
             <div className="px-3 pb-4">
               <button
-                onClick={() => signOut({ callbackUrl: "/" })}
+                onClick={() => {
+                  clearAccent();
+                  signOut({ callbackUrl: "/" });
+                }}
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-red-500/10 text-red-300 border border-red-500/25 hover:bg-red-500/20 transition text-[13px] font-medium"
               >
                 <i className="fa-solid fa-right-from-bracket text-[12px]" />
                 logout
               </button>
+            </div>
             </div>
           </motion.div>
         )}

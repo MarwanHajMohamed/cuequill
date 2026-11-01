@@ -31,7 +31,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 // GET /api/dashboard/insight[?refresh=1]
-// Returns the user's "Insight of the day" for the dashboard Quill widget —
+// Returns the user's "Insight of the day" for the dashboard Quill widget -
 // a short, specific AI observation from their own trades/rules/goals.
 // Generated once per LOCAL day and cached on the user doc; ?refresh=1
 // forces a fresh one (counted against the same Quill fair-use budget).
@@ -52,7 +52,7 @@ You are QuillAI, the trading-journal assistant. Write ONE short "insight of
 the day" for the trader's dashboard, drawn strictly from the snapshot below.
 
 Rules:
-- 1–2 sentences, under ~45 words. Plain text only — no markdown, no lists,
+- 1–2 sentences, under ~45 words. Plain text only - no markdown, no lists,
   no headings, no preamble like "Here's your insight".
 - Be specific and grounded: cite a real number, symbol, strategy, streak,
   rule, or goal from the data. Never invent trades or stats.
@@ -60,7 +60,7 @@ Rules:
   a strategy or symbol that's over/under-performing, a rule they broke, or
   progress toward a goal. Prefer something actionable.
 - Encouraging but honest. If they're doing well, say what's working.
-- This is journaling insight, NOT financial advice — no predictions or
+- This is journaling insight, NOT financial advice - no predictions or
   trade recommendations.
 - If there aren't enough trades yet to say anything meaningful, give a brief
   friendly nudge to log more trades so you can spot patterns.
@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
   await connectDb();
   const user = await User.findById(session.user.id)
     .select(
-      "isPro chatDailyDate chatDailyCount chatMonth chatMonthTokens dashInsightDate dashInsightText dashInsightAt",
+      "isPro chatDailyDate chatDailyCount chatMonth chatMonthTokens dashInsightDate dashInsightText dashInsightAt dashInsightRecent",
     )
     .lean<{
       isPro?: boolean;
@@ -86,6 +86,7 @@ export async function GET(req: NextRequest) {
       dashInsightDate?: string;
       dashInsightText?: string;
       dashInsightAt?: Date;
+      dashInsightRecent?: string[];
     }>();
   if (!user?.isPro) {
     return NextResponse.json(
@@ -139,7 +140,7 @@ export async function GET(req: NextRequest) {
       });
     }
     return NextResponse.json(
-      { error: "AI usage limit reached — check back tomorrow." },
+      { error: "AI usage limit reached. Check back tomorrow." },
       { status: 429 },
     );
   }
@@ -169,13 +170,22 @@ export async function GET(req: NextRequest) {
     .filter(Boolean)
     .join("\n\n");
 
+  // Last N insights (newest first). Injected into the system prompt
+  // so the model steers clear of the same angle two days running.
+  const recent = (user.dashInsightRecent ?? []).slice(0, 14);
+  const recentBlock = recent.length
+    ? `\n\nRecent insights you've given this trader - do NOT repeat these or ` +
+      `say anything close in meaning (pick a different angle):\n` +
+      recent.map((r, i) => `${i + 1}. ${r}`).join("\n")
+    : "";
+
   let insight = "";
   let tokens = 0;
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
       model: "gemini-2.5-flash",
-      systemInstruction: `${INSIGHT_PROMPT}\n\nToday: ${today} (${tz}).`,
+      systemInstruction: `${INSIGHT_PROMPT}\n\nToday: ${today} (${tz}).${recentBlock}`,
     });
     const result = await model.generateContent(
       `TRADER SNAPSHOT\n---\n${context}\n---\n\nWrite today's insight.`,
@@ -202,12 +212,20 @@ export async function GET(req: NextRequest) {
   }
 
   const now = new Date();
+  // Push into the ring buffer, newest first, dedup against the very
+  // last entry (a manual refresh that produced the same text
+  // shouldn't fill two slots) and cap at 14.
+  const nextRecent = [
+    insight,
+    ...recent.filter((r, i) => !(i === 0 && r === insight)),
+  ].slice(0, 14);
   try {
     await User.findByIdAndUpdate(session.user.id, {
       $set: {
         dashInsightDate: today,
         dashInsightText: insight,
         dashInsightAt: now,
+        dashInsightRecent: nextRecent,
         chatDailyDate: dKey,
         chatDailyCount: usedToday + 1,
         chatMonth: mKey,
@@ -215,7 +233,7 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch {
-    /* best-effort persistence — still return the fresh insight */
+    /* best-effort persistence - still return the fresh insight */
   }
 
   return NextResponse.json({ insight, generatedAt: now, cached: false });

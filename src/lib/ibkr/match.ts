@@ -1,4 +1,4 @@
-// Pure FIFO fill-matcher shared by the nightly Flex sync today and the
+// Pure FIFO fill-matcher shared by the morning Flex sync today and the
 // real-time worker later (see docs/realtime-ibkr-sync.md). It knows
 // nothing about CSV, HTTP, Mongo, or users - it takes normalized fills
 // and returns trade drafts. Keeping it pure means both ingestion paths
@@ -37,6 +37,10 @@ export type TradeDraft = {
   dateBought: Date;
   expiryDate: Date;
   dateClosed?: Date;
+  // Execution time-of-day as an "HH:mm" string in market (ET) time,
+  // carried over from the fills so imported trades show entry/exit times.
+  timeEntered?: string;
+  timeExited?: string;
   closingContractPrice?: number;
   profitLoss?: number;
   fees: number;
@@ -63,7 +67,21 @@ function commissionPerContract(fill: NormalizedFill): number {
   return qty > 0 ? fill.fee / qty : 0;
 }
 
-// Fees are stored to 2dp — brokers quote commissions in cents, so
+// Format a fill's execution instant as an "HH:mm" 24h string in market
+// (Eastern) time - the same wall-clock the flex report reported - so it
+// matches the manually-entered timeEntered/timeExited convention.
+function etTime(d: Date): string {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  })
+    .format(d)
+    .replace(/^24:/, "00:");
+}
+
+// Fees are stored to 2dp - brokers quote commissions in cents, so
 // trailing sub-cent noise from per-contract division is pure display
 // clutter. Consistent with how manual entries are recorded.
 function round2(n: number): number {
@@ -119,13 +137,17 @@ export function matchFills(fills: NormalizedFill[]): TradeDraft[] {
           const lot = openQueue[0];
           const matchQty = Math.min(lot.remainingQty, remainingSell);
           const buy = lot.fill;
-          // Prefer the broker's reported realized P/L (IBKR); otherwise
-          // derive it from the round-trip prices, gross of fees (which
-          // are stored separately) to match the IBKR convention.
-          const pnl =
-            fill.realizedPnl !== undefined
-              ? (fill.realizedPnl / qty) * matchQty
-              : (fill.price - buy.price) * CONTRACT_MULTIPLIER * matchQty;
+          // Derive GROSS realized P/L from the round-trip prices, matching the
+          // app's canonical convention everywhere else (manual entry, the edit
+          // modal, and merge all use (close - open) * 100 * qty). We do NOT use
+          // the broker's FifoPnlRealized here: IBKR reports it NET of
+          // commissions, and we store commissions separately as `fees` - so
+          // net P/L (profitLoss - fees) would double-count commissions if
+          // profitLoss were already net. Gross here keeps the maths consistent
+          // and matches what re-saving a trade in the modal produces.
+          const pnl = round2(
+            (fill.price - buy.price) * CONTRACT_MULTIPLIER * matchQty,
+          );
           const fees = round2((lot.commissionPerContract + sellCpc) * matchQty);
 
           drafts.push({
@@ -137,6 +159,8 @@ export function matchFills(fills: NormalizedFill[]): TradeDraft[] {
             dateBought: buy.time,
             expiryDate: buy.expiry,
             dateClosed: fill.time,
+            timeEntered: etTime(buy.time),
+            timeExited: etTime(fill.time),
             closingContractPrice: fill.price,
             profitLoss: pnl,
             fees,
@@ -173,6 +197,7 @@ export function matchFills(fills: NormalizedFill[]): TradeDraft[] {
         contractPrice: buy.price,
         dateBought: buy.time,
         expiryDate: buy.expiry,
+        timeEntered: etTime(buy.time),
         fees,
         status: "OPEN",
         simulated: false,

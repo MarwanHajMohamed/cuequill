@@ -7,9 +7,11 @@ import { usePceDates } from "@/hooks/usePceDates";
 import { usePpiDates } from "@/hooks/usePpiDates";
 import { useMarketHolidays } from "@/hooks/useMarketHolidays";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
-import { useTrades } from "@/hooks/useTrades";
 import { useWatchlist } from "@/hooks/useWatchlist";
 import { useEarnings } from "@/hooks/useEarnings";
+import { useTrades } from "@/hooks/useTrades";
+import { useProfile } from "@/hooks/useProfile";
+import { useBalanceTimeline } from "@/hooks/useBalanceTimeline";
 import {
   addDays,
   endOfMonth,
@@ -20,7 +22,9 @@ import {
 } from "date-fns";
 import { useSession } from "next-auth/react";
 import React, { useLayoutEffect, useMemo, useRef, useState } from "react";
-import DayTradesModal from "../dashboard/components/modals/DayTradesModal";
+import DayTradesModal, {
+  type DayEvent,
+} from "../dashboard/components/modals/DayTradesModal";
 import TradeModal from "../dashboard/components/modals/TradeModal";
 import { useQueryClient } from "@tanstack/react-query";
 import { Trade } from "../types/Trades";
@@ -35,8 +39,10 @@ import MonthlyShareCard, {
   CARD_H as MONTH_CARD_H,
   type MonthlyShareStats,
 } from "@/components/MonthlyShareCard";
+import { useCardSkinPrefs } from "@/hooks/useCardSkinPrefs";
+import PageTour from "@/components/PageTour";
 
-import { fmtMoneyCompact, fmtMoneySignedCompact } from "@/lib/helpers/fmt";
+import { fmtMoneyFull, fmtMoneySignedCompact } from "@/lib/helpers/fmt";
 type TradeEvent =
   | Trade
   | {
@@ -103,6 +109,7 @@ function Page() {
   const { data: session } = useSession();
   const userId = session?.user?.id;
   const queryClient = useQueryClient();
+  const cardSkinPrefs = useCardSkinPrefs();
 
   const value = new Date();
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -138,22 +145,28 @@ function Page() {
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
 
   const { data: trades } = useTrades(userId, simulated);
+  const { data: profile } = useProfile();
+  const startingBalance = profile?.startingBalance ?? 0;
+  // Running account balance (starting balance + deposits/withdrawals + realised
+  // P/L), in date order - the basis for each month's return %.
+  const { points: balancePoints } = useBalanceTimeline();
   const fedDates = useFedDates();
   const cpiDates = useCpiDates();
   const pceDates = usePceDates();
   const ppiDates = usePpiDates();
   const holidays = useMarketHolidays();
 
-  // Detailed mode — overlays watchlist earnings dates and open-trade
+  // Extended mode - overlays watchlist earnings dates and open-trade
   // expiries on the month grid. Persisted so the preference sticks.
   const [detailed, setDetailed] = useLocalStorage<boolean>(
     "calendar:detailed",
     false,
   );
   const { data: watchlist = [] } = useWatchlist();
-  // Only fetch earnings while detailed mode is on — the hook no-ops on
-  // an empty symbol list.
-  const { data: earnings = [] } = useEarnings(detailed ? watchlist : []);
+  // Fetch earnings whenever there's a watchlist so the day-detail modal can
+  // always list them (the tile overlay is still gated on extended mode). The
+  // query is shared/cached with the dashboard, so this is usually a cache hit.
+  const { data: earnings = [] } = useEarnings(watchlist);
 
   // "yyyy-MM-dd" → symbols reporting that day (watchlist only).
   const earningsByDay = useMemo(() => {
@@ -290,11 +303,111 @@ function Page() {
     };
   };
 
+  // Aggregate an arbitrary set of trades into the shared card's stat shape.
+  const statsFor = (
+    subset: typeof trades,
+    extra: Partial<MonthlyShareStats> & { monthName: string; year: string },
+  ): MonthlyShareStats => {
+    const rows = subset ?? [];
+    const closed = rows.filter(
+      (t) => t.status === "WIN" || t.status === "LOSS",
+    );
+    const wins = closed.filter((t) => t.status === "WIN").length;
+    const losses = closed.filter((t) => t.status === "LOSS").length;
+    const netPL = closed.reduce((s, t) => s + tradeNetPL(t), 0);
+    return {
+      netPL,
+      trades: rows.length,
+      closed: closed.length,
+      wins,
+      losses,
+      winRate: closed.length ? (wins / closed.length) * 100 : null,
+      ...extra,
+    };
+  };
+
+  // The displayed week (Mon–Sun), for the week-view share card.
+  const weekShareStats = (): MonthlyShareStats => {
+    const start = displayedWeekStart;
+    const end = addDays(start, 6);
+    const startKey = format(start, "yyyy-MM-dd");
+    const endKey = format(end, "yyyy-MM-dd");
+    const inWeek = (trades ?? []).filter((t) => {
+      const k = bucketDateFor(t);
+      return k >= startKey && k <= endKey;
+    });
+    return statsFor(inWeek, {
+      monthName: format(start, "MMM d"),
+      year: `${start.getFullYear()}`,
+      title: "This week",
+      periodLabel: `${format(start, "MMM d")} – ${format(end, "MMM d")}`,
+      periodNoun: "week",
+    });
+  };
+
+  // The displayed year, for the zoomed-out (year drill-up) share card.
+  const yearShareStats = (): MonthlyShareStats => {
+    const y = displayedMonth.getFullYear();
+    const inYear = (trades ?? []).filter((t) =>
+      bucketDateFor(t).startsWith(`${y}-`),
+    );
+    return statsFor(inYear, {
+      monthName: `${y}`,
+      year: `${y}`,
+      title: `${y}`,
+      periodLabel: `${y}`,
+      periodNoun: "year",
+    });
+  };
+
+  // What the share button captures, keyed to the current view: the week (week
+  // view), the whole year (zoomed out to the months grid), else the month.
+  const shareContext: "week" | "month" | "year" =
+    view === "week" ? "week" : calView === "month" ? "month" : "year";
+  const activeShareStats = (): MonthlyShareStats =>
+    shareContext === "week"
+      ? weekShareStats()
+      : shareContext === "year"
+        ? yearShareStats()
+        : monthShareStats();
+
+  // Economic events + watchlist earnings landing on a day, for the day-detail
+  // modal - mirrors the dashboard calendar's getDayEvents.
+  const getDayEvents = (date: Date): DayEvent[] => {
+    const s = format(date, "yyyy-MM-dd");
+    const evs: DayEvent[] = [];
+    if (fedDates.meetings.has(s))
+      evs.push({ kind: "fed", label: "FOMC meeting" });
+    if (fedDates.minutes.has(s))
+      evs.push({ kind: "fed", label: "FOMC minutes" });
+    if (cpiDates.has(s)) evs.push({ kind: "cpi", label: "CPI release" });
+    if (ppiDates.has(s)) evs.push({ kind: "ppi", label: "PPI release" });
+    if (pceDates.has(s)) evs.push({ kind: "pce", label: "PCE release" });
+    const h = holidays.get(s);
+    if (h) {
+      evs.push({
+        kind: "holiday",
+        label: h.name,
+        detail: h.early ? "early close · 1:00pm ET" : "market closed",
+      });
+    }
+    for (const e of earningsByDay.get(s) ?? []) {
+      evs.push({
+        kind: "earnings",
+        label: `${e.symbol} earnings`,
+        detail: e.isEstimate ? "estimated" : undefined,
+      });
+    }
+    return evs;
+  };
+
   const handleDateClick = (date: Date) => {
     setSelectedDate(date);
     const dayStr = format(date, "yyyy-MM-dd");
     const dayTrades = trades?.filter((t) => bucketDateFor(t) === dayStr) ?? [];
-    if (dayTrades.length > 0) {
+    // Open the day detail when there are trades OR events to show; otherwise
+    // jump straight to adding a trade for an empty day.
+    if (dayTrades.length > 0 || getDayEvents(date).length > 0) {
       setDayListOpen(true);
     } else {
       setEditingTrade(null);
@@ -307,6 +420,12 @@ function Page() {
     const dayStr = format(selectedDate, "yyyy-MM-dd");
     return trades.filter((t) => bucketDateFor(t) === dayStr);
   }, [selectedDate, trades]);
+
+  const eventsForSelectedDay = useMemo(
+    () => (selectedDate ? getDayEvents(selectedDate) : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [selectedDate, fedDates, cpiDates, ppiDates, pceDates, holidays, earningsByDay],
+  );
 
   // Per-week summaries for the displayed month - used by the sidebar.
   // Buckets trades by the date string (yyyy-MM-dd) prefix of dateBought, the
@@ -368,26 +487,36 @@ function Page() {
     return buckets;
   }, [trades, displayedMonth]);
 
-  const handleSaveTrade = async (trade: Trade) => {
-    if (trade._id) {
-      // UPDATE EXISTING TRADE
-      await fetch(`/api/trades/${trade._id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(trade),
-      });
-    } else {
-      // CREATE NEW TRADE
-      await fetch("/api/trades", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...trade, userId }),
-      });
+  const handleSaveTrade = async (trade: Trade): Promise<boolean> => {
+    const res = trade._id
+      ? // UPDATE EXISTING TRADE
+        await fetch(`/api/trades/${trade._id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(trade),
+        })
+      : // CREATE NEW TRADE
+        await fetch("/api/trades", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...trade, userId }),
+        });
+
+    if (!res.ok) {
+      let message = "Couldn't save trade. Please try again.";
+      try {
+        const data = await res.json();
+        if (data?.error) message = data.error;
+      } catch {
+        /* non-JSON error body - keep the generic message */
+      }
+      throw new Error(message);
     }
 
     await queryClient.invalidateQueries({ queryKey: ["trades", userId] });
     setIsModalOpen(false);
     setEditingTrade(null);
+    return true;
   };
 
   const handleDeleteTrade = async (tradeId: string) => {
@@ -425,7 +554,8 @@ function Page() {
       netPL,
       hasOpen,
       isToday,
-      isFed: fedDates.has(dayStr),
+      isFed: fedDates.meetings.has(dayStr),
+      isFedMinutes: fedDates.minutes.has(dayStr),
       isCpi: cpiDates.has(dayStr),
       isPce: pceDates.has(dayStr),
       isPpi: ppiDates.has(dayStr),
@@ -438,16 +568,30 @@ function Page() {
     if (view === "year") {
       const { total, closedCount, netPL } = getMonthSummary(date);
       if (total === 0) return null;
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      const pct = monthPctByKey.get(key);
       return (
-        <div className="mt-1 flex flex-col items-center gap-0.5 text-[10px] md:text-xs">
+        <div className="mt-1 flex flex-col items-center gap-0.5 text-[10px] md:text-xs leading-tight">
           {closedCount > 0 ? (
-            <div
-              className={`font-normal ${
-                netPL >= 0 ? "text-green-500" : "text-red-500"
-              }`}
-            >
-              {fmtMoneySignedCompact(netPL)}
-            </div>
+            <>
+              <div
+                className={`font-normal tabular-nums whitespace-nowrap ${
+                  netPL >= 0 ? "text-green-500" : "text-red-500"
+                }`}
+              >
+                {fmtMoneySignedCompact(netPL)}
+              </div>
+              {pct != null && (
+                <div
+                  className={`text-[9px] md:text-[10px] tabular-nums whitespace-nowrap opacity-70 ${
+                    netPL >= 0 ? "text-green-500" : "text-red-500"
+                  }`}
+                >
+                  {pct >= 0 ? "+" : ""}
+                  {pct.toFixed(1)}%
+                </div>
+              )}
+            </>
           ) : (
             <div className="font-semibold text-orange-400">Open</div>
           )}
@@ -483,7 +627,7 @@ function Page() {
     }
 
     // Day badges (Fed / market-closed / today) only belong on the month
-    // grid — never on the year/decade tiles (where Jan 1 would otherwise
+    // grid - never on the year/decade tiles (where Jan 1 would otherwise
     // tag every cell as a holiday "Closed").
     if (view !== "month") return null;
 
@@ -495,6 +639,7 @@ function Page() {
       netPL,
       isToday,
       isFed,
+      isFedMinutes,
       isCpi,
       isPce,
       isPpi,
@@ -507,6 +652,7 @@ function Page() {
       tradeCount === 0 &&
       !isToday &&
       !isFed &&
+      !isFedMinutes &&
       !isCpi &&
       !isPce &&
       !isPpi &&
@@ -516,27 +662,105 @@ function Page() {
     )
       return null;
 
+    const anyEcon =
+      isFed ||
+      isFedMinutes ||
+      isCpi ||
+      isPce ||
+      isPpi ||
+      Boolean(marketDay && marketDay.early);
+    // The high-impact-release pills, rendered once and placed either
+    // top-right (default) or in the left overlay stack (extended mode),
+    // so an earnings chip and a Fed pill never fight for the same row on
+    // a narrow mobile tile.
+    const econBadges = (
+      <>
+        {isFed && (
+          <span
+            title="FOMC meeting - high volatility, avoid trading"
+            className={NO_TRADE_PILL}
+          >
+            <span className="w-1 h-1 rounded-full bg-red-200" aria-hidden />
+            Fed
+          </span>
+        )}
+        {isFedMinutes && (
+          <span title="FOMC meeting minutes release" className={NO_TRADE_PILL}>
+            <span className="w-1 h-1 rounded-full bg-red-200" aria-hidden />
+            Fed
+          </span>
+        )}
+        {isCpi && (
+          <span
+            title="CPI inflation report - 8:30am ET - avoid trading"
+            className={NO_TRADE_PILL}
+          >
+            <i className="fa-solid fa-percent text-[7px]" aria-hidden />
+            CPI
+          </span>
+        )}
+        {isPpi && (
+          <span
+            title="PPI producer inflation report - 8:30am ET - avoid trading"
+            className={NO_TRADE_PILL}
+          >
+            <i className="fa-solid fa-industry text-[7px]" aria-hidden />
+            PPI
+          </span>
+        )}
+        {isPce && (
+          <span
+            title="PCE - Fed's preferred inflation gauge - 8:30am ET - avoid trading"
+            className={NO_TRADE_PILL}
+          >
+            <i className="fa-solid fa-landmark text-[7px]" aria-hidden />
+            PCE
+          </span>
+        )}
+        {marketDay && marketDay.early && (
+          <span
+            title={`Early close 1:00pm ET - ${marketDay.name}`}
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-500/35 text-sky-100 border border-sky-400/60 shadow-[0_0_8px_rgba(56,189,248,0.35)] text-[9px] md:text-[10px] font-bold tracking-wide leading-none"
+          >
+            <i className="fa-solid fa-clock text-[8px]" aria-hidden />
+            1pm
+          </span>
+        )}
+      </>
+    );
+
     return (
       <>
-        {/* Detailed mode — earnings + expiry chips, stacked top-left so
-            they don't collide with the Fed/holiday badges top-right. */}
-        {(dayEarnings.length > 0 || dayExpiries.length > 0) && (
-          <div className="absolute top-7 left-1.5 flex flex-col items-start gap-0.5 max-w-[80%]">
-            {dayEarnings.length > 0 && (
+        {/* All day badges live in one right-aligned column, top-right -
+            earnings and expiry pills (extended mode only) above the econ
+            pills. Right-aligned so the stack stays clear of the P/L readout
+            pinned bottom-left, without having to grow the tile. */}
+        {(dayEarnings.length > 0 || dayExpiries.length > 0 || anyEcon) && (
+          <div className="absolute top-7 right-1 md:top-1 flex flex-col items-end gap-0.5 max-w-[85%]">
+            {/* One pill per reporting company so a symbol never gets
+                truncated. Capped at 3 with a "+N" overflow. */}
+            {dayEarnings.slice(0, 3).map((e) => (
               <span
-                title={`Earnings: ${dayEarnings
-                  .map((e) => e.symbol + (e.isEstimate ? " (est.)" : ""))
-                  .join(", ")}`}
-                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/40 text-[8.5px] md:text-[9.5px] font-bold tracking-wide leading-none max-w-full"
+                key={e.symbol}
+                title={`Earnings: ${e.symbol}${e.isEstimate ? " (estimated date)" : ""}`}
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/40 text-[8.5px] md:text-[9.5px] font-bold tracking-wide leading-none"
               >
                 <i className="fa-solid fa-bullhorn text-[7px]" aria-hidden />
-                <span className="truncate">
-                  {dayEarnings
-                    .slice(0, 2)
-                    .map((e) => e.symbol)
-                    .join(" ")}
-                  {dayEarnings.length > 2 && ` +${dayEarnings.length - 2}`}
-                </span>
+                {e.symbol}
+                {e.isEstimate && (
+                  <span className="opacity-60 font-medium">est</span>
+                )}
+              </span>
+            ))}
+            {dayEarnings.length > 3 && (
+              <span
+                title={`Also reporting: ${dayEarnings
+                  .slice(3)
+                  .map((e) => e.symbol)
+                  .join(", ")}`}
+                className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-teal-500/15 text-teal-300/80 border border-teal-500/30 text-[8.5px] md:text-[9.5px] font-bold tracking-wide leading-none"
+              >
+                +{dayEarnings.length - 3}
               </span>
             )}
             {dayExpiries.length > 0 && (
@@ -544,74 +768,21 @@ function Page() {
                 title={`Open positions expiring: ${dayExpiries.join(", ")}`}
                 className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/40 text-[8.5px] md:text-[9.5px] font-bold tracking-wide leading-none max-w-full"
               >
-                <i className="fa-solid fa-hourglass-end text-[7px]" aria-hidden />
+                <i
+                  className="fa-solid fa-hourglass-end text-[7px]"
+                  aria-hidden
+                />
                 <span className="truncate">
                   {dayExpiries.slice(0, 2).join(" ")}
                   {dayExpiries.length > 2 && ` +${dayExpiries.length - 2}`}
                 </span>
               </span>
             )}
-          </div>
-        )}
-        {/* Top-right event badges — stacked so a day with several
-            (e.g. Fed + CPI) doesn't pile them on top of each other. */}
-        {(isFed || isCpi || isPce || isPpi || (marketDay && marketDay.early)) && (
-          // On mobile the tiles are narrow, so a 2-digit day number (top-left)
-          // would collide with these pills if they sat at the very top-right.
-          // Drop them below the number row on mobile; keep them top-right on
-          // desktop where the tile is wide enough.
-          <div className="absolute top-7 right-1 md:top-1 flex flex-col items-end gap-0.5">
-            {/* Red "no-trade" pills — one shared red style across every
-                high-impact release so the day reads as a single warning. */}
-            {isFed && (
-              <span
-                title="FOMC meeting — high volatility, avoid trading"
-                className={NO_TRADE_PILL}
-              >
-                <span className="w-1 h-1 rounded-full bg-red-200" aria-hidden />
-                Fed
-              </span>
-            )}
-            {isCpi && (
-              <span
-                title="CPI inflation report — 8:30am ET — avoid trading"
-                className={NO_TRADE_PILL}
-              >
-                <i className="fa-solid fa-percent text-[7px]" aria-hidden />
-                CPI
-              </span>
-            )}
-            {isPpi && (
-              <span
-                title="PPI producer inflation report — 8:30am ET — avoid trading"
-                className={NO_TRADE_PILL}
-              >
-                <i className="fa-solid fa-industry text-[7px]" aria-hidden />
-                PPI
-              </span>
-            )}
-            {isPce && (
-              <span
-                title="PCE — Fed's preferred inflation gauge — 8:30am ET — avoid trading"
-                className={NO_TRADE_PILL}
-              >
-                <i className="fa-solid fa-landmark text-[7px]" aria-hidden />
-                PCE
-              </span>
-            )}
-            {marketDay && marketDay.early && (
-              <span
-                title={`Early close 1:00pm ET — ${marketDay.name}`}
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-500/35 text-sky-100 border border-sky-400/60 shadow-[0_0_8px_rgba(56,189,248,0.35)] text-[9px] md:text-[10px] font-bold tracking-wide leading-none"
-              >
-                <i className="fa-solid fa-clock text-[8px]" aria-hidden />
-                1pm
-              </span>
-            )}
+            {econBadges}
           </div>
         )}
         {/* Full-day closure: mute the whole tile and mark it with a lock
-            (kept separate — the overlay is inset, the lock stays pinned). */}
+            (kept separate - the overlay is inset, the lock stays pinned). */}
         {marketDay && !marketDay.early && (
           <>
             <span
@@ -619,15 +790,12 @@ function Page() {
               className="absolute inset-0 rounded-[inherit] bg-neutral-500/15 pointer-events-none"
             />
             <span
-              title={`Market closed — ${marketDay.name}`}
+              title={`Market closed - ${marketDay.name}`}
               className="absolute top-1 right-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-500/30 text-amber-300 border border-amber-500/50 shadow-[0_0_8px_rgba(245,158,11,0.35)]"
             >
               <i className="fa-solid fa-lock text-[9px]" aria-hidden />
             </span>
           </>
-        )}
-        {isToday && (
-          <span className="absolute top-2 right-1 w-1.5 h-1.5 rounded-full bg-blue-400" />
         )}
         {/* Bottom-left: P/L, trade count, then W/L bars underneath */}
         {tradeCount > 0 && (
@@ -741,6 +909,30 @@ function Page() {
     return map;
   }, [trades]);
 
+  // Each month's return as a % of the ACCOUNT BALANCE at the start of that
+  // month (starting balance + deposits/withdrawals + realised P/L up to then),
+  // so later months aren't measured against the original balance and it works
+  // for deposit-funded accounts too. Skipped for simulated trades (no real
+  // balance) and any month whose start-of-month balance isn't positive.
+  const monthPctByKey = useMemo(() => {
+    const map = new Map<string, number>();
+    if (simulated) return map;
+    const keys = Array.from(tradesByMonth.keys()).sort(); // chronological
+    for (const key of keys) {
+      const firstDay = `${key}-01`;
+      // Balance as of the last event strictly before this month; falls back to
+      // the opening balance when nothing precedes it.
+      let base = startingBalance;
+      for (const p of balancePoints) {
+        if (p.date < firstDay) base = p.balance;
+        else break;
+      }
+      const m = tradesByMonth.get(key)!;
+      if (base > 0) map.set(key, (m.netPL / base) * 100);
+    }
+    return map;
+  }, [tradesByMonth, balancePoints, startingBalance, simulated]);
+
   // Per-year aggregates for the decade (years) drill-up view.
   const tradesByYear = useMemo(() => {
     const map = new Map<
@@ -817,14 +1009,71 @@ function Page() {
     );
   };
 
-  // On phones the month grid normally fits the viewport exactly (no
-  // scroll). In detailed mode the tiles carry extra chips, so we switch
-  // to taller, scrollable tiles instead of cramming everything into a
-  // fixed height. Desktop is unaffected (md:h-auto everywhere).
-  const scrollMode = detailed && view === "month";
+  // On phones the month grid uses natural, scrollable rows (see the
+  // mobile rules in custom-calendar.css) rather than a fixed viewport
+  // height, so the page scrolls in both default and extended mode.
+  // Desktop is unaffected (md:h-auto everywhere).
+  const scrollMode = view === "month";
+
+  // Control buttons shared between the desktop cluster (top-right of the
+  // P/L) and the mobile row (below the P/L, beside Show earnings). Kept
+  // as small render helpers so the markup isn't duplicated per breakpoint.
+  const shareButton = () => (
+    <button
+      data-tour="cal-share"
+      onClick={() => setShowMonthShare(true)}
+      className="w-8 h-8 inline-flex items-center justify-center rounded-full border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/75 hover:text-white transition cursor-pointer"
+      title={`Share this ${shareContext}'s P/L as an image`}
+      aria-label={`Share this ${shareContext}`}
+    >
+      <i className="fa-solid fa-share-nodes text-[11px]" />
+    </button>
+  );
+
+  const todayButton = () => (
+    <button
+      onClick={goToToday}
+      className="inline-flex items-center px-3 py-1.5 rounded-full border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/75 hover:text-white transition text-[12px] font-medium cursor-pointer"
+      title="Jump to today"
+    >
+      Today
+    </button>
+  );
+
+  const viewToggle = () => (
+    <div className="relative inline-flex rounded-full border border-white/10 bg-white/[0.03] p-1">
+      <span
+        aria-hidden
+        className={`absolute top-1 bottom-1 rounded-full bg-white/10 border border-white/15 transition-[left,width] duration-300 ease-out ${
+          view === "month"
+            ? "left-1 w-[calc(50%-4px)]"
+            : "left-[calc(50%)] w-[calc(50%-4px)]"
+        }`}
+      />
+      <button
+        type="button"
+        onClick={() => setView("month")}
+        className={`relative px-3 py-1 rounded-full text-[12px] font-medium transition-colors cursor-pointer ${
+          view === "month" ? "text-white" : "text-white/55 hover:text-white"
+        }`}
+      >
+        Month
+      </button>
+      <button
+        type="button"
+        onClick={() => setView("week")}
+        className={`relative px-3 py-1 rounded-full text-[12px] font-medium transition-colors cursor-pointer ${
+          view === "week" ? "text-white" : "text-white/55 hover:text-white"
+        }`}
+      >
+        Week
+      </button>
+    </div>
+  );
 
   return (
     <>
+      <PageTour pageId="calendar" />
       {/* Aurora - matches the dashboard / trades / settings hue. */}
       <div
         aria-hidden
@@ -865,19 +1114,37 @@ function Page() {
             <div className="flex items-center justify-between gap-2 px-3 md:px-0 mb-3 md:mb-4">
               {(() => {
                 const isWeek = view === "week";
+                // In the drill-up grids (calView "year" = months, "decade" =
+                // years) the header must total the whole year, not just the
+                // one month in `displayedMonth` - otherwise it showed only
+                // January's P/L instead of the year's sum.
+                const isYearView = !isWeek && calView !== "month";
                 const summary = isWeek
                   ? getWeekSummary(displayedWeekStart)
-                  : getMonthSummary(displayedMonth);
+                  : isYearView
+                    ? getYearSummary(displayedMonth)
+                    : getMonthSummary(displayedMonth);
                 const label = isWeek
                   ? `${format(displayedWeekStart, "MMM d")} – ${format(
                       addDays(displayedWeekStart, 4),
                       "MMM d",
                     )}`
-                  : `${displayedMonth.toLocaleDateString("en-US", {
-                      month: "short",
-                      year: "numeric",
-                    })}`;
+                  : isYearView
+                    ? `${displayedMonth.getFullYear()}`
+                    : `${displayedMonth.toLocaleDateString("en-US", {
+                        month: "short",
+                        year: "numeric",
+                      })}`;
                 const positive = summary.netPL >= 0;
+                // Month-view only: this month's return %, on the same basis as
+                // the year-view tiles.
+                const monthKey = `${displayedMonth.getFullYear()}-${String(
+                  displayedMonth.getMonth() + 1,
+                ).padStart(2, "0")}`;
+                const pct =
+                  !isWeek && !isYearView && summary.closedCount > 0
+                    ? monthPctByKey.get(monthKey)
+                    : undefined;
                 return (
                   <div className="flex flex-col gap-0.5">
                     <div className="text-[10px] md:text-[11px] tracking-[0.1em] text-white/40 font-medium">
@@ -894,78 +1161,63 @@ function Page() {
                     >
                       {summary.closedCount === 0
                         ? "-"
-                        : `${positive ? "" : "-"}${fmtMoneyCompact(Math.abs(summary.netPL))}`}
+                        : `${positive ? "" : "-"}${fmtMoneyFull(Math.abs(summary.netPL))}`}
+                      {pct != null && (
+                        <span className="ml-2 text-[12px] md:text-[14px] opacity-70">
+                          ({pct >= 0 ? "+" : ""}
+                          {pct.toFixed(1)}%)
+                        </span>
+                      )}
                     </div>
                   </div>
                 );
               })()}
+              {/* Share sits at the very top-right (under the profile avatar)
+                  on every breakpoint and in every view; the rest of the
+                  controls stay in the desktop cluster / mobile row. */}
               <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setDetailed((v) => !v)}
-                  className={`w-8 h-8 inline-flex items-center justify-center rounded-full border transition cursor-pointer ${
-                    detailed
-                      ? "bg-teal-500/15 text-teal-300 border-teal-500/30 hover:bg-teal-500/25"
-                      : "border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/75 hover:text-white"
-                  }`}
-                  title="Overlay watchlist earnings and open-position expiries"
-                  aria-label={detailed ? "Hide overlays" : "Show overlays"}
-                  aria-pressed={detailed}
-                >
-                  <i className="fa-solid fa-layer-group text-[11px]" />
-                </button>
-                {view === "month" && (
+                {shareButton()}
+                <div className="hidden md:flex items-center gap-2">
                   <button
-                    onClick={() => setShowMonthShare(true)}
-                    className="w-8 h-8 inline-flex items-center justify-center rounded-full border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/75 hover:text-white transition cursor-pointer"
-                    title="Share this month's P/L as an image"
-                    aria-label="Share this month"
-                  >
-                    <i className="fa-solid fa-share-nodes text-[11px]" />
-                  </button>
-                )}
-                <button
-                  onClick={goToToday}
-                  className="inline-flex items-center px-3 py-1.5 rounded-full border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/75 hover:text-white transition text-[12px] font-medium cursor-pointer"
-                  title="Jump to today"
-                >
-                  Today
-                </button>
-                <div className="relative inline-flex rounded-full border border-white/10 bg-white/[0.03] p-1">
-                  <span
-                    aria-hidden
-                    className={`absolute top-1 bottom-1 rounded-full bg-white/10 border border-white/15 transition-[left,width] duration-300 ease-out ${
-                      view === "month"
-                        ? "left-1 w-[calc(50%-4px)]"
-                        : "left-[calc(50%)] w-[calc(50%-4px)]"
+                    onClick={() => setDetailed((v) => !v)}
+                    className={`w-8 h-8 inline-flex items-center justify-center rounded-full border transition cursor-pointer ${
+                      detailed
+                        ? "bg-teal-500/15 text-teal-300 border-teal-500/30 hover:bg-teal-500/25"
+                        : "border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/75 hover:text-white"
                     }`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setView("month")}
-                    className={`relative px-3 py-1 rounded-full text-[12px] font-medium transition-colors cursor-pointer ${
-                      view === "month"
-                        ? "text-white"
-                        : "text-white/55 hover:text-white"
-                    }`}
+                    title="Overlay watchlist earnings and open-position expiries"
+                    aria-label={detailed ? "Hide earnings overlay" : "Show earnings overlay"}
+                    aria-pressed={detailed}
                   >
-                    Month
+                    <i className="fa-solid fa-layer-group text-[11px]" />
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setView("week")}
-                    className={`relative px-3 py-1 rounded-full text-[12px] font-medium transition-colors cursor-pointer ${
-                      view === "week"
-                        ? "text-white"
-                        : "text-white/55 hover:text-white"
-                    }`}
-                  >
-                    Week
-                  </button>
+                  {todayButton()}
+                  {viewToggle()}
                 </div>
               </div>
             </div>
 
-            {/* Detailed-mode legend — explains the overlay chips. */}
+            {/* Mobile: Show earnings + Share + Today + Month/Week toggle all
+                sit on one row below the P/L, so the P/L headline can span
+                the full width and show the exact figure. */}
+            <div className="md:hidden flex items-center justify-end flex-wrap gap-2 px-3 mb-3">
+              <button
+                onClick={() => setDetailed((v) => !v)}
+                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border transition cursor-pointer text-[12px] font-medium ${
+                  detailed
+                    ? "bg-teal-500/15 text-teal-300 border-teal-500/30"
+                    : "border-white/10 bg-white/[0.03] text-white/75"
+                }`}
+                aria-pressed={detailed}
+              >
+                <i className="fa-solid fa-layer-group text-[11px]" />
+                {detailed ? "Hide earnings" : "Show earnings"}
+              </button>
+              {todayButton()}
+              {viewToggle()}
+            </div>
+
+            {/* Extended-mode legend - explains the overlay chips. */}
             {detailed && (
               <div className="flex items-center flex-wrap gap-x-4 gap-y-1 px-3 md:px-0 mb-2 text-[10.5px] text-white/50">
                 <span className="inline-flex items-center gap-1.5">
@@ -978,7 +1230,7 @@ function Page() {
                 </span>
                 {watchlist.length === 0 && (
                   <span className="text-white/35 italic">
-                    Your watchlist is empty — add tickers on the Earnings page
+                    Your watchlist is empty - add tickers on the Earnings page
                     to see report dates here.
                   </span>
                 )}
@@ -993,6 +1245,7 @@ function Page() {
               >
                 <div
                   ref={calendarColRef}
+                  data-tour="cal-grid"
                   className={`flex-1 min-w-0 relative md:h-auto ${
                     scrollMode ? "" : "h-full"
                   }`}
@@ -1068,6 +1321,7 @@ function Page() {
         <DayTradesModal
           date={selectedDate}
           trades={tradesForSelectedDay}
+          events={eventsForSelectedDay}
           onClose={() => setDayListOpen(false)}
           onAddTrade={() => {
             setDayListOpen(false);
@@ -1093,7 +1347,7 @@ function Page() {
                 ? new Date(editingTrade.dateBought)
                 : selectedDate
             }
-            // Close the whole stack — trade view AND the day-list
+            // Close the whole stack - trade view AND the day-list
             // parent (if it was open). Back chevron below returns to
             // the day list instead.
             onClose={() => {
@@ -1116,19 +1370,29 @@ function Page() {
         )}
       </AnimatePresence>
 
-      {showMonthShare && (
-        <ShareImageModal
-          cardW={MONTH_CARD_W}
-          cardH={MONTH_CARD_H}
-          fileName={`cuequill-${monthShareStats().monthName.toLowerCase()}-${monthShareStats().year}.png`}
-          shareTitle={`${monthShareStats().monthName} ${monthShareStats().year} — Cuequill`}
-          shareText={`My ${monthShareStats().monthName} trading recap — Cuequill`}
-          renderCard={(ref) => (
-            <MonthlyShareCard ref={ref} stats={monthShareStats()} />
-          )}
-          onClose={() => setShowMonthShare(false)}
-        />
-      )}
+      {showMonthShare &&
+        (() => {
+          const s = activeShareStats();
+          const label = s.periodLabel ?? `${s.monthName} ${s.year}`;
+          const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+          return (
+            <ShareImageModal
+              cardW={MONTH_CARD_W}
+              cardH={MONTH_CARD_H}
+              fileName={`cuequill-${slug}.png`}
+              shareTitle={`${label} - Cuequill`}
+              shareText={`My ${label} trading recap - Cuequill`}
+              renderCard={(ref, skin) => (
+                <MonthlyShareCard ref={ref} stats={s} skin={skin} />
+              )}
+              skinnable
+              userLevel={cardSkinPrefs.level}
+              initialSkin={cardSkinPrefs.cardSkin}
+              onSkinChange={cardSkinPrefs.persist}
+              onClose={() => setShowMonthShare(false)}
+            />
+          );
+        })()}
     </>
   );
 }

@@ -42,8 +42,8 @@ function getCtor(): SpeechRecognitionCtor | null {
 }
 
 // Tap-to-talk dictation via the browser's Speech Recognition API.
-//   onResult — live transcript (interim + final) while speaking.
-//   onFinal  — the complete phrase once the user stops (recognition ends).
+//   onResult - live transcript (interim + final) while speaking.
+//   onFinal  - the complete phrase once the user stops (recognition ends).
 // Callbacks are kept in refs so the recognition instance isn't rebuilt when
 // they change (e.g. a fresh `send` closure each render).
 export function useSpeechRecognition(opts: {

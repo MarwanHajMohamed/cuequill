@@ -14,7 +14,7 @@ import { format, addDays, addWeeks, subWeeks, startOfWeek } from "date-fns";
 import { Trade } from "../types/Trades";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
 
-import { fmtMoneySignedCompact } from "@/lib/helpers/fmt";
+import { fmtMoneySignedShort } from "@/lib/helpers/fmt";
 export type WeekViewHandle = { goToToday: () => void };
 
 type TradeEventType = "WIN" | "LOSS" | "OPEN" | "TODAY";
@@ -258,12 +258,14 @@ const WeekView = forwardRef<WeekViewHandle, WeekViewProps>(function WeekView(
           <i className="fa-solid fa-chevron-left text-[11px]" />
         </button>
         <div className="flex flex-col items-center">
-          <div className="text-[10px] tracking-[0.1em] text-white/40 font-medium">
-            Week of
-          </div>
           <div className="md:text-[14px] text-[13px] font-semibold tracking-tight tabular-nums">
             {format(weekStart, "MMM d")} –{" "}
-            {format(addDays(weekStart, 4), "MMM d, yyyy")}
+            {format(
+              addDays(weekStart, 4),
+              weekStart.getMonth() === addDays(weekStart, 4).getMonth()
+                ? "d"
+                : "MMM d",
+            )}
           </div>
         </div>
         <button
@@ -369,13 +371,13 @@ const WeekView = forwardRef<WeekViewHandle, WeekViewProps>(function WeekView(
                   </div>
                   {closedTrades.length > 0 && (
                     <div
-                      className={`mx-1.5 mb-1.5 mt-2 text-center py-1.5 rounded-lg text-[12px] md:text-[13px] font-semibold tabular-nums ${
+                      className={`mx-1.5 mb-1.5 mt-2 text-center py-1.5 rounded-lg text-[12px] md:text-[13px] font-semibold tabular-nums whitespace-nowrap ${
                         netPL >= 0
                           ? "text-green-300 bg-green-500/10 border border-green-500/20"
                           : "text-red-300 bg-red-500/10 border border-red-500/20"
                       }`}
                     >
-                      {fmtMoneySignedCompact(netPL)}
+                      {fmtMoneySignedShort(netPL)}
                     </div>
                   )}
                 </button>

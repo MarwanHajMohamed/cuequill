@@ -17,7 +17,7 @@ type TradeModalProps = {
   /** Hide the Delete button if not provided. Called with the trade _id. */
   onDelete?: (_id: string) => void;
   /** When set, renders a top-left chevron that goes back instead of
-   *  closing outright — used when this modal was opened from a
+   *  closing outright - used when this modal was opened from a
    *  parent modal (e.g. the day list) and we want to preserve that
    *  parent underneath. */
   onBack?: () => void;
@@ -93,7 +93,7 @@ export default function ViewTradeModal({
               ? "bg-gradient-to-br from-green-500/15 via-transparent to-transparent"
               : isLoss
                 ? "bg-gradient-to-br from-red-500/15 via-transparent to-transparent"
-                : "bg-gradient-to-br from-orange-500/10 via-transparent to-transparent"
+                : "bg-gradient-to-br from-blue-500/10 via-transparent to-transparent"
           }`}
         >
           {/* Close button */}
@@ -148,7 +148,7 @@ export default function ViewTradeModal({
                 <span className="text-xs text-white/40">Net</span>
               </>
             ) : (
-              <span className="text-2xl md:text-3xl font-bold text-orange-400">
+              <span className="text-2xl md:text-3xl font-bold text-blue-500">
                 Open position
               </span>
             )}
@@ -292,6 +292,13 @@ export default function ViewTradeModal({
                 }
                 .notes-display a { color: #5eead4; text-decoration: underline; }
                 .notes-display p { margin: 0.25em 0; }
+                .notes-display blockquote {
+                  margin: 0.5em 0;
+                  padding: 0.25em 0.75em;
+                  border-left: 3px solid rgb(20 184 166 / 0.55);
+                  color: rgb(var(--fg-rgb) / 0.85);
+                  font-style: italic;
+                }
               `}</style>
             </div>
           )}

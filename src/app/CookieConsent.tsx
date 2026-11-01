@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 // Lightweight cookie notice. Cuequill only sets cookies that are strictly
-// necessary (keeping you signed in) — no advertising or tracking cookies —
+// necessary (keeping you signed in) - no advertising or tracking cookies -
 // so this is an acknowledgement, not a granular opt-in. The acknowledgement
 // is stored in localStorage (not a cookie) so the notice itself needs no
 // consent. If tracking/analytics cookies are ever added, this should be
@@ -20,7 +20,7 @@ export default function CookieConsent() {
     try {
       if (!localStorage.getItem(STORAGE_KEY)) setShow(true);
     } catch {
-      /* localStorage unavailable — just don't show it */
+      /* localStorage unavailable - just don't show it */
     }
   }, []);
 
@@ -49,7 +49,7 @@ export default function CookieConsent() {
             <i className="fa-solid fa-cookie-bite text-teal-300 text-[14px] mt-0.5" />
             <p className="text-[12.5px] leading-relaxed text-white/70">
               We use only the cookies needed to keep you signed in and run
-              Cuequill — no ads or tracking.
+              Cuequill - no ads or tracking.
             </p>
           </div>
           <div className="flex items-center justify-end">

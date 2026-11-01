@@ -16,7 +16,7 @@ import {
 } from "date-fns";
 import "react-calendar/dist/Calendar.css";
 import "./calendar-custom.css";
-import DayTradesModal from "../modals/DayTradesModal";
+import DayTradesModal, { type DayEvent } from "../modals/DayTradesModal";
 import TradeModal from "../modals/TradeModal";
 import { Trade } from "@/app/types/Trades";
 import { useTrades } from "@/hooks/useTrades";
@@ -25,7 +25,12 @@ import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useRouter } from "next/navigation";
 import { handleSaveTrade, handleDeleteTrade } from "@/handlers/tradeHandlers";
 import { useFedDates } from "@/hooks/useFedDates";
+import { useCpiDates } from "@/hooks/useCpiDates";
+import { usePpiDates } from "@/hooks/usePpiDates";
+import { usePceDates } from "@/hooks/usePceDates";
 import { useMarketHolidays } from "@/hooks/useMarketHolidays";
+import { useWatchlist } from "@/hooks/useWatchlist";
+import { useEarnings } from "@/hooks/useEarnings";
 import AnimatedCalendar from "@/app/reusablecalendar/AnimatedCalendar";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
 import { AnimatePresence } from "framer-motion";
@@ -88,7 +93,24 @@ export default function TradeCalendar({ userId }: { userId: string }) {
   const [dayListOpen, setDayListOpen] = useState(false);
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
   const fedDates = useFedDates();
+  const cpiDates = useCpiDates();
+  const ppiDates = usePpiDates();
+  const pceDates = usePceDates();
   const holidays = useMarketHolidays();
+  const { data: watchlistSymbols = [] } = useWatchlist();
+  const { data: earnings = [] } = useEarnings(watchlistSymbols);
+
+  // "yyyy-MM-dd" → the watchlist symbols reporting earnings that day.
+  const earningsByDay = useMemo(() => {
+    const map = new Map<string, { symbol: string; isEstimate: boolean }[]>();
+    for (const e of earnings) {
+      if (!e.date) continue;
+      const list = map.get(e.date) ?? [];
+      list.push({ symbol: e.symbol, isEstimate: e.isEstimate });
+      map.set(e.date, list);
+    }
+    return map;
+  }, [earnings]);
 
   const [simulated] = useLocalStorage<boolean>("simulated", false);
 
@@ -306,11 +328,43 @@ export default function TradeCalendar({ userId }: { userId: string }) {
       total: 0,
     };
 
+  // Economic events + watchlist earnings landing on a given day, for the
+  // day-detail modal.
+  const getDayEvents = (date: Date): DayEvent[] => {
+    const s = format(date, "yyyy-MM-dd");
+    const evs: DayEvent[] = [];
+    if (fedDates.meetings.has(s))
+      evs.push({ kind: "fed", label: "FOMC meeting" });
+    if (fedDates.minutes.has(s))
+      evs.push({ kind: "fed", label: "FOMC minutes" });
+    if (cpiDates.has(s)) evs.push({ kind: "cpi", label: "CPI release" });
+    if (ppiDates.has(s)) evs.push({ kind: "ppi", label: "PPI release" });
+    if (pceDates.has(s)) evs.push({ kind: "pce", label: "PCE release" });
+    const h = holidays.get(s);
+    if (h) {
+      evs.push({
+        kind: "holiday",
+        label: h.name,
+        detail: h.early ? "early close · 1:00pm ET" : "market closed",
+      });
+    }
+    for (const e of earningsByDay.get(s) ?? []) {
+      evs.push({
+        kind: "earnings",
+        label: `${e.symbol} earnings`,
+        detail: e.isEstimate ? "estimated" : undefined,
+      });
+    }
+    return evs;
+  };
+
   const handleDateClick = (date: Date) => {
     setSelectedDate(date);
     const dayStr = format(date, "yyyy-MM-dd");
     const dayTrades = trades?.filter((t) => bucketDateFor(t) === dayStr) ?? [];
-    if (dayTrades.length > 0) {
+    // Open the day detail when there are trades OR events to show; otherwise
+    // jump straight to adding a trade for an empty day.
+    if (dayTrades.length > 0 || getDayEvents(date).length > 0) {
       setDayListOpen(true);
     } else {
       setEditingTrade(null);
@@ -324,6 +378,12 @@ export default function TradeCalendar({ userId }: { userId: string }) {
     return trades.filter((t) => bucketDateFor(t) === dayStr);
   }, [selectedDate, trades]);
 
+  const eventsForSelectedDay = useMemo(
+    () => (selectedDate ? getDayEvents(selectedDate) : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [selectedDate, fedDates, cpiDates, ppiDates, pceDates, holidays, earningsByDay],
+  );
+
   const getDaySummary = (date: Date) => {
     const dayStr = format(date, "yyyy-MM-dd");
     const summary = tradesByDay.get(dayStr) ?? {
@@ -335,7 +395,8 @@ export default function TradeCalendar({ userId }: { userId: string }) {
     return {
       ...summary,
       isToday: dayStr === today,
-      isFed: fedDates.has(dayStr),
+      isFed: fedDates.meetings.has(dayStr),
+      isFedMinutes: fedDates.minutes.has(dayStr),
       marketDay: holidays.get(dayStr) ?? null,
     };
   };
@@ -392,39 +453,59 @@ export default function TradeCalendar({ userId }: { userId: string }) {
     // Day badges only belong on the month grid.
     if (view !== "month") return null;
 
-    const { total, closedCount, netPL, isToday, isFed, marketDay } =
+    const { total, closedCount, netPL, isToday, isFed, isFedMinutes, marketDay } =
       getDaySummary(date);
-    if (total === 0 && !isToday && !isFed && !marketDay) return null;
+    if (total === 0 && !isToday && !isFed && !isFedMinutes && !marketDay)
+      return null;
 
-    return (
-      <>
-        {isFed && (
-          <span className="absolute bottom-1 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-500/35 text-purple-100 border border-purple-400/60 shadow-[0_0_8px_rgba(168,85,247,0.35)] text-[9px] md:text-[10px] font-bold tracking-wide leading-none">
+    // Event pill (Fed meeting / minutes / holiday). When the day has trades
+    // it's rendered inline beneath the P/L + trade count so it stacks instead
+    // of overlapping them; on empty days it's anchored to the bottom-centre.
+    const hasTrades = total > 0;
+    const pos = hasTrades ? "mt-1" : "absolute bottom-1 left-1/2 -translate-x-1/2";
+    const pill =
+      isFed || isFedMinutes || marketDay ? (
+        isFed ? (
+          <span
+            className={`${pos} inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-500/35 text-purple-100 border border-purple-400/60 shadow-[0_0_8px_rgba(168,85,247,0.35)] text-[9px] md:text-[10px] font-bold tracking-wide leading-none`}
+          >
             <span className="w-1 h-1 rounded-full bg-purple-200" aria-hidden />
             Fed
           </span>
-        )}
-        {marketDay &&
-          (marketDay.early ? (
-            <span
-              title={`early close 1:00pm ET — ${marketDay.name}`}
-              className="absolute bottom-1 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-500/35 text-sky-100 border border-sky-400/60 shadow-[0_0_8px_rgba(56,189,248,0.35)] text-[9px] md:text-[10px] font-bold tracking-wide leading-none"
-            >
-              <i className="fa-solid fa-clock text-[8px]" aria-hidden />
-              1pm
-            </span>
-          ) : (
-            <span
-              title={`market closed — ${marketDay.name}`}
-              className="absolute bottom-1 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/35 text-amber-100 border border-amber-400/60 shadow-[0_0_8px_rgba(245,158,11,0.4)] text-[9px] md:text-[10px] font-bold tracking-wide leading-none"
-            >
-              <i className="fa-solid fa-lock text-[8px]" aria-hidden />
-              Closed
-            </span>
-          ))}
+        ) : isFedMinutes ? (
+          <span
+            title="FOMC meeting minutes"
+            className={`${pos} inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-500/35 text-purple-100 border border-purple-400/60 shadow-[0_0_8px_rgba(168,85,247,0.35)] text-[9px] md:text-[10px] font-bold tracking-wide leading-none`}
+          >
+            <span className="w-1 h-1 rounded-full bg-purple-200" aria-hidden />
+            Fed
+          </span>
+        ) : marketDay!.early ? (
+          <span
+            title={`early close 1:00pm ET - ${marketDay!.name}`}
+            className={`${pos} inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-500/35 text-sky-100 border border-sky-400/60 shadow-[0_0_8px_rgba(56,189,248,0.35)] text-[9px] md:text-[10px] font-bold tracking-wide leading-none`}
+          >
+            <i className="fa-solid fa-clock text-[8px]" aria-hidden />
+            1pm
+          </span>
+        ) : (
+          <span
+            title={`market closed - ${marketDay!.name}`}
+            className={`${pos} inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/35 text-amber-100 border border-amber-400/60 shadow-[0_0_8px_rgba(245,158,11,0.4)] text-[9px] md:text-[10px] font-bold tracking-wide leading-none`}
+          >
+            <i className="fa-solid fa-lock text-[8px]" aria-hidden />
+            Closed
+          </span>
+        )
+      ) : null;
+
+    return (
+      <>
+        {/* Empty days: pill floats at the bottom-centre. */}
+        {!hasTrades && pill}
         <div className="mt-1 flex flex-col items-center gap-0.5 text-[10px] md:text-xs">
           {isToday && <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />}
-          {total > 0 && (
+          {hasTrades && (
             <>
               {closedCount > 0 ? (
                 <div
@@ -442,6 +523,8 @@ export default function TradeCalendar({ userId }: { userId: string }) {
               </div>
             </>
           )}
+          {/* Days with trades: pill stacks beneath the count. */}
+          {hasTrades && pill}
         </div>
       </>
     );
@@ -509,6 +592,25 @@ export default function TradeCalendar({ userId }: { userId: string }) {
                 value={value}
                 onMonthChange={setDisplayedMonth}
                 onViewChange={setCalView}
+                headerLeft={
+                  calView === "month" &&
+                  getMonthSummary(displayedMonth).closedCount > 0 ? (
+                    <div className="flex items-baseline gap-1.5 text-xs">
+                      <span className="text-white/40">Net</span>
+                      <span
+                        className={`font-medium ${
+                          getMonthSummary(displayedMonth).netPL >= 0
+                            ? "text-green-500"
+                            : "text-red-500"
+                        }`}
+                      >
+                        {fmtMoneySignedCompact(
+                          getMonthSummary(displayedMonth).netPL,
+                        )}
+                      </span>
+                    </div>
+                  ) : null
+                }
               />
             </div>
             {/* Sidebar - empty spacer at top sized to the calendar's
@@ -548,6 +650,7 @@ export default function TradeCalendar({ userId }: { userId: string }) {
         <DayTradesModal
           date={selectedDate}
           trades={tradesForSelectedDay}
+          events={eventsForSelectedDay}
           onClose={() => setDayListOpen(false)}
           onAddTrade={() => {
             setDayListOpen(false);
@@ -571,7 +674,7 @@ export default function TradeCalendar({ userId }: { userId: string }) {
                 ? new Date(editingTrade.dateBought)
                 : selectedDate
             }
-            // Close the whole stack — trade view AND the day-list
+            // Close the whole stack - trade view AND the day-list
             // parent. Back chevron below returns to the day list
             // instead.
             onClose={() => {

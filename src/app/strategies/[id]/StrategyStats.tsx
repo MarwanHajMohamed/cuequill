@@ -104,8 +104,8 @@ function Breakdown({
   );
 }
 
-const CARD =
-  "rounded-2xl border border-white/10 bg-white/[0.02] p-4 md:p-5 flex flex-col gap-4";
+// The performance section sits directly on the page (no card container).
+const CARD = "flex flex-col gap-4";
 
 export default function StrategyStats({ strategyName }: { strategyName: string }) {
   const { data: session } = useSession();
@@ -137,13 +137,9 @@ export default function StrategyStats({ strategyName }: { strategyName: string }
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="text-[13px] font-semibold">Performance</div>
         <div className="flex items-center gap-3">
-          <span className="text-[11px] text-white/40">
-            {s.total} used · {s.closedCount} closed
-            {s.openCount > 0 ? ` · ${s.openCount} open` : ""}
-          </span>
           <Link
             href={`/chat?prompt=${encodeURIComponent(
-              `Analyse my "${strategyName}" strategy using its stats — what's working, what's my biggest leak, and how can I tighten it up?`,
+              `Analyse my "${strategyName}" strategy using its stats - what's working, what's my biggest leak, and how can I tighten it up?`,
             )}`}
             className="inline-flex items-center gap-1.5 text-[11.5px] font-medium text-teal-300 hover:text-teal-200 border border-teal-500/25 hover:border-teal-400/40 rounded-full px-2.5 py-1 transition"
           >
@@ -153,20 +149,20 @@ export default function StrategyStats({ strategyName }: { strategyName: string }
         </div>
       </div>
 
-      {/* Leak callout — the slice bleeding the most, or an all-clear. */}
+      {/* Leak callout - the slice bleeding the most, or an all-clear. */}
       {s.closedCount >= 3 &&
         (s.leak ? (
           <div className="rounded-xl border border-red-500/30 bg-red-500/[0.08] px-3.5 py-2.5 text-[12.5px] text-red-300 leading-relaxed">
             <i className="fa-solid fa-magnifying-glass-chart mr-1.5" />
             <span className="font-medium">Biggest leak:</span> {s.leak.label}{" "}
-            {s.leak.dimension} — {s.leak.n} trades, {s.leak.winRate.toFixed(0)}%
+            {s.leak.dimension} - {s.leak.n} trades, {s.leak.winRate.toFixed(0)}%
             win, {fmtMoneySignedCompact(s.leak.net)}. Consider whether this
             slice is worth keeping.
           </div>
         ) : (
           <div className="rounded-xl border border-teal-500/25 bg-teal-500/[0.06] px-3.5 py-2.5 text-[12.5px] text-teal-200/90 leading-relaxed">
             <i className="fa-solid fa-circle-check mr-1.5" />
-            No obvious leak — every direction, symbol, and weekday slice is net
+            No obvious leak - every direction, symbol, and weekday slice is net
             positive so far.
           </div>
         ))}
@@ -194,7 +190,7 @@ export default function StrategyStats({ strategyName }: { strategyName: string }
         <Kpi label="Avg loss" value={fmtMoneySignedCompact(-s.avgLoss)} tone="bad" />
         <Kpi
           label="Payoff ratio"
-          value={s.payoff == null ? "—" : `${s.payoff.toFixed(2)}×`}
+          value={s.payoff == null ? "-" : `${s.payoff.toFixed(2)}×`}
           hint="avg win ÷ avg loss"
           tone={s.payoff != null && s.payoff >= 1 ? "good" : "bad"}
         />
@@ -254,6 +250,8 @@ export default function StrategyStats({ strategyName }: { strategyName: string }
                     fontSize: 12,
                     color: "var(--foreground)",
                   }}
+                  itemStyle={{ color: "var(--foreground)" }}
+                  labelStyle={{ color: "var(--foreground)" }}
                   labelFormatter={(l) => `Trade ${l}`}
                   formatter={(v: number) => [fmtMoneyCompact(v), "Cumulative"]}
                 />
@@ -272,19 +270,19 @@ export default function StrategyStats({ strategyName }: { strategyName: string }
         </div>
       )}
 
-      {/* Hold-time comparison — a classic leak (holding losers longer). */}
+      {/* Hold-time comparison - a classic leak (holding losers longer). */}
       {(s.avgHoldWin != null || s.avgHoldLoss != null) && (
         <div className="flex items-center gap-4 text-[12px] text-white/55 border-t border-white/[0.06] pt-3">
           <span>
-            Avg hold — winners{" "}
+            Avg hold - winners{" "}
             <span className="text-white/85 font-medium tabular-nums">
-              {s.avgHoldWin != null ? `${s.avgHoldWin.toFixed(1)}d` : "—"}
+              {s.avgHoldWin != null ? `${s.avgHoldWin.toFixed(1)}d` : "-"}
             </span>
           </span>
           <span>
             losers{" "}
             <span className="text-white/85 font-medium tabular-nums">
-              {s.avgHoldLoss != null ? `${s.avgHoldLoss.toFixed(1)}d` : "—"}
+              {s.avgHoldLoss != null ? `${s.avgHoldLoss.toFixed(1)}d` : "-"}
             </span>
           </span>
           {s.avgHoldWin != null &&
@@ -298,12 +296,7 @@ export default function StrategyStats({ strategyName }: { strategyName: string }
       )}
 
       {/* Breakdowns */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 border-t border-white/[0.06] pt-4">
-        <Breakdown
-          title="By direction"
-          slices={s.byDirection}
-          worstKey={worstKey}
-        />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 border-t border-white/[0.06] pt-4">
         <Breakdown
           title="By weekday"
           slices={s.byWeekday}

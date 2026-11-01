@@ -6,7 +6,7 @@ import { syncSubscriptionToUser } from "@/lib/stripeSync";
 
 // Nightly backstop for the Stripe webhook. Webhooks can be missed
 // (endpoint down, mis-signed secret, dropped delivery), and isPro is only
-// ever turned OFF by a webhook — so without this, a cancelled or
+// ever turned OFF by a webhook - so without this, a cancelled or
 // non-paying subscriber could keep Pro indefinitely. This job pulls each
 // subscriber's LIVE status straight from Stripe and re-syncs, self-healing
 // any drift regardless of webhook delivery.
@@ -46,19 +46,19 @@ async function runReconcile() {
     try {
       const sub = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
       // syncSubscriptionToUser re-derives isPro from the live status and
-      // saves — the single source of truth used by the webhook too.
+      // saves - the single source of truth used by the webhook too.
       await syncSubscriptionToUser(sub);
       results.resynced += 1;
     } catch (err) {
       if (isMissing(err)) {
-        // Subscription is gone entirely — drop to comp-only access.
+        // Subscription is gone entirely - drop to comp-only access.
         user.isPro = !!user.proManualOverride;
         user.stripeSubscriptionStatus = "canceled";
         user.stripeCancelAtPeriodEnd = false;
         await user.save();
         results.dropped += 1;
       } else {
-        // Transient Stripe/DB error — leave this user's state untouched
+        // Transient Stripe/DB error - leave this user's state untouched
         // and let the next run retry.
         results.errors += 1;
         console.error(

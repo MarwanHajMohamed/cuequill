@@ -1,0 +1,105 @@
+import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import connectDb from "@/lib/db";
+import mongoose from "mongoose";
+import Trade from "@/lib/models/Trade";
+import { User } from "@/lib/models/User";
+import {
+  CHALLENGE_MAP,
+  levelInfo,
+  activityXp,
+  type EvalTrade,
+} from "@/lib/challenges";
+import { chatBetween } from "@/lib/levelRewards";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+// POST /api/challenges/claim { id } - award a completed challenge's XP,
+// once. Re-verifies completion server-side from real trades so a claim
+// can't be forged, and guards against double-claim.
+export async function POST(req: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const body = await req.json().catch(() => ({}));
+  const id = typeof body.id === "string" ? body.id : "";
+  const def = CHALLENGE_MAP[id];
+  if (!def) {
+    return NextResponse.json({ error: "Unknown challenge" }, { status: 400 });
+  }
+
+  await connectDb();
+  const user = await User.findById(session.user.id).select(
+    "xp challengeClaims bonusChatMessages chatRewardLevel",
+  );
+  if (!user) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
+
+  if ((user.challengeClaims ?? []).some((c: { id: string }) => c.id === id)) {
+    return NextResponse.json({ error: "Already claimed" }, { status: 409 });
+  }
+
+  const trades = await Trade.find({
+    userID: new mongoose.Types.ObjectId(session.user.id),
+    simulated: false,
+  })
+    .select("status symbol notes tags strategy option dateBought dateClosed")
+    .lean<EvalTrade[]>();
+
+  // Derived activity XP counts toward the level everywhere.
+  const act = activityXp(trades ?? []);
+
+  // Level-gated challenges can't be claimed until the account reaches the
+  // required level.
+  if ((def.minLevel ?? 1) > levelInfo((user.xp ?? 0) + act).level) {
+    return NextResponse.json(
+      { error: `Reach level ${def.minLevel} to unlock this challenge` },
+      { status: 400 },
+    );
+  }
+
+  if (def.progress(trades ?? []) < def.target) {
+    return NextResponse.json(
+      { error: "Challenge not complete yet" },
+      { status: 400 },
+    );
+  }
+
+  const preLevel = levelInfo((user.xp ?? 0) + act).level;
+  user.xp = (user.xp ?? 0) + def.xp;
+  user.challengeClaims = [
+    ...(user.challengeClaims ?? []),
+    { id, claimedAt: new Date() },
+  ];
+
+  // Grant level-up chat rewards. The watermark tracks the highest level
+  // already paid out; a value of 0 means "not initialised" (existing
+  // account) - seed it to the pre-claim level so we never retro-pay for
+  // levels reached before this system existed, only ones crossed from here.
+  const newLevel = levelInfo(user.xp + act).level;
+  let watermark = user.chatRewardLevel ?? 0;
+  if (watermark === 0) watermark = preLevel;
+  let chatGranted = 0;
+  if (newLevel > watermark) {
+    chatGranted = chatBetween(watermark, newLevel);
+    if (chatGranted > 0) {
+      user.bonusChatMessages = (user.bonusChatMessages ?? 0) + chatGranted;
+    }
+  }
+  user.chatRewardLevel = Math.max(watermark, newLevel);
+
+  await user.save();
+
+  return NextResponse.json({
+    success: true,
+    awarded: def.xp,
+    // Bonus chats granted from any level-up this claim triggered.
+    chatGranted,
+    ...levelInfo(user.xp + act),
+  });
+}

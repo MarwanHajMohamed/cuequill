@@ -3,14 +3,8 @@
 import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { useToast } from "@/hooks/useToast";
-import {
-  FaqRow,
-  SectionMark,
-  SiteFooter,
-  SiteHeader,
-} from "../_marketing/Chrome";
+import { useEffect, useRef, useState } from "react";
+import { FaqRow, SiteFooter, SiteHeader } from "../_marketing/Chrome";
 
 // ─── Data ────────────────────────────────────────────────────────────
 
@@ -37,7 +31,7 @@ type Plan = {
 const PLANS: Plan[] = [
   {
     name: "Starter",
-    tagline: "For the journal you keep meaning to read.",
+    tagline: "",
     monthly: 0,
     annual: 0,
     cta: "Start free",
@@ -48,6 +42,7 @@ const PLANS: Plan[] = [
       "Up to 3 custom strategies",
       "Manual IBKR import",
       "Win rate & core stats",
+      "Downloadable CSV reports",
       "90-day history",
     ],
     excluded: [
@@ -55,13 +50,14 @@ const PLANS: Plan[] = [
       "Auto IBKR sync",
       "Unlimited strategies",
       "Per-strategy & per-symbol stats",
+      "Monthly heatmap & trends",
       "Rules board & affirmations",
       "Unlimited history",
     ],
   },
   {
     name: "Pro",
-    tagline: "The whole thing, working for you nightly.",
+    tagline: "",
     monthly: 39,
     annual: 31,
     cta: "Go pro",
@@ -70,9 +66,10 @@ const PLANS: Plan[] = [
     leadIn: "Everything in Starter, plus",
     included: [
       "Quill AI over your own trades",
-      "Auto IBKR sync after close",
+      "Auto IBKR sync every morning",
       "Unlimited strategies",
       "Per-strategy & per-symbol stats",
+      "Monthly heatmap & trends",
       "Rules board & affirmations",
       "Unlimited history retained",
     ],
@@ -95,7 +92,19 @@ const COMPARE: CompareGroup[] = [
       { feature: "Manual trade logging", starter: "Unlimited", pro: "Unlimited" },
       {
         feature: "Calendar P&L",
-        note: "Net of commissions",
+        note: "Net of commissions · economic-event pills",
+        starter: true,
+        pro: true,
+      },
+      {
+        feature: "Entry & exit times",
+        note: "Logged by hand or pulled from IBKR",
+        starter: true,
+        pro: true,
+      },
+      {
+        feature: "Sortable trades table & saved filters",
+        note: "Sticky header · URL-stateful",
         starter: true,
         pro: true,
       },
@@ -109,7 +118,7 @@ const COMPARE: CompareGroup[] = [
       { feature: "Manual IBKR import", starter: true, pro: true },
       {
         feature: "IBKR auto-sync",
-        note: "Every weeknight after close",
+        note: "Every morning",
         starter: false,
         pro: true,
       },
@@ -122,6 +131,18 @@ const COMPARE: CompareGroup[] = [
       { feature: "Win rate & core stats", starter: true, pro: true },
       { feature: "Per-strategy stats", starter: false, pro: true },
       { feature: "Per-symbol stats", starter: false, pro: true },
+      {
+        feature: "Monthly heatmap & trends",
+        note: "Day-by-day heatmap · month-over-month",
+        starter: false,
+        pro: true,
+      },
+      {
+        feature: "Downloadable CSV reports",
+        note: "Performance, tax & activity, date-scoped",
+        starter: true,
+        pro: true,
+      },
     ],
   },
   {
@@ -147,7 +168,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "What do I need for IBKR sync?",
-    a: "A Flex Web Service token from Interactive Brokers. Drop it into settings and Cuequill imports every fill weeknight after close — commissions and taxes included.",
+    a: "A Flex Web Service token from Interactive Brokers. Drop it into settings and Cuequill imports every fill each morning - commissions and taxes included.",
   },
   {
     q: "Can I switch between monthly and yearly?",
@@ -163,7 +184,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "Does my trade data train the AI?",
-    a: "No. Quill AI reads your trades to answer your questions in the moment. Your journal is yours — it isn't used to train models.",
+    a: "No. Quill AI reads your trades to answer your questions in the moment. Your journal is yours - it isn't used to train models.",
   },
   {
     q: "Do you offer refunds?",
@@ -175,7 +196,7 @@ const FAQS: { q: string; a: string }[] = [
 
 export default function PricingPage() {
   const [cycle, setCycle] = useState<Cycle>("annual");
-  // When signed in, the global app navbar already renders — so skip the
+  // When signed in, the global app navbar already renders - so skip the
   // marketing header to avoid two stacked navbars.
   const { data: session, status, update } = useSession();
   const signedIn = status === "authenticated";
@@ -184,15 +205,32 @@ export default function PricingPage() {
   // Returning from Stripe Checkout. Read the flag off the URL (rather
   // than useSearchParams, which would force a Suspense boundary). On
   // success, poll a DB-backed endpoint until the webhook has flipped
-  // isPro, THEN refresh the session exactly once — polling the session
+  // isPro, THEN refresh the session exactly once - polling the session
   // itself (repeated update() calls) churns next-auth and flickers the
   // navbar. The `{ isPro: true }` arg makes the jwt callback re-check the
   // DB (the DB value, not the client's, is authoritative).
+  //
+  // Runs EXACTLY ONCE (ref guard + empty deps). `update` must NOT be a
+  // dependency: calling update() re-renders this component with a fresh
+  // `update` identity, which would re-run the effect, poll again, call
+  // update() again... an infinite loop that flips isPro on and off every
+  // couple of seconds. We also strip the `checkout` param from the URL so
+  // a refresh doesn't restart the whole flow.
   const [checkoutResult, setCheckoutResult] = useState<string | null>(null);
+  const handledCheckoutRef = useRef(false);
   useEffect(() => {
-    const c = new URLSearchParams(window.location.search).get("checkout");
+    if (handledCheckoutRef.current) return;
+    const params = new URLSearchParams(window.location.search);
+    const c = params.get("checkout");
     if (!c) return;
+    handledCheckoutRef.current = true;
     setCheckoutResult(c);
+
+    // Drop ?checkout=… so a page refresh doesn't re-enter this flow.
+    params.delete("checkout");
+    const qs = params.toString();
+    window.history.replaceState({}, "", `/pricing${qs ? `?${qs}` : ""}`);
+
     if (c !== "success") return;
 
     let cancelled = false;
@@ -208,7 +246,7 @@ export default function PricingPage() {
           return;
         }
       } catch {
-        // transient — fall through and retry
+        // transient - fall through and retry
       }
       if (!cancelled && tries < 10) setTimeout(poll, 2000);
     };
@@ -218,7 +256,10 @@ export default function PricingPage() {
       cancelled = true;
       clearTimeout(first);
     };
-  }, [update]);
+    // Intentionally run once on mount only - see the note above on why
+    // `update` must be excluded from the dependency array.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -227,8 +268,8 @@ export default function PricingPage() {
           <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-teal-400/40 bg-teal-500/15 px-4 py-2 text-[13px] text-teal-200 backdrop-blur-md shadow-lg">
             <i className="fa-solid fa-circle-check" />
             {isPro
-              ? "You're on Pro — welcome aboard."
-              : "Payment received — activating Pro…"}
+              ? "You're on Pro. Welcome aboard."
+              : "Payment received. Activating Pro…"}
           </div>
         </div>
       )}
@@ -236,7 +277,7 @@ export default function PricingPage() {
         <div className="fixed top-4 inset-x-0 z-[60] flex justify-center px-4 pointer-events-none">
           <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-4 py-2 text-[13px] text-white/80 backdrop-blur-md shadow-lg">
             <i className="fa-solid fa-circle-info text-white/50" />
-            Checkout cancelled — no charge was made.
+            Checkout cancelled - no charge was made.
           </div>
         </div>
       )}
@@ -250,12 +291,11 @@ export default function PricingPage() {
             "radial-gradient(50% 50% at 50% 0%, rgba(20,184,166,0.14) 0%, rgba(20,184,166,0) 75%), radial-gradient(40% 45% at 80% 5%, rgba(99,102,241,0.10) 0%, rgba(99,102,241,0) 75%)",
         }}
       />
-      {/* Only render the marketing header once we KNOW the visitor is
-          logged out. During the brief "loading" state signedIn is also
-          false, which — paired with the app navbar appearing only when
-          authenticated — made the two headers flicker back and forth on
-          session revalidation. */}
-      {status === "unauthenticated" && <SiteHeader />}
+      {/* Pricing is a marketing surface: the app sidebar is suppressed here
+          (NavbarWrapper), so the top marketing header shows for everyone -
+          signed in or out. When signed in its CTAs collapse to "Go to
+          Dashboard". */}
+      <SiteHeader />
 
       <main className="flex-1 pt-20">
         <PricingHero />
@@ -292,9 +332,8 @@ function PricingHero() {
             transition={{ duration: 0.4 }}
             className="mb-8"
           >
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[10.5px] tracking-[0.1em] text-white/55">
-              <span className="w-1.5 h-1.5 rounded-full bg-teal-400" />
-              Pricing · two tiers
+            <span className="text-[11px] tracking-[0.1em] text-teal-300">
+              Pricing
             </span>
           </motion.div>
 
@@ -356,7 +395,7 @@ function BillingToggle({
         }`}
       >
         Yearly
-        <span className="text-[9.5px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25">
+        <span className="text-[9.5px] font-semibold tracking-wide text-teal-300">
           −20%
         </span>
       </button>
@@ -380,7 +419,7 @@ function PlansSpread({
   return (
     <section className="px-6 md:px-10 py-20 md:py-28">
       <div className="max-w-[1100px] mx-auto">
-        <SectionMark label="Plans" />
+        <span className="text-[11px] tracking-[0.1em] text-teal-300">Plans</span>
 
         <div className="mt-6 flex flex-col md:flex-row md:items-end md:justify-between gap-6 md:gap-10">
           <h2 className="text-[32px] md:text-[48px] leading-[1.04] font-medium tracking-[-0.02em] max-w-3xl">
@@ -421,36 +460,13 @@ function PlanCTA({
   signedIn: boolean;
   isPro: boolean;
 }) {
-  const toast = useToast();
-  const [loading, setLoading] = useState(false);
-
   const base = `shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-full transition text-[11px] font-semibold tracking-[0.08em] cursor-pointer disabled:opacity-60 disabled:cursor-default ${
     plan.featured
       ? "bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25"
       : "border border-white/15 text-white/85 hover:bg-white/[0.06]"
   }`;
 
-  const post = async (endpoint: string, body?: unknown) => {
-    setLoading(true);
-    try {
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: body ? { "Content-Type": "application/json" } : undefined,
-        body: body ? JSON.stringify(body) : undefined,
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok && data.url) {
-        window.location.href = data.url;
-        return;
-      }
-      toast(data.error || "Something went wrong. Please try again.");
-    } catch {
-      toast("Network error. Please try again.");
-    }
-    setLoading(false);
-  };
-
-  // Starter (free) tier — a link into the app / sign-up.
+  // Starter (free) tier - a link into the app / sign-up.
   if (!plan.featured) {
     return (
       <Link href={signedIn ? "/dashboard" : plan.href} className={base}>
@@ -460,7 +476,7 @@ function PlanCTA({
     );
   }
 
-  // Pro tier, signed out — send to login (they can subscribe after).
+  // Pro tier, signed out - send to login (they can subscribe after).
   if (!signedIn) {
     return (
       <Link href="/login" className={base}>
@@ -470,32 +486,22 @@ function PlanCTA({
     );
   }
 
-  // Pro tier, already subscribed — manage billing.
+  // Pro tier, already subscribed - manage the plan in-app.
   if (isPro) {
     return (
-      <button
-        type="button"
-        onClick={() => post("/api/stripe/portal")}
-        disabled={loading}
-        className={base}
-      >
-        {loading ? "Opening…" : "Manage billing"}
-        {!loading && <i className="fa-solid fa-arrow-up-right-from-square text-[9px]" />}
-      </button>
+      <Link href="/settings" className={base}>
+        Manage plan
+        <i className="fa-solid fa-chevron-right text-[9px]" />
+      </Link>
     );
   }
 
-  // Pro tier, signed in but free — start checkout for the chosen cycle.
+  // Pro tier, signed in but free - go to the in-app checkout page.
   return (
-    <button
-      type="button"
-      onClick={() => post("/api/stripe/checkout", { cycle })}
-      disabled={loading}
-      className={base}
-    >
-      {loading ? "Redirecting…" : plan.cta}
-      {!loading && <i className="fa-solid fa-chevron-right text-[9px]" />}
-    </button>
+    <Link href={`/checkout?cycle=${cycle}`} className={base}>
+      {plan.cta}
+      <i className="fa-solid fa-chevron-right text-[9px]" />
+    </Link>
   );
 }
 
@@ -527,20 +533,22 @@ function PlanColumn({
           : "bg-white/[0.03]"
       }`}
     >
-      {/* Name + recommended pill */}
+      {/* Name + recommended label */}
       <div className="flex items-center justify-between gap-3">
         <h3 className="text-[20px] md:text-[22px] leading-none tracking-[-0.02em] font-medium">
           {plan.name}
         </h3>
         {plan.featured && (
-          <span className="text-[9.5px] tracking-[0.12em] text-teal-300 border border-teal-500/30 rounded-full px-2 py-0.5">
+          <span className="text-[10px] tracking-[0.12em] text-teal-300">
             Recommended
           </span>
         )}
       </div>
-      <p className="mt-1.5 text-[12px] text-white/55 leading-snug italic">
-        {plan.tagline}
-      </p>
+      {plan.tagline && (
+        <p className="mt-1.5 text-[12px] text-white/55 leading-snug italic">
+          {plan.tagline}
+        </p>
+      )}
 
       {/* Price + CTA on one row */}
       <div className="mt-5 flex items-end justify-between gap-4">
@@ -568,19 +576,27 @@ function PlanColumn({
               </span>
             </div>
           )}
-          <p className="mt-1.5 text-[10px] tracking-[0.1em] text-white/40 tabular-nums">
-            {isContact
-              ? "One-time · invite-only"
-              : price === 0
-                ? "No card required"
-                : cycle === "annual"
-                  ? `£${(plan.annual ?? 0) * 12}/yr`
-                  : "Cancel any time"}
-          </p>
+          {!isContact && price !== 0 && cycle === "annual" && (
+            <p className="mt-1.5 text-[10px] tracking-[0.1em] text-white/40 tabular-nums">
+              £{(plan.annual ?? 0) * 12}/yr
+            </p>
+          )}
         </div>
 
         <PlanCTA plan={plan} cycle={cycle} signedIn={signedIn} isPro={isPro} />
       </div>
+
+      {/* Launch promo - only on Pro, and only for those who could still use
+          it (not existing subscribers). Mirrors the announcement stripe. */}
+      {plan.featured && !isPro && (
+        <div className="mt-4 flex items-center gap-2 rounded-lg border border-teal-500/20 bg-teal-500/[0.06] px-3 py-2 text-[11.5px] text-teal-200">
+          <i className="fa-solid fa-tag text-[10px] shrink-0" />
+          <span>
+            Use <span className="font-semibold tracking-wide">LAUNCH26</span> for
+            50% off your first 6 months
+          </span>
+        </div>
+      )}
 
       {/* Features - hairline divider above. Check = included, muted dash
           with strike = explicitly not included on this tier. */}
@@ -637,7 +653,7 @@ function CompareSection({ cycle }: { cycle: Cycle }) {
   return (
     <section className="px-6 md:px-10 py-20 md:py-28">
       <div className="max-w-[1200px] mx-auto">
-        <SectionMark label="Compare" />
+        <span className="text-[11px] tracking-[0.1em] text-teal-300">Compare</span>
         <h2 className="mt-6 text-[32px] md:text-[40px] leading-[1.04] font-medium tracking-[-0.02em]">
           What sits inside each tier.
         </h2>
@@ -730,7 +746,7 @@ function CompareCell({ value, accent }: { value: Cell; accent?: boolean }) {
         />
       ) : value === false ? (
         <span className="text-white/20" aria-label="Not included">
-          —
+          -
         </span>
       ) : (
         <span
@@ -750,12 +766,12 @@ function FaqSection() {
     <section className="px-6 md:px-10 py-20 md:py-28">
       <div className="max-w-[1200px] mx-auto grid md:grid-cols-12 gap-10">
         <div className="md:col-span-4">
-          <SectionMark label="FAQ" />
+          <span className="text-[11px] tracking-[0.1em] text-teal-300">FAQ</span>
           <h2 className="mt-6 text-[32px] md:text-[40px] leading-[1.04] font-medium tracking-[-0.02em]">
             Frequently <span className="italic text-teal-300">asked.</span>
           </h2>
           <p className="mt-5 max-w-xs text-[13px] text-white/55 leading-relaxed">
-            Or write to me directly — I usually reply same day.
+            Or write to me directly - I usually reply same day.
           </p>
           <a
             href="mailto:info@cuequill.com"
@@ -781,7 +797,7 @@ function Signoff() {
   return (
     <section className="px-6 md:px-10 py-20 md:py-28">
       <div className="max-w-[1200px] mx-auto rounded-3xl border border-white/10 bg-white/[0.02] backdrop-blur-md shadow-[0_8px_40px_var(--shadow-soft)] p-8 md:p-14">
-        <SectionMark label="get started" />
+        <span className="text-[11px] tracking-[0.1em] text-teal-300">Get started</span>
         <h2 className="mt-6 text-[36px] sm:text-[52px] md:text-[64px] leading-[0.98] font-medium tracking-[-0.025em] max-w-4xl">
           Start free, today.{" "}
           <span className="italic text-teal-300">

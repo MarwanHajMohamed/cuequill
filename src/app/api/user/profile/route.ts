@@ -3,7 +3,64 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import connectDb from "@/lib/db";
 import { User } from "@/lib/models/User";
+import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
+import Trade from "@/lib/models/Trade";
+import {
+  CHALLENGES,
+  levelInfo,
+  activityXp,
+  type EvalTrade,
+} from "@/lib/challenges";
+import { availableTitles, type TrophyStats } from "@/lib/trophies";
+import { normalizeAccent } from "@/lib/accents";
+import { normalizeCardSkin } from "@/lib/cardSkins";
+
+// GET /api/user/profile - display preferences + read-only account info.
+export async function GET() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  await connectDb();
+  const [user, trades] = await Promise.all([
+    User.findById(session.user.id).select(
+      "currency startingBalance simulatedStartingBalance riskPerTrade avatarColor avatarFrame accentColor cardSkin equippedTitle xp isPro proManualOverride stripeCurrentPeriodEnd stripeCancelAtPeriodEnd",
+    ),
+    // Just the dates + count needed to derive activity XP (real trades only).
+    Trade.find({
+      userID: new mongoose.Types.ObjectId(session.user.id),
+      simulated: false,
+    })
+      .select("dateBought dateClosed")
+      .lean<EvalTrade[]>(),
+  ]);
+  if (!user) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
+
+  return NextResponse.json({
+    currency: user.currency ?? "USD",
+    startingBalance: user.startingBalance ?? 0,
+    simulatedStartingBalance: user.simulatedStartingBalance ?? 0,
+    riskPerTrade: user.riskPerTrade ?? null,
+    avatarColor: user.avatarColor ?? "teal",
+    avatarFrame: user.avatarFrame ?? "none",
+    accentColor: user.accentColor ?? "teal",
+    cardSkin: user.cardSkin ?? "midnight",
+    equippedTitle: user.equippedTitle ?? "",
+    ...levelInfo((user.xp ?? 0) + activityXp(trades ?? [])),
+    isPro: !!user.isPro,
+    proManualOverride: !!user.proManualOverride,
+    stripeCurrentPeriodEnd: user.stripeCurrentPeriodEnd ?? null,
+    stripeCancelAtPeriodEnd: !!user.stripeCancelAtPeriodEnd,
+    // Derive "member since" from the ObjectId - no schema change needed.
+    memberSince: new mongoose.Types.ObjectId(session.user.id)
+      .getTimestamp()
+      .toISOString(),
+  });
+}
 
 // PATCH /api/user/profile
 // Updates the signed-in user's identity (firstname / surname / email)
@@ -22,6 +79,15 @@ export async function PATCH(req: Request) {
     email?: string;
     currentPassword?: string;
     newPassword?: string;
+    currency?: string;
+    startingBalance?: number;
+    simulatedStartingBalance?: number;
+    riskPerTrade?: number | null;
+    avatarColor?: string;
+    avatarFrame?: string;
+    accentColor?: string;
+    cardSkin?: string;
+    equippedTitle?: string;
   };
   try {
     body = await req.json();
@@ -89,7 +155,7 @@ export async function PATCH(req: Request) {
       );
     }
     // Cost factor 12 matches OWASP's 2023 guidance for bcrypt on
-    // modern hardware — meaningfully harder to brute-force offline
+    // modern hardware - meaningfully harder to brute-force offline
     // than the old default of 10.
     user.password = await bcrypt.hash(body.newPassword, 12);
   }
@@ -99,6 +165,109 @@ export async function PATCH(req: Request) {
   if (surname !== undefined) user.surname = surname;
   if (email !== undefined) user.email = email;
 
+  // ── Apply preference changes (all optional, validated leniently) ────
+  if (body.currency !== undefined) {
+    const code = String(body.currency).toUpperCase();
+    if (!/^[A-Z]{3}$/.test(code)) {
+      return NextResponse.json(
+        { error: "Currency must be a 3-letter code" },
+        { status: 400 },
+      );
+    }
+    user.currency = code;
+  }
+  if (body.startingBalance !== undefined) {
+    const n = Number(body.startingBalance);
+    if (!Number.isFinite(n)) {
+      return NextResponse.json(
+        { error: "Starting balance must be a number" },
+        { status: 400 },
+      );
+    }
+    user.startingBalance = n;
+  }
+  if (body.simulatedStartingBalance !== undefined) {
+    const n = Number(body.simulatedStartingBalance);
+    if (!Number.isFinite(n)) {
+      return NextResponse.json(
+        { error: "Simulated starting balance must be a number" },
+        { status: 400 },
+      );
+    }
+    user.simulatedStartingBalance = n;
+  }
+  if (body.riskPerTrade !== undefined) {
+    if (body.riskPerTrade === null || body.riskPerTrade === ("" as unknown)) {
+      user.riskPerTrade = undefined;
+    } else {
+      const n = Number(body.riskPerTrade);
+      if (!Number.isFinite(n) || n < 0 || n > 100) {
+        return NextResponse.json(
+          { error: "Risk per trade must be between 0 and 100" },
+          { status: 400 },
+        );
+      }
+      user.riskPerTrade = n;
+    }
+  }
+  if (body.avatarColor !== undefined) {
+    user.avatarColor = String(body.avatarColor).slice(0, 20);
+  }
+  if (body.avatarFrame !== undefined) {
+    user.avatarFrame = String(body.avatarFrame).slice(0, 20);
+  }
+  if (body.accentColor !== undefined) {
+    user.accentColor = normalizeAccent(String(body.accentColor));
+  }
+  if (body.cardSkin !== undefined) {
+    user.cardSkin = normalizeCardSkin(String(body.cardSkin));
+  }
+  if (body.equippedTitle !== undefined) {
+    const wanted = String(body.equippedTitle).trim();
+    if (wanted === "") {
+      // Clearing the nameplate is always allowed.
+      user.equippedTitle = "";
+    } else {
+      // Only allow a title the user has actually earned. Compute the same
+      // way the challenges route does, from real (non-simulated) trades.
+      const trades = await Trade.find({
+        userID: new mongoose.Types.ObjectId(session.user.id),
+        simulated: false,
+      })
+        .select("status symbol dateBought dateClosed")
+        .lean<EvalTrade[]>();
+      const closed = trades.filter(
+        (t) => t.status === "WIN" || t.status === "LOSS",
+      );
+      const monthSet = new Set<string>();
+      const symbolSet = new Set<string>();
+      for (const t of trades) {
+        const d = t.dateClosed ?? t.dateBought;
+        if (d) monthSet.add(new Date(d).toISOString().slice(0, 7));
+        if (t.symbol) symbolSet.add(t.symbol.toUpperCase());
+      }
+      const info = levelInfo((user.xp ?? 0) + activityXp(trades));
+      const stats: TrophyStats = {
+        totalTrades: trades.length,
+        closedTrades: closed.length,
+        wins: trades.filter((t) => t.status === "WIN").length,
+        months: monthSet.size,
+        symbols: symbolSet.size,
+        level: info.level,
+        levelTitle: info.title,
+        claimedCount: (user.challengeClaims ?? []).length,
+        totalChallenges: CHALLENGES.length,
+      };
+      if (!availableTitles(stats).includes(wanted)) {
+        return NextResponse.json(
+          { error: "You haven't earned that title yet" },
+          { status: 400 },
+        );
+      }
+      user.equippedTitle = wanted;
+    }
+  }
+
   await user.save();
 
   return NextResponse.json({
@@ -106,5 +275,14 @@ export async function PATCH(req: Request) {
     firstname: user.firstname,
     surname: user.surname,
     email: user.email,
+    currency: user.currency,
+    startingBalance: user.startingBalance,
+    simulatedStartingBalance: user.simulatedStartingBalance ?? 0,
+    riskPerTrade: user.riskPerTrade ?? null,
+    avatarColor: user.avatarColor,
+    avatarFrame: user.avatarFrame,
+    accentColor: user.accentColor,
+    cardSkin: user.cardSkin,
+    equippedTitle: user.equippedTitle ?? "",
   });
 }

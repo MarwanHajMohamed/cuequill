@@ -5,9 +5,10 @@ import { useSession } from "next-auth/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import ImportedTradesModal from "@/app/trades/ImportedTradesModal";
+import { useScrollLock } from "@/hooks/useScrollLock";
 
 // Shows a small welcome pop-up on the first authenticated page load
-// after the nightly IBKR sync (or any earlier session's manual sync)
+// after the morning IBKR sync (or any earlier session's manual sync)
 // inserted rows the user hasn't acknowledged yet. Dismissing or
 // opening the imported-list stamps the "seen" marker server-side so
 // the notice doesn't reappear on the next navigation.
@@ -20,8 +21,11 @@ export default function AutoImportNotifier() {
   const [showNotice, setShowNotice] = useState(false);
   const [showImported, setShowImported] = useState(false);
 
+  // Imported modal locks scroll itself; here we cover just the notice pop-up.
+  useScrollLock(showNotice);
+
   useEffect(() => {
-    // Wait until NextAuth resolves the session — status starts as
+    // Wait until NextAuth resolves the session - status starts as
     // "loading". Bail out entirely for unauthenticated visitors so we
     // don't hit an auth-gated endpoint from the marketing page.
     if (status !== "authenticated" || checked) return;
@@ -37,7 +41,7 @@ export default function AutoImportNotifier() {
           setShowNotice(true);
         }
       } catch {
-        // Silent failure — no notice is fine. Better to skip the
+        // Silent failure - no notice is fine. Better to skip the
         // notice than to spam the user with an error toast.
       } finally {
         if (!cancelled) setChecked(true);
@@ -53,7 +57,7 @@ export default function AutoImportNotifier() {
     try {
       await fetch("/api/ibkr/last-sync-notice", { method: "POST" });
     } catch {
-      // Non-fatal — worst case the notice reappears next login.
+      // Non-fatal - worst case the notice reappears next login.
     }
   };
 
@@ -90,7 +94,7 @@ export default function AutoImportNotifier() {
               exit={{ opacity: 0, scale: 0.96, y: 12 }}
               transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
             >
-              <div className="bg-gradient-to-br from-teal-500/15 via-transparent to-transparent px-5 md:px-6 pt-5 md:pt-6 pb-4 md:pb-5 border-b border-white/5">
+              <div className="bg-gradient-to-br from-teal-500/15 via-transparent to-transparent px-5 md:px-6 pt-5 md:pt-6 pb-4 md:pb-5">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-8 h-8 rounded-full bg-teal-500/20 border border-teal-500/40 flex items-center justify-center">
                     <i className="fa-solid fa-cloud-arrow-down text-teal-300 text-[13px]" />
@@ -105,8 +109,7 @@ export default function AutoImportNotifier() {
                     : `${insertedCount} new trades imported`}
                 </div>
                 <div className="mt-1.5 text-[12.5px] text-white/55 leading-snug">
-                  Your IBKR account synced automatically overnight while you
-                  were away.
+                  New trades imported from your IBKR account.
                 </div>
               </div>
               <div className="flex items-center gap-2 px-5 md:px-6 py-3 md:py-4">
@@ -123,7 +126,7 @@ export default function AutoImportNotifier() {
                   className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 rounded-full bg-teal-500/20 text-teal-200 border border-teal-500/40 hover:bg-teal-500/30 transition text-[13px] font-semibold cursor-pointer"
                 >
                   <i className="fa-solid fa-list-check text-[11px]" />
-                  See what changed
+                  See imported
                 </button>
               </div>
             </motion.div>

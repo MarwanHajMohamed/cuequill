@@ -6,10 +6,12 @@ import "@/app/calendar/custom-calendar.css";
 import Providers from "./providers";
 import NavbarWrapper from "./navbar/NavbarWrapper";
 import ContentShell from "./ContentShell";
+import { SidebarProvider } from "./navbar/SidebarContext";
 import { ToastProvider } from "@/hooks/useToast";
 import PWARegister from "./PWARegister";
 import NativeBridge from "./NativeBridge";
 import CookieConsent from "./CookieConsent";
+import DocumentTitle from "./DocumentTitle";
 
 // Single typeface for the whole app - headings inherit this via
 // globals.css, so there's no separate display/serif font.
@@ -20,12 +22,34 @@ const dmMono = DM_Mono({
   display: "swap",
 });
 
+const SITE_URL = "https://cuequill.com";
+const SITE_DESCRIPTION =
+  "A trading journal that remembers for you. Log trades, sync IBKR, and ask Quill AI about your own options trading.";
+
 export const metadata: Metadata = {
-  title: "Cuequill",
-  description:
-    "Discretionary US-options trading journal - strategies, calendar, and stats.",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "Cuequill - a trading journal that remembers for you",
+    template: "%s · Cuequill",
+  },
+  description: SITE_DESCRIPTION,
   applicationName: "Cuequill",
   manifest: "/manifest.webmanifest",
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    siteName: "Cuequill",
+    url: SITE_URL,
+    title: "Cuequill - a trading journal that remembers for you",
+    description: SITE_DESCRIPTION,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Cuequill - a trading journal that remembers for you",
+    description: SITE_DESCRIPTION,
+  },
   appleWebApp: {
     capable: true,
     title: "Cuequill",
@@ -66,6 +90,22 @@ export default function RootLayout({
               "(function(){try{var t=localStorage.getItem('cuequill:theme');var m=t==='light'?'light':'dark';var e=document.documentElement;e.classList.add(m);e.style.colorScheme=m;}catch(e){document.documentElement.classList.add('dark');}})();",
           }}
         />
+        {/* Apply the saved accent pack before first paint so the UI is
+            painted in the chosen accent with no flash of teal. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){try{var a=localStorage.getItem('cuequill:accent');if(a){document.documentElement.setAttribute('data-accent',a);}}catch(e){}})();",
+          }}
+        />
+        {/* Apply the saved sidebar-collapsed state before first paint so the
+            content offset doesn't jump from expanded to collapsed on load. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){try{if(localStorage.getItem('cuequill:sidebar-collapsed')==='1'){document.documentElement.classList.add('nav-collapsed');}}catch(e){}})();",
+          }}
+        />
         <link
           rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css"
@@ -74,8 +114,11 @@ export default function RootLayout({
       <body className={dmMono.className}>
         <Providers>
           <ToastProvider>
-            <NavbarWrapper />
-            <ContentShell>{children}</ContentShell>
+            <SidebarProvider>
+              <NavbarWrapper />
+              <ContentShell>{children}</ContentShell>
+            </SidebarProvider>
+            <DocumentTitle />
             <PWARegister />
             <NativeBridge />
             <CookieConsent />

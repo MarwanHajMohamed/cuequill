@@ -3,8 +3,8 @@ import connectDB from "@/lib/db";
 import { Waitlist } from "@/lib/models/Waitlist";
 
 // Very small RFC-lite email check. The point isn't to catch every
-// invalid address — the browser's input[type=email] already does
-// most of the work — it's to reject obvious junk before we hit Mongo.
+// invalid address - the browser's input[type=email] already does
+// most of the work - it's to reject obvious junk before we hit Mongo.
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(req: NextRequest) {

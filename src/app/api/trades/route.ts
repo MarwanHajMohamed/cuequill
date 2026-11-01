@@ -13,7 +13,7 @@ import mongoose from "mongoose";
 const FREE_HISTORY_DAYS = 90;
 
 // All handlers in this file derive the user identity from the
-// authenticated session — any `userId` value the client sends is
+// authenticated session - any `userId` value the client sends is
 // ignored. Previously the GET / POST / DELETE handlers trusted the
 // client's `userId` so any logged-in user could read, create, or
 // bulk-delete trades belonging to any other user.

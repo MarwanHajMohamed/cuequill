@@ -7,6 +7,7 @@ import Link from "next/link";
 import React, { use, useEffect, useState } from "react";
 import { useRulesBoard, type Rule } from "../useRulesBoard";
 import IconBtn from "../IconBtn";
+import ConfirmDialog from "../ConfirmDialog";
 
 function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -19,15 +20,25 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
     moveRuleToSection,
   } = useRulesBoard();
   const [editMode, setEditMode] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<{
+    ruleId: string;
+    title: string;
+  } | null>(null);
 
-  const section = sections?.find((s) => s.id === id) ?? null;
+  const index = sections?.findIndex((s) => s.id === id) ?? -1;
+  const section = index >= 0 ? sections![index] : null;
+  const prev = sections && index > 0 ? sections[index - 1] : null;
+  const next =
+    sections && index >= 0 && index < sections.length - 1
+      ? sections[index + 1]
+      : null;
   const otherSections =
     sections
       ?.filter((s) => s.id !== id)
       .map((s) => ({ id: s.id, title: s.title })) ?? [];
 
   return (
-    <div className="w-full flex flex-col md:items-start min-h-screen pb-20">
+    <div className="w-full flex justify-center min-h-screen pb-24">
       {/* Aurora */}
       <div
         aria-hidden
@@ -38,82 +49,78 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
         }}
       />
 
-      <div className="w-full max-w-[1100px] mt-25 md:mt-10 px-5 md:px-10">
-        {/* HERO */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: "easeOut" }}
-          className="flex flex-col gap-2"
+      <div className="w-full max-w-[1500px] px-5 md:px-8 pt-24 md:pt-12 flex flex-col">
+        {/* Header */}
+        <Link
+          href="/rules"
+          prefetch
+          className="inline-flex items-center gap-1.5 text-[12.5px] text-white/45 hover:text-white/80 transition w-fit"
         >
-          <div className="flex items-center gap-2 flex-wrap">
-            <Link
-              href="/rules"
-              prefetch
-              aria-label="back to rules"
-              className="inline-flex items-center justify-center w-6 h-6 rounded-full border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/70 hover:text-white transition"
-            >
-              <i className="fa-solid fa-chevron-left text-[10px]" />
-            </Link>
-            <div className="text-[11px] tracking-[0.1em] text-white/40 font-medium">
-              Playbook
-            </div>
-          </div>
-          <div className="flex items-baseline justify-between gap-4 flex-wrap">
-            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight leading-[1.05]">
-              <span className="bg-gradient-to-r from-teal-300 to-emerald-400 bg-clip-text text-transparent">
-                {sections === null
-                  ? "Loading…"
-                  : (section?.title ?? "Section not found")}
-              </span>
+          <i className="fa-solid fa-chevron-left text-[9px]" />
+          Rules
+        </Link>
+
+        <div className="mt-3 flex items-end justify-between gap-4 flex-wrap">
+          <div className="min-w-0">
+            <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight">
+              {sections === null
+                ? "Loading…"
+                : (section?.title ?? "Section not found")}
             </h1>
             {section && (
-              <div className="text-[12px] text-white/45 tabular-nums">
+              <p className="mt-1.5 text-[13px] md:text-sm text-white/55 tabular-nums">
                 {section.rules.length} rule
                 {section.rules.length === 1 ? "" : "s"}
-              </div>
+                {sections && sections.length > 1
+                  ? ` · Section ${index + 1} of ${sections.length}`
+                  : ""}
+              </p>
             )}
           </div>
-        </motion.div>
+
+          {section && (
+            <button
+              onClick={() => setEditMode((v) => !v)}
+              className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-[12px] font-medium transition cursor-pointer ${
+                editMode
+                  ? "bg-teal-500/15 text-teal-300 border-teal-500/30"
+                  : "bg-white/[0.03] text-white/65 border-white/10 hover:bg-white/[0.06] hover:text-white"
+              }`}
+            >
+              <i
+                className={`fa-solid ${
+                  editMode ? "fa-check" : "fa-pen"
+                } text-[10px]`}
+              />
+              {editMode ? "Done" : "Edit"}
+            </button>
+          )}
+        </div>
 
         {sections === null ? null : !section ? (
-          <div className="mt-10 text-center text-[13px] text-white/40">
+          <div className="mt-12 text-[13px] text-white/40">
             This section no longer exists.
           </div>
         ) : (
           <>
-            <div className="mt-8 md:mt-10 flex justify-end">
-              <button
-                onClick={() => setEditMode((v) => !v)}
-                className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-[12px] font-medium transition cursor-pointer ${
-                  editMode
-                    ? "bg-teal-500/15 text-teal-300 border-teal-500/30"
-                    : "bg-white/[0.03] text-white/65 border-white/10 hover:bg-white/[0.06] hover:text-white"
-                }`}
-              >
-                <i
-                  className={`fa-solid ${
-                    editMode ? "fa-check" : "fa-pen"
-                  } text-[10px]`}
-                />
-                {editMode ? "Done" : "Edit"}
-              </button>
-            </div>
-
-            <motion.section
-              layout
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-              className="mt-3 rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-5 md:p-7"
-            >
-              <ol className="flex flex-col gap-3 md:gap-4">
+            {section.rules.length === 0 && !editMode ? (
+              <div className="mt-8 text-[13px] text-white/45">
+                No rules in this section yet.{" "}
+                <button
+                  onClick={() => setEditMode(true)}
+                  className="text-teal-300 hover:text-teal-200 transition cursor-pointer"
+                >
+                  Add one
+                </button>
+                .
+              </div>
+            ) : (
+              <ol className="mt-7 md:mt-8 border-t border-white/[0.08]">
                 <AnimatePresence initial={false}>
                   {section.rules.map((rule, i) => (
                     <RuleRow
                       key={rule.id}
                       editMode={editMode}
-                      index={i}
                       rule={rule}
                       isFirst={i === 0}
                       isLast={i === section.rules.length - 1}
@@ -123,32 +130,74 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
                         moveRuleToSection(section.id, rule.id, toId)
                       }
                       onEdit={(t, b) => editRule(section.id, rule.id, t, b)}
-                      onDelete={() => deleteRule(section.id, rule.id)}
+                      onDelete={() =>
+                        setPendingDelete({ ruleId: rule.id, title: rule.title })
+                      }
                     />
                   ))}
                 </AnimatePresence>
                 {editMode && (
-                  <AddRuleRow
-                    onAdd={(t, b) => addRule(section.id, t, b)}
-                  />
-                )}
-                {!editMode && section.rules.length === 0 && (
-                  <li className="text-[13px] text-white/40 text-center py-2">
-                    No rules yet. Tap Edit to add one.
-                  </li>
+                  <AddRuleRow onAdd={(t, b) => addRule(section.id, t, b)} />
                 )}
               </ol>
-            </motion.section>
+            )}
+
+            {/* Prev / next section - understated text links */}
+            {(prev || next) && !editMode && (
+              <div className="mt-10 flex items-center justify-between gap-4 text-[12.5px]">
+                {prev ? (
+                  <Link
+                    href={`/rules/${prev.id}`}
+                    prefetch
+                    className="group inline-flex items-center gap-2 text-white/50 hover:text-white transition min-w-0"
+                  >
+                    <i className="fa-solid fa-chevron-left text-[9px] group-hover:-translate-x-0.5 transition" />
+                    <span className="truncate">{prev.title}</span>
+                  </Link>
+                ) : (
+                  <span />
+                )}
+                {next ? (
+                  <Link
+                    href={`/rules/${next.id}`}
+                    prefetch
+                    className="group inline-flex items-center gap-2 text-white/50 hover:text-white transition min-w-0 justify-end text-right"
+                  >
+                    <span className="truncate">{next.title}</span>
+                    <i className="fa-solid fa-chevron-right text-[9px] group-hover:translate-x-0.5 transition" />
+                  </Link>
+                ) : (
+                  <span />
+                )}
+              </div>
+            )}
           </>
         )}
       </div>
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title="Delete rule?"
+        message={
+          <>
+            &ldquo;{pendingDelete?.title}&rdquo; will be removed. This can&apos;t
+            be undone.
+          </>
+        }
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={() => {
+          if (section && pendingDelete) {
+            deleteRule(section.id, pendingDelete.ruleId);
+          }
+          setPendingDelete(null);
+        }}
+      />
     </div>
   );
 }
 
 function RuleRow({
   editMode,
-  index,
   rule,
   isFirst,
   isLast,
@@ -159,7 +208,6 @@ function RuleRow({
   onDelete,
 }: {
   editMode: boolean;
-  index: number;
   rule: Rule;
   isFirst: boolean;
   isLast: boolean;
@@ -194,19 +242,15 @@ function RuleRow({
   return (
     <motion.li
       layout
-      initial={{ opacity: 0, y: -6 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       exit={{ opacity: 0, height: 0 }}
-      transition={{ duration: 0.2, ease: "easeOut" }}
-      className="group flex gap-4"
+      transition={{ duration: 0.18, ease: "easeOut" }}
+      className="group flex gap-4 md:gap-5 py-4 md:py-5 border-b border-white/[0.08]"
     >
-      <div className="shrink-0 w-8 h-8 rounded-lg border bg-teal-500/10 border-teal-500/25 text-teal-300 flex items-center justify-center text-[12px] font-semibold tabular-nums">
-        {String(index + 1).padStart(2, "0")}
-      </div>
-
-      <div className="flex-1 min-w-0 pt-0.5">
+      <div className="flex-1 min-w-0">
         {editing && editMode ? (
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2">
             <input
               autoFocus
               value={title}
@@ -216,7 +260,7 @@ function RuleRow({
                 if (e.key === "Escape") setEditing(false);
               }}
               placeholder="Rule"
-              className="w-full bg-transparent text-[14px] md:text-[15px] font-medium text-white border-b border-white/15 focus:outline-none focus:border-white/30 pb-0.5"
+              className="w-full bg-transparent text-[14px] md:text-[15px] font-medium text-white border-b border-white/15 focus:outline-none focus:border-teal-400/50 pb-1"
             />
             <input
               value={body}
@@ -244,13 +288,13 @@ function RuleRow({
             </div>
           </div>
         ) : (
-          <div className="flex items-start justify-between gap-2">
+          <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <div className="text-[14px] md:text-[15px] font-medium text-white">
+              <div className="text-[14px] md:text-[15px] font-medium text-white leading-snug">
                 {rule.title}
               </div>
               {rule.body && (
-                <div className="text-[13px] md:text-[14px] text-white/55 leading-relaxed mt-0.5">
+                <div className="text-[13px] md:text-[14px] text-white/55 leading-relaxed mt-1 max-w-3xl">
                   {rule.body}
                 </div>
               )}
@@ -340,11 +384,8 @@ function AddRuleRow({
   };
 
   return (
-    <li className="flex gap-4">
-      <div className="shrink-0 w-8 h-8 rounded-lg border border-dashed border-teal-500/25 flex items-center justify-center text-white/30">
-        <i className="fa-solid fa-plus text-[11px]" />
-      </div>
-      <div className="flex-1 min-w-0 pt-0.5">
+    <li className="flex gap-4 md:gap-5 py-4 md:py-5 border-b border-white/[0.08]">
+      <div className="flex-1 min-w-0">
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -355,11 +396,11 @@ function AddRuleRow({
               setBody("");
             }
           }}
-          placeholder="add a rule…"
+          placeholder="Add a rule…"
           className="w-full bg-transparent text-[14px] md:text-[15px] font-medium placeholder:text-white/30 text-white focus:outline-none"
         />
         {title.trim() && (
-          <div className="flex items-center gap-3 mt-1">
+          <div className="flex items-center gap-3 mt-1.5">
             <input
               value={body}
               onChange={(e) => setBody(e.target.value)}
@@ -377,7 +418,7 @@ function AddRuleRow({
               onClick={save}
               className="shrink-0 text-xs text-teal-300 hover:text-teal-200 transition cursor-pointer"
             >
-              save
+              Save
             </button>
           </div>
         )}

@@ -786,7 +786,7 @@ export default function SchematicEditor({ value, onChange }: Props) {
 
   return (
     <div className="flex flex-col md:grid md:grid-cols-[40px_minmax(0,1fr)_220px] gap-3 rounded-2xl border border-white/10 bg-white/[0.02] p-3">
-      {/* Tool palette — horizontal scroll strip on mobile, vertical
+      {/* Tool palette - horizontal scroll strip on mobile, vertical
           column on md+. */}
       <div className="flex flex-row md:flex-col items-center gap-1.5 overflow-x-auto md:overflow-visible -mx-1 px-1 md:mx-0 md:px-0">
         {TOOLS.map((t) => (
@@ -828,7 +828,7 @@ export default function SchematicEditor({ value, onChange }: Props) {
 
       {/* Canvas. The scene is landscape, so on a portrait phone we
           render it wider than the screen and let the wrapper scroll
-          horizontally — touchAction:pan-x pans the oversized canvas
+          horizontally - touchAction:pan-x pans the oversized canvas
           while vertical drags still move elements. On md+ it fits the
           column. */}
       <div className="relative rounded-xl border border-white/10 bg-[#0c0c11] overflow-x-auto md:overflow-hidden">
@@ -1671,7 +1671,7 @@ function NumField({
 }) {
   // Keep the raw text locally so the field can be cleared and typed into
   // freely. The parent may clamp the committed value (e.g. to a minimum),
-  // but we don't force that back into the box mid-edit — otherwise
+  // but we don't force that back into the box mid-edit - otherwise
   // deleting the number or typing a digit below the minimum snaps it.
   const [text, setText] = useState(String(value));
   const editing = useRef(false);

@@ -2,6 +2,7 @@
 
 import { withAuth } from "@/lib/withAuth";
 import ProGate from "@/components/ProGate";
+import PageTour from "@/components/PageTour";
 import { AnimatePresence, motion } from "framer-motion";
 import React, {
   createContext,
@@ -68,7 +69,7 @@ const TradeChatContext = createContext<TradeChatCtx | null>(null);
 // react-markdown sanitizes link URLs by default and drops any scheme
 // that isn't in its safe-list (http/https/mailto/tel/etc.). Without
 // this transform, `trade://<id>` would be stripped entirely and the
-// link would render as plain text — the <a> component override would
+// link would render as plain text - the <a> component override would
 // never see the href and the trade cards / click handlers would
 // silently break. Allow trade:// through; mirror the safe-list for
 // everything else.
@@ -86,47 +87,60 @@ function tradeAwareUrlTransform(url: string): string {
 // any lingering client copy from the previous approach.
 const LEGACY_LOCAL_KEY = "cuequill:chat:v1";
 
-// Compact starter prompts shown on the empty state. Title + body lets
-// each one read as a tappable card rather than a wall of pills.
-const SUGGESTIONS: {
-  title: string;
-  body: string;
+// A one-tap starter prompt shown on the empty state. `title` is the label
+// on the card; `prompt` is the full text sent to Quill when tapped. Users
+// can edit, add, remove, and reorder these - the customised set is saved
+// per-user (see cuequill:chatPrompts below).
+type Suggestion = {
+  id: string;
   icon: string;
+  title: string;
   prompt: string;
-}[] = [
+};
+
+function genPromptId(): string {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return `p-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+const DEFAULT_SUGGESTIONS: Suggestion[] = [
   {
+    id: "default-how",
     icon: "fa-solid fa-chart-line",
     title: "How am I doing?",
-    body: "Performance this month vs the last.",
     prompt: "How am I doing this month?",
   },
   {
+    id: "default-best",
     icon: "fa-solid fa-trophy",
     title: "Best strategy",
-    body: "Which setup wins most for me?",
     prompt: "Which strategy is performing best for me?",
   },
   {
+    id: "default-log",
     icon: "fa-solid fa-pen-to-square",
     title: "Log a trade",
-    body: "Add a new trade in plain English.",
     prompt: "Help me log a trade",
   },
   {
+    id: "default-losses",
     icon: "fa-solid fa-magnifying-glass",
     title: "Review my losses",
-    body: "Last 5 losses - what they had in common.",
-    prompt:
-      "Show me my last 5 losing trades and what they had in common.",
+    prompt: "Show me my last 5 losing trades and what they had in common.",
   },
   {
+    id: "default-week",
     icon: "fa-solid fa-calendar-check",
     title: "Review my week",
-    body: "A debrief: wins, leaks, rules, goals.",
     prompt:
       "Review my trading week. Give me a short debrief: my P/L and record for the week, what went well, the biggest mistake or leak in the data, any rules I broke, and where I stand on my goals. End with one thing to focus on next.",
   },
 ];
+
+// Default icon assigned to newly-added shortcuts.
+const NEW_PROMPT_ICON = "fa-solid fa-bolt";
 
 // Sentinel emitted by the server when the chat turn modified the user's
 // trades. Stripped from display text and used to invalidate the cached
@@ -184,14 +198,52 @@ function Page() {
     setConversationId(id);
   }, []);
 
+  // Customisable starter prompts, persisted per-user server-side (so they
+  // sync across devices). A null response means the user has never
+  // customised them, so we keep the defaults; a stored array (even empty)
+  // is used verbatim.
+  const [suggestions, setSuggestions] =
+    useState<Suggestion[]>(DEFAULT_SUGGESTIONS);
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/chat/prompts", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = (await res.json()) as { prompts: Suggestion[] | null };
+        if (!cancelled && Array.isArray(data.prompts)) {
+          setSuggestions(data.prompts);
+        }
+      } catch {
+        /* keep defaults */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+  const saveSuggestions = useCallback((next: Suggestion[]) => {
+    setSuggestions(next);
+    // Best-effort server persistence; the local state already updated so the
+    // UI reflects the change immediately.
+    fetch("/api/chat/prompts", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompts: next }),
+    }).catch(() => {
+      /* best-effort */
+    });
+  }, []);
+
   // Pull the user's full trade list once (React Query caches it across
   // the app) so the trade cards rendered inside chat replies can read
-  // their data straight from memory — no N+1 fetches per card.
+  // their data straight from memory - no N+1 fetches per card.
   const { data: trades } = useTrades(userId, false);
 
   // Look up a trade by id from the cached list. Returns undefined when
-  // the id isn't known (rare — Gemini only sees ids that exist in this
-  // same list — but possible for simulated trades or a stale cache).
+  // the id isn't known (rare - Gemini only sees ids that exist in this
+  // same list - but possible for simulated trades or a stale cache).
   const findTrade = useCallback(
     (id: string): Trade | undefined =>
       trades?.find((t) => String(t._id) === id),
@@ -328,8 +380,12 @@ function Page() {
     }
   }, []);
 
-  // Initial load: fetch the thread list, open the most recent (or create
-  // the first one), and load its messages. Re-runs on account switch.
+  // Initial load: fetch the thread list (for the history sidebar) but
+  // always open on a FRESH, empty chat rather than reopening the most
+  // recent thread. The server-side conversation is created lazily on the
+  // first message (see `send`), so simply visiting the tab never litters
+  // history with empty threads. Re-runs on account switch. Past
+  // conversations remain one tap away in the sidebar / history menu.
   useEffect(() => {
     if (!userId) return;
     // Purge any leftover localStorage copies from the old client approach.
@@ -343,43 +399,20 @@ function Page() {
     loadedOkRef.current = false;
     setHydrated(false);
     (async () => {
+      let list: ConversationMeta[] = [];
       try {
-        let list = await fetchConversationList();
-        let id: string | null = null;
-        let msgs: Msg[] = [];
-        let ok = false;
-        if (list.length > 0) {
-          id = list[0].id;
-          const mRes = await fetch(`/api/chat/conversations/${id}`, {
-            cache: "no-store",
-          });
-          if (mRes.ok) {
-            msgs = ((await mRes.json()).messages ?? []) as Msg[];
-            ok = true;
-          }
-        } else {
-          const cRes = await fetch("/api/chat/conversations", {
-            method: "POST",
-          });
-          if (cRes.ok) {
-            const c = (await cRes.json()) as ConversationMeta;
-            id = c.id;
-            list = [c];
-            ok = true; // fresh empty thread — safe to persist to
-          }
-        }
-        if (!cancelled && id) {
-          setConversations(list);
-          setConv(id);
-          setMessages(msgs);
-          // Only enable auto-save if we actually loaded the thread, so a
-          // failed message fetch can't overwrite stored history with [].
-          loadedOkRef.current = ok;
-        }
+        list = await fetchConversationList();
       } catch {
-        /* leave empty; loadedOk stays false so we don't overwrite */
-      } finally {
-        if (!cancelled) setHydrated(true);
+        /* keep the empty list */
+      }
+      if (!cancelled) {
+        setConversations(list);
+        // Start blank: no active thread, no messages. loadedOk is true so
+        // the (no-op, id-less) auto-save guard is satisfied.
+        setConv(null);
+        setMessages([]);
+        loadedOkRef.current = true;
+        setHydrated(true);
       }
     })();
     return () => {
@@ -397,22 +430,26 @@ function Page() {
     return () => clearTimeout(id);
   }, [messages, hydrated, conversationId, streaming, persist]);
 
-  // Start a fresh conversation.
-  const newChat = useCallback(async () => {
+  // Start a fresh conversation. Just resets to the blank state - the
+  // server-side thread is created lazily on the first message (see
+  // `send`), so opening a new chat and leaving it empty never creates a
+  // stray thread.
+  const newChat = useCallback(() => {
     resetTicker();
-    try {
-      const res = await fetch("/api/chat/conversations", { method: "POST" });
-      if (!res.ok) return;
-      const c = (await res.json()) as ConversationMeta;
-      loadedOkRef.current = true;
-      setConversations((prev) => [c, ...prev]);
-      setConv(c.id);
-      setMessages([]);
-      setInput("");
-    } catch {
-      /* ignore */
-    }
+    loadedOkRef.current = true;
+    setConv(null);
+    setMessages([]);
+    setInput("");
   }, [resetTicker, setConv]);
+
+  // Pressing the Quill AI tab while already on the chat page can't remount
+  // the route (router.push to the same path is a no-op), so the navbar
+  // dispatches this event instead. Reset to a fresh chat when it fires.
+  useEffect(() => {
+    const onNewChat = () => newChat();
+    window.addEventListener("cuequill:new-chat", onNewChat);
+    return () => window.removeEventListener("cuequill:new-chat", onNewChat);
+  }, [newChat]);
 
   // Switch to an existing conversation.
   const switchConversation = useCallback(
@@ -464,7 +501,7 @@ function Page() {
     const inner = scrollRef.current;
     if (!inner) return;
     // Instant, scoped-to-the-container scroll only. The previous version
-    // combined this with a smooth scrollIntoView on every streamed token —
+    // combined this with a smooth scrollIntoView on every streamed token -
     // the two fought each other (and scrollIntoView could nudge the whole
     // page), which read as glitchy jitter while Quill AI typed. Only stick
     // to the bottom when the user is already near it, so scrolling up to
@@ -538,10 +575,6 @@ function Page() {
     async (text: string, images: string[] = []) => {
       const trimmed = text.trim();
       if ((!trimmed && images.length === 0) || streaming) return;
-      // The thread this turn belongs to. If the user switches conversations
-      // mid-stream, we stop feeding tokens so they don't land in the wrong
-      // thread.
-      const activeConv = convIdRef.current;
       const next: Msg[] = [
         ...messages,
         { role: "user", text: trimmed, images: images.length ? images : undefined },
@@ -553,6 +586,28 @@ function Page() {
       setStreaming(true);
       networkOpenRef.current = true;
       renderQueueRef.current = [];
+
+      // The thread this turn belongs to. If the user switches conversations
+      // mid-stream, we stop feeding tokens so they don't land in the wrong
+      // thread. On a fresh chat there's no thread yet, so create it now -
+      // the first message is what turns a blank chat into a saved one.
+      let activeConv = convIdRef.current;
+      if (!activeConv) {
+        try {
+          const cRes = await fetch("/api/chat/conversations", {
+            method: "POST",
+          });
+          if (cRes.ok) {
+            const c = (await cRes.json()) as ConversationMeta;
+            activeConv = c.id;
+            loadedOkRef.current = true;
+            setConv(c.id);
+            setConversations((prev) => [c, ...prev]);
+          }
+        } catch {
+          /* no thread - the reply still streams, it just won't persist */
+        }
+      }
 
       try {
         const outbound = next.filter((m) => !m.pending);
@@ -600,7 +655,7 @@ function Page() {
         for (;;) {
           const { value, done } = await reader.read();
           if (done) break;
-          // User switched away from this thread — stop appending here.
+          // User switched away from this thread - stop appending here.
           if (convIdRef.current !== activeConv) {
             await reader.cancel().catch(() => {});
             break;
@@ -628,6 +683,7 @@ function Page() {
         }
         if (tradesTouched && userId) {
           queryClient.invalidateQueries({ queryKey: ["trades", userId] });
+          queryClient.invalidateQueries({ queryKey: ["challenges"] });
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Network error";
@@ -642,27 +698,45 @@ function Page() {
       } finally {
         networkOpenRef.current = false;
         setStreaming(false);
-        // Refresh the usage meter — this turn consumed a message + tokens.
+        // Refresh the usage meter - this turn consumed a message + tokens.
         queryClient.invalidateQueries({ queryKey: ["chatUsage"] });
         // Refresh the thread list so a new thread's derived title and the
         // most-recent ordering show up.
         refreshConversations();
       }
     },
-    [messages, streaming, enqueueChunk, queryClient, userId, refreshConversations],
+    [
+      messages,
+      streaming,
+      enqueueChunk,
+      queryClient,
+      userId,
+      refreshConversations,
+      setConv,
+    ],
   );
 
-  // Deep-link: /chat?prompt=… (e.g. "Ask Quill" on a strategy) auto-sends
-  // the question once the thread is ready, then clears the URL so a refresh
-  // doesn't resend it.
+  // Deep-links, handled once the thread is ready, then the URL is cleared
+  // so a refresh doesn't repeat them:
+  //   /chat?prompt=…  auto-sends the question (e.g. "Ask Quill" on a strategy)
+  //   /chat?draft=…   prefills the composer with the text but does NOT send,
+  //                   so the user can tweak it first (e.g. dashboard insight)
   const promptSentRef = useRef(false);
   useEffect(() => {
     if (!hydrated || promptSentRef.current) return;
-    const p = new URLSearchParams(window.location.search).get("prompt");
+    const params = new URLSearchParams(window.location.search);
+    const p = params.get("prompt");
+    const draft = params.get("draft");
     if (p && p.trim()) {
       promptSentRef.current = true;
       window.history.replaceState({}, "", "/chat");
       send(p);
+    } else if (draft && draft.trim()) {
+      promptSentRef.current = true;
+      window.history.replaceState({}, "", "/chat");
+      setInput(draft);
+      // Focus the composer so the prefilled text is ready to edit or send.
+      requestAnimationFrame(() => inputRef.current?.focus());
     }
   }, [hydrated, send]);
 
@@ -692,8 +766,13 @@ function Page() {
 
   const submit = () => send(input, pendingImages);
 
+  // Whether there's anything to send. Drives the right-hand button: show the
+  // record (mic) button while the box is empty, and swap it for Send the
+  // moment the user types (or stages an image).
+  const hasContent = input.trim().length > 0 || pendingImages.length > 0;
+
   // Tap-to-talk: dictate into the input, and auto-send the phrase once the
-  // user stops speaking — so a position can be closed hands-free
+  // user stops speaking - so a position can be closed hands-free
   // ("close my 5 SPY 600 calls at $2.30").
   const speech = useSpeechRecognition({
     onResult: (t) => setLiveTranscript(t),
@@ -733,26 +812,12 @@ function Page() {
             Ask anything about your trades
           </h2>
         </div>
-        <div className="grid grid-cols-2 gap-2 w-full">
-          {SUGGESTIONS.map((s) => (
-            <button
-              key={s.title}
-              onClick={() => send(s.prompt)}
-              className="group text-left rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/20 transition px-3.5 py-3 cursor-pointer"
-            >
-              <div className="flex items-center gap-2.5 mb-0.5">
-                <i
-                  className={`${s.icon} text-[11px] text-teal-300/80 group-hover:text-teal-300 transition`}
-                />
-                <span className="text-[13px] font-medium text-white">
-                  {s.title}
-                </span>
-              </div>
-              <div className="text-[11.5px] text-white/45 leading-snug">
-                {s.body}
-              </div>
-            </button>
-          ))}
+        <div data-tour="chat-starters" className="w-full">
+          <PromptShortcuts
+            suggestions={suggestions}
+            onSend={send}
+            onSave={saveSuggestions}
+          />
         </div>
         <p className="text-[11px] text-white/30 leading-relaxed text-center md:text-left">
           Quill AI can make mistakes and does not give financial advice. It
@@ -760,7 +825,7 @@ function Page() {
         </p>
       </div>
     ),
-    [send],
+    [send, suggestions, saveSuggestions],
   );
 
   return (
@@ -769,6 +834,7 @@ function Page() {
        (used to open ViewTradeModal on click) to the Markdown <a>
        override deep inside MarkdownText. */
     <TradeChatContext.Provider value={tradeChat}>
+    <PageTour pageId="chat" />
     {/* The outer column is sized to EXACTLY the visible area (viewport
        minus the floating mobile nav, or full viewport on desktop)
        using `h-[…]` rather than `min-h-[…]`. That swap is load-
@@ -795,7 +861,7 @@ function Page() {
           back to 0 because the composer is in-flow there. */}
       {/* Navbar-width shell: a collapsible history sidebar + the chat
           column, spanning the same max width as the top nav. */}
-      <div className="w-full max-w-[1500px] mx-auto md:mx-0 px-5 md:px-10 mt-12 md:mt-8 flex-1 flex min-h-0">
+      <div className="w-full max-w-[1500px] mx-auto md:mx-0 px-5 md:pl-3 md:pr-8 mt-12 md:mt-8 flex-1 flex min-h-0">
         <ConversationSidebar
           conversations={conversations}
           currentId={conversationId}
@@ -876,13 +942,14 @@ function Page() {
             </div>
 
             {/* Bottom edge blend (desktop) - the composer is in-flow here,
-                sitting right below the message view, so an absolute band at
-                the bottom of the scroll area blends straight into it. On
+                sitting right below the message view. Drop the band by the
+                composer's top margin (mt-3) so its opaque base lands exactly
+                on the top edge of the text box rather than stopping short. On
                 mobile the composer is fixed with a reserved gap, so a
                 separate fixed band (below) handles the blend instead. */}
             <div
               aria-hidden
-              className="hidden md:block pointer-events-none absolute inset-x-0 bottom-0 h-16 z-10"
+              className="hidden md:block pointer-events-none absolute inset-x-0 -bottom-3 h-16 z-10"
               style={{
                 background:
                   "linear-gradient(to top, rgb(var(--bg-rgb) / 0.85) 0%, rgb(var(--bg-rgb) / 0.4) 45%, rgb(var(--bg-rgb) / 0) 100%)",
@@ -935,7 +1002,7 @@ function Page() {
               stageFiles(e.dataTransfer.files);
             }
           }}
-          className="fixed left-5 right-5 z-30 bottom-[calc(74px+env(safe-area-inset-bottom))] bg-[var(--background)]/85 backdrop-blur-md md:static md:left-auto md:right-auto md:bottom-auto md:mt-3 md:bg-white/[0.04] md:backdrop-blur-0 flex flex-col gap-2 rounded-2xl border border-white/10 px-3 py-2"
+          className="fixed left-5 right-5 z-30 bottom-[calc(74px+env(safe-area-inset-bottom))] bg-[var(--background)]/85 backdrop-blur-md md:static md:left-auto md:right-auto md:bottom-auto md:mt-3 md:w-3/5 md:mx-auto md:bg-white/[0.04] md:backdrop-blur-0 flex flex-col gap-1.5 rounded-3xl border border-white/10 px-2 py-1.5"
         >
           {/* Staged screenshot thumbnails, removable before send. */}
           {pendingImages.length > 0 && (
@@ -1005,29 +1072,12 @@ function Page() {
               disabled={pendingImages.length >= MAX_IMAGES || streaming}
               title="Attach a screenshot"
               aria-label="Attach a screenshot"
-              className="shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-full border border-white/10 bg-white/[0.02] text-white/50 hover:bg-white/[0.06] hover:text-white/80 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full border border-white/10 bg-white/[0.02] text-white/50 hover:bg-white/[0.06] hover:text-white/80 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              <i className="fa-solid fa-paperclip text-[13px]" />
+              <i className="fa-solid fa-paperclip text-[12px]" />
             </button>
-            {speech.supported && (
-              <button
-                type="button"
-                onClick={speech.toggle}
-                disabled={streaming}
-                title={speech.listening ? "Stop listening" : "Speak to Quill"}
-                aria-label={
-                  speech.listening ? "Stop listening" : "Speak to Quill"
-                }
-                className={`shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-full border transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
-                  speech.listening
-                    ? "bg-red-500/20 text-red-300 border-red-500/40 animate-pulse"
-                    : "bg-white/[0.02] text-white/50 border-white/10 hover:bg-white/[0.06] hover:text-white/80"
-                }`}
-              >
-                <i className="fa-solid fa-microphone text-[13px]" />
-              </button>
-            )}
             <textarea
+              data-tour="chat-composer"
               ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -1037,22 +1087,42 @@ function Page() {
               placeholder="Ask about your trades…"
               className="flex-1 resize-none bg-transparent text-[14px] text-white placeholder:text-white/35 placeholder:text-[12px] focus:outline-none py-1.5 max-h-[160px]"
             />
-            <button
-              type="submit"
-              disabled={(!input.trim() && pendingImages.length === 0) || streaming}
-              className={`shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-full border transition ${
-                (!input.trim() && pendingImages.length === 0) || streaming
-                  ? "bg-white/[0.02] text-white/30 border-white/10 cursor-not-allowed"
-                  : "bg-teal-500/15 text-teal-300 border-teal-500/25 hover:bg-teal-500/25 cursor-pointer"
-              }`}
-              aria-label="Send"
-            >
-              {streaming ? (
-                <i className="fa-solid fa-circle-notch text-[12px] animate-spin" />
-              ) : (
-                <i className="fa-solid fa-chevron-up text-[12px]" />
-              )}
-            </button>
+            {/* Record button while the box is empty; swaps to Send as soon as
+                there's something to send (or while a reply is streaming). */}
+            {!hasContent && !streaming && speech.supported ? (
+              <button
+                type="button"
+                onClick={speech.toggle}
+                title={speech.listening ? "Stop listening" : "Speak to Quill"}
+                aria-label={
+                  speech.listening ? "Stop listening" : "Speak to Quill"
+                }
+                className={`shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full border transition cursor-pointer ${
+                  speech.listening
+                    ? "bg-red-500/20 text-red-300 border-red-500/40 animate-pulse"
+                    : "bg-white/[0.02] text-white/50 border-white/10 hover:bg-white/[0.06] hover:text-white/80"
+                }`}
+              >
+                <i className="fa-solid fa-microphone text-[12px]" />
+              </button>
+            ) : (
+              <button
+                type="submit"
+                disabled={!hasContent || streaming}
+                className={`shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full border transition ${
+                  !hasContent || streaming
+                    ? "bg-white/[0.02] text-white/30 border-white/10 cursor-not-allowed"
+                    : "bg-teal-500/15 text-teal-300 border-teal-500/25 hover:bg-teal-500/25 cursor-pointer"
+                }`}
+                aria-label="Send"
+              >
+                {streaming ? (
+                  <i className="fa-solid fa-circle-notch text-[12px] animate-spin" />
+                ) : (
+                  <i className="fa-solid fa-chevron-up text-[12px]" />
+                )}
+              </button>
+            )}
           </div>
         </form>
 
@@ -1111,6 +1181,179 @@ function Page() {
       )}
     </AnimatePresence>
     </TradeChatContext.Provider>
+  );
+}
+
+// The starter-prompt shortcuts on the empty state. In normal mode each is a
+// one-tap button that sends its prompt; a Customise toggle flips the grid
+// into an editor where labels and prompts can be edited, added, removed, or
+// reset - saved via onSave (persisted per-user by the parent).
+function PromptShortcuts({
+  suggestions,
+  onSend,
+  onSave,
+}: {
+  suggestions: Suggestion[];
+  onSend: (prompt: string) => void;
+  onSave: (next: Suggestion[]) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState<Suggestion[]>(suggestions);
+
+  // Keep the draft in sync with the saved set whenever we're not editing.
+  useEffect(() => {
+    if (!editing) setDraft(suggestions);
+  }, [suggestions, editing]);
+
+  const startEdit = () => {
+    setDraft(suggestions);
+    setEditing(true);
+  };
+  const cancel = () => {
+    setDraft(suggestions);
+    setEditing(false);
+  };
+  const saveAll = () => {
+    const cleaned = draft
+      .map((d) => ({
+        ...d,
+        title: d.title.trim(),
+        prompt: d.prompt.trim(),
+      }))
+      .filter((d) => d.title && d.prompt);
+    onSave(cleaned);
+    setEditing(false);
+  };
+  const update = (id: string, patch: Partial<Suggestion>) =>
+    setDraft((prev) => prev.map((d) => (d.id === id ? { ...d, ...patch } : d)));
+  const remove = (id: string) =>
+    setDraft((prev) => prev.filter((d) => d.id !== id));
+  const add = () =>
+    setDraft((prev) => [
+      ...prev,
+      { id: genPromptId(), icon: NEW_PROMPT_ICON, title: "", prompt: "" },
+    ]);
+  const resetDefaults = () => setDraft(DEFAULT_SUGGESTIONS);
+
+  return (
+    <div className="w-full">
+      {/* Edit controls */}
+      <div className="flex items-center justify-end mb-2">
+        {editing ? (
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={cancel}
+              className="px-2.5 py-1 rounded-full text-[11.5px] text-white/50 hover:text-white transition cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={saveAll}
+              className="px-2.5 py-1 rounded-full text-[11.5px] font-medium bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition cursor-pointer"
+            >
+              Save
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={startEdit}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11.5px] text-white/50 hover:text-white hover:bg-white/[0.05] transition cursor-pointer"
+          >
+            <i className="fa-solid fa-pen text-[9px]" />
+            Customise
+          </button>
+        )}
+      </div>
+
+      {editing ? (
+        <div className="flex flex-col gap-2">
+          {draft.map((s) => (
+            <div
+              key={s.id}
+              className="rounded-xl border border-white/10 bg-white/[0.02] p-2.5 flex flex-col gap-1.5"
+            >
+              <div className="flex items-center gap-2">
+                <i
+                  className={`${s.icon} text-[11px] text-teal-300/80 w-4 text-center shrink-0`}
+                />
+                <input
+                  value={s.title}
+                  onChange={(e) => update(s.id, { title: e.target.value })}
+                  placeholder="Shortcut label"
+                  maxLength={60}
+                  className="flex-1 min-w-0 bg-transparent text-[13px] font-medium text-white placeholder:text-white/30 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => remove(s.id)}
+                  aria-label="Remove shortcut"
+                  className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-white/30 hover:text-red-300 hover:bg-red-500/10 transition cursor-pointer"
+                >
+                  <i className="fa-solid fa-xmark text-[11px]" />
+                </button>
+              </div>
+              <textarea
+                value={s.prompt}
+                onChange={(e) => update(s.id, { prompt: e.target.value })}
+                placeholder="The prompt sent to Quill when tapped…"
+                rows={2}
+                maxLength={1000}
+                className="w-full resize-none rounded-lg bg-white/[0.03] border border-white/10 px-2.5 py-1.5 text-[12.5px] text-white/80 placeholder:text-white/30 focus:outline-none focus:border-white/25 transition"
+              />
+            </div>
+          ))}
+
+          <div className="flex items-center justify-between pt-0.5">
+            <button
+              type="button"
+              onClick={add}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-white/15 text-[12px] font-medium text-white/55 hover:text-white/85 hover:border-white/30 transition cursor-pointer"
+            >
+              <i className="fa-solid fa-plus text-[10px]" />
+              Add shortcut
+            </button>
+            <button
+              type="button"
+              onClick={resetDefaults}
+              className="text-[11.5px] text-white/40 hover:text-white/70 transition cursor-pointer"
+            >
+              Reset to defaults
+            </button>
+          </div>
+        </div>
+      ) : suggestions.length === 0 ? (
+        <button
+          type="button"
+          onClick={startEdit}
+          className="w-full rounded-xl border border-dashed border-white/15 bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/25 transition px-3.5 py-4 text-[12.5px] text-white/45 hover:text-white/70 cursor-pointer"
+        >
+          <i className="fa-solid fa-plus text-[10px] mr-1.5" />
+          Add a shortcut
+        </button>
+      ) : (
+        <div className="grid grid-cols-2 gap-2 w-full">
+          {suggestions.map((s) => (
+            <button
+              key={s.id}
+              onClick={() => onSend(s.prompt)}
+              className="group text-left rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/20 transition px-3.5 py-3 cursor-pointer"
+            >
+              <div className="flex items-center gap-2.5">
+                <i
+                  className={`${s.icon} text-[11px] text-teal-300/80 group-hover:text-teal-300 transition`}
+                />
+                <span className="text-[13px] font-medium text-white truncate">
+                  {s.title}
+                </span>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -1231,7 +1474,7 @@ function TradeCard({ id }: { id: string }) {
   const trade = ctx?.findTrade(id);
   const onClick = () => ctx?.openTrade(id);
 
-  // Cache miss: still clickable — openTrade() falls back to a single
+  // Cache miss: still clickable - openTrade() falls back to a single
   // /api/trades/<id> fetch, so the user can always view the modal.
   if (!trade) {
     return (
@@ -1258,7 +1501,7 @@ function TradeCard({ id }: { id: string }) {
   const exitDate = fmtDate(trade.dateClosed);
 
   // Border/background tint follows the trade outcome. Keep it subtle
-  // so a column of cards stays scannable — the chip + amount carry
+  // so a column of cards stays scannable - the chip + amount carry
   // the strong color.
   const tone = isWin
     ? "border-green-500/20 bg-green-500/[0.04] hover:bg-green-500/[0.08] hover:border-green-500/30"
@@ -1383,7 +1626,7 @@ function MarkdownText({ text }: { text: string }) {
           a: ({ href, children }) => {
             // `trade://<id>` links are emitted by Gemini for every
             // trade it mentions (see SYSTEM_PROMPT). They aren't real
-            // URLs — replace them with a full TradeCard rendered from
+            // URLs - replace them with a full TradeCard rendered from
             // the user's cached trade data. The link's inner text
             // (always the literal "trade-card") is discarded.
             if (href && href.startsWith("trade://")) {

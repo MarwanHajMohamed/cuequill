@@ -62,7 +62,7 @@ export async function GET() {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
   await connectDb();
-  // Note: accounts start with an empty library — no default strategies
+  // Note: accounts start with an empty library - no default strategies
   // are seeded. Existing seeded strategies still get their ported
   // content backfilled below.
   await backfillSeedContent(auth.userId);
@@ -102,7 +102,12 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json().catch(() => ({}));
   const name = String(body.name ?? "").trim();
-  const direction = body.direction === "PUT" ? "PUT" : "CALL";
+  const direction =
+    body.direction === "PUT"
+      ? "PUT"
+      : body.direction === "BOTH"
+        ? "BOTH"
+        : "CALL";
   if (!name) {
     return NextResponse.json({ error: "Name is required" }, { status: 400 });
   }

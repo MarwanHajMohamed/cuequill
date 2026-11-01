@@ -1,6 +1,7 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useState } from "react";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -35,6 +36,67 @@ export const CuequillLogo = ({ className = "" }: { className?: string }) => (
   </svg>
 );
 
+// Launch announcement stripe - a full-bleed bar above the nav pill that
+// scrolls the launch date + promo code right-to-left. Rendered by
+// SiteHeader, so every marketing surface picks it up. Honours reduced-
+// motion by showing the message statically instead of scrolling.
+const PROMO_ITEMS = [
+  "Cuequill is live",
+  "Use code LAUNCH26 for 50% off your first 6 months",
+];
+
+// One run of the promo items with dot separators. aria-hidden because the
+// bar exposes a single readable sr-only copy for assistive tech; the
+// visible marquee is decorative and duplicated for a seamless loop.
+function PromoSequence() {
+  return (
+    <div className="flex items-center shrink-0" aria-hidden>
+      {[0, 1, 2].map((rep) =>
+        PROMO_ITEMS.map((item, i) => (
+          <span key={`${rep}-${i}`} className="flex items-center">
+            <span className="px-6 text-[11.5px] font-medium tracking-[0.02em] text-teal-50 whitespace-nowrap">
+              {item}
+            </span>
+            <span className="w-1 h-1 rounded-full bg-teal-200/70" />
+          </span>
+        )),
+      )}
+    </div>
+  );
+}
+
+export function AnnouncementBar() {
+  const reduce = useReducedMotion();
+  return (
+    <div className="pointer-events-auto w-full overflow-hidden border-b border-teal-400/20 bg-gradient-to-r from-teal-600/30 via-teal-500/20 to-emerald-500/30 backdrop-blur-md">
+      {/* Single readable copy for screen readers; the marquee is decorative. */}
+      <span className="sr-only">
+        Cuequill is live. Use code LAUNCH26 for 50% off your first 6 months.
+      </span>
+      <div className="relative flex h-9 items-center">
+        {reduce ? (
+          <div className="flex w-full items-center justify-center">
+            <span className="px-6 text-[11.5px] font-medium text-teal-50 text-center">
+              Cuequill is live · Use code LAUNCH26 for 50% off your first 6
+              months
+            </span>
+          </div>
+        ) : (
+          <motion.div
+            className="flex w-max flex-nowrap"
+            animate={{ x: ["0%", "-50%"] }}
+            transition={{ ease: "linear", duration: 26, repeat: Infinity }}
+          >
+            {/* Two identical runs; shifting by exactly -50% loops seamlessly. */}
+            <PromoSequence />
+            <PromoSequence />
+          </motion.div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // Pill navbar - preserved from the previous landing page per the brief.
 // Glass-pill structure, fixed at top, centered up to a max width. On
 // phones the Features / Pricing links and Sign in pill collapse behind
@@ -42,12 +104,18 @@ export const CuequillLogo = ({ className = "" }: { className?: string }) => (
 // reachable without crowding the pill.
 export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
+  // When signed in, the two auth CTAs collapse into a single "Go to
+  // Dashboard" button so logged-in visitors can jump straight back in.
+  const { status } = useSession();
+  const authed = status === "authenticated";
 
   return (
     <header
-      className="fixed top-0 left-0 right-0 z-50 flex flex-col items-center pointer-events-none px-3 md:px-10"
+      className="fixed top-0 left-0 right-0 z-50 flex flex-col items-center pointer-events-none"
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
+      <AnnouncementBar />
+      <div className="w-full flex flex-col items-center px-3 md:px-10">
       <div className="pointer-events-auto flex justify-between items-center w-full max-w-[1200px] mt-3 md:mt-5 py-2 pl-3 pr-2 bg-white/[0.03] backdrop-blur-md rounded-full border border-white/10 shadow-[0_2px_24px_var(--shadow-soft)]">
         <Link
           href="/"
@@ -72,18 +140,30 @@ export function SiteHeader() {
           >
             Pricing
           </Link>
-          <Link
-            href="/login"
-            className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-full text-white/55 hover:text-white transition text-[12.5px]"
-          >
-            Sign in
-          </Link>
-          <Link
-            href="/signup"
-            className="hidden sm:inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[12.5px] font-medium"
-          >
-            Join waitlist
-          </Link>
+          {authed ? (
+            <Link
+              href="/dashboard"
+              className="hidden sm:inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[12.5px] font-medium"
+            >
+              Go to Dashboard
+              <i className="fa-solid fa-chevron-right text-[10px]" />
+            </Link>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-full text-white/55 hover:text-white transition text-[12.5px]"
+              >
+                Sign in
+              </Link>
+              <Link
+                href="/signup"
+                className="hidden sm:inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[12.5px] font-medium"
+              >
+                Sign up
+              </Link>
+            </>
+          )}
           <button
             type="button"
             onClick={() => setMenuOpen((o) => !o)}
@@ -106,7 +186,7 @@ export function SiteHeader() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.18, ease: "easeOut" }}
-            className="sm:hidden pointer-events-auto w-full max-w-[1200px] mt-2 px-3"
+            className="sm:hidden pointer-events-auto w-full max-w-[1200px] mt-2"
           >
             <div className="flex flex-col rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md shadow-[0_2px_24px_var(--shadow-soft)] overflow-hidden">
               <Link
@@ -123,26 +203,40 @@ export function SiteHeader() {
               >
                 Pricing
               </Link>
-              <Link
-                href="/login"
-                onClick={() => setMenuOpen(false)}
-                className="px-5 py-3.5 text-[14px] text-white/80 hover:text-white hover:bg-white/[0.04] border-b border-[var(--rule)] transition inline-flex items-center justify-between"
-              >
-                Sign in
-                <i className="fa-solid fa-chevron-right text-[11px]" />
-              </Link>
-              <Link
-                href="/signup"
-                onClick={() => setMenuOpen(false)}
-                className="px-5 py-3.5 text-[14px] font-medium text-teal-300 hover:bg-teal-500/[0.08] transition inline-flex items-center justify-between"
-              >
-                Join waitlist
-                <i className="fa-solid fa-chevron-right text-[11px]" />
-              </Link>
+              {authed ? (
+                <Link
+                  href="/dashboard"
+                  onClick={() => setMenuOpen(false)}
+                  className="px-5 py-3.5 text-[14px] font-medium text-teal-300 hover:bg-teal-500/[0.08] transition inline-flex items-center justify-between"
+                >
+                  Go to Dashboard
+                  <i className="fa-solid fa-chevron-right text-[11px]" />
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    onClick={() => setMenuOpen(false)}
+                    className="px-5 py-3.5 text-[14px] text-white/80 hover:text-white hover:bg-white/[0.04] border-b border-[var(--rule)] transition inline-flex items-center justify-between"
+                  >
+                    Sign in
+                    <i className="fa-solid fa-chevron-right text-[11px]" />
+                  </Link>
+                  <Link
+                    href="/signup"
+                    onClick={() => setMenuOpen(false)}
+                    className="px-5 py-3.5 text-[14px] font-medium text-teal-300 hover:bg-teal-500/[0.08] transition inline-flex items-center justify-between"
+                  >
+                    Sign up
+                    <i className="fa-solid fa-chevron-right text-[11px]" />
+                  </Link>
+                </>
+              )}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
+      </div>
     </header>
   );
 }
@@ -152,7 +246,7 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-white/10">
       <div className="max-w-[1200px] mx-auto px-6 md:px-10 py-12 grid grid-cols-2 md:grid-cols-12 gap-y-8 gap-x-6">
-        <div className="md:col-span-5 flex flex-col gap-3">
+        <div className="md:col-span-4 flex flex-col gap-3">
           <Link href="/" className="flex items-center gap-2.5">
             <CuequillLogo className="h-5 w-auto" />
             <span className="font-semibold tracking-tight text-[13.5px]">
@@ -171,8 +265,6 @@ export function SiteFooter() {
             { label: "Overview", href: "/" },
             { label: "Features", href: "/features" },
             { label: "Pricing", href: "/pricing" },
-            { label: "Join waitlist", href: "/signup" },
-            { label: "Sign in", href: "/login" },
           ]}
         />
         <FooterCol
@@ -182,6 +274,13 @@ export function SiteFooter() {
             { label: "Quill AI", href: "/#quill" },
             { label: "Numbers", href: "/#numbers" },
             { label: "IBKR sync", href: "/#ibkr" },
+          ]}
+        />
+        <FooterCol
+          title="Legal"
+          links={[
+            { label: "Privacy policy", href: "/privacy" },
+            { label: "Terms of service", href: "/terms" },
           ]}
         />
         <FooterCol
@@ -195,7 +294,7 @@ export function SiteFooter() {
           <p className="text-[11px] leading-relaxed text-white/40 max-w-[80ch]">
             Cuequill is a trading journal and analytics tool for your own record
             keeping. It is not a broker or financial adviser, and nothing in the
-            app — including any AI-generated observations — is financial,
+            app - including any AI-generated observations - is financial,
             investment, tax, or legal advice. Trading options involves
             substantial risk of loss. You are solely responsible for your
             trading decisions.
@@ -203,7 +302,6 @@ export function SiteFooter() {
           <div className="flex items-center justify-between text-[10.5px] tracking-[0.1em] text-white/35">
             <span>© {new Date().getFullYear()} Cuequill</span>
             <div className="flex items-center gap-4">
-              <span>Invite-only</span>
               <ThemeToggle />
             </div>
           </div>
@@ -237,6 +335,166 @@ function FooterCol({
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+// ─── Legal document shell ─────────────────────────────────────────────
+// Shared layout for the Privacy Policy and Terms pages. Data-driven so
+// each page just supplies its metadata and a list of sections. Renders
+// the marketing header/footer, a title block with the effective date, a
+// jump-links table of contents and the numbered sections themselves.
+
+export type LegalBlock =
+  | { type: "p"; text: string }
+  | { type: "list"; items: string[] };
+
+export type LegalSection = {
+  id: string;
+  heading: string;
+  blocks: LegalBlock[];
+};
+
+export function LegalDoc({
+  title,
+  tagline,
+  updated,
+  effective,
+  intro,
+  sections,
+  layout = "centered",
+}: {
+  title: string;
+  tagline: string;
+  updated: string;
+  effective: string;
+  intro: string[];
+  sections: LegalSection[];
+  // "centered" keeps the classic single narrow column with the Contents
+  // inline. "split" pins the Contents to a sticky left rail and puts the
+  // title, intro and sections in a wider right column.
+  layout?: "centered" | "split";
+}) {
+  const titleBlock = (
+    <>
+      {/* Title block */}
+      <SectionMark label="Legal" />
+      <h1 className="mt-6 text-[36px] md:text-[52px] leading-[1.02] font-medium tracking-[-0.025em]">
+        {title}
+      </h1>
+      <p className="mt-5 max-w-xl text-[14px] text-white/60 leading-relaxed">
+        {tagline}
+      </p>
+      <div className="mt-6 flex flex-wrap gap-x-6 gap-y-1 text-[11px] tracking-[0.08em] text-white/40">
+        <span>Effective {effective}</span>
+        <span>Last updated {updated}</span>
+      </div>
+
+      {/* Intro */}
+      <div className="mt-10 flex flex-col gap-4">
+        {intro.map((t, i) => (
+          <p key={i} className="text-[14px] text-white/70 leading-relaxed">
+            {t}
+          </p>
+        ))}
+      </div>
+    </>
+  );
+
+  const contentsNav = (
+    <nav className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
+      <h2 className="text-[10.5px] tracking-[0.1em] text-white/40 mb-3 font-medium">
+        Contents
+      </h2>
+      <ol className="flex flex-col gap-1.5 text-[13px]">
+        {sections.map((s, i) => (
+          <li key={s.id} className="flex gap-2.5">
+            <span className="tabular-nums text-white/35">{i + 1}.</span>
+            <a
+              href={`#${s.id}`}
+              className="text-white/65 hover:text-white transition"
+            >
+              {s.heading}
+            </a>
+          </li>
+        ))}
+      </ol>
+    </nav>
+  );
+
+  const sectionsBlock = (
+    <div className="flex flex-col gap-12">
+      {sections.map((s, i) => (
+        <section key={s.id} id={s.id} className="scroll-mt-28">
+          <h2 className="text-[19px] md:text-[21px] font-medium tracking-[-0.01em]">
+            <span className="text-white/35 tabular-nums mr-2">{i + 1}.</span>
+            {s.heading}
+          </h2>
+          <div className="mt-4 flex flex-col gap-4">
+            {s.blocks.map((b, j) =>
+              b.type === "p" ? (
+                <p
+                  key={j}
+                  className="text-[14px] text-white/70 leading-relaxed"
+                >
+                  {b.text}
+                </p>
+              ) : (
+                <ul key={j} className="flex flex-col gap-2 pl-1">
+                  {b.items.map((it, k) => (
+                    <li
+                      key={k}
+                      className="flex items-start gap-2.5 text-[14px] text-white/70 leading-relaxed"
+                    >
+                      <span className="shrink-0 mt-[9px] w-1.5 h-1.5 rounded-full bg-teal-400/70" />
+                      <span>{it}</span>
+                    </li>
+                  ))}
+                </ul>
+              ),
+            )}
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 -z-10"
+        style={{
+          background:
+            "radial-gradient(45% 40% at 50% 0%, rgba(20,184,166,0.10) 0%, rgba(20,184,166,0) 70%)",
+        }}
+      />
+      <SiteHeader />
+
+      <main className="flex-1 pt-28 md:pt-44 px-6 md:px-10">
+        {layout === "split" ? (
+          <div className="max-w-[1100px] mx-auto pb-24 grid md:grid-cols-12 gap-10 md:gap-12">
+            {/* Contents rail - sticky on desktop, stacks on top on mobile.
+                top-40 keeps a clear gap below the fixed navbar when pinned. */}
+            <aside className="md:col-span-4 md:sticky md:top-40 self-start md:max-h-[calc(100vh-11rem)] md:overflow-y-auto">
+              {contentsNav}
+            </aside>
+            {/* Everything else. */}
+            <div className="md:col-span-8">
+              {titleBlock}
+              <div className="mt-14">{sectionsBlock}</div>
+            </div>
+          </div>
+        ) : (
+          <div className="max-w-[760px] mx-auto pb-24">
+            {titleBlock}
+            <div className="mt-10">{contentsNav}</div>
+            <div className="mt-14">{sectionsBlock}</div>
+          </div>
+        )}
+      </main>
+
+      <SiteFooter />
     </div>
   );
 }

@@ -1,26 +1,23 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-import PageLoading from "./PageLoading";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
 import { FaqRow, SiteFooter, SiteHeader } from "./_marketing/Chrome";
 
 // ─── Page ────────────────────────────────────────────────────────────
 
+// The landing page is public and stays reachable when signed in - logged-in
+// visitors see the top marketing navbar (with a "Go to Dashboard" button)
+// instead of the app sidebar, which NavbarWrapper/ContentShell suppress on
+// this route.
 export default function Home() {
-  const { status } = useSession();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (status === "authenticated") router.push("/dashboard");
-  }, [status, router]);
-
-  if (status === "loading") return <PageLoading />;
-  if (status === "authenticated") return null;
-
   return (
     <div className="min-h-screen flex flex-col">
       <div
@@ -101,12 +98,12 @@ export default function Home() {
             <>
               Every IBKR fill,
               <br />
-              <span className="italic text-teal-300">synced nightly.</span>
+              <span className="italic text-teal-300">synced every morning.</span>
             </>
           }
-          body="Drop a Flex Web Service token in settings. Cuequill imports every fill weeknight after close — commissions and taxes included. Manual entry still works."
+          body="Drop a Flex Web Service token in settings. Cuequill imports every fill each morning - commissions and taxes included. Manual entry still works."
           stats={[
-            ["Runs", "After close"],
+            ["Runs", "Every morning"],
             ["Commissions", "Imported"],
             ["Setup", "≈3 min"],
           ]}
@@ -175,7 +172,7 @@ function Hero() {
           transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
           className="md:col-span-6"
         >
-          <HeroCalendar />
+          <HeroCarousel />
         </motion.div>
       </div>
     </section>
@@ -183,18 +180,21 @@ function Hero() {
 }
 
 // A self-contained, on-brand hero visual: a miniature month calendar with
-// each day tinted by its P/L (green wins, red losses) — a preview of the
+// each day tinted by its P/L (green wins, red losses) - a preview of the
 // product's signature "calendar tinted by your P/L". Pure JSX/CSS, no
 // external asset. Data is a fixed, believable mostly-green month.
 type HeroCell = { pl?: number; tone: "win" | "loss" | "flat" };
+// 6 weeks × 5 weekdays (Mon-Fri). Weekends are skipped entirely so
+// the calendar reads as a trading-days grid, not a full month.
 const HERO_MONTH: HeroCell[] = [
-  { tone: "flat" }, { tone: "win", pl: 120 }, { tone: "flat" }, { tone: "loss", pl: -80 }, { tone: "win", pl: 260 }, { tone: "flat" }, { tone: "flat" },
-  { tone: "win", pl: 90 }, { tone: "flat" }, { tone: "flat" }, { tone: "win", pl: 540 }, { tone: "loss", pl: -210 }, { tone: "flat" }, { tone: "win", pl: 75 },
-  { tone: "flat" }, { tone: "win", pl: 320 }, { tone: "flat" }, { tone: "flat" }, { tone: "win", pl: 180 }, { tone: "flat" }, { tone: "loss", pl: -60 },
-  { tone: "win", pl: 410 }, { tone: "flat" }, { tone: "win", pl: 95 }, { tone: "flat" }, { tone: "flat" }, { tone: "win", pl: 230 }, { tone: "flat" },
-  { tone: "flat" }, { tone: "loss", pl: -140 }, { tone: "win", pl: 680 }, { tone: "flat" }, { tone: "win", pl: 150 }, { tone: "flat" }, { tone: "flat" },
+  { tone: "flat" }, { tone: "win", pl: 120 }, { tone: "flat" }, { tone: "loss", pl: -80 }, { tone: "win", pl: 260 },
+  { tone: "win", pl: 90 }, { tone: "flat" }, { tone: "win", pl: 540 }, { tone: "loss", pl: -210 }, { tone: "flat" },
+  { tone: "win", pl: 75 }, { tone: "flat" }, { tone: "win", pl: 320 }, { tone: "flat" }, { tone: "win", pl: 180 },
+  { tone: "flat" }, { tone: "loss", pl: -60 }, { tone: "win", pl: 410 }, { tone: "flat" }, { tone: "win", pl: 95 },
+  { tone: "flat" }, { tone: "win", pl: 230 }, { tone: "flat" }, { tone: "loss", pl: -140 }, { tone: "win", pl: 680 },
+  { tone: "flat" }, { tone: "win", pl: 150 }, { tone: "flat" }, { tone: "win", pl: 200 }, { tone: "flat" },
 ];
-const HERO_DOW = ["S", "M", "T", "W", "T", "F", "S"];
+const HERO_DOW = ["M", "T", "W", "T", "F"];
 
 function fmtCellPL(n: number): string {
   const sign = n >= 0 ? "+" : "-";
@@ -217,6 +217,59 @@ const heroCell = {
   },
 };
 
+// The single "featured" day the drill-down animation zooms into,
+// plus the trades that make up its P/L (they must sum to that day's
+// total so the story is honest). Day 8 in HERO_MONTH is +$540 and
+// sits at row 1 col 2 of the 5×6 grid (a nice mid-upper anchor).
+const FEATURED_INDEX = 7;
+const FEATURED_TRADES: {
+  symbol: string;
+  side: "Call" | "Put";
+  strike: number;
+  expiry: string;
+  entry: number;
+  exit: number;
+  qty: number;
+  held: string;
+  pl: number;
+}[] = [
+  {
+    symbol: "AAPL",
+    side: "Call",
+    strike: 220,
+    expiry: "26 Jul",
+    entry: 1.85,
+    exit: 3.65,
+    qty: 1,
+    held: "1h 42m",
+    pl: 180,
+  },
+  {
+    symbol: "TSLA",
+    side: "Put",
+    strike: 285,
+    expiry: "25 Jul",
+    entry: 2.4,
+    exit: 4.6,
+    qty: 1,
+    held: "2h 14m",
+    pl: 220,
+  },
+  {
+    symbol: "NVDA",
+    side: "Call",
+    strike: 125,
+    expiry: "26 Jul",
+    entry: 0.98,
+    exit: 2.38,
+    qty: 1,
+    held: "58m",
+    pl: 140,
+  },
+];
+// Which trade the animation "clicks into" for the detail modal.
+const FEATURED_DETAIL_INDEX = 1;
+
 function HeroCalendar() {
   const net = HERO_MONTH.reduce((s, c) => s + (c.pl ?? 0), 0);
   const wins = HERO_MONTH.filter((c) => c.tone === "win").length;
@@ -225,110 +278,384 @@ function HeroCalendar() {
   const animatedNet = Math.round(useCountUp(net, 1300, true));
   let dayNo = 0;
 
+  // Drill-down loop: calendar settles → zoom into the featured day
+  // → trades animate down under it → the middle trade "opens" into a
+  // detail modal → detail closes → trades close → zoom out → rest.
+  // Loops continuously so late-arriving visitors still see the story.
+  // Each drill step is split into an "aim" phase (the cursor glides to its
+  // target, nothing else moves) and the action phase (zoom / modal), which
+  // fires on arrival - so the zoom is synced to the cursor's click.
+  const [phase, setPhase] = useState<
+    | "idle"
+    | "aimDay"
+    | "trades"
+    | "aimTrade"
+    | "detail"
+    | "closing"
+    | "unzoom"
+  >("idle");
+  useEffect(() => {
+    let cancelled = false;
+    const timeouts: ReturnType<typeof setTimeout>[] = [];
+    const wait = (ms: number) =>
+      new Promise<void>((r) => {
+        timeouts.push(setTimeout(() => r(), ms));
+      });
+    (async () => {
+      await wait(2400); // let the entrance stagger finish first
+      while (!cancelled) {
+        setPhase("aimDay"); // cursor glides to the featured day
+        await wait(750);
+        if (cancelled) return;
+        setPhase("trades"); // click lands → zoom in + trades open
+        await wait(2000);
+        if (cancelled) return;
+        setPhase("aimTrade"); // cursor glides down to the middle trade
+        await wait(750);
+        if (cancelled) return;
+        setPhase("detail"); // click lands → detail modal opens
+        await wait(2400);
+        if (cancelled) return;
+        setPhase("closing"); // modal closes, still zoomed in
+        await wait(650);
+        if (cancelled) return;
+        setPhase("unzoom"); // zoom back out to the calendar
+        await wait(1500);
+        if (cancelled) return;
+        setPhase("idle");
+        await wait(2600);
+      }
+    })();
+    return () => {
+      cancelled = true;
+      timeouts.forEach(clearTimeout);
+    };
+  }, []);
+
+  // Zoomed in from the moment the day is clicked through to the modal
+  // closing; the trades panel is mounted the whole time we're zoomed.
+  const zoomed =
+    phase === "trades" ||
+    phase === "aimTrade" ||
+    phase === "detail" ||
+    phase === "closing";
+  const showTrades = zoomed;
+  const showDetail = phase === "detail";
+  const featuredTotal = FEATURED_TRADES.reduce((s, t) => s + t.pl, 0);
+  const detailTrade = FEATURED_TRADES[FEATURED_DETAIL_INDEX];
+
+  // Measured so the cursor can point at the real featured tile / trade row
+  // rather than guessed percentages.
+  const cardRef = useRef<HTMLDivElement>(null);
+  const dayRef = useRef<HTMLDivElement>(null);
+  const tradeRef = useRef<HTMLLIElement>(null);
+
   return (
     <div className="relative mx-auto w-full max-w-[440px]">
-      {/* Soft glow behind the card. */}
+      {/* Soft glow behind the card. Clipped to the card's own bounds
+          (inset-0 + matching rounded corners) so it doesn't bleed out
+          into the page below the calendar. */}
       <div
         aria-hidden
-        className="absolute -inset-6 -z-10 rounded-[32px] opacity-70"
+        className="absolute inset-0 -z-10 rounded-2xl opacity-70 overflow-hidden"
         style={{
           background:
             "radial-gradient(60% 60% at 70% 20%, rgba(45,212,191,0.18) 0%, rgba(45,212,191,0) 70%)",
         }}
       />
-      <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5 shadow-[0_30px_80px_rgba(0,0,0,0.45)]">
-        <div className="flex items-center justify-between mb-3">
-          <div className="text-[12px] tracking-[0.1em] text-white/45 font-medium">
-            This month
-          </div>
-          <div
-            className={`text-[15px] font-semibold tabular-nums ${
-              net >= 0 ? "text-green-400" : "text-red-400"
-            }`}
-          >
-            {net >= 0 ? "+" : "-"}${Math.abs(animatedNet).toLocaleString()}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-7 gap-1 mb-1.5">
-          {HERO_DOW.map((d, i) => (
-            <div
-              key={i}
-              className="text-center text-[9px] text-white/30 tracking-wide"
-            >
-              {d}
+      <div
+        ref={cardRef}
+        className="relative rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5 shadow-[0_8px_40px_var(--shadow-soft)] overflow-hidden"
+      >
+        {/* Card contents are wrapped in a scaling layer so the zoom-in
+            drill-down enlarges everything from an anchor at day 11's
+            centre. Origin is the featured cell's centre inside the
+            grid: col 3.5/7 ≈ 50%, row (1.5/5 rows) ≈ 34%. */}
+        <motion.div
+          animate={{ scale: zoomed ? 2.4 : 1 }}
+          transition={{
+            // The zoom-out back to the calendar (unzoom) is deliberately
+            // slower than the zoom-in so the last step reads as a gentle
+            // pull-back rather than a snap.
+            duration: phase === "unzoom" ? 1.5 : 0.7,
+            ease: [0.4, 0, 0.2, 1],
+          }}
+          style={{ transformOrigin: "50% 30%" }}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="text-[12px] tracking-[0.1em] text-white/45 font-medium">
+              This month
             </div>
-          ))}
-        </div>
+            <div
+              className={`text-[15px] font-semibold tabular-nums ${
+                net >= 0 ? "text-green-400" : "text-red-400"
+              }`}
+            >
+              {net >= 0 ? "+" : "-"}${Math.abs(animatedNet).toLocaleString()}
+            </div>
+          </div>
 
-        {/* Tiles stagger-fill in; a light sweep passes across on a loop. */}
-        <div className="relative overflow-hidden rounded-md">
-          <motion.div
-            className="grid grid-cols-7 gap-1"
-            variants={heroGrid}
-            initial="hidden"
-            animate="show"
-          >
-            {HERO_MONTH.map((c, i) => {
-              dayNo += 1;
-              const tone =
-                c.tone === "win"
-                  ? "bg-green-500/15 border-green-500/25"
-                  : c.tone === "loss"
-                    ? "bg-red-500/15 border-red-500/25"
-                    : "bg-white/[0.02] border-white/[0.06]";
-              const plColor =
-                c.tone === "win" ? "text-green-300" : "text-red-300";
-              return (
-                <motion.div
-                  key={i}
-                  variants={heroCell}
-                  className={`relative aspect-square rounded-md border ${tone} flex flex-col items-center justify-center`}
-                >
-                  <span className="absolute top-0.5 left-1 text-[7.5px] text-white/30 tabular-nums">
-                    {dayNo}
-                  </span>
-                  {c.pl != null && (
-                    <span
-                      className={`text-[8.5px] md:text-[9.5px] font-semibold tabular-nums ${plColor}`}
-                    >
-                      {fmtCellPL(c.pl)}
+          <div className="grid grid-cols-5 gap-1 mb-1.5">
+            {HERO_DOW.map((d, i) => (
+              <div
+                key={i}
+                className="text-center text-[10px] text-white/30 tracking-wide"
+              >
+                {d}
+              </div>
+            ))}
+          </div>
+
+          {/* Tiles stagger-fill in; a light sweep passes across on a loop. */}
+          <div className="relative overflow-hidden rounded-md">
+            <motion.div
+              className="grid grid-cols-5 gap-1"
+              variants={heroGrid}
+              initial="hidden"
+              animate="show"
+            >
+              {HERO_MONTH.map((c, i) => {
+                dayNo += 1;
+                const tone =
+                  c.tone === "win"
+                    ? "bg-green-500/15 border-green-500/25"
+                    : c.tone === "loss"
+                      ? "bg-red-500/15 border-red-500/25"
+                      : "bg-white/[0.02] border-white/[0.06]";
+                const plColor =
+                  c.tone === "win" ? "text-green-300" : "text-red-300";
+                const isFeatured = i === FEATURED_INDEX;
+                const highlight =
+                  isFeatured && zoomed
+                    ? "ring-1 ring-teal-400/70 shadow-[0_0_0_1px_rgba(45,212,191,0.35)]"
+                    : "";
+                return (
+                  <motion.div
+                    key={i}
+                    ref={isFeatured ? dayRef : undefined}
+                    variants={heroCell}
+                    className={`relative aspect-square rounded-md border ${tone} ${highlight} flex flex-col items-center justify-center`}
+                  >
+                    <span className="absolute top-0.5 left-1 text-[7.5px] text-white/30 tabular-nums">
+                      {dayNo}
                     </span>
-                  )}
-                </motion.div>
-              );
-            })}
-          </motion.div>
+                    {c.pl != null && (
+                      <span
+                        className={`text-[8.5px] md:text-[9.5px] font-semibold tabular-nums ${plColor}`}
+                      >
+                        {fmtCellPL(c.pl)}
+                      </span>
+                    )}
+                  </motion.div>
+                );
+              })}
+            </motion.div>
 
-          {/* Looping diagonal light sweep. */}
-          <motion.div
-            aria-hidden
-            className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 skew-x-[-18deg]"
-            style={{
-              background:
-                "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.07) 50%, rgba(255,255,255,0) 100%)",
-            }}
-            animate={{ left: ["-33%", "133%"] }}
-            transition={{
-              duration: 2.6,
-              ease: "easeInOut",
-              repeat: Infinity,
-              repeatDelay: 3.2,
-            }}
-          />
-        </div>
+            {/* Looping diagonal light sweep. */}
+            <motion.div
+              aria-hidden
+              className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 skew-x-[-18deg]"
+              style={{
+                background:
+                  "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.07) 50%, rgba(255,255,255,0) 100%)",
+              }}
+              animate={{ left: ["-33%", "133%"] }}
+              transition={{
+                duration: 2.6,
+                ease: "easeInOut",
+                repeat: Infinity,
+                repeatDelay: 3.2,
+              }}
+            />
+          </div>
 
-        <div className="flex items-center gap-4 mt-3 pt-3 border-t border-white/[0.06] text-[11px]">
-          <span className="text-white/45">
-            Win rate <span className="text-white/80 font-medium">{winRate}%</span>
-          </span>
-          <span className="text-white/45">
-            Trades <span className="text-white/80 font-medium">{closed}</span>
-          </span>
-        </div>
+          <div className="flex items-center gap-4 mt-3 pt-3 border-t border-white/[0.06] text-[11px]">
+            <span className="text-white/45">
+              Win rate <span className="text-white/80 font-medium">{winRate}%</span>
+            </span>
+            <span className="text-white/45">
+              Trades <span className="text-white/80 font-medium">{closed}</span>
+            </span>
+          </div>
+        </motion.div>
+
+        {/* Drill-down: a small trade breakdown that slides down under
+            the enlarged featured cell, showing which trades summed to
+            that day's total. Stays mounted through the detail-modal
+            phase (dimming behind it) so it's visible around the edges
+            of the modal instead of blinking away and back. */}
+        <AnimatePresence>
+          {showTrades && (
+            <motion.div
+              key="trades"
+              className="absolute left-4 right-4 md:left-5 md:right-5 rounded-lg bg-[var(--surface-2)] border border-teal-500/25 p-3 shadow-[0_10px_30px_rgba(0,0,0,0.35)] backdrop-blur-sm z-10"
+              style={{ top: "54%" }}
+              initial={{ opacity: 0, y: -22, scale: 0.9 }}
+              animate={{
+                opacity: showDetail ? 0.35 : 1,
+                y: 0,
+                scale: showDetail ? 0.96 : 1,
+              }}
+              exit={{
+                opacity: 0,
+                y: -14,
+                scale: 0.94,
+                // Slower fade-out so the panel eases away in step with the
+                // slower zoom-out to the calendar.
+                transition: { duration: 0.7, ease: [0.4, 0, 0.2, 1] },
+              }}
+              transition={{ duration: 0.65, ease: [0.4, 0, 0.2, 1] }}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-[9.5px] tracking-[0.12em] text-white/50">
+                  Wed · Day 8
+                </div>
+                <div className="text-[9.5px] text-white/40">
+                  {FEATURED_TRADES.length} trades
+                </div>
+              </div>
+              <motion.ul
+                className="space-y-1.5"
+                initial="hidden"
+                animate="show"
+                exit="hide"
+                variants={{
+                  hidden: {},
+                  show: {
+                    transition: { staggerChildren: 0.14, delayChildren: 0.1 },
+                  },
+                  hide: {
+                    transition: { staggerChildren: 0.05, staggerDirection: -1 },
+                  },
+                }}
+              >
+                {FEATURED_TRADES.map((t, idx) => {
+                  const selected = idx === FEATURED_DETAIL_INDEX;
+                  return (
+                    <motion.li
+                      key={t.symbol}
+                      ref={idx === FEATURED_DETAIL_INDEX ? tradeRef : undefined}
+                      variants={{
+                        hidden: { opacity: 0, y: -12 },
+                        show: {
+                          opacity: 1,
+                          y: 0,
+                          transition: { duration: 0.28, ease: "easeOut" },
+                        },
+                        hide: {
+                          opacity: 0,
+                          y: -8,
+                          transition: { duration: 0.2 },
+                        },
+                      }}
+                      className={`flex items-center justify-between rounded-md px-1.5 py-1 transition-colors ${
+                        selected && showDetail
+                          ? "bg-teal-500/15 ring-1 ring-teal-400/50"
+                          : ""
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-[12px] font-semibold text-white/85 tabular-nums">
+                          {t.symbol}
+                        </span>
+                        <span
+                          className={`px-1.5 py-0.5 rounded-[3px] text-[8.5px] font-medium tracking-wide ${
+                            t.side === "Call"
+                              ? "bg-teal-500/15 text-teal-300"
+                              : "bg-fuchsia-500/15 text-fuchsia-300"
+                          }`}
+                        >
+                          {t.side}
+                        </span>
+                      </div>
+                      <span className="text-[12px] font-semibold text-green-300 tabular-nums">
+                        +${t.pl}
+                      </span>
+                    </motion.li>
+                  );
+                })}
+              </motion.ul>
+              <motion.div
+                className="mt-2.5 pt-2 border-t border-white/10 flex items-center justify-between"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1, transition: { delay: 0.6 } }}
+                exit={{ opacity: 0, transition: { duration: 0.15 } }}
+              >
+                <span className="text-[10px] tracking-[0.08em] text-white/50">
+                  Net
+                </span>
+                <span className="text-[13px] font-semibold text-green-300 tabular-nums">
+                  +${featuredTotal}
+                </span>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Trade detail modal: opens after the middle trade is
+            "selected". Grows from the selected row's Y position, sits
+            over the (dimmed) trades panel, and shows the contract +
+            entry/exit + net P/L. */}
+        <AnimatePresence>
+          {showDetail && (
+            <motion.div
+              key="detail"
+              className="absolute left-3 right-3 md:left-4 md:right-4 rounded-xl bg-[var(--surface-2)] border border-teal-500/40 p-4 shadow-[0_20px_60px_rgba(0,0,0,0.55)] backdrop-blur-md z-20"
+              style={{ top: "50%" }}
+              initial={{ opacity: 0, y: 18, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 12, scale: 0.94 }}
+              transition={{ duration: 0.32, ease: [0.4, 0, 0.2, 1] }}
+            >
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[15px] font-bold text-white/90 tabular-nums">
+                    {detailTrade.symbol}
+                  </span>
+                  <span
+                    className={`px-1.5 py-0.5 rounded-[3px] text-[9px] font-medium tracking-wide ${
+                      detailTrade.side === "Call"
+                        ? "bg-teal-500/15 text-teal-300"
+                        : "bg-fuchsia-500/15 text-fuchsia-300"
+                    }`}
+                  >
+                    {detailTrade.side}
+                  </span>
+                  <span className="text-[10px] text-white/45 tabular-nums">
+                    ${detailTrade.strike} · {detailTrade.expiry}
+                  </span>
+                </div>
+                <i className="fa-solid fa-xmark text-white/35 text-[11px] mt-0.5" />
+              </div>
+              <div className="grid grid-cols-3 gap-2 mb-3">
+                <DetailStat label="Entry" value={`$${detailTrade.entry.toFixed(2)}`} />
+                <DetailStat label="Exit" value={`$${detailTrade.exit.toFixed(2)}`} />
+                <DetailStat label="Held" value={detailTrade.held} />
+              </div>
+              <div className="pt-2.5 border-t border-white/10 flex items-center justify-between">
+                <span className="text-[10px] tracking-[0.08em] text-white/50">
+                  Net P/L
+                </span>
+                <span className="text-[15px] font-bold text-green-300 tabular-nums">
+                  +${detailTrade.pl}
+                </span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Animated cursor that "drives" the drill-down: clicks the
+            featured day to zoom in, then the middle trade to open its
+            detail. Decorative (pointer-events-none), clipped to the card. */}
+        <HeroCursor
+          phase={phase}
+          cardRef={cardRef}
+          dayRef={dayRef}
+          tradeRef={tradeRef}
+        />
       </div>
 
-      {/* Floating Quill AI hint chip — gently bobs. */}
+      {/* Floating Quill AI hint chip - gently bobs. */}
       <motion.div
         className="absolute -bottom-3 -right-2 md:-right-4 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-[var(--surface-2)] border border-teal-500/25 text-teal-300 shadow-lg text-[11px] font-medium"
         animate={{ y: [0, -5, 0] }}
@@ -337,6 +664,457 @@ function HeroCalendar() {
         <i className="fa-solid fa-wand-magic-sparkles text-[10px]" />
         Ask Quill AI
       </motion.div>
+    </div>
+  );
+}
+
+// A fake pointer that glides across the hero card in time with the
+// drill-down loop: it hovers, "clicks" the featured day (zoom in), then
+// "clicks" the middle trade (open detail), then drifts away as it unzooms.
+// A click ripple + a small press-scale fire only on the forward clicks, so
+// the return leg doesn't look like an extra click.
+function HeroCursor({
+  phase,
+  cardRef,
+  dayRef,
+  tradeRef,
+}: {
+  phase:
+    | "idle"
+    | "aimDay"
+    | "trades"
+    | "aimTrade"
+    | "detail"
+    | "closing"
+    | "unzoom";
+  cardRef: RefObject<HTMLDivElement | null>;
+  dayRef: RefObject<HTMLDivElement | null>;
+  tradeRef: RefObject<HTMLLIElement | null>;
+}) {
+  // The cursor points at the real element centres, measured relative to the
+  // card. The day is measured only before the zoom (aimDay); the trade row
+  // is unscaled so it's measured whenever we're on it. trades keeps the day
+  // target so it doesn't jump onto the tile mid-zoom.
+  const [target, setTarget] = useState<{
+    x: number;
+    y: number;
+    opacity: number;
+  } | null>(null);
+
+  const applyTarget = useCallback(() => {
+    const card = cardRef.current;
+    if (!card) return;
+    const cr = card.getBoundingClientRect();
+    const bx = cr.left + card.clientLeft;
+    const by = cr.top + card.clientTop;
+    const w = card.clientWidth;
+    const h = card.clientHeight;
+    const centerOf = (el: HTMLElement | null) => {
+      if (!el) return null;
+      const r = el.getBoundingClientRect();
+      return { x: r.left + r.width / 2 - bx, y: r.top + r.height / 2 - by };
+    };
+    let next: { x: number; y: number; opacity: number } | null = null;
+    if (phase === "aimDay") {
+      const c = centerOf(dayRef.current);
+      if (c) next = { ...c, opacity: 1 };
+    } else if (
+      phase === "aimTrade" ||
+      phase === "detail" ||
+      phase === "closing"
+    ) {
+      const c = centerOf(tradeRef.current);
+      if (c) next = { ...c, opacity: 1 };
+    } else if (phase === "unzoom") {
+      next = { x: w * 0.64, y: h * 0.86, opacity: 0 };
+    } else if (phase === "idle") {
+      next = { x: w * 0.58, y: h * 0.72, opacity: 0.85 };
+    }
+    // phase === "trades": leave the day target from aimDay in place.
+    if (next) setTarget(next);
+  }, [phase, cardRef, dayRef, tradeRef]);
+
+  useEffect(() => {
+    applyTarget();
+  }, [applyTarget]);
+
+  useEffect(() => {
+    const on = () => applyTarget();
+    window.addEventListener("resize", on);
+    return () => window.removeEventListener("resize", on);
+  }, [applyTarget]);
+
+  // The cursor has already glided to its target during the aim phase, so the
+  // click fires the instant we enter the action phase - in lockstep with the
+  // zoom / modal it triggers.
+  const [clickId, setClickId] = useState(0);
+  const prevPhase = useRef(phase);
+  useEffect(() => {
+    const p = prevPhase.current;
+    prevPhase.current = phase;
+    if (
+      (p === "aimDay" && phase === "trades") ||
+      (p === "aimTrade" && phase === "detail")
+    ) {
+      setClickId((n) => n + 1);
+    }
+  }, [phase]);
+
+  if (!target) return null;
+
+  return (
+    <motion.div
+      aria-hidden
+      className="pointer-events-none absolute z-30"
+      initial={false}
+      // Nudge so the pointer's tip (not its top-left) sits on the target.
+      style={{ transform: "translate(-3px, -2px)" }}
+      animate={{ left: target.x, top: target.y, opacity: target.opacity }}
+      transition={{
+        left: { duration: 0.55, ease: [0.4, 0, 0.2, 1] },
+        top: { duration: 0.55, ease: [0.4, 0, 0.2, 1] },
+        opacity: { duration: 0.4 },
+      }}
+    >
+      {/* Click ripple - remounts (and replays) on each forward click. */}
+      {clickId > 0 && (
+        <motion.span
+          key={clickId}
+          className="absolute left-0 top-0 rounded-full border border-teal-300/80"
+          initial={{ width: 6, height: 6, x: -3, y: -3, opacity: 0.75 }}
+          animate={{ width: 28, height: 28, x: -14, y: -14, opacity: 0 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+        />
+      )}
+      {/* Pointer - a small press-scale plays on each click. */}
+      <motion.svg
+        key={`ptr-${clickId}`}
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.55)]"
+        style={{ transformOrigin: "4px 3px" }}
+        animate={clickId > 0 ? { scale: [1, 0.8, 1] } : { scale: 1 }}
+        transition={{ duration: 0.32, ease: "easeOut" }}
+      >
+        <path
+          d="M4 2.5l14.5 8.2-6.1 1.35-3.1 6.3L4 2.5z"
+          fill="#ffffff"
+          stroke="rgba(0,0,0,0.55)"
+          strokeWidth="1"
+          strokeLinejoin="round"
+        />
+      </motion.svg>
+    </motion.div>
+  );
+}
+
+// ─── Hero carousel ──────────────────────────────────────────────────
+// Rotates the hero visual through the calendar drill-down and the
+// affirmations tick-off so the hero shows two of Cuequill's rituals
+// in turn rather than only the calendar. Each slide runs its own
+// self-contained animation loop; the carousel just cross-fades
+// between them at a fixed interval.
+
+const CAROUSEL_SLIDE_MS = 16000;
+const CAROUSEL_SLIDES = 2;
+
+function HeroCarousel() {
+  const [slide, setSlide] = useState(0);
+  useEffect(() => {
+    const t = setInterval(
+      () => setSlide((s) => (s + 1) % CAROUSEL_SLIDES),
+      CAROUSEL_SLIDE_MS,
+    );
+    return () => clearInterval(t);
+  }, []);
+
+  return (
+    <div className="relative mx-auto w-full max-w-[440px] min-h-[630px]">
+      <AnimatePresence mode="wait">
+        {slide === 0 ? (
+          <motion.div
+            key="cal"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.45, ease: [0.4, 0, 0.2, 1] }}
+          >
+            <HeroCalendar />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="aff"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.45, ease: [0.4, 0, 0.2, 1] }}
+          >
+            <HeroAffirmations />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Slide indicator dots. */}
+      <div className="absolute left-1/2 -translate-x-1/2 -bottom-8 flex items-center gap-1.5">
+        {Array.from({ length: CAROUSEL_SLIDES }).map((_, i) => (
+          <button
+            key={i}
+            type="button"
+            aria-label={`Show slide ${i + 1}`}
+            onClick={() => setSlide(i)}
+            className={`h-1.5 rounded-full transition-all ${
+              i === slide
+                ? "w-5 bg-teal-300"
+                : "w-1.5 bg-white/25 hover:bg-white/40"
+            }`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Affirmations slide ─────────────────────────────────────────────
+// A miniature Morning Affirmations widget. Six affirmations sit on
+// screen, the "camera" zooms in on the first, then ticks each one
+// off in turn while translating up so the current focus stays near
+// the top of the visible viewport. When the last one is ticked the
+// zoom reverses and the progress bar reads full — a scripted
+// demonstration of the daily-affirmations ritual.
+
+const HERO_AFFIRMATIONS = [
+  "Trust the process, not the outcome.",
+  "One trade won't make my year.",
+  "I only take A+ setups.",
+  "I journal every trade - win or loss.",
+  "Discipline compounds.",
+  "The market rewards patience.",
+  "I honor my stops without hesitation.",
+  "Green days don't require green trades.",
+  "My edge is boring - that's the point.",
+  "I reset after every fill.",
+];
+
+const AFF_ROW_HEIGHT = 44; // px, unscaled
+const AFF_ZOOM_SCALE = 1.4;
+
+function HeroAffirmations() {
+  const total = HERO_AFFIRMATIONS.length;
+  const [phase, setPhase] = useState<
+    "idle" | "zoom" | "ticking" | "unzoom" | "complete"
+  >("idle");
+  const [focusIndex, setFocusIndex] = useState(0);
+  const [checkedCount, setCheckedCount] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    const timeouts: ReturnType<typeof setTimeout>[] = [];
+    const wait = (ms: number) =>
+      new Promise<void>((r) => {
+        timeouts.push(setTimeout(() => r(), ms));
+      });
+    (async () => {
+      // Let the card and rows settle in first.
+      await wait(1400);
+      if (cancelled) return;
+      setPhase("zoom");
+      setFocusIndex(0);
+      await wait(650);
+      if (cancelled) return;
+      setPhase("ticking");
+      for (let i = 0; i < total; i++) {
+        if (cancelled) return;
+        setFocusIndex(i);
+        // Each subsequent tick lands faster, so the checklist builds
+        // momentum — first affirmation has room to breathe, the last
+        // couple snap through.
+        const readPause = Math.max(140, 460 - i * 70);
+        const holdAfter = Math.max(120, 380 - i * 60);
+        await wait(readPause);
+        if (cancelled) return;
+        setCheckedCount(i + 1);
+        await wait(holdAfter);
+      }
+      if (cancelled) return;
+      setPhase("unzoom");
+      await wait(700);
+      if (cancelled) return;
+      setPhase("complete");
+      // The carousel typically advances after ~16s, so this hold
+      // just needs to survive the remainder of the slide.
+      await wait(4000);
+    })();
+    return () => {
+      cancelled = true;
+      timeouts.forEach(clearTimeout);
+    };
+  }, [total]);
+
+  const zoomed = phase === "zoom" || phase === "ticking";
+  // Slide the list up so the current focus row sits near the top
+  // of the visible viewport. Because scale is applied on the same
+  // element, y needs to be multiplied by the scale factor so the
+  // shift lines up with a whole row in visual pixels.
+  const listY = zoomed ? -focusIndex * AFF_ROW_HEIGHT * AFF_ZOOM_SCALE : 0;
+
+  return (
+    <div className="relative mx-auto w-full max-w-[440px]">
+      {/* Same soft teal glow behind the card as the calendar hero. */}
+      <div
+        aria-hidden
+        className="absolute inset-0 -z-10 rounded-2xl opacity-70 overflow-hidden"
+        style={{
+          background:
+            "radial-gradient(60% 60% at 70% 20%, rgba(45,212,191,0.18) 0%, rgba(45,212,191,0) 70%)",
+        }}
+      />
+      <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5 shadow-[0_8px_40px_var(--shadow-soft)]">
+        <div className="flex items-center justify-between mb-3">
+          <div className="text-[12px] tracking-[0.1em] text-white/45 font-medium">
+            Morning affirmations
+          </div>
+          <div className="text-[13px] font-semibold text-white/85 tabular-nums">
+            <motion.span
+              key={checkedCount}
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25 }}
+            >
+              {checkedCount}
+            </motion.span>
+            <span className="text-white/35"> / {total}</span>
+          </div>
+        </div>
+
+        {/* Progress bar. */}
+        <div className="relative h-1.5 rounded-full bg-white/[0.06] overflow-hidden mb-4">
+          <motion.div
+            className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-teal-400/80 to-teal-300"
+            animate={{ width: `${(checkedCount / total) * 100}%` }}
+            transition={{ duration: 0.45, ease: [0.4, 0, 0.2, 1] }}
+          />
+        </div>
+
+        {/* Viewport for the affirmations list. Fixed height, clipped,
+            so the scale + translate stay contained inside the card. */}
+        <div className="relative h-[480px] overflow-hidden rounded-md">
+          <motion.div
+            animate={{ scale: zoomed ? AFF_ZOOM_SCALE : 1, y: listY }}
+            transition={{ duration: 0.55, ease: [0.4, 0, 0.2, 1] }}
+            style={{ transformOrigin: "0% 0%" }}
+          >
+            {HERO_AFFIRMATIONS.map((text, i) => {
+              const checked = i < checkedCount;
+              const isFocus = zoomed && i === focusIndex && !checked;
+              return (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{
+                    duration: 0.35,
+                    delay: 0.4 + i * 0.08,
+                    ease: "easeOut",
+                  }}
+                  className="flex items-center gap-3 px-2"
+                  style={{ height: AFF_ROW_HEIGHT }}
+                >
+                  <motion.div
+                    animate={{
+                      backgroundColor: checked
+                        ? "rgba(45,212,191,0.9)"
+                        : "rgba(255,255,255,0)",
+                      borderColor: checked
+                        ? "rgba(45,212,191,0.9)"
+                        : isFocus
+                          ? "rgba(94,234,212,0.55)"
+                          : "rgba(255,255,255,0.18)",
+                      scale: isFocus ? 1.08 : 1,
+                    }}
+                    transition={{ duration: 0.28, ease: "easeOut" }}
+                    className="relative flex items-center justify-center w-4 h-4 rounded-[5px] border shrink-0"
+                  >
+                    <AnimatePresence>
+                      {checked && (
+                        <motion.i
+                          key="check"
+                          initial={{ scale: 0, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0, opacity: 0 }}
+                          transition={{
+                            duration: 0.24,
+                            ease: [0.34, 1.56, 0.64, 1],
+                          }}
+                          className="fa-solid fa-check text-[9px] text-[color:var(--background)]"
+                        />
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
+                  <motion.span
+                    animate={{
+                      opacity: checked ? 0.55 : isFocus ? 1 : 0.8,
+                    }}
+                    transition={{ duration: 0.28 }}
+                    className={`text-[12.5px] leading-snug ${
+                      checked
+                        ? "line-through text-white/60"
+                        : isFocus
+                          ? "text-white"
+                          : "text-white/80"
+                    }`}
+                  >
+                    {text}
+                  </motion.span>
+                </motion.div>
+              );
+            })}
+          </motion.div>
+        </div>
+
+        <div className="flex items-center gap-4 mt-3 pt-3 border-t border-white/[0.06] text-[11px]">
+          <span className="text-white/45">
+            Streak <span className="text-white/80 font-medium">14 days</span>
+          </span>
+          <span className="text-white/45">
+            {phase === "complete"
+              ? "All read for today"
+              : `${total - checkedCount} to go`}
+          </span>
+        </div>
+      </div>
+
+      {/* Ritual-complete confetti chip that pops up when finished. */}
+      <AnimatePresence>
+        {phase === "complete" && (
+          <motion.div
+            className="absolute -bottom-3 -right-2 md:-right-4 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-[var(--surface-2)] border border-teal-500/25 text-teal-300 shadow-lg text-[11px] font-medium"
+            initial={{ opacity: 0, scale: 0.7, y: 6 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{
+              duration: 0.35,
+              ease: [0.34, 1.56, 0.64, 1],
+            }}
+          >
+            <i className="fa-solid fa-circle-check text-[10px]" />
+            Complete
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function DetailStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className="text-[8.5px] tracking-[0.08em] text-white/45">
+        {label}
+      </span>
+      <span className="text-[12px] font-semibold text-white/85 tabular-nums">
+        {value}
+      </span>
     </div>
   );
 }
@@ -417,11 +1195,11 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "Do I need Interactive Brokers?",
-    a: "No. Manual entry works fully on its own. IBKR sync is a convenience — drop in a Flex Web Service token and Cuequill imports every fill weeknight after close, commissions and taxes included.",
+    a: "No. Manual entry works fully on its own. IBKR sync is a convenience - drop in a Flex Web Service token and Cuequill imports every fill each morning, commissions and taxes included.",
   },
   {
     q: "Is it free to try?",
-    a: "Yes. The Starter plan — manual logging, calendar, core stats and rules — is free forever. You only pay when you want IBKR sync and the full Quill AI.",
+    a: "Yes. The Starter plan - manual logging, calendar, core stats and rules - is free forever. You only pay when you want IBKR sync and the full Quill AI.",
   },
   {
     q: "Does Quill AI use my trades to train models?",
@@ -1083,7 +1861,7 @@ function QuillAIPreview() {
     {
       kind: "ai-answer",
       text:
-        "Hard Floor — 10 closed this month, 40% win rate, expectancy −$18.40/trade. Want to see them?",
+        "Hard Floor - 10 closed this month, 40% win rate, expectancy −$18.40/trade. Want to see them?",
       durMs: 2200,
     },
     {
@@ -1117,7 +1895,7 @@ function QuillAIPreview() {
     {
       kind: "ai-answer",
       text:
-        "Partly — FROC is 58% before 11am and 47% after, but it stays net-positive in both windows (+$12 vs +$4/trade).",
+        "Partly - FROC is 58% before 11am and 47% after, but it stays net-positive in both windows (+$12 vs +$4/trade).",
       durMs: 2800,
     },
     {
@@ -1501,10 +2279,10 @@ function IBKRPreview() {
         {[
           {
             k: "Imported",
-            v: phase === "done" ? Math.round(imported).toString() : "—",
+            v: phase === "done" ? Math.round(imported).toString() : "-",
             tone: "good" as const,
           },
-          { k: "Skipped", v: phase === "done" ? "0" : "—", tone: "neutral" as const },
+          { k: "Skipped", v: phase === "done" ? "0" : "-", tone: "neutral" as const },
           { k: "Next run", v: "22:00 ET", tone: "neutral" as const },
         ].map((s) => (
           <div key={s.k} className="flex flex-col gap-0.5">

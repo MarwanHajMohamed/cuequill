@@ -1,0 +1,45 @@
+name: Reconcile subscriptions
+
+# Nightly backstop for the Stripe webhook. isPro is only ever turned OFF
+# by a webhook, so if a subscription.deleted / cancelled delivery is
+# missed, a paying-but-cancelled customer keeps Pro indefinitely. This
+# job pulls each subscriber's LIVE status straight from Stripe and re-
+# syncs, self-healing any drift regardless of webhook delivery.
+#
+# GitHub's schedule: is best-effort but "roughly nightly" is exactly the
+# guarantee we want here - the endpoint is idempotent and a missed run
+# just gets picked up the next night. Runs at 03:15 UTC to sit off the
+# top of the hour and away from the IBKR morning sync at 05:00 UTC.
+
+on:
+  schedule:
+    - cron: "15 3 * * *"
+  workflow_dispatch: # manual run / smoke test from the Actions tab
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hit /api/cron/reconcile-subscriptions
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "${CRON_SECRET}" ]; then
+            echo "::error::CRON_SECRET is empty. Set it in Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+          # POST to the canonical host (www) directly - curl strips
+          # Authorization on cross-host redirects, so hitting the apex
+          # would 401. -L follows same-host redirects safely; -sS keeps
+          # the log quiet on success but prints errors.
+          resp=$(curl -sS -L -X POST -w $'\n%{http_code}' \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            https://www.cuequill.com/api/cron/reconcile-subscriptions)
+          code=$(printf '%s' "$resp" | tail -n1)
+          body=$(printf '%s' "$resp" | sed '$d')
+          echo "HTTP $code"
+          echo "$body"
+          if [ "$code" -ge 400 ]; then
+            echo "::error::reconcile-subscriptions returned HTTP $code"
+            exit 1
+          fi

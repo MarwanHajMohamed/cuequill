@@ -1,4 +1,4 @@
-// US CPI (Consumer Price Index) release dates — the headline monthly
+// US CPI (Consumer Price Index) release dates - the headline monthly
 // inflation report, published by the BLS at 8:30am ET. There's no clean
 // free API for the schedule, so it's hard-coded from the official BLS
 // release calendar and needs updating once a year when BLS publishes
@@ -6,7 +6,7 @@
 //   https://www.bls.gov/schedule/news_release/cpi.htm
 //
 // Each entry is the RELEASE day (yyyy-MM-dd), not the reference month.
-// Verify against the BLS calendar before relying on any single date —
+// Verify against the BLS calendar before relying on any single date -
 // individual dates occasionally shift.
 export const CPI_RELEASE_DATES: string[] = [
   // 2025

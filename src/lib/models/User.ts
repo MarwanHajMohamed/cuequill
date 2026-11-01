@@ -2,7 +2,9 @@ import mongoose, { Schema, Document } from "mongoose";
 
 export interface IUser extends Document {
   email: string;
-  password: string;
+  // Optional: OAuth-only accounts (e.g. Sign up with Google) have no
+  // password. Credentials login is blocked for such users (see auth.ts).
+  password?: string;
   // Account lockout counters, incremented by the sign-in flow. The
   // `authorize` callback rejects logins while `lockedUntil` is in the
   // future so a single account can't be brute-forced even without
@@ -12,9 +14,31 @@ export interface IUser extends Document {
   firstname: string;
   surname: string;
   timezone: string;
+  // Display preferences. `currency` is a 3-letter ISO code used only to
+  // pick the money symbol app-wide (no FX conversion). `startingBalance`
+  // anchors the Balance page; `riskPerTrade` is a % of account risked per
+  // trade; `avatarColor` is a preset key for the nav avatar.
+  currency?: string;
+  startingBalance?: number;
+  // Opening balance for simulated (paper) mode - kept separate from the
+  // real starting balance so the simulated Balance page has its own base.
+  simulatedStartingBalance?: number;
+  riskPerTrade?: number;
+  avatarColor?: string;
+  avatarFrame?: string;
+  // App-wide accent pack id (recolours teal→accent across the UI). A
+  // level-gated reward; defaults to "teal".
+  accentColor?: string;
+  // Default share-card skin id (trade / month / achievement cards). A
+  // level-gated reward; defaults to "midnight".
+  cardSkin?: string;
   ibkrToken: string;
   ibkrQueryId: string;
   ibkrLastSync: Date;
+  // Last time the user ran a MANUAL sync from settings, tracked apart from
+  // ibkrLastSync (which the cron also writes) so auto-syncs don't eat into
+  // the manual cooldown. Gates manual resyncs to one per 30 minutes.
+  ibkrLastManualSync?: Date;
   ibkrLastSyncInserted: number;
   ibkrLastSyncSkipped: number;
   // ObjectIds of the trades inserted by the most recent sync. Used by
@@ -26,6 +50,12 @@ export interface IUser extends Document {
   // client shows a "new trades imported automatically" pop-up on the
   // next login. Updated once the user dismisses or opens the notice.
   ibkrLastSyncSeenAt?: Date;
+  // Staged import awaiting the user's confirmation. A manual sync now
+  // PREVIEWS (fetch + match + dedupe) and stashes the would-be-new trade
+  // drafts here; nothing is written to the journal until the user confirms,
+  // at which point these are inserted and the stash is cleared.
+  ibkrPendingImport?: unknown[];
+  ibkrPendingSkipped?: number;
   // Tickers the user tracks on the earnings calendar.
   watchlist: string[];
   // User-authored trading affirmations (Pro). Empty by default; users
@@ -35,7 +65,17 @@ export interface IUser extends Document {
   // resets daily. Stored server-side so the state syncs across devices.
   // `date` is a yyyy-MM-dd string; `texts` are the read affirmations.
   affirmationsRead: { date: string; texts: string[] };
-  // Pro membership flag — the effective, computed access gate. Gates
+  // Affirmations streak. A day counts as complete when the user has read
+  // ALL of their current affirmations that day. `current` is the length of
+  // the latest run and `lastDate` (yyyy-MM-dd, client-local) is the most
+  // recent completed day; a run stays "alive" while lastDate is today or
+  // yesterday, otherwise it's considered broken (see the read route). Once a
+  // day is completed, un-reading later that day does not revoke it.
+  affirmationStreak: { current: number; longest: number; lastDate: string };
+  // High-water mark: the best streak length (days) for which streak XP
+  // milestones have already been awarded, so each milestone pays out once.
+  affirmationStreakXp?: number;
+  // Pro membership flag - the effective, computed access gate. Gates
   // Quill AI, IBKR auto-sync, the rules board / affirmations,
   // per-strategy + per-symbol stats, and unlimited trade history. Free
   // users see blurred previews behind an upgrade prompt.
@@ -44,8 +84,15 @@ export interface IUser extends Document {
   // is active/trialing>`, so it stays true for comped accounts even with
   // no subscription, and flips false when a subscription lapses.
   isPro: boolean;
+  // First-run tour tracking. Set to an empty array at signup so newly-
+  // registered users see the coach-mark tour the first time they open
+  // each page; each pageId gets appended when the user completes or
+  // dismisses that page's tour. Left `undefined` on legacy accounts so
+  // existing users aren't ambushed on their next visit - they can opt
+  // back in through the "Show me around" button.
+  tutorialsSeen?: string[];
   // Admin comp: when true, the account is Pro regardless of billing. The
-  // Stripe webhook never clears this — it only ORs it into isPro — so a
+  // Stripe webhook never clears this - it only ORs it into isPro - so a
   // manually-granted account can't be revoked by a subscription event.
   proManualOverride?: boolean;
   // Stripe billing linkage. stripeCustomerId is the lookup key the
@@ -58,7 +105,11 @@ export interface IUser extends Document {
   stripeSubscriptionStatus?: string;
   stripePriceId?: string;
   stripeCurrentPeriodEnd?: Date;
-  // True once the user has cancelled but the paid term hasn't elapsed —
+  // Last time we reconciled this user's Pro status live from Stripe (used
+  // to self-heal a missed webhook). Throttles the reconcile so a genuinely
+  // non-Pro account with a Stripe customer id isn't re-checked every call.
+  proSyncedAt?: Date;
+  // True once the user has cancelled but the paid term hasn't elapsed -
   // access continues until stripeCurrentPeriodEnd, then the subscription
   // ends. Lets the UI show "cancels on <date>" instead of a bare "Pro".
   stripeCancelAtPeriodEnd?: boolean;
@@ -88,16 +139,64 @@ export interface IUser extends Document {
   // Per-widget row span (1 = one row tall, 2 = two rows tall) keyed by
   // widget id. Missing id → default span of 1.
   dashboardWidgetRows?: Record<string, number>;
+  // Separate dashboard customisation for simulated (paper) mode, so the
+  // simulated dashboard keeps its own layout / sizes / rows independent of
+  // the real one.
+  simDashboardLayout?: string[];
+  simDashboardWidgetSizes?: Record<string, number>;
+  simDashboardWidgetRows?: Record<string, number>;
   // Cached "Insight of the day" for the dashboard Quill widget. Generated
   // once per local day (see dashInsightDate) so it stays stable through the
   // day and doesn't burn the Quill token budget on every dashboard load.
   dashInsightDate?: string; // yyyy-MM-dd (user's tz) the insight belongs to
   dashInsightText?: string;
   dashInsightAt?: Date; // when it was generated
+  // Ring buffer of the most recent insights (newest first, bounded to
+  // ~14 entries). Injected into the prompt as an "avoid repeating"
+  // list so QuillAI doesn't keep surfacing the same observation two
+  // days running.
+  dashInsightRecent?: string[];
   // One-time flag: the "Insight of the day" widget has been auto-inserted
   // into this (Pro) user's saved layout, so we never fight a later manual
   // removal by re-adding it.
   dashInsightMigrated?: boolean;
+  // One-time flag: the "Balance" widget has been auto-inserted into this
+  // user's saved layout, so we never fight a later manual removal.
+  dashBalanceMigrated?: boolean;
+  dashChallengesMigrated?: boolean;
+  // Challenges & rewards. `xp` accumulates from claimed challenges and
+  // drives the level/title; `challengeClaims` records which challenges
+  // have been claimed (each awards its XP exactly once).
+  xp?: number;
+  challengeClaims?: { id: string; claimedAt: Date }[];
+  // Bonus Quill AI messages earned from level-up rewards - a finite pool
+  // consumed once the daily message limit is hit.
+  bonusChatMessages?: number;
+  // Customisable Quill AI starter-prompt shortcuts shown on the empty
+  // chat state. Unset means "use the client defaults"; an empty array
+  // means the user cleared them all. Each entry is a labelled one-tap
+  // prompt.
+  chatPrompts?: { id: string; icon: string; title: string; prompt: string }[];
+  // Gemini context-cache registry for Quill. The big, stable system
+  // instruction (trader snapshot + rules + strategies + goals) is cached
+  // server-side so multi-turn chats on an unchanged journal don't re-send /
+  // re-bill it every message. `chatCacheHash` is a hash of the cached
+  // instruction so we recreate the cache when the snapshot changes.
+  chatCacheName?: string;
+  chatCacheHash?: string;
+  chatCacheExpiresAt?: Date;
+  // High-water mark: the highest level for which level-up chat rewards have
+  // already been granted, so reaching a level pays out exactly once.
+  chatRewardLevel?: number;
+  // The title the user has chosen to display as a nameplate next to their
+  // name. Must be one of their earned titles (current level title or a
+  // title granted by an earned trophy); purely cosmetic.
+  equippedTitle?: string;
+  // Leaderboard participation. Off by default (opt-in): only when true does
+  // the user appear on the public leaderboards, shown as first name + last
+  // initial. Ranking metrics (level/XP, trades, streak) are all process /
+  // discipline based - never P/L.
+  leaderboardOptIn?: boolean;
 }
 
 const UserSchema = new Schema<IUser>({
@@ -114,21 +213,32 @@ const UserSchema = new Schema<IUser>({
   // select:false → the hash is never returned by default queries.
   // The two callsites that legitimately need it (sign-in verification
   // and password change) opt in with `.select("+password")`.
-  password: { type: String, required: true, select: false },
+  password: { type: String, required: false, select: false },
   failedLoginAttempts: { type: Number, default: 0 },
   lockedUntil: { type: Date },
   firstname: { type: String, required: true },
   surname: { type: String },
   timezone: { type: String, default: null },
+  currency: { type: String, default: "USD" },
+  startingBalance: { type: Number, default: 0 },
+  simulatedStartingBalance: { type: Number, default: 0 },
+  riskPerTrade: { type: Number },
+  avatarColor: { type: String, default: "teal" },
+  avatarFrame: { type: String, default: "none" },
+  accentColor: { type: String, default: "teal" },
+  cardSkin: { type: String, default: "midnight" },
   ibkrToken: { type: String },
   ibkrQueryId: { type: String },
   ibkrLastSync: { type: Date },
+  ibkrLastManualSync: { type: Date },
   ibkrLastSyncInserted: { type: Number },
   ibkrLastSyncSkipped: { type: Number },
   ibkrLastSyncTradeIds: [
     { type: Schema.Types.ObjectId, ref: "Trade", default: [] },
   ],
   ibkrLastSyncSeenAt: { type: Date },
+  ibkrPendingImport: { type: [mongoose.Schema.Types.Mixed], default: undefined },
+  ibkrPendingSkipped: { type: Number },
   watchlist: { type: [String], default: [] },
   affirmations: { type: [String], default: [] },
   affirmationsRead: {
@@ -141,7 +251,20 @@ const UserSchema = new Schema<IUser>({
     ),
     default: () => ({ date: "", texts: [] }),
   },
+  affirmationStreak: {
+    type: new Schema(
+      {
+        current: { type: Number, default: 0 },
+        longest: { type: Number, default: 0 },
+        lastDate: { type: String, default: "" },
+      },
+      { _id: false },
+    ),
+    default: () => ({ current: 0, longest: 0, lastDate: "" }),
+  },
+  affirmationStreakXp: { type: Number, default: 0 },
   isPro: { type: Boolean, default: false },
+  tutorialsSeen: { type: [String], default: undefined },
   proManualOverride: { type: Boolean, default: false },
   // Indexed: the Stripe webhook finds the user by customer id on every
   // subscription event.
@@ -150,6 +273,7 @@ const UserSchema = new Schema<IUser>({
   stripeSubscriptionStatus: { type: String },
   stripePriceId: { type: String },
   stripeCurrentPeriodEnd: { type: Date },
+  proSyncedAt: { type: Date },
   stripeCancelAtPeriodEnd: { type: Boolean, default: false },
   chatDailyDate: { type: String, default: "" },
   chatDailyCount: { type: Number, default: 0 },
@@ -161,10 +285,47 @@ const UserSchema = new Schema<IUser>({
   dashboardGlanceTiles: { type: [String], default: undefined },
   dashboardWidgetSizes: { type: Schema.Types.Mixed, default: undefined },
   dashboardWidgetRows: { type: Schema.Types.Mixed, default: undefined },
+  simDashboardLayout: { type: [String], default: undefined },
+  simDashboardWidgetSizes: { type: Schema.Types.Mixed, default: undefined },
+  simDashboardWidgetRows: { type: Schema.Types.Mixed, default: undefined },
   dashInsightDate: { type: String, default: "" },
   dashInsightText: { type: String, default: "" },
   dashInsightAt: { type: Date },
+  dashInsightRecent: { type: [String], default: [] },
   dashInsightMigrated: { type: Boolean, default: false },
+  dashBalanceMigrated: { type: Boolean, default: false },
+  dashChallengesMigrated: { type: Boolean, default: false },
+  xp: { type: Number, default: 0 },
+  bonusChatMessages: { type: Number, default: 0 },
+  chatPrompts: {
+    type: [
+      new Schema(
+        {
+          id: { type: String },
+          icon: { type: String, default: "fa-solid fa-bolt" },
+          title: { type: String },
+          prompt: { type: String },
+        },
+        { _id: false },
+      ),
+    ],
+    default: undefined,
+  },
+  chatCacheName: { type: String, default: "" },
+  chatCacheHash: { type: String, default: "" },
+  chatCacheExpiresAt: { type: Date },
+  chatRewardLevel: { type: Number, default: 0 },
+  equippedTitle: { type: String, default: "" },
+  leaderboardOptIn: { type: Boolean, default: false },
+  challengeClaims: {
+    type: [
+      new Schema(
+        { id: { type: String }, claimedAt: { type: Date, default: Date.now } },
+        { _id: false },
+      ),
+    ],
+    default: [],
+  },
 });
 
 // In dev, Next.js hot-reload keeps the previously-compiled model (with

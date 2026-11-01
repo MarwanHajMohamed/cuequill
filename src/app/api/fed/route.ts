@@ -121,7 +121,9 @@ function parseFomcEvents(html: string): FedEvent[] {
       if (meetingIso) meetings.add(meetingIso);
 
       // Minutes release date - appears as "(Released MMMM DD, YYYY)" near the
-      // bottom of each past meeting's block. Future meetings don't have this.
+      // bottom of each PAST meeting's block. Future meetings don't have this,
+      // so for those we schedule it ourselves: FOMC minutes are released three
+      // weeks (21 days) to the day after the meeting's decision day.
       const releaseMatch = block.match(
         /\(Released\s+([A-Za-z]+)\s+(\d{1,2}),?\s+(\d{4})\)/i
       );
@@ -136,6 +138,8 @@ function parseFomcEvents(html: string): FedEvent[] {
             ).padStart(2, "0")}`
           );
         }
+      } else if (meetingIso) {
+        minutes.add(addDaysIso(meetingIso, 21));
       }
     }
   }
@@ -149,6 +153,16 @@ function parseFomcEvents(html: string): FedEvent[] {
   }
   events.sort((a, b) => a.date.localeCompare(b.date));
   return events;
+}
+
+// Add N days to a "yyyy-MM-dd" string (UTC to avoid TZ drift).
+function addDaysIso(iso: string, days: number): string {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(
+    2,
+    "0",
+  )}-${String(d.getUTCDate()).padStart(2, "0")}`;
 }
 
 // Given a year, raw month label ("January" or "October/November") and raw

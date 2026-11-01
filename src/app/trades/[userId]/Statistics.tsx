@@ -28,6 +28,8 @@ type StatsVisibility = {
   winStreak: boolean;
   equityCurve: boolean;
   tagStats: boolean;
+  strategyStats: boolean;
+  symbolStats: boolean;
   filteredStats: boolean;
   totalStats: boolean;
   monthlyStats: boolean;
@@ -41,6 +43,8 @@ const DEFAULT_VISIBILITY: StatsVisibility = {
   winStreak: true,
   equityCurve: true,
   tagStats: true,
+  strategyStats: true,
+  symbolStats: true,
   filteredStats: true,
   totalStats: true,
   monthlyStats: true,
@@ -57,8 +61,10 @@ const TILE_OPTIONS: Array<{ key: keyof StatsVisibility; label: string }> = [
 const SECTION_OPTIONS: Array<{ key: keyof StatsVisibility; label: string }> = [
   { key: "equityCurve", label: "Equity curve" },
   { key: "tagStats", label: "Performance by tag" },
+  { key: "strategyStats", label: "Performance by strategy" },
+  { key: "symbolStats", label: "Performance by symbol" },
   { key: "filteredStats", label: "Filter insights" },
-  { key: "totalStats", label: "Performance breakdown" },
+  { key: "totalStats", label: "Statistics summaries" },
   { key: "monthlyStats", label: "Monthly stats" },
 ];
 
@@ -70,8 +76,10 @@ const STATS_SECTIONS: Array<{ id: string; label: string }> = [
   { id: "equityCurve", label: "Equity curve" },
   { id: "quickGlance", label: "Top / worst" },
   { id: "tagStats", label: "Performance by tag" },
+  { id: "strategyStats", label: "Performance by strategy" },
+  { id: "symbolStats", label: "Performance by symbol" },
   { id: "filterInsights", label: "Filter insights" },
-  { id: "breakdown", label: "Performance breakdown" },
+  { id: "breakdown", label: "Statistics summaries" },
   { id: "monthly", label: "Monthly stats" },
 ];
 const DEFAULT_SECTION_ORDER = STATS_SECTIONS.map((s) => s.id);
@@ -97,7 +105,7 @@ function sanitizeOrder(raw: unknown, allowed: string[]): string[] {
 
 // Lightweight drag-reorder. CSS `order` positions the items, so on each
 // pointer move we read the live rects (in visual order) and recompute
-// where the dragged item should sit — a pure function of pointer position,
+// where the dragged item should sit - a pure function of pointer position,
 // so it can't oscillate. Order state is derived from the DOM each move, so
 // a stale closure can't fight it. Persists via setOrder (localStorage).
 function beginReorder(
@@ -176,7 +184,7 @@ function moveByArrow(
   setOrder(next);
 }
 
-// A small arrow button to nudge an item one step earlier/later — the
+// A small arrow button to nudge an item one step earlier/later - the
 // touch-friendly alternative to dragging.
 function MoveBtn({
   icon,
@@ -355,40 +363,72 @@ const CustomizeMenu = ({
 const MiniDonut = ({
   greenPct,
   size = 40,
+  center,
+  onSegHover,
+  onSegLeave,
 }: {
   greenPct: number;
   size?: number;
+  center?: React.ReactNode; // optional overlay in the ring's hole
+  // When provided, the green and red arcs are drawn as separate, individually
+  // hoverable segments (used for the days-traded donut's per-arc tooltip).
+  onSegHover?: (seg: "green" | "red", e: React.MouseEvent) => void;
+  onSegLeave?: () => void;
 }) => {
   const r = size / 2 - 4;
   const c = 2 * Math.PI * r;
   const safe = Math.max(0, Math.min(100, greenPct));
-  const dash = (safe / 100) * c;
+  const greenLen = (safe / 100) * c;
+  const redLen = c - greenLen;
+  const segProps = (seg: "green" | "red") =>
+    onSegHover
+      ? {
+          style: { pointerEvents: "stroke" as const, cursor: "default" },
+          onMouseEnter: (e: React.MouseEvent) => onSegHover(seg, e),
+          onMouseMove: (e: React.MouseEvent) => onSegHover(seg, e),
+          onMouseLeave: onSegLeave,
+        }
+      : {};
   return (
-    <svg
-      width={size}
-      height={size}
-      style={{ transform: "rotate(-90deg)" }}
-      className="shrink-0"
-    >
-      <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={r}
-        fill="none"
-        stroke="#dc2626"
-        strokeWidth="5"
-      />
-      <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={r}
-        fill="none"
-        stroke="#16a34a"
-        strokeWidth="5"
-        strokeDasharray={`${dash} ${c}`}
-        strokeLinecap="butt"
-      />
-    </svg>
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
+        {/* Red segment - the complement, drawn where the green arc ends. */}
+        {redLen > 0.01 && (
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            fill="none"
+            stroke="#dc2626"
+            strokeWidth="5"
+            strokeDasharray={`${redLen} ${c}`}
+            strokeDashoffset={-greenLen}
+            {...segProps("red")}
+          />
+        )}
+        {/* Green segment. */}
+        {greenLen > 0.01 && (
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            fill="none"
+            stroke="#16a34a"
+            strokeWidth="5"
+            strokeDasharray={`${greenLen} ${c}`}
+            {...segProps("green")}
+          />
+        )}
+      </svg>
+      {center != null && (
+        <div
+          className="absolute inset-0 flex items-center justify-center"
+          style={{ pointerEvents: "none" }}
+        >
+          {center}
+        </div>
+      )}
+    </div>
   );
 };
 
@@ -523,6 +563,7 @@ const SummaryTile = ({
   style,
   dataId,
   handle,
+  reorder = false,
 }: {
   label: string;
   info?: string;
@@ -531,9 +572,14 @@ const SummaryTile = ({
   style?: React.CSSProperties;
   dataId?: string;
   handle?: React.ReactNode;
+  reorder?: boolean;
 }) => (
   <motion.div
-    layout="position"
+    // Only track layout while reordering in Customize mode. Otherwise an
+    // incidental page shift (e.g. a modal opening and locking scroll) makes
+    // framer-motion animate every tile from its shifted position back into
+    // place - the "stats jump from the top" glitch.
+    layout={reorder ? "position" : false}
     transition={{ type: "spring", stiffness: 500, damping: 40 }}
     data-tile-id={dataId}
     style={style}
@@ -695,14 +741,13 @@ function MetricTile({
   value,
   sub,
   tone,
-  icon,
   info,
 }: {
   label: string;
   value: string;
   sub?: string;
   tone: "good" | "bad" | "neutral";
-  icon: string;
+  icon?: string; // accepted for call-site compatibility; no longer rendered
   info?: string;
 }) {
   const valueColor =
@@ -711,25 +756,12 @@ function MetricTile({
       : tone === "bad"
         ? "text-red-400"
         : "text-white";
-  const chip =
-    tone === "good"
-      ? "bg-green-500/10 text-green-300 border-green-500/25"
-      : tone === "bad"
-        ? "bg-red-500/10 text-red-300 border-red-500/25"
-        : "bg-white/[0.04] text-white/60 border-white/10";
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4 flex flex-col gap-2 min-w-0">
       <div className="flex items-center justify-between gap-1.5">
-        <div className="flex items-center gap-2 min-w-0">
-          <div
-            className={`shrink-0 w-7 h-7 rounded-lg border flex items-center justify-center ${chip}`}
-          >
-            <i className={`fa-solid ${icon} text-[11px]`} />
-          </div>
-          <span className="text-[10px] md:text-[11px] tracking-[0.08em] text-white/45 font-medium truncate">
-            {label}
-          </span>
-        </div>
+        <span className="text-[10px] md:text-[11px] tracking-[0.08em] text-white/45 font-medium truncate">
+          {label}
+        </span>
         {info && <InfoTooltip text={info} />}
       </div>
       <div className="flex flex-col gap-0.5 min-w-0">
@@ -744,105 +776,50 @@ function MetricTile({
   );
 }
 
-type BreakdownRow = {
-  label: string;
-  n: number;
-  winRate: number;
-  netPL: number;
-  expectancy: number;
-};
+// Eased tween towards `target`. Starts from the previously-rendered
+// value (or straight at `target` on first mount), so the first paint
+// never shows the wrong sign - the old `useState(0)` would flash
+// "+$0.00" for one frame on a negative target, then invert to red.
+function useCountUp(target: number, durationMs = 900) {
+  const [v, setV] = useState(target);
+  const vRef = useRef(target);
+  vRef.current = v;
+  const firstRun = useRef(true);
+  useEffect(() => {
+    if (firstRun.current) {
+      firstRun.current = false;
+      setV(target);
+      return;
+    }
+    let raf: number;
+    const from = vRef.current;
+    const start = performance.now();
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / durationMs);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setV(from + (target - from) * eased);
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, durationMs]);
+  return v;
+}
 
-function BreakdownTable({
-  title,
-  rows,
-  info,
+// Renders an animated, sign-formatted dollar value. Kept as a component so
+// the hook can live inside the conditionally-rendered monthly section.
+function CountUpMoney({
+  value,
+  className,
 }: {
-  title: string;
-  rows: BreakdownRow[];
-  info?: string;
+  value: number;
+  className?: string;
 }) {
-  // Largest absolute net P/L for the inline bar widths.
-  const maxAbs = Math.max(...rows.map((r) => Math.abs(r.netPL)), 1);
+  const v = useCountUp(value);
   return (
-    <div className="flex flex-col gap-2.5">
-      <div className="flex items-center gap-1.5 text-[10px] md:text-[11px] tracking-[0.1em] text-white/45 font-medium">
-        <span>{title}</span>
-        {info && <InfoTooltip text={info} />}
-      </div>
-      <div className="rounded-xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md overflow-x-auto md:overflow-hidden">
-        <table className="w-full min-w-[480px] md:min-w-0 text-xs md:text-sm">
-          <thead>
-            <tr className="text-white/40 bg-white/[0.02] border-b border-white/[0.06]">
-              <th className="text-left font-medium py-2.5 px-3 text-[10px] tracking-[0.08em]">
-                Label
-              </th>
-              <th className="text-right font-medium py-2.5 px-3 text-[10px] tracking-[0.08em]">
-                N
-              </th>
-              <th className="text-right font-medium py-2.5 px-3 text-[10px] tracking-[0.08em]">
-                Win %
-              </th>
-              <th className="text-right font-medium py-2.5 px-3 text-[10px] tracking-[0.08em]">
-                Net
-              </th>
-              <th className="text-right font-medium py-2.5 px-3 text-[10px] tracking-[0.08em]">
-                Avg
-              </th>
-              <th className="w-1/4 text-left font-normal py-2.5 px-3 hidden md:table-cell"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => {
-              const isProfit = r.netPL >= 0;
-              const widthPct = (Math.abs(r.netPL) / maxAbs) * 100;
-              return (
-                <tr
-                  key={r.label}
-                  className="border-t border-white/[0.06] hover:bg-white/[0.02] transition"
-                >
-                  <td className="py-2.5 px-3 truncate max-w-[180px] text-white/85">
-                    {r.label}
-                  </td>
-                  <td className="py-2.5 px-3 text-right text-white/55 tabular-nums">
-                    {r.n}
-                  </td>
-                  <td className="py-2.5 px-3 text-right text-white/55 tabular-nums">
-                    {r.winRate.toFixed(0)}%
-                  </td>
-                  <td
-                    className={`py-2.5 px-3 text-right font-medium tabular-nums ${
-                      isProfit ? "text-green-400" : "text-red-400"
-                    }`}
-                  >
-                    {isProfit ? "+" : "−"}${Math.abs(r.netPL).toFixed(2)}
-                  </td>
-                  <td
-                    className={`py-2.5 px-3 text-right tabular-nums ${
-                      r.expectancy >= 0
-                        ? "text-green-400/80"
-                        : "text-red-400/80"
-                    }`}
-                  >
-                    {r.expectancy >= 0 ? "+" : "−"}$
-                    {Math.abs(r.expectancy).toFixed(2)}
-                  </td>
-                  <td className="py-2.5 px-3 hidden md:table-cell">
-                    <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full ${
-                          isProfit ? "bg-green-500/60" : "bg-red-500/60"
-                        }`}
-                        style={{ width: `${widthPct}%` }}
-                      />
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <span className={className}>
+      {v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(2)}
+    </span>
   );
 }
 
@@ -958,6 +935,64 @@ export default function Statistics({
   // Reorder (Customize) mode + saved section/tile order. CSS `order` on
   // each block does the actual repositioning, driven by these arrays.
   const [editing, setEditing] = useState(false);
+  // Custom hover tooltip shared by the monthly heatmap cells, the daily P/L
+  // bars, and the days-traded donut. Follows the cursor; portalled to <body>
+  // so the cards' backdrop-blur doesn't trap the fixed positioning.
+  const [tip, setTip] = useState<{
+    x: number;
+    y: number;
+    content: React.ReactNode;
+  } | null>(null);
+  const hideTip = () => setTip(null);
+  const dayTipContent = (label: string, pl: number | null) => (
+    <>
+      <div className="text-[10.5px] text-white/55 font-medium leading-tight">
+        {label}
+      </div>
+      <div
+        className={`mt-0.5 text-[13px] font-semibold tabular-nums leading-tight ${
+          pl === null
+            ? "text-white/40"
+            : pl >= 0
+              ? "text-green-400"
+              : "text-red-400"
+        }`}
+      >
+        {pl === null
+          ? "No trades"
+          : `${pl >= 0 ? "+" : "−"}$${Math.abs(pl).toFixed(2)}`}
+      </div>
+    </>
+  );
+  const showDayTip = (e: React.MouseEvent, label: string, pl: number | null) =>
+    setTip({ x: e.clientX, y: e.clientY, content: dayTipContent(label, pl) });
+  const showDonutSeg = (
+    e: React.MouseEvent,
+    seg: "green" | "red",
+    green: number,
+    red: number,
+  ) => {
+    const n = seg === "green" ? green : red;
+    setTip({
+      x: e.clientX,
+      y: e.clientY,
+      content: (
+        <>
+          <div className="text-[10.5px] text-white/55 font-medium leading-tight">
+            {seg === "green" ? "Green days" : "Red days"}
+          </div>
+          <div
+            className={`mt-0.5 text-[13px] font-semibold tabular-nums leading-tight ${
+              seg === "green" ? "text-green-400" : "text-red-400"
+            }`}
+          >
+            {n} {n === 1 ? "day" : "days"}
+          </div>
+        </>
+      ),
+    });
+  };
+  const hideDayTip = hideTip;
   const [sectionOrderRaw, setSectionOrder] = useLocalStorage<string[]>(
     "cuequill:stats-section-order",
     DEFAULT_SECTION_ORDER,
@@ -1118,6 +1153,48 @@ export default function Statistics({
           | "other",
       }))
       .sort((a, b) => b.count - a.count);
+  }, [data]);
+
+  // Performance by strategy - net P/L, win rate, expectancy and profit factor
+  // per strategy across all closed trades (like the tag breakdown, but grouped
+  // by the strategy each trade is tagged with).
+  type StrategyStatRow = {
+    label: string;
+    count: number;
+    totalPL: number;
+    avgPL: number;
+    winRate: number;
+    profitFactor: number | null;
+  };
+  const strategyStats: StrategyStatRow[] = useMemo(() => {
+    const closed = data.filter(
+      (t) => t.status === "WIN" || t.status === "LOSS",
+    );
+    const by = new Map<
+      string,
+      { count: number; totalPL: number; wins: number; gw: number; gl: number }
+    >();
+    for (const t of closed) {
+      const key = (t.strategy ?? "").trim() || "Unassigned";
+      const prev = by.get(key) ?? { count: 0, totalPL: 0, wins: 0, gw: 0, gl: 0 };
+      const pl = tradeNetPL(t);
+      prev.count += 1;
+      prev.totalPL += pl;
+      if (t.status === "WIN") prev.wins += 1;
+      if (pl >= 0) prev.gw += pl;
+      else prev.gl += -pl;
+      by.set(key, prev);
+    }
+    return Array.from(by.entries())
+      .map(([label, v]) => ({
+        label,
+        count: v.count,
+        totalPL: v.totalPL,
+        avgPL: v.count > 0 ? v.totalPL / v.count : 0,
+        winRate: v.count > 0 ? (v.wins / v.count) * 100 : 0,
+        profitFactor: v.gl > 0 ? v.gw / v.gl : null,
+      }))
+      .sort((a, b) => b.totalPL - a.totalPL);
   }, [data]);
 
   const strategyCounts: Record<string, number> = {};
@@ -1514,6 +1591,7 @@ export default function Statistics({
           {sectionControls("summary", "Summary tiles")}
           {visibility.netPL && (
             <SummaryTile
+              reorder={editing}
               label="Net P&L"
               info="Total profit/loss across all closed trades."
               className="basis-[100px] md:basis-[200px] grow max-w-[280px]"
@@ -1533,6 +1611,7 @@ export default function Statistics({
 
           {visibility.profitFactor && (
             <SummaryTile
+              reorder={editing}
               label="Profit factor"
               info="Gross wins ÷ gross losses. Above 1.0 = profitable; above 2.0 = strong system."
               className="basis-[100px] md:basis-[200px] grow max-w-[280px]"
@@ -1559,6 +1638,7 @@ export default function Statistics({
 
           {visibility.winRate && (
             <SummaryTile
+              reorder={editing}
               label="Win rate"
               info="Percentage of closed trades that ended as wins."
               className="basis-[100px] md:basis-[200px] grow max-w-[280px]"
@@ -1577,6 +1657,7 @@ export default function Statistics({
 
           {visibility.avgRR && (
             <SummaryTile
+              reorder={editing}
               label="Avg R:R"
               info="Average winner size ÷ average loser size. Above 1R means your wins are bigger than your losses on average."
               className="basis-[100px] md:basis-[200px] grow max-w-[280px]"
@@ -1604,6 +1685,7 @@ export default function Statistics({
 
           {visibility.winStreak && (
             <SummaryTile
+              reorder={editing}
               label="Best win streak"
               info="Longest run of consecutive winning trades in your history (open trades are skipped, losses break the streak)."
               className="basis-[100px] md:basis-[200px] grow max-w-[280px]"
@@ -1626,7 +1708,7 @@ export default function Statistics({
       {/* Equity curve */}
       {visibility.equityCurve && (
         <motion.div
-          layout="position"
+          layout={editing ? "position" : false}
           transition={{ type: "spring", stiffness: 500, damping: 40 }}
           data-sec-id="equityCurve"
           style={{ order: secOrder("equityCurve") }}
@@ -1682,7 +1764,7 @@ export default function Statistics({
           if (cards.length === 0) return null;
           return (
             <motion.div
-              layout="position"
+              layout={editing ? "position" : false}
               transition={{ type: "spring", stiffness: 500, damping: 40 }}
               data-sec-id="quickGlance"
               style={{ order: secOrder("quickGlance") }}
@@ -1697,7 +1779,7 @@ export default function Statistics({
                 const r = c.row!;
                 const positive = r.netPL >= 0;
                 // Colour by actual outcome, not by which slot the
-                // card lives in — a "worst" that's still net-positive
+                // card lives in - a "worst" that's still net-positive
                 // shouldn't wear red.
                 const numberClass = positive
                   ? "text-green-400"
@@ -1740,7 +1822,7 @@ export default function Statistics({
       {/* Performance by tag */}
       {visibility.tagStats && tagStats.length > 0 && (
         <motion.div
-          layout="position"
+          layout={editing ? "position" : false}
           transition={{ type: "spring", stiffness: 500, damping: 40 }}
           data-sec-id="tagStats"
           style={{ order: secOrder("tagStats") }}
@@ -1755,7 +1837,7 @@ export default function Statistics({
             title="Performance by tag"
             info="Net P/L grouped by the tags you've added to your trades. Highlights which mistakes are costing the most and which patterns are paying off."
           />
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-3 md:p-4 overflow-x-auto">
+          <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[480px]">
               <thead>
                 <tr className="text-[10px] tracking-[0.08em] text-white/40 border-b border-white/[0.06]">
@@ -1820,10 +1902,176 @@ export default function Statistics({
         </motion.div>
       )}
 
+      {/* Performance by strategy */}
+      {visibility.strategyStats && strategyStats.length > 0 && (
+        <motion.div
+          layout={editing ? "position" : false}
+          transition={{ type: "spring", stiffness: 500, damping: 40 }}
+          data-sec-id="strategyStats"
+          style={{ order: secOrder("strategyStats") }}
+          className={`relative w-full flex flex-col gap-4 md:gap-5 ${
+            editing
+              ? "rounded-2xl outline outline-1 outline-dashed outline-white/15 outline-offset-4"
+              : ""
+          }`}
+        >
+          {sectionControls("strategyStats", "Performance by strategy")}
+          <SectionHeader
+            title="Performance by strategy"
+            info="Net P/L, win rate, expectancy (avg P/L per trade) and profit factor for each of your strategies, across all closed trades."
+          />
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[540px]">
+              <thead>
+                <tr className="text-[10px] tracking-[0.08em] text-white/40 border-b border-white/[0.06]">
+                  <th className="text-left py-2.5 pr-3 font-medium">Strategy</th>
+                  <th className="text-right py-2.5 px-3 font-medium">Trades</th>
+                  <th className="text-right py-2.5 px-3 font-medium">Win rate</th>
+                  <th className="text-right py-2.5 px-3 font-medium">Avg P/L</th>
+                  <th className="text-right py-2.5 px-3 font-medium">
+                    Profit factor
+                  </th>
+                  <th className="text-right py-2.5 pl-3 font-medium">Total P/L</th>
+                </tr>
+              </thead>
+              <tbody>
+                {strategyStats.map((s) => (
+                  <tr
+                    key={s.label}
+                    className="border-t border-white/[0.06] hover:bg-white/[0.02] transition"
+                  >
+                    <td className="py-2.5 pr-3">
+                      <span
+                        className="block max-w-[180px] truncate text-xs text-white/75"
+                        title={s.label}
+                      >
+                        {s.label}
+                      </span>
+                    </td>
+                    <td className="text-right py-2.5 px-3 text-white/55 tabular-nums">
+                      {s.count}
+                    </td>
+                    <td className="text-right py-2.5 px-3 text-white/55 tabular-nums">
+                      {s.winRate.toFixed(0)}%
+                    </td>
+                    <td
+                      className={`text-right py-2.5 px-3 font-medium tabular-nums ${
+                        s.avgPL >= 0 ? "text-green-400" : "text-red-400"
+                      }`}
+                    >
+                      {s.avgPL >= 0 ? "+" : "−"}${Math.abs(s.avgPL).toFixed(2)}
+                    </td>
+                    <td className="text-right py-2.5 px-3 text-white/55 tabular-nums">
+                      {s.profitFactor == null ? "∞" : s.profitFactor.toFixed(2)}
+                    </td>
+                    <td
+                      className={`text-right py-2.5 pl-3 font-medium tabular-nums ${
+                        s.totalPL >= 0 ? "text-green-400" : "text-red-400"
+                      }`}
+                    >
+                      {s.totalPL >= 0 ? "+" : "−"}$
+                      {Math.abs(s.totalPL).toFixed(2)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Performance by symbol */}
+      {visibility.symbolStats && bySymbol.length > 0 && (
+        <motion.div
+          layout={editing ? "position" : false}
+          transition={{ type: "spring", stiffness: 500, damping: 40 }}
+          data-sec-id="symbolStats"
+          style={{ order: secOrder("symbolStats") }}
+          className={`relative w-full flex flex-col gap-4 md:gap-5 ${
+            editing
+              ? "rounded-2xl outline outline-1 outline-dashed outline-white/15 outline-offset-4"
+              : ""
+          }`}
+        >
+          {sectionControls("symbolStats", "Performance by symbol")}
+          <SectionHeader
+            title="Performance by symbol"
+            info="Net P/L and win rate by ticker across all closed trades, with a tornado chart of each symbol's net P/L."
+          />
+          <ProGate
+            feature="Per-symbol stats"
+            description="See net P/L and win rate broken down by ticker. Available on Pro."
+          >
+            <div className="overflow-x-auto">
+                <table className="w-full text-sm min-w-[480px]">
+                  <thead>
+                    <tr className="text-[10px] tracking-[0.08em] text-white/40 border-b border-white/[0.06]">
+                      <th className="text-left py-2.5 pr-3 font-medium">
+                        Symbol
+                      </th>
+                      <th className="text-right py-2.5 px-3 font-medium">
+                        Trades
+                      </th>
+                      <th className="text-right py-2.5 px-3 font-medium">
+                        Win rate
+                      </th>
+                      <th className="text-right py-2.5 px-3 font-medium">
+                        Avg P/L
+                      </th>
+                      <th className="text-right py-2.5 pl-3 font-medium">
+                        Total P/L
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bySymbol.slice(0, 8).map((r) => (
+                      <tr
+                        key={r.label}
+                        className="border-t border-white/[0.06] hover:bg-white/[0.02] transition"
+                      >
+                        <td className="py-2.5 pr-3">
+                          <span
+                            className="block max-w-[180px] truncate text-xs text-white/75"
+                            title={r.label}
+                          >
+                            {r.label}
+                          </span>
+                        </td>
+                        <td className="text-right py-2.5 px-3 text-white/55 tabular-nums">
+                          {r.n}
+                        </td>
+                        <td className="text-right py-2.5 px-3 text-white/55 tabular-nums">
+                          {r.winRate.toFixed(0)}%
+                        </td>
+                        <td
+                          className={`text-right py-2.5 px-3 font-medium tabular-nums ${
+                            r.expectancy >= 0 ? "text-green-400" : "text-red-400"
+                          }`}
+                        >
+                          {r.expectancy >= 0 ? "+" : "−"}$
+                          {Math.abs(r.expectancy).toFixed(2)}
+                        </td>
+                        <td
+                          className={`text-right py-2.5 pl-3 font-medium tabular-nums ${
+                            r.netPL >= 0 ? "text-green-400" : "text-red-400"
+                          }`}
+                        >
+                          {r.netPL >= 0 ? "+" : "−"}$
+                          {Math.abs(r.netPL).toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+          </ProGate>
+        </motion.div>
+      )}
+
       {/* ── Filter Insights ─────────────────────────────────────────── */}
       {visibility.filteredStats && (
         <motion.div
-          layout="position"
+          layout={editing ? "position" : false}
           transition={{ type: "spring", stiffness: 500, damping: 40 }}
           data-sec-id="filterInsights"
           style={{ order: secOrder("filterInsights") }}
@@ -1945,7 +2193,7 @@ export default function Statistics({
       {/* ── Performance Breakdown ───────────────────────────────────── */}
       {visibility.totalStats && (
         <motion.div
-          layout="position"
+          layout={editing ? "position" : false}
           transition={{ type: "spring", stiffness: 500, damping: 40 }}
           data-sec-id="breakdown"
           style={{ order: secOrder("breakdown") }}
@@ -1955,10 +2203,10 @@ export default function Statistics({
               : ""
           }`}
         >
-          {sectionControls("breakdown", "Performance breakdown")}
+          {sectionControls("breakdown", "Statistics summaries")}
           <SectionHeader
-            title="Performance breakdown"
-            info="A bird's-eye view of where your edge is across your entire trading history - split by direction, strategy, symbol, streaks, and best/worst day."
+            title="Statistics summaries"
+            info="A bird's-eye view of your edge across your whole history - direction (CALL vs PUT), streaks, drawdown, and best/worst day."
           />
 
           {/* CALL vs PUT */}
@@ -2033,31 +2281,6 @@ export default function Statistics({
               );
             })}
           </div>
-
-          {/* By Strategy + By Symbol — Pro-only. Wrapped together so a
-              single upgrade card spans both tables. */}
-          {(byStrategy.length > 0 || bySymbol.length > 0) && (
-            <ProGate
-              feature="Per-strategy & per-symbol stats"
-              description="See net P/L and win rate broken down by setup and ticker. Available on Pro."
-            >
-              {byStrategy.length > 0 && (
-                <BreakdownTable
-                  title="By strategy"
-                  rows={byStrategy.slice(0, 8)}
-                  info="Net P/L and win rate for each strategy, ranked by trade count. Highlights which setups consistently make money and which are net losers."
-                />
-              )}
-
-              {bySymbol.length > 0 && (
-                <BreakdownTable
-                  title="By symbol"
-                  rows={bySymbol.slice(0, 8)}
-                  info="Net P/L by ticker. The horizontal bar's width is relative to your biggest mover, green for profit and red for loss."
-                />
-              )}
-            </ProGate>
-          )}
 
           {/* Streaks & Risk */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
@@ -2171,7 +2394,6 @@ export default function Statistics({
           const greenDays = Array.from(monthDayMap.values()).filter(
             (v) => v > 0,
           ).length;
-          const redDays = tradedDays - greenDays;
           const dayValues = Array.from(monthDayMap.values());
           const monthBestDay = dayValues.length ? Math.max(...dayValues) : 0;
           const monthWorstDay = dayValues.length ? Math.min(...dayValues) : 0;
@@ -2211,6 +2433,36 @@ export default function Statistics({
             1,
           );
 
+          // Calendar heatmap layout: blank leading cells to align day 1 to
+          // its weekday (Mon-first), then one cell per day.
+          const firstWeekday = (new Date(year, date.monthIndex, 1).getDay() + 6) % 7;
+          const heatCells: Array<
+            { day: number; pl: number | null; isWeekend: boolean } | null
+          > = [...Array(firstWeekday).fill(null), ...dailyBars];
+
+          // Month-over-month: realized net for the previous month (closed
+          // trades attributed to their exit month), and the delta vs it.
+          // Compare the stored ISO date STRING's yyyy-MM prefix rather
+          // than `new Date(str).getMonth()` - date-only strings ("2025-08-01")
+          // parse as UTC midnight, so `.getMonth()` shifts an August-1 trade
+          // into July for anyone west of UTC. The string prefix reflects the
+          // date the user actually saw when they entered / imported the trade.
+          const prevM = date.monthIndex === 0 ? 11 : date.monthIndex - 1;
+          const prevY = date.monthIndex === 0 ? year - 1 : year;
+          const prevYMPrefix = `${prevY}-${String(prevM + 1).padStart(2, "0")}`;
+          const prevMonthClosed = dataIgnoringDateRange.filter((t) => {
+            if (t.status !== "WIN" && t.status !== "LOSS") return false;
+            const dateStr = t.dateClosed || t.dateBought;
+            return (
+              typeof dateStr === "string" && dateStr.startsWith(prevYMPrefix)
+            );
+          });
+          const prevMonthNet = prevMonthClosed.reduce(
+            (s, t) => s + tradeNetPL(t),
+            0,
+          );
+          const momDelta = monthSummary.netPL - prevMonthNet;
+
           const isCurrentMonth =
             date.monthIndex === new Date().getMonth() &&
             date.year === new Date().getFullYear();
@@ -2227,7 +2479,7 @@ export default function Statistics({
 
           return (
             <motion.div
-              layout="position"
+              layout={editing ? "position" : false}
               transition={{ type: "spring", stiffness: 500, damping: 40 }}
               data-sec-id="monthly"
               style={{ order: secOrder("monthly") }}
@@ -2321,142 +2573,248 @@ export default function Statistics({
                       </div>
                     ) : (
                       <>
-                        {/* Hero card - net P/L + headline metrics */}
-                        <div
-                          className={`relative overflow-hidden rounded-2xl border md:backdrop-blur-md p-5 md:p-6 ${
-                            monthSummary.netPL >= 0
-                              ? "border-green-500/20 bg-gradient-to-br from-green-500/[0.06] via-white/[0.03] to-white/[0.02]"
-                              : "border-red-500/20 bg-gradient-to-br from-red-500/[0.06] via-white/[0.03] to-white/[0.02]"
-                          }`}
-                        >
-                          <div className="flex items-start justify-between gap-4 flex-wrap">
-                            <div className="flex flex-col gap-1 min-w-0">
-                              <div className="text-[10px] md:text-[11px] tracking-[0.1em] text-white/45 font-medium flex items-center gap-1.5">
-                                Net P/L
-                                <InfoTooltip text="Total realized profit/loss for trades closed this month, after fees." />
-                              </div>
-                              <div
-                                className={`text-3xl md:text-5xl font-semibold tracking-tight tabular-nums truncate ${
-                                  monthSummary.netPL >= 0
-                                    ? "text-green-400"
-                                    : "text-red-400"
+                        {/* Net P/L - sits directly on the background. */}
+                        <div className="min-w-0 px-1">
+                          <div className="text-[10px] md:text-[11px] tracking-[0.1em] text-white/45 font-medium flex items-center gap-1.5">
+                            Net P/L
+                            <InfoTooltip text="Total realized profit/loss for trades closed this month, after fees." />
+                          </div>
+                          <div className="mt-0.5 flex items-baseline gap-x-2.5 gap-y-0.5 flex-wrap">
+                            <CountUpMoney
+                              key={`${year}-${date.monthIndex}`}
+                              value={monthSummary.netPL}
+                              className={`text-xl md:text-2xl font-semibold tracking-tight tabular-nums ${
+                                monthSummary.netPL >= 0
+                                  ? "text-green-400"
+                                  : "text-red-400"
+                              }`}
+                            />
+                            {prevMonthClosed.length > 0 && (
+                              <span
+                                className={`text-[11px] font-medium ${
+                                  momDelta >= 0
+                                    ? "text-green-400/90"
+                                    : "text-red-400/90"
                                 }`}
                               >
-                                {monthSummary.netPL >= 0 ? "+" : "−"}$
-                                {Math.abs(monthSummary.netPL).toFixed(2)}
+                                {fmtMoneySignedCompact(momDelta)}
+                                <span className="text-white/40"> vs last month</span>
+                              </span>
+                            )}
+                            <span className="text-[11.5px] text-white/45">
+                              · {monthSummary.n} trade
+                              {monthSummary.n === 1 ? "" : "s"} ·{" "}
+                              {monthSummary.winRate.toFixed(0)}% win
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Calendar heatmap (hugs its grid) + daily P/L strip
+                            (fills the rest) side by side. */}
+                        {tradedDays > 0 && (
+                          <div className="flex flex-col md:flex-row gap-4 md:gap-5">
+                            {/* Calendar heatmap - each day tinted by P/L.
+                                Full-width card on mobile (grid centred), hugs
+                                its grid beside the strip on desktop. */}
+                            <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5 md:w-fit md:shrink-0">
+                              <div className="flex items-center justify-between gap-4 mb-3">
+                                <div className="text-[10px] md:text-[11px] tracking-[0.1em] text-white/45 font-medium flex items-center gap-1.5">
+                                  Heatmap
+                                  <InfoTooltip text="Each cell is a day, tinted by its net P/L - deeper green is a bigger up day, deeper red a bigger down day." />
+                                </div>
+                                <div className="flex items-center gap-1 text-[10px] text-white/40">
+                                  <span className="inline-block w-3 h-3 rounded-sm bg-red-500/70" />
+                                  <span className="inline-block w-3 h-3 rounded-sm bg-white/[0.06]" />
+                                  <span className="inline-block w-3 h-3 rounded-sm bg-green-500/70" />
+                                </div>
                               </div>
-                              <div className="text-[12px] text-white/50">
-                                {monthSummary.n} trade
-                                {monthSummary.n === 1 ? "" : "s"} ·{" "}
-                                {monthSummary.winRate.toFixed(0)}% win rate ·{" "}
-                                <span
-                                  className={
-                                    monthSummary.expectancy >= 0
-                                      ? "text-green-400/85"
-                                      : "text-red-400/85"
+                              <div
+                                className="grid gap-1 mb-1 justify-center text-center text-[9px] text-white/35"
+                                style={{ gridTemplateColumns: "repeat(7, 2.25rem)" }}
+                              >
+                                {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => (
+                                  <span key={i}>{d}</span>
+                                ))}
+                              </div>
+                              <div
+                                className="grid gap-1 justify-center"
+                                style={{ gridTemplateColumns: "repeat(7, 2.25rem)" }}
+                              >
+                                {heatCells.map((c, i) => {
+                                  if (!c)
+                                    return (
+                                      <div key={`b${i}`} className="aspect-square" />
+                                    );
+                                  if (c.pl === null || c.pl === undefined) {
+                                    const label = `${currentMonth} ${c.day}`;
+                                    return (
+                                      <div
+                                        key={c.day}
+                                        onMouseEnter={(e) =>
+                                          showDayTip(e, label, null)
+                                        }
+                                        onMouseMove={(e) =>
+                                          showDayTip(e, label, null)
+                                        }
+                                        onMouseLeave={hideDayTip}
+                                        className={`aspect-square rounded-md flex items-start justify-end p-1 text-[9px] leading-none ${
+                                          c.isWeekend
+                                            ? "bg-white/[0.02] text-white/20"
+                                            : "bg-white/[0.04] text-white/30"
+                                        }`}
+                                      >
+                                        {c.day}
+                                      </div>
+                                    );
                                   }
-                                >
-                                  {monthSummary.expectancy >= 0 ? "+" : "−"}$
-                                  {Math.abs(monthSummary.expectancy).toFixed(2)}
-                                  /trade
-                                </span>
+                                  const intensity = Math.min(
+                                    1,
+                                    Math.abs(c.pl) / maxAbsDayPL,
+                                  );
+                                  const op = 0.18 + intensity * 0.62;
+                                  const rgb =
+                                    c.pl >= 0 ? "34,197,94" : "239,68,68";
+                                  const cellPL = c.pl;
+                                  const label = `${currentMonth} ${c.day}`;
+                                  return (
+                                    <div
+                                      key={c.day}
+                                      onMouseEnter={(e) =>
+                                        showDayTip(e, label, cellPL)
+                                      }
+                                      onMouseMove={(e) =>
+                                        showDayTip(e, label, cellPL)
+                                      }
+                                      onMouseLeave={hideDayTip}
+                                      style={{
+                                        backgroundColor: `rgba(${rgb},${op})`,
+                                      }}
+                                      className="aspect-square rounded-md flex items-start justify-end p-1 text-[9px] leading-none text-white/80 font-medium cursor-default"
+                                    >
+                                      {c.day}
+                                    </div>
+                                  );
+                                })}
                               </div>
                             </div>
-                            {tradedDays > 0 && (
-                              <div className="flex items-center gap-3">
-                                <div className="flex flex-col items-end">
-                                  <div className="text-[10px] tracking-[0.08em] text-white/40">
-                                    Days traded
-                                  </div>
-                                  <div className="text-xl md:text-2xl font-semibold tabular-nums">
-                                    {tradedDays}
-                                  </div>
-                                  <div className="text-[11px] text-white/50">
-                                    <span className="text-green-400/85">
-                                      {greenDays} green
-                                    </span>
-                                    {" · "}
-                                    <span className="text-red-400/85">
-                                      {redDays} red
-                                    </span>
-                                  </div>
+
+                            {/* Daily P/L strip - desktop only; on phones the
+                                heatmap already covers per-day and the strip
+                                just adds an empty box. */}
+                            <div className="hidden md:flex rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5 flex-1 min-w-0 flex-col">
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="text-[10px] md:text-[11px] tracking-[0.1em] text-white/45 font-medium flex items-center gap-1.5">
+                                  Daily P/L
+                                  <InfoTooltip text="Each bar is one calendar day's net P/L." />
                                 </div>
+                                <div className="text-[11px] text-white/40 flex items-center gap-3">
+                                  <span className="flex items-center gap-1">
+                                    <span className="inline-block w-2 h-2 rounded-sm bg-green-500/70" />
+                                    Win
+                                  </span>
+                                  <span className="flex items-center gap-1">
+                                    <span className="inline-block w-2 h-2 rounded-sm bg-red-500/70" />
+                                    Loss
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex-1 flex items-end gap-[2px] md:gap-[3px] min-h-[80px]">
+                                {dailyBars.map((b) => {
+                                  const label = `${currentMonth} ${b.day}`;
+                                  if (b.pl === null) {
+                                    return (
+                                      <div
+                                        key={b.day}
+                                        onMouseEnter={(e) =>
+                                          showDayTip(e, label, null)
+                                        }
+                                        onMouseMove={(e) =>
+                                          showDayTip(e, label, null)
+                                        }
+                                        onMouseLeave={hideDayTip}
+                                        className="flex-1 flex items-center justify-center min-w-0 h-full"
+                                      >
+                                        <div
+                                          className={`w-full h-px ${
+                                            b.isWeekend
+                                              ? "bg-white/[0.04]"
+                                              : "bg-white/10"
+                                          }`}
+                                        />
+                                      </div>
+                                    );
+                                  }
+                                  const heightPct =
+                                    (Math.abs(b.pl) / maxAbsDayPL) * 100;
+                                  const isProfit = b.pl >= 0;
+                                  const barPL = b.pl;
+                                  return (
+                                    <div
+                                      key={b.day}
+                                      onMouseEnter={(e) =>
+                                        showDayTip(e, label, barPL)
+                                      }
+                                      onMouseMove={(e) =>
+                                        showDayTip(e, label, barPL)
+                                      }
+                                      onMouseLeave={hideDayTip}
+                                      className="flex-1 flex items-end justify-center min-w-0 h-full cursor-default"
+                                    >
+                                      <div
+                                        style={{
+                                          height: `${Math.max(heightPct, 4)}%`,
+                                        }}
+                                        className={`w-full rounded-sm transition ${
+                                          isProfit
+                                            ? "bg-green-500/65 hover:bg-green-500/85"
+                                            : "bg-red-500/65 hover:bg-red-500/85"
+                                        }`}
+                                      />
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                              <div className="flex justify-between text-[10px] text-white/35 mt-2 tabular-nums">
+                                <span>1</span>
+                                <span>{Math.ceil(daysInMonth / 2)}</span>
+                                <span>{daysInMonth}</span>
+                              </div>
+                            </div>
+
+                            {/* Days traded - donut in its own card. */}
+                            <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5 flex flex-col gap-3 md:w-52 md:shrink-0">
+                              <div className="text-[10px] md:text-[11px] tracking-[0.1em] text-white/45 font-medium">
+                                Days traded
+                              </div>
+                              <div className="flex-1 flex items-center justify-center">
                                 <MiniDonut
                                   greenPct={
                                     tradedDays > 0
                                       ? (greenDays / tradedDays) * 100
                                       : 0
                                   }
-                                  size={48}
+                                  onSegHover={(seg, e) =>
+                                    showDonutSeg(
+                                      e,
+                                      seg,
+                                      greenDays,
+                                      tradedDays - greenDays,
+                                    )
+                                  }
+                                  onSegLeave={hideTip}
+                                  size={72}
+                                  center={
+                                    <div className="flex flex-col items-center leading-none">
+                                      <span className="text-lg font-semibold tabular-nums">
+                                        {tradedDays}
+                                      </span>
+                                      <span className="text-[7px] tracking-[0.08em] uppercase text-white/40 mt-0.5">
+                                        days
+                                      </span>
+                                    </div>
+                                  }
                                 />
                               </div>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Daily P/L strip */}
-                        {tradedDays > 0 && (
-                          <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5">
-                            <div className="flex items-center justify-between mb-3">
-                              <div className="text-[10px] md:text-[11px] tracking-[0.1em] text-white/45 font-medium flex items-center gap-1.5">
-                                Daily P/L
-                                <InfoTooltip text="Each bar is one calendar day's net P/L. Greyed = weekend, faint dash = no trades that day." />
-                              </div>
-                              <div className="text-[11px] text-white/40 flex items-center gap-3">
-                                <span className="flex items-center gap-1">
-                                  <span className="inline-block w-2 h-2 rounded-sm bg-green-500/70" />
-                                  Win
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <span className="inline-block w-2 h-2 rounded-sm bg-red-500/70" />
-                                  Loss
-                                </span>
-                              </div>
-                            </div>
-                            <div className="flex items-end gap-[2px] md:gap-[3px] h-20 md:h-24">
-                              {dailyBars.map((b) => {
-                                if (b.pl === null) {
-                                  return (
-                                    <div
-                                      key={b.day}
-                                      title={`${currentMonth} ${b.day}: no trades`}
-                                      className={`flex-1 self-center h-px ${
-                                        b.isWeekend
-                                          ? "bg-white/[0.04]"
-                                          : "bg-white/10"
-                                      }`}
-                                    />
-                                  );
-                                }
-                                const heightPct =
-                                  (Math.abs(b.pl) / maxAbsDayPL) * 100;
-                                const isProfit = b.pl >= 0;
-                                return (
-                                  <div
-                                    key={b.day}
-                                    title={`${currentMonth} ${b.day}: ${
-                                      isProfit ? "+" : "−"
-                                    }$${Math.abs(b.pl).toFixed(2)}`}
-                                    className="flex-1 flex items-end justify-center min-w-0 h-full"
-                                  >
-                                    <div
-                                      style={{
-                                        height: `${Math.max(heightPct, 4)}%`,
-                                      }}
-                                      className={`w-full rounded-sm transition ${
-                                        isProfit
-                                          ? "bg-green-500/65 hover:bg-green-500/85"
-                                          : "bg-red-500/65 hover:bg-red-500/85"
-                                      }`}
-                                    />
-                                  </div>
-                                );
-                              })}
-                            </div>
-                            <div className="flex justify-between text-[10px] text-white/35 mt-2 tabular-nums">
-                              <span>1</span>
-                              <span>{Math.ceil(daysInMonth / 2)}</span>
-                              <span>{daysInMonth}</span>
                             </div>
                           </div>
                         )}
@@ -2516,6 +2874,30 @@ export default function Statistics({
             </motion.div>
           );
         })()}
+
+      {/* Shared hover tooltip: heatmap cells, daily P/L bars, days donut. */}
+      {tip &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            style={{
+              position: "fixed",
+              left: Math.min(
+                tip.x + 14,
+                (typeof window !== "undefined" ? window.innerWidth : 9999) - 160,
+              ),
+              top: Math.min(
+                tip.y + 14,
+                (typeof window !== "undefined" ? window.innerHeight : 9999) - 60,
+              ),
+              pointerEvents: "none",
+            }}
+            className="z-[999] bg-[var(--surface)] border border-white/10 rounded-md px-2.5 py-1.5 shadow-md"
+          >
+            {tip.content}
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }

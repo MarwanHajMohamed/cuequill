@@ -45,11 +45,11 @@ export function Spinner({
     >
       <span
         className="absolute inset-0 rounded-full border-2 border-white/10"
-        style={{ borderTopColor: "#5eead4" }}
+        style={{ borderTopColor: "var(--color-teal-300)" }}
       />
       <motion.span
         className="absolute inset-0 rounded-full border-2 border-transparent"
-        style={{ borderTopColor: "#5eead4" }}
+        style={{ borderTopColor: "var(--color-teal-300)" }}
         animate={{ rotate: 360 }}
         transition={{ duration: 0.9, repeat: Infinity, ease: "linear" }}
       />
@@ -103,7 +103,7 @@ export function PageLoader({ label }: { label?: string }) {
         {/* Rotating teal arc */}
         <motion.span
           className="absolute inset-0 rounded-full border-2 border-transparent"
-          style={{ borderTopColor: "#5eead4" }}
+          style={{ borderTopColor: "var(--color-teal-300)" }}
           animate={{ rotate: 360 }}
           transition={{ duration: 1.1, repeat: Infinity, ease: "linear" }}
         />
@@ -113,7 +113,7 @@ export function PageLoader({ label }: { label?: string }) {
           className="absolute inset-2 rounded-full"
           style={{
             background:
-              "radial-gradient(circle, rgba(45,212,191,0.30) 0%, rgba(45,212,191,0) 70%)",
+              "radial-gradient(circle, color-mix(in oklab, var(--color-teal-400) 30%, transparent) 0%, transparent 70%)",
           }}
           animate={{ scale: [0.85, 1.1, 0.85], opacity: [0.5, 0.85, 0.5] }}
           transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}

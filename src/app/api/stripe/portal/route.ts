@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://cuequill.com";
 
 // Opens the Stripe Billing Portal so the user can update card details,
-// switch plans, or cancel — Stripe hosts the whole flow.
+// switch plans, or cancel - Stripe hosts the whole flow.
 export async function POST() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
@@ -28,9 +28,12 @@ export async function POST() {
   }
 
   const stripe = getStripe();
+  // Return to the plan panel (not /pricing) so the user lands where their
+  // subscription state is shown - it force-reconciles on load and reflects
+  // any change (e.g. a cancellation) they just made in the portal.
   const portal = await stripe.billingPortal.sessions.create({
     customer: user.stripeCustomerId,
-    return_url: `${APP_URL}/pricing`,
+    return_url: `${APP_URL}/settings?billing=1`,
   });
 
   return NextResponse.json({ url: portal.url });

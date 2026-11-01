@@ -11,14 +11,16 @@ import SchematicEditor, {
 } from "@/components/SchematicEditor";
 import RichNotesEditor from "@/components/RichNotesEditor";
 import { fetchStrategy, type StrategyDoc } from "@/hooks/useStrategies";
+import { buildBundle, bundleFilename } from "@/lib/strategyTransfer";
 import { useToast } from "@/hooks/useToast";
 import { Skeleton } from "@/components/Loaders";
 import { fileToDownscaledDataUrl } from "@/lib/imageDataUrl";
 import type { StrategyExample, ExampleOutcome } from "@/lib/strategySeed";
 import StrategyStats from "./StrategyStats";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { useScrollLock } from "@/hooks/useScrollLock";
 
-type Direction = "CALL" | "PUT";
+type Direction = "CALL" | "PUT" | "BOTH";
 type Mode = "view" | "edit";
 
 // Generate a client-side id for newly uploaded examples. crypto.randomUUID
@@ -72,6 +74,8 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
   const [examples, setExamples] = useState<StrategyExample[]>([]);
   const [saving, setSaving] = useState(false);
   const [delConfirm, setDelConfirm] = useState(false);
+
+  useScrollLock(delConfirm);
 
   // Hydrate the edit buffer from the loaded doc. Runs on load and again
   // whenever we re-sync (e.g. after a save invalidates the query).
@@ -156,8 +160,8 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
       ]);
       toast(`${name} saved`);
       setMode("view");
-    } catch {
-      toast("Save failed");
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Save failed");
     } finally {
       setSaving(false);
     }
@@ -166,6 +170,22 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
   const handleCancel = () => {
     if (data) hydrate(data);
     setMode("view");
+  };
+
+  // Download this single strategy as a portable JSON bundle (same format the
+  // library export uses, so it re-imports cleanly on any account).
+  const handleExport = () => {
+    if (!data) return;
+    const bundle = buildBundle([data]);
+    const blob = new Blob([JSON.stringify(bundle, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = bundleFilename(data.name);
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const handleDelete = async () => {
@@ -180,8 +200,8 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
       await queryClient.invalidateQueries({ queryKey: ["strategies"] });
       toast("Strategy deleted");
       router.replace("/strategies");
-    } catch {
-      toast("Delete failed");
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Delete failed");
     } finally {
       setSaving(false);
       setDelConfirm(false);
@@ -247,6 +267,16 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
             <DirectionBadge direction={data.direction} />
             <button
               type="button"
+              onClick={handleExport}
+              title="Export this strategy as JSON"
+              aria-label="Export strategy"
+              className="shrink-0 inline-flex items-center gap-2 px-3 py-2 text-[13px] font-medium text-white/70 hover:text-white transition cursor-pointer"
+            >
+              <i className="fa-solid fa-file-export text-[12px]" />
+              <span className="hidden sm:inline">Export</span>
+            </button>
+            <button
+              type="button"
               onClick={() => setMode("edit")}
               className="shrink-0 inline-flex items-center gap-2 px-3.5 py-2 text-[13px] font-medium text-white hover:text-white/80 transition cursor-pointer"
             >
@@ -257,7 +287,7 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
         )}
       </div>
 
-      {/* Schematic — editable canvas in edit mode, static preview in view.
+      {/* Schematic - editable canvas in edit mode, static preview in view.
           In view mode it can be retracted to a small square thumbnail. */}
       {editing ? (
         <SchematicEditor value={schematic} onChange={setSchematic} />
@@ -320,7 +350,7 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
             </Field>
           </div>
 
-          {/* Description — rich-text editor */}
+          {/* Description - rich-text editor */}
           <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 md:p-5 flex flex-col gap-2.5">
             <span className="text-[10.5px] tracking-[0.12em] text-white/45">
               Description
@@ -333,21 +363,21 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
             />
           </div>
 
-          {/* Examples — upload + manage */}
+          {/* Examples - upload + manage */}
           <ExamplesEditor value={examples} onChange={setExamples} />
         </>
       ) : (
         <>
-          {/* Performance — trades tagged with this strategy, geared to
+          {/* Performance - trades tagged with this strategy, geared to
               surfacing where the setup leaks. */}
           <StrategyStats strategyName={data.name} />
 
-          {/* Description — read-only */}
+          {/* Description - read-only */}
           {data.description ? (
             <DescriptionDisplay html={data.description} />
           ) : null}
 
-          {/* Examples — read-only gallery */}
+          {/* Examples - read-only gallery */}
           <ExamplesGallery examples={data.examples ?? []} />
 
           {/* Nudge when the strategy has no content yet. */}
@@ -448,7 +478,7 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
 // editor's inline CSS so saved content looks identical out of edit mode.
 function DescriptionDisplay({ html }: { html: string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 md:p-5">
+    <div className="border-t border-white/[0.06] pt-4">
       <div
         className="strategy-desc text-[14px] text-white/85 leading-relaxed"
         dangerouslySetInnerHTML={{ __html: html }}
@@ -462,6 +492,13 @@ function DescriptionDisplay({ html }: { html: string }) {
         .strategy-desc p { margin: 0.35em 0; }
         .strategy-desc img { max-width: 100%; height: auto; border-radius: 8px; margin: 0.5em 0; display: block; }
         .strategy-desc a { color: #5eead4; text-decoration: underline; }
+        .strategy-desc blockquote {
+          margin: 0.5em 0;
+          padding: 0.25em 0.75em;
+          border-left: 3px solid rgb(20 184 166 / 0.55);
+          color: rgb(var(--fg-rgb) / 0.85);
+          font-style: italic;
+        }
       `}</style>
     </div>
   );
@@ -531,7 +568,7 @@ function ExamplesGallery({ examples }: { examples: StrategyExample[] }) {
     );
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 md:p-5 flex flex-col gap-4">
+    <div className="border-t border-white/[0.06] pt-4 flex flex-col gap-4">
       <div className="flex items-center gap-2">
         <i className="fa-solid fa-images text-[12px] text-teal-300/80" />
         <span className="text-[10.5px] tracking-[0.12em] text-white/45">
@@ -690,6 +727,7 @@ function ExamplesEditor({
 }
 
 function Lightbox({ src, onClose }: { src: string; onClose: () => void }) {
+  useScrollLock();
   return (
     <div
       className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center z-50 p-4"
@@ -737,7 +775,9 @@ function DirectionBadge({ direction }: { direction: Direction }) {
   const tone =
     direction === "CALL"
       ? "bg-green-500/20 text-green-300 border-green-500/30"
-      : "bg-red-500/20 text-red-300 border-red-500/30";
+      : direction === "PUT"
+        ? "bg-red-500/20 text-red-300 border-red-500/30"
+        : "bg-white/[0.06] text-white/70 border-white/20";
   return (
     <span
       className={`shrink-0 px-3 py-1 rounded-full text-[11px] font-semibold tracking-[0.08em] border ${tone}`}
@@ -756,12 +796,14 @@ function DirectionToggle({
 }) {
   return (
     <div className="inline-flex rounded-full border border-white/10 bg-white/[0.03] p-1 gap-1 shrink-0">
-      {(["CALL", "PUT"] as Direction[]).map((d) => {
+      {(["CALL", "PUT", "BOTH"] as Direction[]).map((d) => {
         const active = d === value;
         const tone =
           d === "CALL"
             ? "bg-green-500/20 text-green-300 border-green-500/30"
-            : "bg-red-500/20 text-red-300 border-red-500/30";
+            : d === "PUT"
+              ? "bg-red-500/20 text-red-300 border-red-500/30"
+              : "bg-white/[0.10] text-white/80 border-white/25";
         return (
           <button
             key={d}

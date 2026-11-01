@@ -19,11 +19,14 @@ import { handleSave, type InvalidField } from "./helpers";
 type TradeModalProps = {
   date: Date;
   onClose: () => void;
-  onSave: (trade: Trade) => void;
+  // Persists the trade. May return a boolean (or a promise of one) indicating
+  // whether the save actually succeeded, which drives the success/failure
+  // toast; a void/undefined return is treated as success.
+  onSave: (trade: Trade) => void | boolean | Promise<void | boolean>;
   initialTrade?: Partial<Trade>;
   onDelete?: (_id: string) => void;
   // Optional back-out handler. When set, Cancel / X / Escape / backdrop
-  // clicks fire this instead of `onClose` — used by TradeModal to send
+  // clicks fire this instead of `onClose` - used by TradeModal to send
   // the user back to the View card rather than onCloseing the whole
   // stack when they were originally viewing an existing trade.
   onCancel?: () => void;
@@ -92,9 +95,16 @@ export default function EditTradeModal({
   };
   const removeTag = (label: string) =>
     setTags((prev) => prev.filter((t) => t !== label));
-  const [simulated, setSimulated] = useState<boolean>(
-    initialTrade?.simulated || false,
-  );
+  // Editing an existing trade keeps its own flag; a brand-new trade defaults
+  // to whatever mode the app is in - so adding a trade while in simulated
+  // mode pre-checks "Mark as simulated".
+  const [simulated, setSimulated] = useState<boolean>(() => {
+    if (initialTrade) return !!initialTrade.simulated;
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("simulated") === "true";
+    }
+    return false;
+  });
   // Invalid fields are tracked individually so the modal can outline
   // each broken input in red instead of showing a single banner. A
   // field is removed from the set as soon as the user edits it.
@@ -110,19 +120,67 @@ export default function EditTradeModal({
       return next;
     });
   const [delModal, setDelModal] = useState<boolean>(false);
+  const [saving, setSaving] = useState<boolean>(false);
 
   const toast = useToast();
+
+  // Validate + build the trade, persist it via onSave, and only then toast the
+  // real outcome. Keeps the button in a loading state for the whole round trip.
+  const submit = async () => {
+    if (saving) return;
+    const tradeData = handleSave(
+      setInvalidFields,
+      date,
+      selectedOption,
+      userId as string,
+      symbol,
+      contractPrice,
+      qty,
+      strike,
+      dateBought,
+      expiryDate,
+      status,
+      closingContractPrice,
+      strategy,
+      dateClosed,
+      notes,
+      tags,
+      simulated,
+      initialTrade!,
+      fees,
+    );
+    if (!tradeData) return; // validation failed - fields already highlighted
+
+    setSaving(true);
+    try {
+      const ok = await onSave(tradeData);
+      if (ok === false) {
+        toast("Couldn't save trade. Please try again.");
+      } else {
+        toast(
+          tradeData._id
+            ? `Trade ${tradeData.symbol} updated successfully!`
+            : `Trade ${tradeData.symbol} added successfully!`,
+        );
+      }
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Couldn't save trade. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
   useScrollLock();
 
   // Pull the user's custom strategy library and filter to the
   // currently selected direction. Until a direction is picked, show
   // every strategy so the dropdown isn't empty.
   const { data: userStrategies = [] } = useStrategies();
+  // "BOTH" strategies apply to either side, so they appear in both lists.
   const callStrategies = userStrategies
-    .filter((s) => s.direction === "CALL")
+    .filter((s) => s.direction === "CALL" || s.direction === "BOTH")
     .map((s) => s.name);
   const putStrategies = userStrategies
-    .filter((s) => s.direction === "PUT")
+    .filter((s) => s.direction === "PUT" || s.direction === "BOTH")
     .map((s) => s.name);
   const strategies: string[] =
     selectedOption === "CALL"
@@ -155,8 +213,8 @@ export default function EditTradeModal({
 
   // A native <select> can't represent an empty value when no <option> has
   // value="": it visually falls back to the first option while React state
-  // stays "". So a brand-new trade — or one opened before the async
-  // strategy list arrived — silently saves an empty strategy unless the
+  // stays "". So a brand-new trade - or one opened before the async
+  // strategy list arrived - silently saves an empty strategy unless the
   // user happens to touch the dropdown. Keep the committed value in sync
   // with what's actually shown: whenever the option set changes, snap
   // `strategy` to a real option if it isn't already one.
@@ -190,7 +248,16 @@ export default function EditTradeModal({
   return (
     <>
       <motion.div
-        className="fixed inset-0 modal-scrim flex items-center justify-center z-50 py-3 px-3 md:p-0"
+        className="fixed inset-0 modal-scrim flex items-center justify-center z-50"
+        style={{
+          // Pad by the safe-area insets so the sheet never sits under the
+          // status bar / home indicator (the app draws full-bleed), with a
+          // small minimum gap everywhere else.
+          paddingTop: "max(env(safe-area-inset-top), 0.75rem)",
+          paddingBottom: "max(env(safe-area-inset-bottom), 0.75rem)",
+          paddingLeft: "max(env(safe-area-inset-left), 0.75rem)",
+          paddingRight: "max(env(safe-area-inset-right), 0.75rem)",
+        }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -199,7 +266,7 @@ export default function EditTradeModal({
       >
         <motion.div
           onClick={(e) => e.stopPropagation()}
-          className="relative flex flex-col bg-[var(--background)] border border-white/10 rounded-2xl md:w-[90%] md:max-w-lg w-full max-h-[calc(100dvh-1.5rem)] md:max-h-[90vh] overflow-hidden"
+          className="relative flex flex-col bg-[var(--background)] border border-white/10 rounded-2xl md:w-[90%] md:max-w-lg w-full max-h-full md:max-h-[90vh] overflow-hidden"
           initial={{ opacity: 0, scale: 0.96, y: 16 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: 16 }}
@@ -527,35 +594,16 @@ export default function EditTradeModal({
               </button>
               <button
                 type="button"
-                onClick={() =>
-                  handleSave(
-                    setInvalidFields,
-                    date,
-                    selectedOption,
-                    userId as string,
-                    symbol,
-                    contractPrice,
-                    qty,
-                    strike,
-                    dateBought,
-                    expiryDate,
-                    status,
-                    closingContractPrice,
-                    strategy,
-                    dateClosed,
-                    notes,
-                    tags,
-                    simulated,
-                    toast,
-                    onSave,
-                    initialTrade!,
-                    fees,
-                  )
-                }
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[13px] font-medium cursor-pointer"
+                onClick={submit}
+                disabled={saving}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[13px] font-medium cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                <i className="fa-solid fa-floppy-disk text-[11px]" />
-                {isEditing ? "Save" : "Create trade"}
+                <i
+                  className={`fa-solid ${
+                    saving ? "fa-circle-notch animate-spin" : "fa-floppy-disk"
+                  } text-[11px]`}
+                />
+                {saving ? "Saving…" : isEditing ? "Save" : "Create trade"}
               </button>
             </div>
           </div>

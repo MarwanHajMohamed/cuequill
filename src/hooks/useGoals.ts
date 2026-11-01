@@ -69,8 +69,8 @@ export function useGoalMutations() {
   });
 
   // Optimistic: patch the cached goal immediately so the checkbox (or any
-  // edit) flips instantly, then reconcile with the server — which owns the
-  // metric recomputation — in the background.
+  // edit) flips instantly, then reconcile with the server - which owns the
+  // metric recomputation - in the background.
   const update = useMutation({
     mutationFn: async ({
       id,

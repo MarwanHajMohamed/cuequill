@@ -1,7 +1,9 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { useScrollLock } from "@/hooks/useScrollLock";
+import { hapticNotify } from "@/lib/haptics";
 
 type ImportedTrade = {
   _id: string;
@@ -11,11 +13,31 @@ type ImportedTrade = {
   qty: number;
   dateBought: string;
   dateClosed?: string | null;
+  expiryDate?: string | null;
   profitLoss?: number | null;
   fees?: number | null;
   status: "WIN" | "LOSS" | "OPEN";
+  simulated?: boolean;
   hasDuplicate?: boolean;
 };
+
+// Contract-identity key for auto-merge: legs share a symbol, side, strike,
+// expiry day, open/closed class, and sim flag - the same rules the merge
+// endpoint enforces. Two+ imported legs on one key are partial fills of the
+// same order and can be collapsed into a single row.
+const dayOf = (iso: string | null | undefined) =>
+  iso ? new Date(iso).toISOString().split("T")[0] : "";
+function mergeKey(t: ImportedTrade): string {
+  const statusClass = t.status === "OPEN" ? "OPEN" : "CLOSED";
+  return [
+    t.symbol,
+    t.option,
+    t.strike,
+    dayOf(t.expiryDate),
+    statusClass,
+    t.simulated ? "sim" : "real",
+  ].join("|");
+}
 
 // Lists the trades inserted by the most recent IBKR sync, flags rows that
 // look like duplicates of existing trades, and lets the user delete any of
@@ -30,21 +52,100 @@ export default function ImportedTradesModal({
   const [trades, setTrades] = useState<ImportedTrade[] | null>(null);
   const [error, setError] = useState("");
   const [deleting, setDeleting] = useState<Record<string, boolean>>({});
+  // True while merging every group at once; a group's key while merging just
+  // that one - so each group's own button can show its spinner independently.
+  const [mergingAll, setMergingAll] = useState(false);
+  const [mergingKey, setMergingKey] = useState<string | null>(null);
+  const busy = mergingAll || mergingKey !== null;
+
+  useScrollLock();
+
+  const load = async () => {
+    try {
+      const r = await fetch("/api/ibkr/last-imported");
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error ?? "Failed to load");
+      setTrades(d.trades ?? []);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load");
+      setTrades([]);
+    }
+  };
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const r = await fetch("/api/ibkr/last-imported");
-        const d = await r.json();
-        if (!r.ok) throw new Error(d.error ?? "Failed to load");
-        setTrades(d.trades ?? []);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to load");
-        setTrades([]);
-      }
-    };
     load();
   }, []);
+
+  // Group the imported legs by contract identity; groups of 2+ are the
+  // auto-mergeable partial fills.
+  const mergeGroups = useMemo(() => {
+    const map = new Map<string, ImportedTrade[]>();
+    for (const t of trades ?? []) {
+      const k = mergeKey(t);
+      const arr = map.get(k);
+      if (arr) arr.push(t);
+      else map.set(k, [t]);
+    }
+    return Array.from(map.values()).filter((g) => g.length >= 2);
+  }, [trades]);
+
+  // ids that belong to some auto-merge group (for the outline + ordering).
+  const groupedIds = useMemo(
+    () => new Set(mergeGroups.flat().map((t) => t._id)),
+    [mergeGroups],
+  );
+
+  const mergeableCount = mergeGroups.reduce((s, g) => s + g.length, 0);
+
+  // Merge one set of ids on the server (collapses partial fills into one row).
+  const mergeIds = async (ids: string[]) => {
+    const r = await fetch("/api/trades/merge", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids }),
+    });
+    if (!r.ok) {
+      const d = await r.json().catch(() => ({}));
+      throw new Error(d.error ?? "Merge failed");
+    }
+  };
+
+  // Merge a single group on demand, so multiple detected groups can be
+  // collapsed one at a time (and reviewed) rather than all at once.
+  const handleMergeGroup = async (group: ImportedTrade[]) => {
+    if (busy) return;
+    setMergingKey(mergeKey(group[0]));
+    setError("");
+    try {
+      await mergeIds(group.map((t) => t._id));
+      hapticNotify("success");
+      await load();
+      onDeleted?.("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Merge failed");
+    } finally {
+      setMergingKey(null);
+    }
+  };
+
+  // Merge every detected group in one go.
+  const handleMergeAll = async () => {
+    if (mergeGroups.length === 0 || busy) return;
+    setMergingAll(true);
+    setError("");
+    try {
+      for (const group of mergeGroups) {
+        await mergeIds(group.map((t) => t._id));
+      }
+      hapticNotify("success");
+      await load();
+      onDeleted?.("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Merge failed");
+    } finally {
+      setMergingAll(false);
+    }
+  };
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -102,7 +203,7 @@ export default function ImportedTradesModal({
                   Imported trades
                 </h2>
                 {/* Hover-only tooltip. `group` on the wrapper + `group-hover`
-                    on the popover keeps this stateless — one-liner
+                    on the popover keeps this stateless - one-liner
                     explanation, no click target, no accessibility trap. */}
                 <span className="relative group inline-flex">
                   <i
@@ -152,18 +253,86 @@ export default function ImportedTradesModal({
                 Nothing from the last sync remains.
               </div>
             ) : (
-              <div className="flex flex-col gap-1">
-                {trades.map((t) => (
-                  <ImportedRow
-                    key={t._id}
-                    trade={t}
-                    deleting={!!deleting[t._id]}
-                    onDelete={() => handleDelete(t._id)}
-                  />
-                ))}
+              <div className="flex flex-col gap-1.5">
+                {/* Auto-mergeable groups - outlined together so the partial
+                    fills that will collapse into one row are obvious. */}
+                {mergeGroups.map((group, gi) => {
+                  const key = mergeKey(group[0]);
+                  const thisMerging = mergingKey === key;
+                  return (
+                  <div
+                    key={`grp-${gi}`}
+                    className="rounded-xl border border-teal-500/40 bg-teal-500/[0.05] p-1"
+                  >
+                    <div className="flex items-center justify-end gap-2 px-2 pt-1 pb-0.5">
+                      <button
+                        type="button"
+                        onClick={() => handleMergeGroup(group)}
+                        disabled={busy}
+                        className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
+                        <i
+                          className={`fa-solid ${
+                            thisMerging
+                              ? "fa-circle-notch animate-spin"
+                              : "fa-object-group"
+                          } text-[10px]`}
+                        />
+                        {thisMerging ? "Merging…" : "Merge"}
+                      </button>
+                    </div>
+                    {group.map((t) => (
+                      <ImportedRow
+                        key={t._id}
+                        trade={t}
+                        deleting={!!deleting[t._id]}
+                        onDelete={() => handleDelete(t._id)}
+                      />
+                    ))}
+                  </div>
+                  );
+                })}
+
+                {/* Everything else */}
+                {trades
+                  .filter((t) => !groupedIds.has(t._id))
+                  .map((t) => (
+                    <ImportedRow
+                      key={t._id}
+                      trade={t}
+                      deleting={!!deleting[t._id]}
+                      onDelete={() => handleDelete(t._id)}
+                    />
+                  ))}
               </div>
             )}
           </div>
+
+          {/* Footer - merge every group at once. Individual groups can also
+              be merged one at a time from their own Merge button above. Only
+              shown when 2+ groups make a bulk action worthwhile. */}
+          {mergeGroups.length > 1 && (
+            <div className="px-4 py-3 border-t border-white/10 shrink-0 flex items-center justify-between gap-3">
+              <span className="text-[11.5px] text-white/50">
+                {mergeGroups.length} mergeable groups · {mergeableCount} fills
+              </span>
+              <button
+                type="button"
+                onClick={handleMergeAll}
+                disabled={busy}
+                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[12px] font-semibold bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                <i
+                  className={`fa-solid ${
+                    mergingAll
+                      ? "fa-circle-notch animate-spin"
+                      : "fa-object-group"
+                  } text-[11px]`}
+                />
+                {mergingAll ? "Merging…" : "Merge all"}
+              </button>
+            </div>
+          )}
         </motion.div>
       </motion.div>
     </AnimatePresence>
@@ -188,7 +357,7 @@ function ImportedRow({
           month: "short",
           day: "numeric",
         })
-      : "—";
+      : "-";
 
   return (
     <div className="group flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/[0.04] transition">
@@ -226,7 +395,7 @@ function ImportedRow({
           isOpen ? "text-white/40" : net >= 0 ? "text-green-300" : "text-red-300"
         }`}
       >
-        {isOpen ? "—" : `${net >= 0 ? "+" : "−"}$${Math.abs(net).toFixed(2)}`}
+        {isOpen ? "-" : `${net >= 0 ? "+" : "−"}$${Math.abs(net).toFixed(2)}`}
       </div>
 
       <button

@@ -3,6 +3,8 @@
 import React from "react";
 import DashboardStats from "./components/stats/DashboardStats";
 import DashboardEquity from "./components/stats/DashboardEquity";
+import DashboardBalance from "./components/stats/DashboardBalance";
+import DashboardChallenges from "./components/stats/DashboardChallenges";
 import DashboardRiskBudget from "./components/insights/DashboardRiskBudget";
 import DashboardOpenPositions from "./components/stats/DashboardOpenPositions";
 import DashboardRecentCloses from "./components/stats/DashboardRecentCloses";
@@ -16,12 +18,14 @@ import DashboardQuillInsight from "./components/insights/DashboardQuillInsight";
 // A dashboard widget is a self-contained card that fetches its own data.
 // `render` receives the current user id (widgets that don't need it just
 // ignore it). The registry is the single source of truth for which
-// widgets exist, their display name, and their default ordering — the
+// widgets exist, their display name, and their default ordering - the
 // customisable grid reads layout as an ordered list of these ids.
 export type WidgetId =
   | "glance"
   | "quillInsight"
   | "equity"
+  | "balance"
+  | "challenges"
   | "riskBudget"
   | "openPositions"
   | "recentCloses"
@@ -34,9 +38,14 @@ export type WidgetId =
 export type WidgetDef = {
   id: WidgetId;
   title: string;
-  // rowSpan is the widget's current height in grid rows (1–3); widgets that
-  // scroll conditionally (e.g. Upcoming) use it, most ignore it.
-  render: (userId: string, rowSpan: number) => React.ReactNode;
+  // rowSpan / colSpan are the widget's current grid size (rows 1–3, cols
+  // 1–2). Widgets that adapt to their size (Upcoming, Challenges) use them;
+  // most ignore them.
+  render: (
+    userId: string,
+    rowSpan: number,
+    colSpan: number,
+  ) => React.ReactNode;
 };
 
 export const WIDGETS: WidgetDef[] = [
@@ -54,6 +63,16 @@ export const WIDGETS: WidgetDef[] = [
     id: "equity",
     title: "Recent equity",
     render: (userId) => <DashboardEquity userId={userId} />,
+  },
+  {
+    id: "balance",
+    title: "Balance",
+    render: () => <DashboardBalance />,
+  },
+  {
+    id: "challenges",
+    title: "Challenges",
+    render: () => <DashboardChallenges />,
   },
   {
     id: "riskBudget",
@@ -101,14 +120,16 @@ export const WIDGET_MAP: Record<WidgetId, WidgetDef> = Object.fromEntries(
   WIDGETS.map((w) => [w.id, w]),
 ) as Record<WidgetId, WidgetDef>;
 
-// Default layout — the order the dashboard ships with before any
+// Default layout - the order the dashboard ships with before any
 // customisation. All widgets enabled. Ordered so the default row heights
-// pair up cleanly (the two short one-row widgets — risk budget and
-// win/loss — sit together at the end) rather than brick-laying.
+// pair up cleanly (the two short one-row widgets - risk budget and
+// win/loss - sit together at the end) rather than brick-laying.
 export const DEFAULT_LAYOUT: WidgetId[] = [
   "glance",
   "quillInsight",
   "equity",
+  "balance",
+  "challenges",
   "openPositions",
   "recentCloses",
   "upcoming",

@@ -1,81 +1,59 @@
 "use client";
 import { withAuth } from "@/lib/withAuth";
-import { useSession } from "next-auth/react";
-import React, { useRef, useState } from "react";
-import TradesTab from "./TradesTab";
-import { useQueryClient } from "@tanstack/react-query";
+import React, { useEffect, useState } from "react";
+import BrokersTab from "./BrokersTab";
 import Account from "./Account";
-import IBKRTab from "./IBKRTab";
 import NotificationsTab from "./NotificationsTab";
 import PlanTab from "./PlanTab";
+import AppearanceTab from "./AppearanceTab";
+import PageTour from "@/components/PageTour";
 
 function Page() {
   const [selectedSetting, setSelectedSetting] = useState<string>("Account");
 
-  const [file, setFile] = useState<File | null>(null);
-  const [status, setStatus] = useState<string>("");
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  const { data: session } = useSession();
-  const userId = session?.user?.id;
-
-  const queryClient = useQueryClient();
-
-  const handleUpload = async () => {
-    if (!file) {
-      setStatus("Please select a file.");
+  // Land on the Plan tab when returning from a billing flow - a new
+  // subscription Checkout (?checkout=success), the cycle-switch Checkout
+  // (?switch=…), or the Stripe billing portal (?billing=1) - so PlanTab
+  // mounts, reconciles, and shows the updated subscription state.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (
+      params.has("switch") ||
+      params.has("billing") ||
+      params.has("checkout")
+    ) {
+      setSelectedSetting("Plan");
       return;
     }
-
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("userId", userId!);
-
-    try {
-      setStatus("Uploading...");
-
-      const res = await fetch("/api/import-trades", {
-        method: "POST",
-        body: formData,
-      });
-
-      const result = await res.json();
-
-      if (res.ok) {
-        setStatus(`Success: imported ${result.inserted} trades`);
-        queryClient.invalidateQueries({ queryKey: ["trades", userId] });
-      } else {
-        console.error("Error: ", result.error);
-        setStatus(`Error: ${result.error}`);
-      }
-    } catch (err) {
-      console.error("Network error:", err);
-      setStatus(
-        "Error: Something went wrong. Ensure the headers are the same as the ones stated above.",
+    // Deep-link to any tab via ?tab= (e.g. /settings?tab=notifications).
+    const wanted = params.get("tab")?.trim().toLowerCase();
+    if (wanted) {
+      const titles = [
+        "Account",
+        "Appearance",
+        "Plan",
+        "Brokers",
+        "Notifications",
+      ];
+      const match = titles.find(
+        (t) => t.toLowerCase() === wanted || t.toLowerCase().startsWith(wanted),
       );
+      if (match) setSelectedSetting(match);
     }
-  };
+  }, []);
 
   const settingsTabs = [
     { title: "Account", icon: "fa-solid fa-user", content: <Account /> },
+    {
+      title: "Appearance",
+      icon: "fa-solid fa-palette",
+      content: <AppearanceTab />,
+    },
     { title: "Plan", icon: "fa-solid fa-crown", content: <PlanTab /> },
     {
-      title: "Trades",
-      icon: "fa-solid fa-file-import",
-      content: (
-        <TradesTab
-          file={file}
-          status={status}
-          setFile={setFile}
-          fileInputRef={fileInputRef}
-          handleUpload={handleUpload}
-        />
-      ),
-    },
-    {
-      title: "IBKR auto-sync",
-      icon: "fa-solid fa-rotate",
-      content: <IBKRTab />,
+      title: "Brokers",
+      icon: "fa-solid fa-building-columns",
+      content: <BrokersTab />,
     },
     {
       title: "Notifications",
@@ -85,7 +63,8 @@ function Page() {
   ];
 
   return (
-    <div className="w-full flex flex-col md:items-start min-h-screen pb-16">
+    <div className="w-full flex justify-center min-h-screen pb-24">
+      <PageTour pageId="settings" />
       {/* Aurora */}
       <div
         aria-hidden
@@ -96,16 +75,24 @@ function Page() {
         }}
       />
 
-      <div className="w-full max-w-[1100px] mt-30 md:mt-10 px-5 md:px-10">
-        {/* Card */}
-        <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md overflow-hidden flex flex-col md:flex-row">
-          {/* Tabs */}
-          <nav className="md:w-56 md:shrink-0 md:border-r border-b md:border-b-0 border-white/10 p-2 flex md:flex-col overflow-x-auto">
+      <div className="w-full max-w-[1500px] px-5 md:px-8 pt-24 md:pt-12 flex flex-col">
+        <header className="pb-6 border-b border-white/10">
+          <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight">
+            Settings
+          </h1>
+        </header>
+
+        <div className="mt-6 flex flex-col md:flex-row gap-6 md:gap-8">
+          {/* Nav rail - sticky on desktop, a horizontal scroller on mobile */}
+          <nav className="md:w-56 md:shrink-0 flex md:flex-col gap-1 overflow-x-auto md:overflow-visible md:sticky md:top-12 md:self-start">
             {settingsTabs.map((tab) => {
               const active = selectedSetting === tab.title;
               return (
                 <button
                   key={tab.title}
+                  data-tour={
+                    tab.title === "Plan" ? "settings-plan" : undefined
+                  }
                   onClick={() => setSelectedSetting(tab.title)}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-xl whitespace-nowrap text-left transition cursor-pointer text-[13px] font-medium ${
                     active
@@ -122,8 +109,17 @@ function Page() {
             })}
           </nav>
 
-          {/* Content */}
-          <div className="flex-1 min-w-0 min-h-[520px]">
+          {/* Desktop divider between the tab rail and the content. Stretches
+              to the content column's height (not the viewport) so short tabs
+              don't overshoot the page and force an empty scroll. */}
+          <div
+            aria-hidden
+            className="hidden md:block w-px shrink-0 self-stretch bg-white/10"
+          />
+
+          {/* Content - sits on the page (no card). On mobile a top border
+              divides it from the tab rail; on desktop the sticky divider does. */}
+          <div className="flex-1 min-w-0 min-h-[520px] border-t md:border-t-0 border-white/10">
             {settingsTabs.map((tab) =>
               selectedSetting === tab.title ? (
                 <div key={tab.title}>{tab.content}</div>

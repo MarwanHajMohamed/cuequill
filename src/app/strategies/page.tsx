@@ -1,15 +1,18 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
 import { withAuth } from "@/lib/withAuth";
+import { Skeleton } from "@/components/Loaders";
 import { useIsPro } from "@/hooks/useIsPro";
 import { useStrategies, type StrategyDoc } from "@/hooks/useStrategies";
 import { SchematicPreview } from "@/components/SchematicEditor";
 import { FREE_STRATEGY_LIMIT } from "@/lib/strategyConstants";
+import { useToast } from "@/hooks/useToast";
+import PageTour from "@/components/PageTour";
 
 type Direction = "CALL" | "PUT";
 
@@ -31,17 +34,25 @@ const directionStyle = {
 function Page() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const toast = useToast();
   const { isPro } = useIsPro();
   const { data: strategies = [], isLoading } = useStrategies();
   const [creating, setCreating] = useState(false);
   const [createErr, setCreateErr] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // "BOTH" strategies apply to either side, so they surface in both columns.
   const calls = useMemo(
-    () => strategies.filter((s) => s.direction === "CALL"),
+    () =>
+      strategies.filter(
+        (s) => s.direction === "CALL" || s.direction === "BOTH",
+      ),
     [strategies],
   );
   const puts = useMemo(
-    () => strategies.filter((s) => s.direction === "PUT"),
+    () =>
+      strategies.filter((s) => s.direction === "PUT" || s.direction === "BOTH"),
     [strategies],
   );
 
@@ -70,8 +81,58 @@ function Page() {
     }
   };
 
+  // Download the whole library. The endpoint streams a JSON attachment, so a
+  // plain navigation (with cookies) triggers the browser's save dialog.
+  const handleExportAll = () => {
+    if (strategies.length === 0) return;
+    window.location.href = "/api/strategies/export";
+  };
+
+  const handleImportClick = () => fileInputRef.current?.click();
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    // Reset the input so re-selecting the same file fires onChange again.
+    e.target.value = "";
+    if (!file) return;
+    setImporting(true);
+    try {
+      const text = await file.text();
+      let json: unknown;
+      try {
+        json = JSON.parse(text);
+      } catch {
+        toast("That file isn't valid JSON");
+        return;
+      }
+      const res = await fetch("/api/strategies/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(json),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast(data.error ?? "Import failed");
+        return;
+      }
+      await queryClient.invalidateQueries({ queryKey: ["strategies"] });
+      const n = data.imported ?? 0;
+      const skipped = data.skippedCap ?? 0;
+      toast(
+        skipped > 0
+          ? `Imported ${n} · ${skipped} skipped (free limit)`
+          : `Imported ${n} strateg${n === 1 ? "y" : "ies"}`,
+      );
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Import failed");
+    } finally {
+      setImporting(false);
+    }
+  };
+
   return (
-    <div className="w-full flex flex-col md:items-start min-h-screen pb-16">
+    <div className="w-full flex justify-center min-h-screen pb-24">
+      <PageTour pageId="strategies" />
       {/* Aurora */}
       <div
         aria-hidden
@@ -82,12 +143,12 @@ function Page() {
         }}
       />
 
-      <div className="w-full max-w-[1500px] mt-30 md:mt-10 px-5 md:px-10">
+      <div className="w-full max-w-[1500px] px-5 md:px-8 pt-24 md:pt-12 flex flex-col">
         {/* Header */}
-        <div className="mt-8 md:mt-10 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
           <div>
-            <h1 className="text-[28px] md:text-[34px] font-medium tracking-[-0.02em] text-white">
-              Your strategies
+            <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight">
+              Strategies
             </h1>
             <p className="mt-1.5 text-[13px] text-white/55 leading-relaxed">
               Custom setups, drawn how you see them. Sketch the pattern in the
@@ -100,6 +161,40 @@ function Page() {
                 {strategies.length} / {FREE_STRATEGY_LIMIT}
               </span>
             )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/json,.json"
+              onChange={handleImportFile}
+              className="hidden"
+            />
+            <button
+              type="button"
+              onClick={handleImportClick}
+              disabled={importing}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11.5px] font-medium border border-white/12 bg-white/[0.03] text-white/75 hover:text-white hover:border-white/25 transition disabled:opacity-60 cursor-pointer"
+            >
+              <i
+                className={`fa-solid ${
+                  importing ? "fa-spinner fa-spin" : "fa-file-import"
+                } text-[11px]`}
+              />
+              Import
+            </button>
+            <button
+              type="button"
+              onClick={handleExportAll}
+              disabled={strategies.length === 0}
+              title={
+                strategies.length === 0
+                  ? "No strategies to export"
+                  : "Download all strategies as JSON"
+              }
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11.5px] font-medium border border-white/12 bg-white/[0.03] text-white/75 hover:text-white hover:border-white/25 transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+            >
+              <i className="fa-solid fa-file-export text-[11px]" />
+              Export all
+            </button>
           </div>
         </div>
 
@@ -125,7 +220,10 @@ function Page() {
         )}
 
         {/* Columns */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+        <div
+          data-tour="strat-list"
+          className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8"
+        >
           <Column
             direction="CALL"
             items={calls}
@@ -171,6 +269,7 @@ function Column({
           {direction}
         </h2>
         <button
+          data-tour="strat-add"
           type="button"
           onClick={onCreate}
           disabled={!canCreate || creating}
@@ -185,9 +284,11 @@ function Column({
         </button>
       </div>
       <div className="flex flex-col gap-2.5">
-        {loading && items.length === 0 && (
-          <div className="text-[12.5px] text-white/40 px-1">Loading…</div>
-        )}
+        {loading &&
+          items.length === 0 &&
+          Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-[64px] rounded-xl" delay={i * 0.05} />
+          ))}
         {!loading && items.length === 0 && (
           <div className="text-[12.5px] text-white/40 px-1 italic">
             No {direction} strategies yet.
@@ -236,8 +337,16 @@ function StrategyCard({
             <i className={`fa-solid ${style.icon} text-[13px]`} />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-[14px] md:text-[15px] font-medium tracking-tight truncate">
-              {strategy.name}
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="text-[14px] md:text-[15px] font-medium tracking-tight truncate">
+                {strategy.name}
+              </div>
+              {strategy.direction === "BOTH" && (
+                <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-semibold tracking-[0.06em] bg-white/[0.06] border border-white/15 text-white/60">
+                  <i className="fa-solid fa-arrows-left-right text-[8px]" />
+                  BOTH
+                </span>
+              )}
             </div>
             <div className="text-[11px] text-white/45 mt-0.5 truncate">
               {tfLine || "No timeframe"}
@@ -245,7 +354,7 @@ function StrategyCard({
             </div>
           </div>
           {hasSchematic && (
-            <div className="hidden md:block shrink-0 w-24 h-14 rounded border border-white/10 overflow-hidden">
+            <div className="hidden md:block shrink-0 w-24 h-14 rounded border border-white/10 overflow-hidden bg-[#0c0c11]">
               <SchematicPreview
                 schematic={strategy.schematic}
                 className="w-full h-full"

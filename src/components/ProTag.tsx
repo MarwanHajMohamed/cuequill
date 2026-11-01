@@ -1,7 +1,7 @@
 import React from "react";
 
 // Small status badge marking a Pro account. Distinct from the locked
-// "Pro" pill used to gate features (which carries a lock icon) — this
+// "Pro" pill used to gate features (which carries a lock icon) - this
 // one is celebratory, shown to users who already have Pro. Render it
 // only behind an `isPro` check at the call site.
 export default function ProTag({ className = "" }: { className?: string }) {
