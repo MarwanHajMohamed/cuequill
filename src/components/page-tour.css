@@ -4,6 +4,10 @@
    language (glass surface, teal accents, rounded corners). */
 
 .cq-tour.driver-popover {
+  /* driver.css forces its own sans-serif stack on the popover; inherit so
+     the coach marks use the app's font (DM Mono, set on <body>) like
+     everything else. Children inherit this in turn. */
+  font-family: inherit;
   background: var(--surface-2);
   color: rgba(255, 255, 255, 0.9);
   border: 1px solid rgba(255, 255, 255, 0.1);
