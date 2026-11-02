@@ -887,27 +887,86 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
       />
 
       {!trades || trades.length === 0 ? (
-        <div className="flex flex-col gap-3 items-center h-screen justify-center">
-          <div className="text-[11px] tracking-[0.1em] text-white/40 font-medium">
-            Journal
+        <div className="w-full flex justify-center mt-19 md:mt-8">
+          <div className="relative w-full max-w-[1500px] px-5 md:px-10 pb-10">
+            {/* Ghost scaffold of the real page - what the journal will look
+                like once it has trades. Static (not pulsing, so it doesn't
+                read as "loading") and dimmed behind the call-to-action. */}
+            <div
+              aria-hidden
+              className="pointer-events-none select-none overflow-hidden opacity-[0.5]"
+            >
+              {/* Hero */}
+              <div className="flex flex-col gap-3 mb-6">
+                <div className="h-3 w-24 rounded bg-white/[0.06]" />
+                <div className="h-9 md:h-12 w-56 md:w-80 rounded-lg bg-white/[0.06]" />
+              </div>
+
+              {/* Summary tiles */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 md:gap-3 mb-6">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="rounded-xl border border-white/10 bg-white/[0.03] p-3 md:p-4 flex flex-col gap-3"
+                  >
+                    <div className="h-2.5 w-16 rounded bg-white/[0.06]" />
+                    <div className="h-6 w-24 rounded bg-white/[0.07]" />
+                  </div>
+                ))}
+              </div>
+
+              {/* Table */}
+              <div className="w-full rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+                <div className="flex gap-3 px-2 py-2 border-b border-white/[0.06]">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="h-3 flex-1 rounded bg-white/[0.06]" />
+                  ))}
+                </div>
+                {Array.from({ length: 8 }).map((_, r) => (
+                  <div
+                    key={r}
+                    className="flex gap-3 px-2 py-3 border-t border-white/[0.04]"
+                  >
+                    {Array.from({ length: 6 }).map((_, c) => (
+                      <div
+                        key={c}
+                        className="h-3.5 flex-1 rounded bg-white/[0.05]"
+                      />
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Call-to-action floating over the scaffold. */}
+            <div className="absolute inset-0 flex items-start justify-center p-5">
+              <div className="mt-24 md:mt-28 flex flex-col gap-3 items-center text-center rounded-2xl border border-white/10 bg-[var(--surface)]/85 backdrop-blur-md px-7 py-7 md:px-9 md:py-8 shadow-[0_20px_80px_var(--shadow)] max-w-sm">
+                <div className="w-11 h-11 rounded-full bg-teal-500/15 border border-teal-500/25 flex items-center justify-center">
+                  <i className="fa-solid fa-feather-pointed text-teal-300 text-base" />
+                </div>
+                <div className="text-[11px] tracking-[0.1em] text-white/40 font-medium">
+                  Journal
+                </div>
+                <div className="text-xl md:text-2xl font-semibold tracking-tight">
+                  No trades yet
+                </div>
+                <div className="text-sm text-white/55 max-w-xs">
+                  Log your first trade to start tracking edge, streaks, and
+                  strategy performance.
+                </div>
+                <button
+                  className="mt-1 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition cursor-pointer text-sm font-medium"
+                  onClick={() => {
+                    setEditingTrade(null);
+                    setIsModalOpen(true);
+                  }}
+                >
+                  <i className="fa-solid fa-plus text-[11px]" />
+                  Add new trade
+                </button>
+              </div>
+            </div>
           </div>
-          <div className="text-2xl font-semibold tracking-tight">
-            No trades yet
-          </div>
-          <div className="text-sm text-white/55 max-w-sm text-center">
-            Log your first trade to start tracking edge, streaks, and strategy
-            performance.
-          </div>
-          <button
-            className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition cursor-pointer text-sm font-medium"
-            onClick={() => {
-              setEditingTrade(null);
-              setIsModalOpen(true);
-            }}
-          >
-            <i className="fa-solid fa-plus text-[11px]" />
-            Add new trade
-          </button>
         </div>
       ) : (
         <div className="w-full flex justify-center md:justify-start mt-19 md:mt-8">
