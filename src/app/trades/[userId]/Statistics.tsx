@@ -1236,16 +1236,22 @@ export default function Statistics({
     symbolCounts[trade.symbol] = (symbolCounts[trade.symbol] || 0) + 1;
   });
 
-  const mostUsedStrat = Object.entries(strategyCounts).reduce((a, b) =>
-    b[1] > a[1] ? b : a,
+  // Initial value guards the empty-journal case: reduce() with no seed
+  // throws on an empty array, and this component now renders even with
+  // zero trades.
+  const mostUsedStrat = Object.entries(strategyCounts).reduce(
+    (a, b) => (b[1] > a[1] ? b : a),
+    ["", 0] as [string, number],
   )[0];
 
-  const mostUsedOption = Object.entries(optionCounts).reduce((a, b) =>
-    b[1] > a[1] ? b : a,
+  const mostUsedOption = Object.entries(optionCounts).reduce(
+    (a, b) => (b[1] > a[1] ? b : a),
+    ["", 0] as [string, number],
   )[0];
 
-  const mostUsedSymbol = Object.entries(symbolCounts).reduce((a, b) =>
-    b[1] > a[1] ? b : a,
+  const mostUsedSymbol = Object.entries(symbolCounts).reduce(
+    (a, b) => (b[1] > a[1] ? b : a),
+    ["", 0] as [string, number],
   )[0];
 
   // ─── Performance Breakdown helpers ───────────────────────────────────
