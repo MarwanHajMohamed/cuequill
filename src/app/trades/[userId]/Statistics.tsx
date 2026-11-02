@@ -366,6 +366,7 @@ const MiniDonut = ({
   center,
   onSegHover,
   onSegLeave,
+  neutral = false,
 }: {
   greenPct: number;
   size?: number;
@@ -374,12 +375,40 @@ const MiniDonut = ({
   // hoverable segments (used for the days-traded donut's per-arc tooltip).
   onSegHover?: (seg: "green" | "red", e: React.MouseEvent) => void;
   onSegLeave?: () => void;
+  // Draw a single flat grey ring (no green/red) - used when there's nothing
+  // to split, e.g. a month with zero traded days.
+  neutral?: boolean;
 }) => {
   const r = size / 2 - 4;
   const c = 2 * Math.PI * r;
   const safe = Math.max(0, Math.min(100, greenPct));
   const greenLen = (safe / 100) * c;
   const redLen = c - greenLen;
+
+  if (neutral) {
+    return (
+      <div className="relative shrink-0" style={{ width: size, height: size }}>
+        <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            fill="none"
+            stroke="rgba(255,255,255,0.12)"
+            strokeWidth="5"
+          />
+        </svg>
+        {center != null && (
+          <div
+            className="absolute inset-0 flex items-center justify-center"
+            style={{ pointerEvents: "none" }}
+          >
+            {center}
+          </div>
+        )}
+      </div>
+    );
+  }
   const segProps = (seg: "green" | "red") =>
     onSegHover
       ? {
@@ -2562,17 +2591,7 @@ export default function Statistics({
                     transition={{ duration: 0.22, ease: "easeOut" }}
                     className="flex flex-col gap-4 md:gap-5"
                   >
-                    {monthlyData.length === 0 ? (
-                      <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-10 text-center">
-                        <div className="text-white/30 text-3xl mb-3">
-                          <i className="fa-regular fa-calendar-xmark" />
-                        </div>
-                        <div className="text-sm text-white/55">
-                          No trades for {currentMonth} {year}
-                        </div>
-                      </div>
-                    ) : (
-                      <>
+                    <>
                         {/* Net P/L - sits directly on the background. */}
                         <div className="min-w-0 px-1">
                           <div className="text-[10px] md:text-[11px] tracking-[0.1em] text-white/45 font-medium flex items-center gap-1.5">
@@ -2610,8 +2629,9 @@ export default function Statistics({
                         </div>
 
                         {/* Calendar heatmap (hugs its grid) + daily P/L strip
-                            (fills the rest) side by side. */}
-                        {tradedDays > 0 && (
+                            (fills the rest) side by side. Always shown - an
+                            empty month renders all-grey days, a "No trades"
+                            daily strip, and a 0 days-traded donut. */}
                           <div className="flex flex-col md:flex-row gap-4 md:gap-5">
                             {/* Calendar heatmap - each day tinted by P/L.
                                 Full-width card on mobile (grid centred), hugs
@@ -2719,7 +2739,12 @@ export default function Statistics({
                                 </div>
                               </div>
                               <div className="flex-1 flex items-end gap-[2px] md:gap-[3px] min-h-[80px]">
-                                {dailyBars.map((b) => {
+                                {tradedDays === 0 ? (
+                                  <div className="flex-1 flex items-center justify-center text-[12px] text-white/35">
+                                    No trades
+                                  </div>
+                                ) : (
+                                  dailyBars.map((b) => {
                                   const label = `${currentMonth} ${b.day}`;
                                   if (b.pl === null) {
                                     return (
@@ -2772,7 +2797,7 @@ export default function Statistics({
                                       />
                                     </div>
                                   );
-                                })}
+                                  }))}
                               </div>
                               <div className="flex justify-between text-[10px] text-white/35 mt-2 tabular-nums">
                                 <span>1</span>
@@ -2788,6 +2813,7 @@ export default function Statistics({
                               </div>
                               <div className="flex-1 flex items-center justify-center">
                                 <MiniDonut
+                                  neutral={tradedDays === 0}
                                   greenPct={
                                     tradedDays > 0
                                       ? (greenDays / tradedDays) * 100
@@ -2817,7 +2843,6 @@ export default function Statistics({
                               </div>
                             </div>
                           </div>
-                        )}
 
                         {/* Detail tiles - extremes */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
@@ -2867,7 +2892,6 @@ export default function Statistics({
                           />
                         </div>
                       </>
-                    )}
                   </motion.div>
                 </AnimatePresence>
               </div>
