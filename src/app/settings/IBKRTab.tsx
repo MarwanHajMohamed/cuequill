@@ -414,12 +414,12 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
                     Set <span className="text-white">Format</span> to{" "}
                     <span className="text-white">CSV</span> and{" "}
                     <span className="text-white">Period</span> to{" "}
-                    <span className="text-white">Last 365 Days</span>, then{" "}
+                    <span className="text-white">Last Business Day</span>, then{" "}
                     <span className="text-white">Save</span>.
                   </>
                 ),
                 img: "/ibkr/6-csv-period.webp",
-                alt: "Activity Flex Query delivery configuration with CSV format and Last 365 Calendar Days period",
+                alt: "Activity Flex Query delivery configuration with CSV format and Last Business Day period",
               },
               {
                 text: (
