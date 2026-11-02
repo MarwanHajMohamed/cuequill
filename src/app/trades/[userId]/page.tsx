@@ -1425,7 +1425,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                   </table>
               )}
             </div>
-            {filteredTrades?.length !== 0 && (
+            {((trades?.length ?? 0) === 0 || filteredTrades?.length !== 0) && (
               <div className="flex md:justify-between gap-2 mt-5 w-full max-w-[1500px]">
                 <div className="flex gap-2">
                   <button
@@ -1558,7 +1558,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
               </div>
             )}
 
-            {filteredTrades?.length !== 0 && (
+            {((trades?.length ?? 0) === 0 || filteredTrades?.length !== 0) && (
               <Statistics
                 data={trades!}
                 status={filter}
