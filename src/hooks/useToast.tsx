@@ -18,15 +18,26 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [message, setMessage] = useState<string | null>(null);
+  // Hovering the toast pauses its auto-dismiss so it can't vanish while the
+  // user is reading it; the countdown resumes when the cursor leaves.
+  const [paused, setPaused] = useState(false);
   const [trades, setTrades] = useState<Trade[]>([]);
   const notifiedTrades = useRef<Set<string>>(new Set());
 
-  // Toasts persist until the user dismisses them with the X (no auto-hide),
-  // so an error can't vanish before it's read. A new toast replaces the
-  // current one.
+  // A new toast replaces the current one and restarts its timer. The user
+  // can also dismiss early with the X.
   const showToast = useCallback((msg: string) => {
     setMessage(msg);
+    setPaused(false);
   }, []);
+
+  // Auto-dismiss after 10s. Hovering (paused) clears the timer; moving the
+  // cursor off restarts a fresh 10s. A new message resets it via `message`.
+  useEffect(() => {
+    if (!message || paused) return;
+    const t = setTimeout(() => setMessage(null), 10_000);
+    return () => clearTimeout(t);
+  }, [message, paused]);
 
   useEffect(() => {
     async function fetchTrades() {
@@ -68,7 +79,11 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     <ToastContext.Provider value={{ showToast }}>
       {children}
       {message && (
-        <div className="fixed bottom-5 right-5 z-50 max-w-[calc(100vw-2.5rem)]">
+        <div
+          className="fixed bottom-5 right-5 z-50 max-w-[calc(100vw-2.5rem)]"
+          onMouseEnter={() => setPaused(true)}
+          onMouseLeave={() => setPaused(false)}
+        >
           <Toast message={message} onClose={() => setMessage(null)} />
         </div>
       )}
