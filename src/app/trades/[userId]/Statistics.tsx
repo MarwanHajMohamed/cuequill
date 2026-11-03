@@ -2262,11 +2262,6 @@ export default function Statistics({
                   className="flex flex-col gap-2 px-4 md:px-7 first:pl-0 last:pr-0"
                 >
                   <div className="flex items-center gap-2">
-                    <span
-                      className={`w-2 h-2 rounded-full ${
-                        isCall ? "bg-green-400" : "bg-red-400"
-                      }`}
-                    />
                     <span className="text-[12.5px] font-medium text-white/70">
                       {isCall ? "Calls" : "Puts"}
                     </span>
