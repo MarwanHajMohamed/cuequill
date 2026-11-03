@@ -2244,74 +2244,58 @@ export default function Statistics({
             info="A bird's-eye view of your edge across your whole history - direction (CALL vs PUT), streaks, drawdown, and best/worst day."
           />
 
-          {/* CALL vs PUT */}
+          {/* Calls vs puts - sit directly on the background (no card),
+              pared back to the headline numbers so it reads at a glance. */}
           <div className="flex items-center gap-1.5 text-[10px] md:text-[11px] tracking-[0.1em] text-white/45 font-medium">
-            <span>CALL vs PUT</span>
-            <InfoTooltip text="Side-by-side breakdown of how your CALLs and PUTs each perform. Compare net P/L, win rate, and average per trade to spot directional edge or bias." />
+            <span>Calls vs puts</span>
+            <InfoTooltip text="How your calls and puts each perform. Compare net P/L and win rate to spot directional edge or bias." />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 divide-x divide-white/10">
             {(["CALL", "PUT"] as const).map((opt) => {
               const sub = byOption.find((b) => b.label === opt);
-              if (!sub) return null;
               const isCall = opt === "CALL";
-              const chip = isCall
-                ? "bg-green-500/10 text-green-300 border-green-500/25"
-                : "bg-red-500/10 text-red-300 border-red-500/25";
+              const n = sub?.n ?? 0;
+              const netPL = sub?.netPL ?? 0;
               return (
                 <div
                   key={opt}
-                  className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5 flex flex-col gap-3"
+                  className="flex flex-col gap-2 px-4 md:px-7 first:pl-0 last:pr-0"
                 >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium border uppercase tracking-[0.08em] ${chip}`}
-                      >
-                        <i
-                          className={`fa-solid ${
-                            isCall ? "fa-arrow-trend-up" : "fa-arrow-trend-down"
-                          } text-[9px]`}
-                        />
-                        {opt}
-                      </span>
-                    </div>
-                    <span className="text-[11px] text-white/40 tabular-nums">
-                      {sub.n} trade{sub.n === 1 ? "" : "s"}
-                    </span>
-                  </div>
-                  <div className="flex items-baseline gap-3 flex-wrap">
+                  <div className="flex items-center gap-2">
                     <span
-                      className={`text-2xl md:text-3xl font-semibold tracking-tight tabular-nums truncate ${
-                        sub.netPL >= 0 ? "text-green-400" : "text-red-400"
+                      className={`w-2 h-2 rounded-full ${
+                        isCall ? "bg-green-400" : "bg-red-400"
                       }`}
-                    >
-                      {fmtMoneySignedCompact(sub.netPL)}
+                    />
+                    <span className="text-[12.5px] font-medium text-white/70">
+                      {isCall ? "Calls" : "Puts"}
                     </span>
-                    <span className="text-xs text-white/50 tabular-nums">
-                      {sub.winRate.toFixed(1)}% win rate
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-white/45 tabular-nums">
-                    <span>
-                      Avg{" "}
-                      <span className="text-white/70">
-                        {fmtMoneyCompact(sub.expectancy)}
-                      </span>
-                      /trade
-                    </span>
-                    <span>
-                      W avg{" "}
-                      <span className="text-green-400/80">
-                        {fmtMoneyCompact(sub.avgWin)}
-                      </span>
-                    </span>
-                    <span>
-                      L avg{" "}
-                      <span className="text-red-400/80">
-                        {fmtMoneyCompact(sub.avgLoss)}
-                      </span>
+                    <span className="ml-auto text-[11px] text-white/35 tabular-nums">
+                      {n} trade{n === 1 ? "" : "s"}
                     </span>
                   </div>
+                  {n > 0 ? (
+                    <>
+                      <div
+                        className={`text-2xl md:text-3xl font-semibold tracking-tight tabular-nums ${
+                          netPL >= 0 ? "text-green-400" : "text-red-400"
+                        }`}
+                      >
+                        {fmtMoneySignedCompact(netPL)}
+                      </div>
+                      <div className="text-[12px] text-white/45 tabular-nums">
+                        {sub!.winRate.toFixed(0)}% win rate · avg{" "}
+                        {fmtMoneyCompact(sub!.expectancy)}/trade
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-2xl md:text-3xl font-semibold tracking-tight text-white/25">
+                        –
+                      </div>
+                      <div className="text-[12px] text-white/35">No trades</div>
+                    </>
+                  )}
                 </div>
               );
             })}
