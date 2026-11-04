@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import React, {
   useState,
@@ -119,6 +120,14 @@ export default function Navbar() {
   const [isNavPending, startTransition] = useTransition();
   const activePath = pendingPath ?? pathname;
   const { collapsed, toggle } = useSidebar();
+  // Instant hover tooltip for collapsed-sidebar nav items. Positioned with
+  // `position: fixed` (portalled to <body>) so it can sit to the RIGHT of the
+  // sidebar without being clipped by the nav's scroll/overflow container.
+  const [navTip, setNavTip] = useState<{
+    label: string;
+    x: number;
+    y: number;
+  } | null>(null);
   const { data: session } = useSession();
   const userId = session?.user?.id;
   const userFullName = session?.user
@@ -789,9 +798,19 @@ export default function Navbar() {
                       prefetch
                       onClick={(e) => {
                         e.preventDefault();
+                        setNavTip(null);
                         navigate(item.slug);
                       }}
-                      title={collapsed ? item.label : undefined}
+                      onMouseEnter={(e) => {
+                        if (!collapsed) return;
+                        const r = e.currentTarget.getBoundingClientRect();
+                        setNavTip({
+                          label: item.label,
+                          x: r.right + 10,
+                          y: r.top + r.height / 2,
+                        });
+                      }}
+                      onMouseLeave={() => setNavTip(null)}
                       className={`flex items-center rounded-xl cursor-pointer transition-colors ${
                         collapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2"
                       } ${
@@ -816,6 +835,29 @@ export default function Navbar() {
               </React.Fragment>
             ))}
           </nav>
+
+          {/* Instant tooltip for collapsed nav items, to the right of the
+              sidebar. Portalled to <body> + position:fixed so it escapes the
+              nav's overflow clip and any blurred/transformed ancestor. */}
+          {collapsed &&
+            navTip &&
+            typeof document !== "undefined" &&
+            createPortal(
+              <div
+                style={{
+                  position: "fixed",
+                  left: navTip.x,
+                  top: navTip.y,
+                  transform: "translateY(-50%)",
+                  pointerEvents: "none",
+                  zIndex: 9999,
+                }}
+                className="px-2.5 py-1.5 rounded-lg bg-[var(--surface-2)] border border-white/10 text-white/90 text-[12.5px] font-medium whitespace-nowrap shadow-[0_8px_30px_var(--shadow)]"
+              >
+                {navTip.label}
+              </div>,
+              document.body,
+            )}
 
           {/* FOOTER - user */}
           <div className="mt-auto pt-3 border-t border-white/10 flex flex-col items-stretch gap-2">

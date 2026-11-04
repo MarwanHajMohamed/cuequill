@@ -886,31 +886,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
         }}
       />
 
-      {!trades || trades.length === 0 ? (
-        <div className="flex flex-col gap-3 items-center h-screen justify-center">
-          <div className="text-[11px] tracking-[0.1em] text-white/40 font-medium">
-            Journal
-          </div>
-          <div className="text-2xl font-semibold tracking-tight">
-            No trades yet
-          </div>
-          <div className="text-sm text-white/55 max-w-sm text-center">
-            Log your first trade to start tracking edge, streaks, and strategy
-            performance.
-          </div>
-          <button
-            className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition cursor-pointer text-sm font-medium"
-            onClick={() => {
-              setEditingTrade(null);
-              setIsModalOpen(true);
-            }}
-          >
-            <i className="fa-solid fa-plus text-[11px]" />
-            Add new trade
-          </button>
-        </div>
-      ) : (
-        <div className="w-full flex justify-center md:justify-start mt-19 md:mt-8">
+      <div className="w-full flex justify-center md:justify-start mt-19 md:mt-8">
           <div
             className={`w-full max-w-[1500px] flex flex-col items-stretch px-5 md:px-10 pb-5 md:pb-10 transition-[padding] duration-300 ease-out ${
               isFiltersOpen ? "md:pl-[264px]" : ""
@@ -1105,9 +1081,37 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                 />
               )}
               {filteredTrades?.length === 0 ? (
-                <div className="text-center text-[13px] text-white/40 py-10">
-                  No trades match the current filters.
-                </div>
+                (trades?.length ?? 0) === 0 ? (
+                  // Journal is genuinely empty - prompt to add the first trade
+                  // right where the table would be.
+                  <div className="flex flex-col items-center gap-3 text-center py-16 px-5">
+                    <div className="w-11 h-11 rounded-full bg-teal-500/15 border border-teal-500/25 flex items-center justify-center">
+                      <i className="fa-solid fa-feather-pointed text-teal-300 text-base" />
+                    </div>
+                    <div className="text-[15px] font-semibold tracking-tight">
+                      No trades yet
+                    </div>
+                    <div className="text-[13px] text-white/50 max-w-xs leading-relaxed">
+                      Add your first trade, or sync from your broker, to start
+                      tracking edge, streaks and strategy performance.
+                    </div>
+                    <button
+                      onClick={() => {
+                        setEditingTrade(null);
+                        setIsModalOpen(true);
+                      }}
+                      className="mt-1 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition cursor-pointer text-[13px] font-medium"
+                    >
+                      <i className="fa-solid fa-plus text-[11px]" />
+                      Add trade
+                    </button>
+                  </div>
+                ) : (
+                  // Trades exist, but the active filters match none of them.
+                  <div className="text-center text-[13px] text-white/40 py-10">
+                    No trades match the current filters.
+                  </div>
+                )
               ) : (
                   <table className="border-collapse table-auto min-w-full">
                     <thead>
@@ -1421,7 +1425,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                   </table>
               )}
             </div>
-            {filteredTrades?.length !== 0 && (
+            {((trades?.length ?? 0) === 0 || filteredTrades?.length !== 0) && (
               <div className="flex md:justify-between gap-2 mt-5 w-full max-w-[1500px]">
                 <div className="flex gap-2">
                   <button
@@ -1554,7 +1558,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
               </div>
             )}
 
-            {filteredTrades?.length !== 0 && (
+            {((trades?.length ?? 0) === 0 || filteredTrades?.length !== 0) && (
               <Statistics
                 data={trades!}
                 status={filter}
@@ -1566,7 +1570,6 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
             )}
           </div>
         </div>
-      )}
 
       {isModalOpen && (
         <TradeModal

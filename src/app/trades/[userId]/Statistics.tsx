@@ -366,6 +366,7 @@ const MiniDonut = ({
   center,
   onSegHover,
   onSegLeave,
+  neutral = false,
 }: {
   greenPct: number;
   size?: number;
@@ -374,12 +375,40 @@ const MiniDonut = ({
   // hoverable segments (used for the days-traded donut's per-arc tooltip).
   onSegHover?: (seg: "green" | "red", e: React.MouseEvent) => void;
   onSegLeave?: () => void;
+  // Draw a single flat grey ring (no green/red) - used when there's nothing
+  // to split, e.g. a month with zero traded days.
+  neutral?: boolean;
 }) => {
   const r = size / 2 - 4;
   const c = 2 * Math.PI * r;
   const safe = Math.max(0, Math.min(100, greenPct));
   const greenLen = (safe / 100) * c;
   const redLen = c - greenLen;
+
+  if (neutral) {
+    return (
+      <div className="relative shrink-0" style={{ width: size, height: size }}>
+        <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            fill="none"
+            stroke="rgba(255,255,255,0.12)"
+            strokeWidth="5"
+          />
+        </svg>
+        {center != null && (
+          <div
+            className="absolute inset-0 flex items-center justify-center"
+            style={{ pointerEvents: "none" }}
+          >
+            {center}
+          </div>
+        )}
+      </div>
+    );
+  }
   const segProps = (seg: "green" | "red") =>
     onSegHover
       ? {
@@ -1207,16 +1236,22 @@ export default function Statistics({
     symbolCounts[trade.symbol] = (symbolCounts[trade.symbol] || 0) + 1;
   });
 
-  const mostUsedStrat = Object.entries(strategyCounts).reduce((a, b) =>
-    b[1] > a[1] ? b : a,
+  // Initial value guards the empty-journal case: reduce() with no seed
+  // throws on an empty array, and this component now renders even with
+  // zero trades.
+  const mostUsedStrat = Object.entries(strategyCounts).reduce(
+    (a, b) => (b[1] > a[1] ? b : a),
+    ["", 0] as [string, number],
   )[0];
 
-  const mostUsedOption = Object.entries(optionCounts).reduce((a, b) =>
-    b[1] > a[1] ? b : a,
+  const mostUsedOption = Object.entries(optionCounts).reduce(
+    (a, b) => (b[1] > a[1] ? b : a),
+    ["", 0] as [string, number],
   )[0];
 
-  const mostUsedSymbol = Object.entries(symbolCounts).reduce((a, b) =>
-    b[1] > a[1] ? b : a,
+  const mostUsedSymbol = Object.entries(symbolCounts).reduce(
+    (a, b) => (b[1] > a[1] ? b : a),
+    ["", 0] as [string, number],
   )[0];
 
   // ─── Performance Breakdown helpers ───────────────────────────────────
@@ -2209,74 +2244,53 @@ export default function Statistics({
             info="A bird's-eye view of your edge across your whole history - direction (CALL vs PUT), streaks, drawdown, and best/worst day."
           />
 
-          {/* CALL vs PUT */}
+          {/* Calls vs puts - sit directly on the background (no card),
+              pared back to the headline numbers so it reads at a glance. */}
           <div className="flex items-center gap-1.5 text-[10px] md:text-[11px] tracking-[0.1em] text-white/45 font-medium">
-            <span>CALL vs PUT</span>
-            <InfoTooltip text="Side-by-side breakdown of how your CALLs and PUTs each perform. Compare net P/L, win rate, and average per trade to spot directional edge or bias." />
+            <span>Calls vs puts</span>
+            <InfoTooltip text="How your calls and puts each perform. Compare net P/L and win rate to spot directional edge or bias." />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 divide-x divide-white/10">
             {(["CALL", "PUT"] as const).map((opt) => {
               const sub = byOption.find((b) => b.label === opt);
-              if (!sub) return null;
               const isCall = opt === "CALL";
-              const chip = isCall
-                ? "bg-green-500/10 text-green-300 border-green-500/25"
-                : "bg-red-500/10 text-red-300 border-red-500/25";
+              const n = sub?.n ?? 0;
+              const netPL = sub?.netPL ?? 0;
               return (
                 <div
                   key={opt}
-                  className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-4 md:p-5 flex flex-col gap-3"
+                  className="flex flex-col gap-2 px-4 md:px-7 first:pl-0 last:pr-0"
                 >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium border uppercase tracking-[0.08em] ${chip}`}
+                  <div className="flex items-center gap-2">
+                    <span className="text-[12.5px] font-medium text-white/70">
+                      {isCall ? "Calls" : "Puts"}
+                    </span>
+                    <span className="ml-auto text-[11px] text-white/35 tabular-nums">
+                      {n} trade{n === 1 ? "" : "s"}
+                    </span>
+                  </div>
+                  {n > 0 ? (
+                    <>
+                      <div
+                        className={`text-2xl md:text-3xl font-semibold tracking-tight tabular-nums ${
+                          netPL >= 0 ? "text-green-400" : "text-red-400"
+                        }`}
                       >
-                        <i
-                          className={`fa-solid ${
-                            isCall ? "fa-arrow-trend-up" : "fa-arrow-trend-down"
-                          } text-[9px]`}
-                        />
-                        {opt}
-                      </span>
-                    </div>
-                    <span className="text-[11px] text-white/40 tabular-nums">
-                      {sub.n} trade{sub.n === 1 ? "" : "s"}
-                    </span>
-                  </div>
-                  <div className="flex items-baseline gap-3 flex-wrap">
-                    <span
-                      className={`text-2xl md:text-3xl font-semibold tracking-tight tabular-nums truncate ${
-                        sub.netPL >= 0 ? "text-green-400" : "text-red-400"
-                      }`}
-                    >
-                      {fmtMoneySignedCompact(sub.netPL)}
-                    </span>
-                    <span className="text-xs text-white/50 tabular-nums">
-                      {sub.winRate.toFixed(1)}% win rate
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-white/45 tabular-nums">
-                    <span>
-                      Avg{" "}
-                      <span className="text-white/70">
-                        {fmtMoneyCompact(sub.expectancy)}
-                      </span>
-                      /trade
-                    </span>
-                    <span>
-                      W avg{" "}
-                      <span className="text-green-400/80">
-                        {fmtMoneyCompact(sub.avgWin)}
-                      </span>
-                    </span>
-                    <span>
-                      L avg{" "}
-                      <span className="text-red-400/80">
-                        {fmtMoneyCompact(sub.avgLoss)}
-                      </span>
-                    </span>
-                  </div>
+                        {fmtMoneySignedCompact(netPL)}
+                      </div>
+                      <div className="text-[12px] text-white/45 tabular-nums">
+                        {sub!.winRate.toFixed(0)}% win rate · avg{" "}
+                        {fmtMoneyCompact(sub!.expectancy)}/trade
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-2xl md:text-3xl font-semibold tracking-tight text-white/25">
+                        –
+                      </div>
+                      <div className="text-[12px] text-white/35">No trades</div>
+                    </>
+                  )}
                 </div>
               );
             })}
@@ -2562,17 +2576,7 @@ export default function Statistics({
                     transition={{ duration: 0.22, ease: "easeOut" }}
                     className="flex flex-col gap-4 md:gap-5"
                   >
-                    {monthlyData.length === 0 ? (
-                      <div className="rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md p-10 text-center">
-                        <div className="text-white/30 text-3xl mb-3">
-                          <i className="fa-regular fa-calendar-xmark" />
-                        </div>
-                        <div className="text-sm text-white/55">
-                          No trades for {currentMonth} {year}
-                        </div>
-                      </div>
-                    ) : (
-                      <>
+                    <>
                         {/* Net P/L - sits directly on the background. */}
                         <div className="min-w-0 px-1">
                           <div className="text-[10px] md:text-[11px] tracking-[0.1em] text-white/45 font-medium flex items-center gap-1.5">
@@ -2610,8 +2614,9 @@ export default function Statistics({
                         </div>
 
                         {/* Calendar heatmap (hugs its grid) + daily P/L strip
-                            (fills the rest) side by side. */}
-                        {tradedDays > 0 && (
+                            (fills the rest) side by side. Always shown - an
+                            empty month renders all-grey days, a "No trades"
+                            daily strip, and a 0 days-traded donut. */}
                           <div className="flex flex-col md:flex-row gap-4 md:gap-5">
                             {/* Calendar heatmap - each day tinted by P/L.
                                 Full-width card on mobile (grid centred), hugs
@@ -2719,7 +2724,12 @@ export default function Statistics({
                                 </div>
                               </div>
                               <div className="flex-1 flex items-end gap-[2px] md:gap-[3px] min-h-[80px]">
-                                {dailyBars.map((b) => {
+                                {tradedDays === 0 ? (
+                                  <div className="flex-1 flex items-center justify-center text-[12px] text-white/35">
+                                    No trades
+                                  </div>
+                                ) : (
+                                  dailyBars.map((b) => {
                                   const label = `${currentMonth} ${b.day}`;
                                   if (b.pl === null) {
                                     return (
@@ -2772,7 +2782,7 @@ export default function Statistics({
                                       />
                                     </div>
                                   );
-                                })}
+                                  }))}
                               </div>
                               <div className="flex justify-between text-[10px] text-white/35 mt-2 tabular-nums">
                                 <span>1</span>
@@ -2788,6 +2798,7 @@ export default function Statistics({
                               </div>
                               <div className="flex-1 flex items-center justify-center">
                                 <MiniDonut
+                                  neutral={tradedDays === 0}
                                   greenPct={
                                     tradedDays > 0
                                       ? (greenDays / tradedDays) * 100
@@ -2817,7 +2828,6 @@ export default function Statistics({
                               </div>
                             </div>
                           </div>
-                        )}
 
                         {/* Detail tiles - extremes */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
@@ -2867,7 +2877,6 @@ export default function Statistics({
                           />
                         </div>
                       </>
-                    )}
                   </motion.div>
                 </AnimatePresence>
               </div>

@@ -407,6 +407,11 @@ function SortableWidget({
       <div
         ref={setNodeRef}
         style={style}
+        // Carry the tour anchor in view mode too (not just edit mode), so the
+        // dashboard walkthrough can actually highlight each widget it talks
+        // about - otherwise driver.js finds nothing and the step falls back
+        // to a centred modal.
+        data-tour={`dash-${id}`}
         className={`h-full min-h-0 [&:empty]:hidden ${spanClass}`}
       >
         {def.render(userId, shownRow, shownCol)}
