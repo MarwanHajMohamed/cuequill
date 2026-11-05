@@ -549,27 +549,41 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
     if (syncing) return;
     setSyncing(true);
     try {
+      // /api/ibkr/sync PREVIEWS (fetch + match + dedupe, stashing the
+      // would-be-new trades) without writing. The settings tab shows that
+      // plan for confirmation; this quick-sync button commits it straight
+      // away and then opens the imported-trades modal for review.
       const res = await fetch("/api/ibkr/sync", { method: "POST" });
       const data = await res.json();
       if (!res.ok) {
-        toast(`Sync failed: ${data.error ?? "Unknown error"}`);
+        toast(data.error ?? "Sync failed");
         return;
       }
-      const inserted = data.inserted ?? 0;
-      const skipped = data.skipped ?? 0;
-      if (inserted === 0) {
+      const previewTrades = data.trades ?? [];
+      const previewSkipped = data.skipped ?? 0;
+      if (previewTrades.length === 0) {
         toast(
-          `Already up to date - no new trades${skipped ? ` (${skipped} skipped)` : ""}`,
+          `Already up to date - no new trades${previewSkipped ? ` (${previewSkipped} skipped)` : ""}`,
         );
-      } else {
-        toast(
-          `Imported ${inserted} new trade${inserted === 1 ? "" : "s"}${skipped ? ` (${skipped} skipped)` : ""}`,
-        );
-        await queryClient.invalidateQueries({ queryKey: ["trades", userId] });
-        // Auto-open the imported-trades modal so the user can verify or
-        // delete any duplicates the dedupe pass didn't catch.
-        setShowImported(true);
+        return;
       }
+      const commitRes = await fetch("/api/ibkr/sync/commit", {
+        method: "POST",
+      });
+      const commitData = await commitRes.json();
+      if (!commitRes.ok) {
+        toast(`Sync failed: ${commitData.error ?? "Unknown error"}`);
+        return;
+      }
+      const inserted = commitData.inserted ?? 0;
+      const skipped = commitData.skipped ?? previewSkipped;
+      toast(
+        `Imported ${inserted} new trade${inserted === 1 ? "" : "s"}${skipped ? ` (${skipped} skipped)` : ""}`,
+      );
+      await queryClient.invalidateQueries({ queryKey: ["trades", userId] });
+      // Auto-open the imported-trades modal so the user can verify or
+      // delete any duplicates the dedupe pass didn't catch.
+      setShowImported(true);
     } catch (err) {
       toast(
         `Sync failed: ${err instanceof Error ? err.message : "Unknown error"}`,
