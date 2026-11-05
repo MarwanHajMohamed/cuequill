@@ -549,10 +549,11 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
     if (syncing) return;
     setSyncing(true);
     try {
-      // /api/ibkr/sync PREVIEWS (fetch + match + dedupe, stashing the
-      // would-be-new trades) without writing. The settings tab shows that
-      // plan for confirmation; this quick-sync button commits it straight
-      // away and then opens the imported-trades modal for review.
+      // /api/ibkr/sync PREVIEWS (fetch + match + dedupe) and SAVES the
+      // would-be-new trades on the account without writing them to the
+      // journal. Nothing is imported here - the user reviews and imports
+      // the saved set from Settings > Brokers (it resurfaces there until
+      // imported, discarded, or replaced by a newer sync).
       const res = await fetch("/api/ibkr/sync", { method: "POST" });
       const data = await res.json();
       if (!res.ok) {
@@ -567,23 +568,9 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
         );
         return;
       }
-      const commitRes = await fetch("/api/ibkr/sync/commit", {
-        method: "POST",
-      });
-      const commitData = await commitRes.json();
-      if (!commitRes.ok) {
-        toast(`Sync failed: ${commitData.error ?? "Unknown error"}`);
-        return;
-      }
-      const inserted = commitData.inserted ?? 0;
-      const skipped = commitData.skipped ?? previewSkipped;
       toast(
-        `Imported ${inserted} new trade${inserted === 1 ? "" : "s"}${skipped ? ` (${skipped} skipped)` : ""}`,
+        `Found ${previewTrades.length} new trade${previewTrades.length === 1 ? "" : "s"} - saved. Review and import them in Settings › Brokers.`,
       );
-      await queryClient.invalidateQueries({ queryKey: ["trades", userId] });
-      // Auto-open the imported-trades modal so the user can verify or
-      // delete any duplicates the dedupe pass didn't catch.
-      setShowImported(true);
     } catch (err) {
       toast(
         `Sync failed: ${err instanceof Error ? err.message : "Unknown error"}`,
