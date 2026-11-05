@@ -62,8 +62,12 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
     matched: number;
     skipped: number;
     trades: ImportedTrade[];
+    // true when these were restored from a previous sync (stored, not just
+    // fetched this moment) - changes the panel's wording.
+    saved?: boolean;
   } | null>(null);
   const [committing, setCommitting] = useState(false);
+  const [discarding, setDiscarding] = useState(false);
 
   // Last-imported viewer state
   const [importedOpen, setImportedOpen] = useState(false);
@@ -87,6 +91,26 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
         setLastInserted(data.ibkrLastSyncInserted ?? null);
         setLastSkipped(data.ibkrLastSyncSkipped ?? null);
       });
+    // Resurface trades staged by a previous sync the user hasn't imported
+    // yet, so they can pick up where they left off and import them.
+    fetch("/api/ibkr/sync/pending")
+      .then((r) => r.json())
+      .then((data) => {
+        const trades: ImportedTrade[] = data.trades ?? [];
+        if (trades.length > 0) {
+          setPreview({
+            fetched: trades.length,
+            matched: trades.length,
+            skipped: data.skipped ?? 0,
+            trades,
+            saved: true,
+          });
+          setSyncStatus(
+            `${trades.length} trade${trades.length !== 1 ? "s" : ""} saved from your last sync - import below when ready.`,
+          );
+        }
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -215,9 +239,19 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
     }
   };
 
-  const handleCancelPreview = () => {
-    setPreview(null);
-    setSyncStatus("Import cancelled - nothing was added.");
+  // Discard the staged trades for good (clears the server stash). Leaving
+  // the page WITHOUT discarding keeps them - they resurface next visit.
+  const handleDiscardPreview = async () => {
+    setDiscarding(true);
+    try {
+      await fetch("/api/ibkr/sync/pending", { method: "DELETE" });
+    } catch {
+      /* best-effort; the stash is also replaced by the next sync */
+    } finally {
+      setDiscarding(false);
+      setPreview(null);
+      setSyncStatus("Discarded - these trades won't be imported.");
+    }
   };
 
   const loadImported = async () => {
@@ -577,13 +611,16 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
         </div>
 
         {/* Preview: what the sync WOULD import, pending confirmation.
-            Nothing is written until the user clicks Import. */}
+            Nothing is written until the user clicks Import. These stay saved
+            on your account until imported, discarded, or replaced by a newer
+            sync - so a preview you didn't act on reappears next time. */}
         {preview && preview.trades.length > 0 && (
           <div className="mt-1 flex flex-col gap-3 rounded-2xl border border-indigo-500/25 bg-indigo-500/[0.06] p-4">
             <div className="flex items-center justify-between gap-2">
               <div className="text-[13px] font-medium text-white">
-                Ready to import {preview.trades.length} trade
-                {preview.trades.length === 1 ? "" : "s"}
+                {preview.saved
+                  ? `${preview.trades.length} trade${preview.trades.length === 1 ? "" : "s"} saved from your last sync`
+                  : `Ready to import ${preview.trades.length} trade${preview.trades.length === 1 ? "" : "s"}`}
               </div>
               {preview.skipped > 0 && (
                 <span className="text-[11px] text-white/45">
@@ -592,7 +629,9 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
               )}
             </div>
             <div className="text-[11.5px] text-white/50 leading-relaxed">
-              Review these below. Nothing is added until you confirm.
+              {preview.saved
+                ? "These were found by an earlier sync and kept for you. Import them now, or discard."
+                : "Review these below. Nothing is added until you confirm - they're saved until you do."}
             </div>
             <div className="flex flex-col gap-1.5 max-h-80 overflow-y-auto pr-1">
               {preview.trades.map((t, i) => (
@@ -615,11 +654,11 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
               </button>
               <button
                 type="button"
-                onClick={handleCancelPreview}
-                disabled={committing}
+                onClick={handleDiscardPreview}
+                disabled={committing || discarding}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] transition text-[13px] font-medium cursor-pointer disabled:opacity-50"
               >
-                Cancel
+                {discarding ? "Discarding…" : "Discard"}
               </button>
             </div>
           </div>
