@@ -549,11 +549,10 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
     if (syncing) return;
     setSyncing(true);
     try {
-      // /api/ibkr/sync PREVIEWS (fetch + match + dedupe) and SAVES the
-      // would-be-new trades on the account without writing them to the
-      // journal. Nothing is imported here - the user reviews and imports
-      // the saved set from Settings > Brokers (it resurfaces there until
-      // imported, discarded, or replaced by a newer sync).
+      // /api/ibkr/sync PREVIEWS (fetch + match + dedupe) and SAVES the found
+      // trades (new + skipped) on the account without writing them to the
+      // journal. Nothing is imported here - the imported-trades modal opens
+      // to review and selectively import them.
       const res = await fetch("/api/ibkr/sync", { method: "POST" });
       const data = await res.json();
       if (!res.ok) {
@@ -561,16 +560,19 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
         return;
       }
       const previewTrades = data.trades ?? [];
-      const previewSkipped = data.skipped ?? 0;
       if (previewTrades.length === 0) {
-        toast(
-          `Already up to date - no new trades${previewSkipped ? ` (${previewSkipped} skipped)` : ""}`,
-        );
+        toast("Already up to date - no new trades");
         return;
       }
+      const skipped = data.skipped ?? 0;
+      const found = previewTrades.length - skipped;
       toast(
-        `Found ${previewTrades.length} new trade${previewTrades.length === 1 ? "" : "s"} - saved. Review and import them in Settings › Brokers.`,
+        found > 0
+          ? `Found ${found} new trade${found === 1 ? "" : "s"} - review and import below.`
+          : `${skipped} possible duplicate${skipped === 1 ? "" : "s"} found - review below.`,
       );
+      // Open the modal to review / import the staged trades.
+      setShowImported(true);
     } catch (err) {
       toast(
         `Sync failed: ${err instanceof Error ? err.message : "Unknown error"}`,

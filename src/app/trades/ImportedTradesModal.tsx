@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import React, { useEffect, useMemo, useState } from "react";
 import { useScrollLock } from "@/hooks/useScrollLock";
 import { hapticNotify } from "@/lib/haptics";
+import PendingImportReview from "@/components/PendingImportReview";
 
 type ImportedTrade = {
   _id: string;
@@ -215,8 +216,8 @@ export default function ImportedTradesModal({
                     role="tooltip"
                     className="pointer-events-none absolute left-1/2 top-full mt-2 -translate-x-1/2 w-56 rounded-lg border border-white/10 bg-[var(--surface)] shadow-[0_12px_40px_var(--shadow)] px-3 py-2 text-[11.5px] leading-snug text-white/75 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition z-10"
                   >
-                    Trades brought in by the last IBKR sync. Review and delete
-                    anything that shouldn&apos;t be here.
+                    Trades the last IBKR sync found. Import the ones you want
+                    (new or skipped), then review or delete imported ones.
                   </span>
                 </span>
               </div>
@@ -238,6 +239,18 @@ export default function ImportedTradesModal({
 
           {/* List */}
           <div className="flex-1 overflow-y-auto px-3 pb-3">
+            {/* Trades the last sync staged but hasn't imported (new +
+                skipped). Importing any of them refreshes the imported list
+                below and the trades table. */}
+            <div className="px-2 pt-1 pb-2 empty:hidden">
+              <PendingImportReview
+                onChanged={() => {
+                  load();
+                  onDeleted?.("");
+                }}
+              />
+            </div>
+
             {error && (
               <div className="text-[12px] text-red-300 border border-red-500/25 bg-red-500/10 rounded-xl px-3 py-2 mb-2 mx-2">
                 {error}
@@ -249,11 +262,14 @@ export default function ImportedTradesModal({
                 Loading…
               </div>
             ) : trades.length === 0 ? (
-              <div className="text-[12px] text-white/40 px-3 py-10 text-center">
-                Nothing from the last sync remains.
+              <div className="text-[12px] text-white/40 px-3 py-6 text-center">
+                No imported trades from the last sync yet.
               </div>
             ) : (
               <div className="flex flex-col gap-1.5">
+                <div className="px-2 pt-1 text-[11px] tracking-[0.1em] text-white/45 font-medium">
+                  In your journal · {trades.length}
+                </div>
                 {/* Auto-mergeable groups - outlined together so the partial
                     fills that will collapse into one row are obvious. */}
                 {mergeGroups.map((group, gi) => {

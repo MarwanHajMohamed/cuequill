@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import connectDb from "@/lib/db";
 import { User } from "@/lib/models/User";
 import Trade from "@/lib/models/Trade";
@@ -10,6 +11,11 @@ import { getBrokerAdapter, DEFAULT_BROKER, type BrokerId } from "@/lib/brokers";
 
 // A matched trade draft with its owner attached, ready to insert.
 type PlannedTrade = TradeDraft & { userID: string };
+
+// A trade staged in the pending stash. `_key` is a stable id so the UI can
+// import or drop individual trades; `_skipped` marks the ones that looked
+// like duplicates (skipped by default, but importable if the user insists).
+export type PendingTrade = PlannedTrade & { _key: string; _skipped: boolean };
 
 // Pull-sync for an auto-sync broker (e.g. IBKR): fetch the user's fills
 // via the broker adapter (the IBKR Activity Flex query), then run the
@@ -53,9 +59,11 @@ async function computeImportPlan(
   fills: NormalizedFill[],
 ): Promise<{
   newTrades: PlannedTrade[];
+  // The matched trades that were deduped out (look like duplicates of
+  // existing ones). Kept so the user can review and import them anyway.
+  skippedTrades: PlannedTrade[];
   fetched: number;
   matched: number;
-  skipped: number;
 }> {
   await connectDb();
 
@@ -65,7 +73,7 @@ async function computeImportPlan(
   }));
 
   if (trades.length === 0) {
-    return { newTrades: [], fetched: fills.length, matched: 0, skipped: 0 };
+    return { newTrades: [], skippedTrades: [], fetched: fills.length, matched: 0 };
   }
 
   // Dedupe pass 1: by ibkrTradeId (fast, for trades imported via this sync).
@@ -109,22 +117,25 @@ async function computeImportPlan(
     existingCounts.set(k, (existingCounts.get(k) ?? 0) + 1);
   }
 
-  const newTrades = trades.filter((t) => {
-    if (t.ibkrTradeId && existingIds.has(t.ibkrTradeId)) return false;
+  const newTrades: PlannedTrade[] = [];
+  const skippedTrades: PlannedTrade[] = [];
+  for (const t of trades) {
+    const dupById = !!t.ibkrTradeId && existingIds.has(t.ibkrTradeId);
     const k = naturalKey(t);
     const remaining = existingCounts.get(k) ?? 0;
-    if (remaining > 0) {
-      existingCounts.set(k, remaining - 1);
-      return false;
+    if (dupById || remaining > 0) {
+      if (!dupById) existingCounts.set(k, remaining - 1);
+      skippedTrades.push(t);
+    } else {
+      newTrades.push(t);
     }
-    return true;
-  });
+  }
 
   return {
     newTrades,
+    skippedTrades,
     fetched: fills.length,
     matched: trades.length,
-    skipped: trades.length - newTrades.length,
   };
 }
 
@@ -166,10 +177,10 @@ export async function importFills(
   matched: number;
 }> {
   const plan = await computeImportPlan(userId, fills);
-  await commitTrades(userId, plan.newTrades, plan.skipped);
+  await commitTrades(userId, plan.newTrades, plan.skippedTrades.length);
   return {
     inserted: plan.newTrades.length,
-    skipped: plan.skipped,
+    skipped: plan.skippedTrades.length,
     fetched: plan.fetched,
     matched: plan.matched,
   };
@@ -187,44 +198,79 @@ export async function previewSyncForUser(
   fetched: number;
   matched: number;
   skipped: number;
-  trades: PlannedTrade[];
+  trades: PendingTrade[];
 }> {
   const fills = await fetchSyncFills(userId, brokerId);
   const plan = await computeImportPlan(userId, fills);
 
+  // Stash new and skipped together, each with a stable key and a flag, so
+  // the UI can show both and let the user import any of them individually.
+  const keyed: PendingTrade[] = [
+    ...plan.newTrades.map((t) => ({ ...t, _key: randomUUID(), _skipped: false })),
+    ...plan.skippedTrades.map((t) => ({
+      ...t,
+      _key: randomUUID(),
+      _skipped: true,
+    })),
+  ];
+
   await User.findByIdAndUpdate(userId, {
-    ibkrPendingImport: plan.newTrades,
-    ibkrPendingSkipped: plan.skipped,
+    ibkrPendingImport: keyed,
+    ibkrPendingSkipped: plan.skippedTrades.length,
   });
 
   return {
     fetched: plan.fetched,
     matched: plan.matched,
-    skipped: plan.skipped,
-    trades: plan.newTrades,
+    skipped: plan.skippedTrades.length,
+    trades: keyed,
   };
 }
 
-// Commit the trades staged by the last preview. No IBKR call - it inserts
-// exactly what the user saw and confirmed, then clears the stash.
+// Read the pending stash (new + skipped), still-staged trades the user
+// hasn't imported.
+export async function getPendingImport(userId: string): Promise<PendingTrade[]> {
+  await connectDb();
+  const user = await User.findById(userId).select("ibkrPendingImport");
+  return (user?.ibkrPendingImport ?? []) as PendingTrade[];
+}
+
+// Commit staged trades. No IBKR call. With `keys`, import exactly those
+// (new or skipped - the user's explicit pick); without, import every NEW
+// trade and leave the skipped ones staged. Imported trades leave the
+// stash; the rest stay for later.
 export async function commitPendingImport(
   userId: string,
-): Promise<{ inserted: number; skipped: number }> {
+  keys?: string[],
+): Promise<{ inserted: number; remaining: number; remainingSkipped: number }> {
   await connectDb();
-  const user = await User.findById(userId).select(
-    "ibkrPendingImport ibkrPendingSkipped",
-  );
-  const pending = (user?.ibkrPendingImport ?? []) as PlannedTrade[];
-  const skipped = user?.ibkrPendingSkipped ?? 0;
+  const user = await User.findById(userId).select("ibkrPendingImport");
+  const pending = (user?.ibkrPendingImport ?? []) as PendingTrade[];
 
-  const inserted = await commitTrades(userId, pending, skipped);
+  const keySet = keys ? new Set(keys) : null;
+  const selected = keySet
+    ? pending.filter((p) => keySet.has(p._key))
+    : pending.filter((p) => !p._skipped);
+  const selectedKeys = new Set(selected.map((p) => p._key));
+  const remaining = pending.filter((p) => !selectedKeys.has(p._key));
 
-  await User.findByIdAndUpdate(userId, {
-    ibkrPendingImport: [],
-    ibkrPendingSkipped: 0,
+  // Strip the stash-only fields before inserting into the journal.
+  const toInsert: PlannedTrade[] = selected.map((p) => {
+    const rest = { ...p } as Partial<PendingTrade>;
+    delete rest._key;
+    delete rest._skipped;
+    return rest as PlannedTrade;
   });
 
-  return { inserted, skipped };
+  const remainingSkipped = remaining.filter((p) => p._skipped).length;
+  const inserted = await commitTrades(userId, toInsert, remainingSkipped);
+
+  await User.findByIdAndUpdate(userId, {
+    ibkrPendingImport: remaining,
+    ibkrPendingSkipped: remainingSkipped,
+  });
+
+  return { inserted, remaining: remaining.length, remainingSkipped };
 }
 
 // Backfill commissions/taxes onto existing trades that have no fees, by

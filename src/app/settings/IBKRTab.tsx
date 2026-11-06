@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
 import { useIsPro } from "@/hooks/useIsPro";
 import { useScrollLock } from "@/hooks/useScrollLock";
+import PendingImportReview from "@/components/PendingImportReview";
 
 const COOLDOWN_MS = 30 * 60 * 1000;
 
@@ -55,19 +56,10 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
     null,
   );
 
-  // Preview (dry-run) of a manual sync: what it WOULD import, pending the
-  // user's confirmation. Null when there's nothing staged.
-  const [preview, setPreview] = useState<{
-    fetched: number;
-    matched: number;
-    skipped: number;
-    trades: ImportedTrade[];
-    // true when these were restored from a previous sync (stored, not just
-    // fetched this moment) - changes the panel's wording.
-    saved?: boolean;
-  } | null>(null);
-  const [committing, setCommitting] = useState(false);
-  const [discarding, setDiscarding] = useState(false);
+  // Bumped after a sync so the pending-import review refetches and shows the
+  // freshly staged trades. The review (new + skipped, per-trade import) lives
+  // in the shared PendingImportReview component.
+  const [pendingReload, setPendingReload] = useState(0);
 
   // Last-imported viewer state
   const [importedOpen, setImportedOpen] = useState(false);
@@ -91,26 +83,8 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
         setLastInserted(data.ibkrLastSyncInserted ?? null);
         setLastSkipped(data.ibkrLastSyncSkipped ?? null);
       });
-    // Resurface trades staged by a previous sync the user hasn't imported
-    // yet, so they can pick up where they left off and import them.
-    fetch("/api/ibkr/sync/pending")
-      .then((r) => r.json())
-      .then((data) => {
-        const trades: ImportedTrade[] = data.trades ?? [];
-        if (trades.length > 0) {
-          setPreview({
-            fetched: trades.length,
-            matched: trades.length,
-            skipped: data.skipped ?? 0,
-            trades,
-            saved: true,
-          });
-          setSyncStatus(
-            `${trades.length} trade${trades.length !== 1 ? "s" : ""} saved from your last sync - import below when ready.`,
-          );
-        }
-      })
-      .catch(() => {});
+    // The pending-import review (below) resurfaces any trades staged by a
+    // previous sync on its own, so there's nothing to fetch here for it.
   }, []);
 
   useEffect(() => {
@@ -162,33 +136,33 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
     }
   };
 
-  // Step 1: preview. Fetch from IBKR and show what WOULD be imported; the
-  // user confirms before anything is written.
+  // Sync: fetch from IBKR, which SAVES the found trades (new + skipped) to
+  // the pending stash. Nothing is written to the journal - the review below
+  // (PendingImportReview) shows them and lets the user import any of them.
   const handleSync = async () => {
     setSyncing(true);
     setSyncStatus("Checking IBKR for new trades…");
-    setPreview(null);
 
     const res = await fetch("/api/ibkr/sync", { method: "POST" });
     const data = await res.json();
 
     setSyncing(false);
     if (res.ok) {
-      const nowIso = new Date().toISOString();
-      setLastManualSync(nowIso);
-      const trades: ImportedTrade[] = data.trades ?? [];
-      setPreview({
-        fetched: data.fetched ?? 0,
-        matched: data.matched ?? 0,
-        skipped: data.skipped ?? 0,
-        trades,
-      });
-      if (trades.length > 0) {
+      setLastManualSync(new Date().toISOString());
+      // Refresh the review with the freshly staged trades.
+      setPendingReload((n) => n + 1);
+      const found = (data.trades ?? []).filter(
+        (t: { _skipped?: boolean }) => !t._skipped,
+      ).length;
+      const skipped = data.skipped ?? 0;
+      if (found > 0) {
         setSyncStatus(
-          `${trades.length} new trade${trades.length !== 1 ? "s" : ""} found - review below and confirm.`,
+          `${found} new trade${found !== 1 ? "s" : ""} found - review below.`,
         );
-      } else if ((data.matched ?? 0) > 0) {
-        setSyncStatus("No new trades - everything IBKR returned is already in your journal.");
+      } else if (skipped > 0) {
+        setSyncStatus(
+          `No new trades - ${skipped} look like duplicates (review below to import anyway).`,
+        );
       } else if ((data.fetched ?? 0) === 0) {
         setSyncStatus(
           "IBKR returned no trades. The Activity Flex query settles on T+1, so trades usually appear the next business day after they're taken.",
@@ -210,48 +184,21 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
     }
   };
 
-  // Step 2: confirm. Insert exactly the previewed trades (no IBKR call).
-  const handleConfirmImport = async () => {
-    setCommitting(true);
-    try {
-      const res = await fetch("/api/ibkr/sync/commit", { method: "POST" });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Import failed");
-      const nowIso = new Date().toISOString();
-      setLastSync(nowIso);
-      setLastInserted(data.inserted);
-      setLastSkipped(data.skipped);
-      setPreview(null);
-      setSyncStatus(
-        `Done - ${data.inserted} trade${data.inserted !== 1 ? "s" : ""} imported.`,
-      );
-      // Refresh the live imported list + the trades table / net P/L.
-      setImportedTrades([]);
-      setHaveLoadedImported(false);
-      refreshTradeData();
-      if (importedOpen) loadImported();
-    } catch (e) {
-      setSyncStatus(
-        `Error: ${e instanceof Error ? e.message : "Import failed"}`,
-      );
-    } finally {
-      setCommitting(false);
-    }
-  };
-
-  // Discard the staged trades for good (clears the server stash). Leaving
-  // the page WITHOUT discarding keeps them - they resurface next visit.
-  const handleDiscardPreview = async () => {
-    setDiscarding(true);
-    try {
-      await fetch("/api/ibkr/sync/pending", { method: "DELETE" });
-    } catch {
-      /* best-effort; the stash is also replaced by the next sync */
-    } finally {
-      setDiscarding(false);
-      setPreview(null);
-      setSyncStatus("Discarded - these trades won't be imported.");
-    }
+  // After the review imports/discards anything, refresh the last-imported
+  // list, the "last synced" counts, and the trades table / net P/L.
+  const handlePendingChanged = () => {
+    setImportedTrades([]);
+    setHaveLoadedImported(false);
+    refreshTradeData();
+    if (importedOpen) loadImported();
+    fetch("/api/user/ibkr-settings")
+      .then((r) => r.json())
+      .then((data) => {
+        setLastSync(data.ibkrLastSync ?? null);
+        setLastInserted(data.ibkrLastSyncInserted ?? null);
+        setLastSkipped(data.ibkrLastSyncSkipped ?? null);
+      })
+      .catch(() => {});
   };
 
   const loadImported = async () => {
@@ -610,59 +557,14 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
           )}
         </div>
 
-        {/* Preview: what the sync WOULD import, pending confirmation.
-            Nothing is written until the user clicks Import. These stay saved
-            on your account until imported, discarded, or replaced by a newer
-            sync - so a preview you didn't act on reappears next time. */}
-        {preview && preview.trades.length > 0 && (
-          <div className="mt-1 flex flex-col gap-3 rounded-2xl border border-indigo-500/25 bg-indigo-500/[0.06] p-4">
-            <div className="flex items-center justify-between gap-2">
-              <div className="text-[13px] font-medium text-white">
-                {preview.saved
-                  ? `${preview.trades.length} trade${preview.trades.length === 1 ? "" : "s"} saved from your last sync`
-                  : `Ready to import ${preview.trades.length} trade${preview.trades.length === 1 ? "" : "s"}`}
-              </div>
-              {preview.skipped > 0 && (
-                <span className="text-[11px] text-white/45">
-                  {preview.skipped} already in your journal
-                </span>
-              )}
-            </div>
-            <div className="text-[11.5px] text-white/50 leading-relaxed">
-              {preview.saved
-                ? "These were found by an earlier sync and kept for you. Import them now, or discard."
-                : "Review these below. Nothing is added until you confirm - they're saved until you do."}
-            </div>
-            <div className="flex flex-col gap-1.5 max-h-80 overflow-y-auto pr-1">
-              {preview.trades.map((t, i) => (
-                <PreviewRow key={i} trade={t} />
-              ))}
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={handleConfirmImport}
-                disabled={committing}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-teal-500/25 bg-teal-500/15 text-teal-200 hover:bg-teal-500/25 transition text-[13px] font-medium cursor-pointer disabled:opacity-50"
-              >
-                <i
-                  className={`fa-solid ${committing ? "fa-circle-notch animate-spin" : "fa-check"} text-[11px]`}
-                />
-                {committing
-                  ? "Importing…"
-                  : `Import ${preview.trades.length} trade${preview.trades.length === 1 ? "" : "s"}`}
-              </button>
-              <button
-                type="button"
-                onClick={handleDiscardPreview}
-                disabled={committing || discarding}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] transition text-[13px] font-medium cursor-pointer disabled:opacity-50"
-              >
-                {discarding ? "Discarding…" : "Discard"}
-              </button>
-            </div>
-          </div>
-        )}
+        {/* Pending-import review: trades the last sync found (new + skipped),
+            each importable on its own or in bulk. Saved until imported,
+            discarded, or replaced by a newer sync - so it reappears on
+            return. Self-fetches; `pendingReload` nudges it after a sync. */}
+        <PendingImportReview
+          reloadToken={pendingReload}
+          onChanged={handlePendingChanged}
+        />
 
         {/* Imported-trades viewer. Once the live list has loaded we
             use its length for the pill count; before that we fall
@@ -826,70 +728,6 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
           />
         )}
       </AnimatePresence>
-    </div>
-  );
-}
-
-// Read-only row for a trade staged in the sync preview (not yet imported).
-// Like ImportedRow but with no delete action and no stored id.
-function PreviewRow({ trade }: { trade: ImportedTrade }) {
-  const isCall = trade.option === "CALL";
-  const net = (trade.profitLoss ?? 0) - (trade.fees ?? 0);
-  const day = (iso: string | null | undefined) =>
-    iso
-      ? new Date(iso).toLocaleDateString(undefined, {
-          month: "short",
-          day: "numeric",
-        })
-      : "-";
-
-  return (
-    <div className="flex items-center gap-3 px-3 py-2 rounded-xl border border-white/10 bg-white/[0.02]">
-      <span
-        className={`shrink-0 inline-flex items-center justify-center w-12 text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full border ${
-          isCall
-            ? "bg-green-500/10 text-green-300 border-green-500/25"
-            : "bg-red-500/10 text-red-300 border-red-500/25"
-        }`}
-      >
-        {trade.option}
-      </span>
-
-      <div className="flex flex-col min-w-0 flex-1">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="text-[13.5px] font-semibold text-white truncate">
-            {trade.symbol}
-          </span>
-          <span className="text-[11.5px] text-white/45 tabular-nums">
-            {trade.strike} × {trade.qty}
-          </span>
-        </div>
-        <div className="text-[10.5px] text-white/40 tabular-nums">
-          {day(trade.dateBought)}
-          {trade.dateClosed ? ` › ${day(trade.dateClosed)}` : " · open"}
-        </div>
-      </div>
-
-      <div className="shrink-0 text-right">
-        <div
-          className={`text-[13px] font-semibold tabular-nums ${
-            trade.status === "OPEN"
-              ? "text-white/50"
-              : net >= 0
-                ? "text-green-300"
-                : "text-red-300"
-          }`}
-        >
-          {trade.status === "OPEN"
-            ? "-"
-            : `${net >= 0 ? "+" : "−"}$${Math.abs(net).toFixed(2)}`}
-        </div>
-        {trade.fees ? (
-          <div className="text-[9.5px] text-white/35 tabular-nums">
-            fees ${trade.fees.toFixed(2)}
-          </div>
-        ) : null}
-      </div>
     </div>
   );
 }

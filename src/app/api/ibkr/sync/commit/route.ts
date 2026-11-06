@@ -7,16 +7,23 @@ export const maxDuration = 60;
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Commit the trades staged by the last preview (POST /api/ibkr/sync).
-// Inserts exactly what the user reviewed - no IBKR call, so no cooldown.
-export async function POST() {
+// Commit staged trades (POST /api/ibkr/sync). No IBKR call, so no cooldown.
+// Body { keys?: string[] }: with keys, import exactly those staged trades
+// (new or skipped); without, import every new trade and leave the skipped
+// ones staged.
+export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const body = await req.json().catch(() => ({}));
+  const keys = Array.isArray(body?.keys)
+    ? (body.keys as unknown[]).filter((k): k is string => typeof k === "string")
+    : undefined;
+
   try {
-    const result = await commitPendingImport(session.user.id);
+    const result = await commitPendingImport(session.user.id, keys);
     return NextResponse.json({ success: true, ...result });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Import failed";
