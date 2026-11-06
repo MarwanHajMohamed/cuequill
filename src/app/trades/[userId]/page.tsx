@@ -223,9 +223,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
   // RETURN_MIN = no lower bound; maxReturn at Infinity = no upper bound
   // (clamped to the slider ceiling in the UI).
   const [minReturn, setMinReturn] = useState<number>(RETURN_MIN);
-  const [maxReturn, setMaxReturn] = useState<number>(
-    Number.POSITIVE_INFINITY,
-  );
+  const [maxReturn, setMaxReturn] = useState<number>(Number.POSITIVE_INFINITY);
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -420,7 +418,8 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
       for (const t of prev) {
         const id = t._id ?? "";
         if (id === anchorId) out.push(optimistic);
-        else if (ids.includes(id)) continue; // the other legs are absorbed
+        else if (ids.includes(id))
+          continue; // the other legs are absorbed
         else out.push(t);
       }
       return out;
@@ -456,9 +455,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
         // server's math, so only the id/timestamps change.
         if (realRow?._id) {
           queryClient.setQueryData<Trade[]>(key, (prev) =>
-            (prev ?? []).map((t) =>
-              t._id === optimistic._id ? realRow : t,
-            ),
+            (prev ?? []).map((t) => (t._id === optimistic._id ? realRow : t)),
           );
         }
       } catch (err) {
@@ -737,9 +734,9 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
   // Distinct tags across all trades (for the tag filter). Sorted A→Z.
   const tags = [
     "All",
-    ...Array.from(
-      new Set((trades ?? []).flatMap((t) => t.tags ?? [])),
-    ).sort((a, b) => a.localeCompare(b)),
+    ...Array.from(new Set((trades ?? []).flatMap((t) => t.tags ?? []))).sort(
+      (a, b) => a.localeCompare(b),
+    ),
   ];
 
   const calcChange = (newPrice: number, oldPrice: number) => {
@@ -890,689 +887,680 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
       />
 
       <div className="w-full flex justify-center md:justify-start mt-19 md:mt-8">
-          <div
-            className={`w-full max-w-[1500px] flex flex-col items-stretch px-5 md:px-10 pb-5 md:pb-10 transition-[padding] duration-300 ease-out ${
-              isFiltersOpen ? "md:pl-[264px]" : ""
-            }`}
-          >
-            <Filters
-              filter={filter}
-              setFilter={setFilter}
-              strategy={strategy}
-              setStrategy={setStrategy}
-              strategies={strategies}
-              symbol={symbol}
-              setSymbol={setSymbol}
-              option={option}
-              setOption={setOption}
-              symbols={symbols}
-              tag={tag}
-              setTag={setTag}
-              tags={tags}
-              minReturn={minReturn}
-              setMinReturn={setMinReturn}
-              maxReturn={maxReturn}
-              setMaxReturn={setMaxReturn}
-              returnMin={RETURN_MIN}
-              returnMax={returnMax}
-              startDate={startDate}
-              setStartDate={setStartDate}
-              endDate={endDate}
-              setEndDate={setEndDate}
-              isOpen={isFiltersOpen}
-              setIsOpen={setIsFiltersOpen}
+        <div
+          className={`w-full max-w-[1500px] flex flex-col items-stretch px-5 md:px-10 pb-5 md:pb-10 transition-[padding] duration-300 ease-out ${
+            isFiltersOpen ? "md:pl-[264px]" : ""
+          }`}
+        >
+          <Filters
+            filter={filter}
+            setFilter={setFilter}
+            strategy={strategy}
+            setStrategy={setStrategy}
+            strategies={strategies}
+            symbol={symbol}
+            setSymbol={setSymbol}
+            option={option}
+            setOption={setOption}
+            symbols={symbols}
+            tag={tag}
+            setTag={setTag}
+            tags={tags}
+            minReturn={minReturn}
+            setMinReturn={setMinReturn}
+            maxReturn={maxReturn}
+            setMaxReturn={setMaxReturn}
+            returnMin={RETURN_MIN}
+            returnMax={returnMax}
+            startDate={startDate}
+            setStartDate={setStartDate}
+            endDate={endDate}
+            setEndDate={setEndDate}
+            isOpen={isFiltersOpen}
+            setIsOpen={setIsFiltersOpen}
+          />
+          {/* Column controls */}
+          <div className="relative flex justify-end mt-5 max-[1130px]:mt-3 mb-3">
+            <CustomizeButton
+              icon="fa-table-columns"
+              label="Columns"
+              onClick={() => setIsColumnsOpen((v) => !v)}
+              active={isColumnsOpen}
+              ariaExpanded={isColumnsOpen}
+              title="Customize columns"
             />
-            {/* Column controls */}
-            <div className="relative flex justify-end mt-5 max-[1130px]:mt-3 mb-3">
-              <CustomizeButton
-                icon="fa-table-columns"
-                label="Columns"
-                onClick={() => setIsColumnsOpen((v) => !v)}
-                active={isColumnsOpen}
-                ariaExpanded={isColumnsOpen}
-                title="Customize columns"
-              />
-              <AnimatePresence>
-                {isColumnsOpen && (
-                  <>
-                    <motion.div
-                      key="columns-backdrop"
-                      className="fixed inset-0 z-40"
-                      onClick={() => setIsColumnsOpen(false)}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.15 }}
-                    />
-                    <motion.div
-                      key="columns-panel"
-                      className="absolute right-0 top-full mt-2 z-50 w-72 origin-top-right rounded-xl border border-white/10 bg-[var(--surface)] shadow-[0_20px_80px_var(--shadow)] p-2"
-                      initial={{ opacity: 0, scale: 0.95, y: -6 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95, y: -6 }}
-                      transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-                    >
-                      <div className="flex items-center justify-between px-2 py-1.5">
-                        <span className="text-[11px] tracking-[0.08em] text-white/40 font-medium">
-                          Columns
-                        </span>
-                        <button
-                          onClick={resetColumns}
-                          className="text-[11px] text-teal-300/80 hover:text-teal-300 transition cursor-pointer"
-                        >
-                          Reset
-                        </button>
-                      </div>
-                      <div className="mt-1 flex flex-col">
-                        {columnOrder.map((key, i) => {
-                          const visible = !hiddenSet.has(key);
-                          const lastVisible =
-                            visible && visibleColumns.length <= 1;
-                          return (
-                            <motion.div
-                              key={key}
-                              layout
-                              transition={{
-                                layout: {
-                                  duration: 0.22,
-                                  ease: [0.16, 1, 0.3, 1],
-                                },
-                              }}
-                              draggable
-                              onDragStart={() => {
-                                dragKey.current = key;
-                              }}
-                              onDragOver={(e) => {
-                                e.preventDefault();
-                                setDragOverKey(key);
-                              }}
-                              onDragEnd={() => {
-                                dragKey.current = null;
-                                setDragOverKey(null);
-                              }}
-                              onDrop={(e) => {
-                                e.preventDefault();
-                                if (dragKey.current)
-                                  moveColumn(dragKey.current, key);
-                                dragKey.current = null;
-                                setDragOverKey(null);
-                              }}
-                              className={`group flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-grab active:cursor-grabbing transition-colors ${
-                                dragOverKey === key
-                                  ? "bg-white/[0.07]"
-                                  : "hover:bg-white/[0.04]"
+            <AnimatePresence>
+              {isColumnsOpen && (
+                <>
+                  <motion.div
+                    key="columns-backdrop"
+                    className="fixed inset-0 z-40"
+                    onClick={() => setIsColumnsOpen(false)}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.15 }}
+                  />
+                  <motion.div
+                    key="columns-panel"
+                    className="absolute right-0 top-full mt-2 z-50 w-72 origin-top-right rounded-xl border border-white/10 bg-[var(--surface)] shadow-[0_20px_80px_var(--shadow)] p-2"
+                    initial={{ opacity: 0, scale: 0.95, y: -6 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: -6 }}
+                    transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                  >
+                    <div className="flex items-center justify-between px-2 py-1.5">
+                      <span className="text-[11px] tracking-[0.08em] text-white/40 font-medium">
+                        Columns
+                      </span>
+                      <button
+                        onClick={resetColumns}
+                        className="text-[11px] text-teal-300/80 hover:text-teal-300 transition cursor-pointer"
+                      >
+                        Reset
+                      </button>
+                    </div>
+                    <div className="mt-1 flex flex-col">
+                      {columnOrder.map((key, i) => {
+                        const visible = !hiddenSet.has(key);
+                        const lastVisible =
+                          visible && visibleColumns.length <= 1;
+                        return (
+                          <motion.div
+                            key={key}
+                            layout
+                            transition={{
+                              layout: {
+                                duration: 0.22,
+                                ease: [0.16, 1, 0.3, 1],
+                              },
+                            }}
+                            draggable
+                            onDragStart={() => {
+                              dragKey.current = key;
+                            }}
+                            onDragOver={(e) => {
+                              e.preventDefault();
+                              setDragOverKey(key);
+                            }}
+                            onDragEnd={() => {
+                              dragKey.current = null;
+                              setDragOverKey(null);
+                            }}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              if (dragKey.current)
+                                moveColumn(dragKey.current, key);
+                              dragKey.current = null;
+                              setDragOverKey(null);
+                            }}
+                            className={`group flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-grab active:cursor-grabbing transition-colors ${
+                              dragOverKey === key
+                                ? "bg-white/[0.07]"
+                                : "hover:bg-white/[0.04]"
+                            }`}
+                          >
+                            <i className="fa-solid fa-grip-vertical text-white/25 group-hover:text-white/40 text-[11px]" />
+                            <button
+                              onClick={() => toggleColumn(key)}
+                              disabled={lastVisible}
+                              className={`flex items-center gap-2.5 flex-1 text-left ${
+                                lastVisible
+                                  ? "cursor-default"
+                                  : "cursor-pointer"
                               }`}
-                            >
-                              <i className="fa-solid fa-grip-vertical text-white/25 group-hover:text-white/40 text-[11px]" />
-                              <button
-                                onClick={() => toggleColumn(key)}
-                                disabled={lastVisible}
-                                className={`flex items-center gap-2.5 flex-1 text-left ${
-                                  lastVisible
-                                    ? "cursor-default"
-                                    : "cursor-pointer"
-                                }`}
-                                title={
-                                  lastVisible
-                                    ? "At least one column must stay visible"
-                                    : visible
-                                      ? "Hide column"
-                                      : "Show column"
-                                }
-                              >
-                                <span
-                                  className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition ${
-                                    visible
-                                      ? "bg-teal-500/20 border-teal-500/40 text-teal-300"
-                                      : "border-white/15 text-transparent"
-                                  }`}
-                                >
-                                  <i className="fa-solid fa-check text-[9px]" />
-                                </span>
-                                <span
-                                  className={`text-[13px] ${
-                                    visible ? "text-white/85" : "text-white/40"
-                                  }`}
-                                >
-                                  {COLUMN_LABELS[key]}
-                                </span>
-                              </button>
-                              <div className="flex items-center gap-0.5 opacity-60 group-hover:opacity-100 transition">
-                                <button
-                                  onClick={() =>
-                                    i > 0 && moveColumn(key, columnOrder[i - 1])
-                                  }
-                                  disabled={i === 0}
-                                  aria-label="Move up"
-                                  className="w-6 h-6 rounded-[10px] flex items-center justify-center text-white/50 hover:text-white hover:bg-white/[0.06] transition cursor-pointer disabled:opacity-25 disabled:cursor-default"
-                                >
-                                  <i className="fa-solid fa-chevron-up text-[10px]" />
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    i < columnOrder.length - 1 &&
-                                    moveColumn(key, columnOrder[i + 1])
-                                  }
-                                  disabled={i === columnOrder.length - 1}
-                                  aria-label="Move down"
-                                  className="w-6 h-6 rounded-[10px] flex items-center justify-center text-white/50 hover:text-white hover:bg-white/[0.06] transition cursor-pointer disabled:opacity-25 disabled:cursor-default"
-                                >
-                                  <i className="fa-solid fa-chevron-down text-[10px]" />
-                                </button>
-                              </div>
-                            </motion.div>
-                          );
-                        })}
-                      </div>
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
-            </div>
-            <div
-              ref={tableWrapRef}
-              className="relative w-full max-w-[1500px] rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md overflow-x-auto max-[1130px]:mt-0 mt-3 p-2 md:p-3"
-            >
-              {particleBurst && (
-                <MergeParticles
-                  key={particleBurst.key}
-                  x={particleBurst.x}
-                  y={particleBurst.y}
-                  width={particleBurst.width}
-                  height={particleBurst.height}
-                  onDone={() => setParticleBurst(null)}
-                />
-              )}
-              {filteredTrades?.length === 0 ? (
-                (trades?.length ?? 0) === 0 ? (
-                  // Journal is genuinely empty - prompt to add the first trade
-                  // right where the table would be.
-                  <div className="flex flex-col items-center gap-3 text-center py-16 px-5">
-                    <div className="w-11 h-11 rounded-full bg-teal-500/15 border border-teal-500/25 flex items-center justify-center">
-                      <i className="fa-solid fa-feather-pointed text-teal-300 text-base" />
-                    </div>
-                    <div className="text-[15px] font-semibold tracking-tight">
-                      No trades yet
-                    </div>
-                    <div className="text-[13px] text-white/50 max-w-xs leading-relaxed">
-                      Add your first trade, or sync from your broker, to start
-                      tracking edge, streaks and strategy performance.
-                    </div>
-                    <button
-                      onClick={() => {
-                        setEditingTrade(null);
-                        setIsModalOpen(true);
-                      }}
-                      className="mt-1 inline-flex items-center gap-2 px-4 py-2 rounded-[10px] bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition cursor-pointer text-[13px] font-medium"
-                    >
-                      <i className="fa-solid fa-plus text-[11px]" />
-                      Add trade
-                    </button>
-                  </div>
-                ) : (
-                  // Trades exist, but the active filters match none of them.
-                  <div className="text-center text-[13px] text-white/40 py-10">
-                    No trades match the current filters.
-                  </div>
-                )
-              ) : (
-                  <table className="border-collapse table-auto min-w-full">
-                    <thead>
-                      <tr>
-                        {/* Fixed quick-edit column - sits outside the
-                            user-customisable column set so it can't be
-                            reordered or hidden. */}
-                        <th
-                          className="pl-2 md:pl-3 pr-0 py-2 w-7"
-                          aria-label="Quick edit"
-                        />
-                        {selectMode && (
-                          <th
-                            className="pl-1 pr-1 py-2 w-6 md:w-7"
-                            aria-label="Select"
-                          />
-                        )}
-                        {visibleColumns.map((key, ci) => {
-                          const isDragging = draggingKey === key;
-                          const isDragOver =
-                            dragOverKey === key && draggingKey !== key;
-                          const numeric = NUMERIC_COLUMNS.has(key);
-                          const sorted = sortKey === key;
-                          return (
-                            <th
-                              key={key}
-                              draggable
-                              onDragStart={(e) => {
-                                dragKey.current = key;
-                                setDraggingKey(key);
-                                // setData is required for Firefox to
-                                // actually start the drag.
-                                e.dataTransfer.setData("text/plain", key);
-                                e.dataTransfer.effectAllowed = "move";
-                              }}
-                              onDragOver={(e) => {
-                                if (!dragKey.current) return;
-                                e.preventDefault();
-                                e.dataTransfer.dropEffect = "move";
-                                if (dragOverKey !== key) setDragOverKey(key);
-                              }}
-                              onDragLeave={() => {
-                                if (dragOverKey === key) setDragOverKey(null);
-                              }}
-                              onDrop={(e) => {
-                                e.preventDefault();
-                                if (
-                                  dragKey.current &&
-                                  dragKey.current !== key
-                                ) {
-                                  moveColumn(dragKey.current, key);
-                                }
-                                dragKey.current = null;
-                                setDragOverKey(null);
-                                setDraggingKey(null);
-                              }}
-                              onDragEnd={() => {
-                                dragKey.current = null;
-                                setDragOverKey(null);
-                                setDraggingKey(null);
-                                // A drag just fired - swallow the click that
-                                // some browsers dispatch right after.
-                                suppressSortClick.current = true;
-                                setTimeout(() => {
-                                  suppressSortClick.current = false;
-                                }, 0);
-                              }}
-                              onClick={() => {
-                                if (suppressSortClick.current) return;
-                                handleSort(key);
-                              }}
-                              title={`Sort by ${COLUMN_LABELS[key]}`}
-                              className={`${ci === 0 ? "pl-1 pr-1 md:pr-1.5" : "px-1 md:px-1.5"} py-2 whitespace-nowrap md:text-[11px] text-[10px] ${numeric ? "text-right" : "text-left"} tracking-[0.04em] font-medium cursor-pointer active:cursor-grabbing select-none transition ${
-                                isDragging
-                                  ? "bg-white/[0.06] text-white"
-                                  : isDragOver
-                                    ? "text-white bg-teal-500/10"
-                                    : sorted
-                                      ? "text-white/80"
-                                      : "text-white/40 hover:text-white/70"
-                              }`}
+                              title={
+                                lastVisible
+                                  ? "At least one column must stay visible"
+                                  : visible
+                                    ? "Hide column"
+                                    : "Show column"
+                              }
                             >
                               <span
-                                className={`inline-flex items-center gap-1 ${
-                                  numeric ? "flex-row-reverse" : ""
+                                className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition ${
+                                  visible
+                                    ? "bg-teal-500/20 border-teal-500/40 text-teal-300"
+                                    : "border-white/15 text-transparent"
+                                }`}
+                              >
+                                <i className="fa-solid fa-check text-[9px]" />
+                              </span>
+                              <span
+                                className={`text-[13px] ${
+                                  visible ? "text-white/85" : "text-white/40"
                                 }`}
                               >
                                 {COLUMN_LABELS[key]}
-                                {sorted && (
-                                  <i
-                                    className={`fa-solid ${
-                                      sortDir === "asc"
-                                        ? "fa-arrow-up"
-                                        : "fa-arrow-down"
-                                    } text-[8px] text-teal-300`}
-                                  />
-                                )}
                               </span>
-                            </th>
-                          );
-                        })}
-                        {/* Trailing actions column (hover cluster). */}
-                        <th
-                          className="pr-2 md:pr-3 pl-0 py-2 w-16"
-                          aria-label="Actions"
-                        />
-                      </tr>
-                    </thead>
-                    <AnimatePresence
-                      mode="wait"
-                      initial={false}
-                      custom={pageDir}
-                    >
-                      <motion.tbody
-                        key={currentPage}
-                        custom={pageDir}
-                        variants={{
-                          enter: (dir: number) => ({
-                            opacity: 0,
-                            x: dir > 0 ? 24 : -24,
-                          }),
-                          center: { opacity: 1, x: 0 },
-                          exit: (dir: number) => ({
-                            opacity: 0,
-                            x: dir > 0 ? -24 : 24,
-                          }),
-                        }}
-                        initial="enter"
-                        animate="center"
-                        exit="exit"
-                        transition={{ duration: 0.15, ease: "easeOut" }}
-                      >
-                        {currentTrades?.map((trade, index) => {
-                          const tradeId = trade._id ?? "";
-                          const isSelected = selectedIds.has(tradeId);
-                          // Seed = the first-selected trade. Every
-                          // subsequent selection must match it, so
-                          // grey out any row that would be an invalid
-                          // merge partner rather than fail server-side.
-                          const seedId = selectedIds.values().next().value as
-                            | string
-                            | undefined;
-                          const seed =
-                            seedId && seedId !== tradeId
-                              ? (currentTrades.find((t) => t._id === seedId) ??
-                                filteredTrades?.find((t) => t._id === seedId) ??
-                                null)
-                              : null;
-                          const dimmed =
-                            selectMode &&
-                            !!seed &&
-                            !isSelected &&
-                            !isMergeableWithSeed(seed, trade);
-                          // Once a merge is confirmed, the selected rows slide
-                          // up toward the topmost selected row and the lower
-                          // ones fade, so they visibly collapse into one. Gated
-                          // on topSelectedId (set only after the server merges)
-                          // so it never fires optimistically.
-                          const mergingRow =
-                            topSelectedId != null && isSelected;
-                          const isTopSelected = tradeId === topSelectedId;
-                          return (
-                            <tr
-                              key={index}
-                              data-trade-id={tradeId}
-                              style={
-                                mergingRow
-                                  ? {
-                                      transform: `translateY(${mergeOffsets[tradeId] ?? 0}px)`,
-                                      opacity: isTopSelected ? 1 : 0,
-                                      transition: `transform ${MERGE_ANIM_MS}ms cubic-bezier(0.4,0,0.2,1), opacity ${MERGE_ANIM_MS}ms ease`,
-                                      position: "relative",
-                                      zIndex: isTopSelected ? 2 : 1,
-                                      pointerEvents: "none",
-                                    }
-                                  : undefined
-                              }
-                              className={`group text-xs md:text-[13.5px] border-t border-white/[0.06] transition cursor-pointer ${
-                                isSelected
-                                  ? "bg-teal-500/[0.08] hover:bg-teal-500/[0.12]"
-                                  : dimmed
-                                    ? "opacity-40 hover:bg-white/[0.02]"
-                                    : "hover:bg-white/[0.02]"
-                              }`}
-                              onClick={() => {
-                                if (selectMode) {
-                                  if (!tradeId) return;
-                                  if (dimmed) return;
-                                  toggleSelected(tradeId);
-                                  return;
+                            </button>
+                            <div className="flex items-center gap-0.5 opacity-60 group-hover:opacity-100 transition">
+                              <button
+                                onClick={() =>
+                                  i > 0 && moveColumn(key, columnOrder[i - 1])
                                 }
-                                router.push(`/trades/${userId}/${trade._id}`);
-                              }}
-                            >
-                              {/* Pencil icon - quick-edit modal. Stops
-                                propagation so the row's row-click
-                                navigation doesn't fire. */}
-                              <td className="pl-2 md:pl-3 pr-0 py-1 w-7 align-middle">
-                                <button
-                                  type="button"
-                                  aria-label="Quick edit"
-                                  title="Quick edit"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setEditingTrade(trade);
-                                    setIsModalOpen(true);
-                                  }}
-                                  className="w-7 h-7 rounded-[10px] inline-flex items-center justify-center text-white/35 group-hover:text-white/65 hover:text-white hover:bg-white/[0.08] transition cursor-pointer"
-                                >
-                                  <i className="fa-solid fa-pen text-[11px]" />
-                                </button>
-                              </td>
-                              {selectMode && (
-                                <td className="pl-1 pr-1 py-1 w-6 md:w-7 align-middle">
-                                  <input
-                                    type="checkbox"
-                                    aria-label="Select trade"
-                                    checked={isSelected}
-                                    disabled={dimmed}
-                                    onChange={() => {
-                                      if (!tradeId) return;
-                                      toggleSelected(tradeId);
-                                    }}
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="w-4 h-4 accent-teal-400 cursor-pointer disabled:cursor-not-allowed"
-                                  />
-                                </td>
-                              )}
-                              {visibleColumns.map((key, ci) => (
-                                <td
-                                  key={key}
-                                  className={`${ci === 0 ? "pl-1 pr-1 md:pr-1.5" : "px-1 md:px-1.5"} py-1 whitespace-nowrap transition ${
-                                    key === "notes"
-                                      ? "text-center"
-                                      : NUMERIC_COLUMNS.has(key)
-                                        ? "text-right tabular-nums"
-                                        : ""
-                                  } ${
-                                    draggingKey === key
-                                      ? "bg-white/[0.06]"
-                                      : dragOverKey === key &&
-                                          draggingKey !== null
-                                        ? "bg-teal-500/[0.06]"
-                                        : ""
-                                  }`}
-                                >
-                                  {renderCell(key, trade)}
-                                </td>
-                              ))}
-                              {/* Hover actions - favourite + delete (with an
-                                  inline confirm). Hidden until the row is
-                                  hovered; stops propagation so the row-click
-                                  navigation doesn't fire. */}
-                              <td className="pr-2 md:pr-3 pl-0 py-1 w-16 align-middle text-right">
-                                <div className="inline-flex items-center justify-end gap-0.5">
-                                  {confirmDeleteId === tradeId ? (
-                                    <>
-                                      <button
-                                        type="button"
-                                        aria-label="Confirm delete"
-                                        title="Confirm delete"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleDeleteTrade(
-                                            tradeId,
-                                            userId,
-                                            setIsModalOpen,
-                                            setEditingTrade,
-                                            queryClient,
-                                          );
-                                          setConfirmDeleteId(null);
-                                        }}
-                                        className="w-7 h-7 rounded-[10px] inline-flex items-center justify-center text-red-300 hover:text-white hover:bg-red-500/20 transition cursor-pointer"
-                                      >
-                                        <i className="fa-solid fa-check text-[11px]" />
-                                      </button>
-                                      <button
-                                        type="button"
-                                        aria-label="Cancel delete"
-                                        title="Cancel"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setConfirmDeleteId(null);
-                                        }}
-                                        className="w-7 h-7 rounded-[10px] inline-flex items-center justify-center text-white/50 hover:text-white hover:bg-white/[0.08] transition cursor-pointer"
-                                      >
-                                        <i className="fa-solid fa-xmark text-[11px]" />
-                                      </button>
-                                    </>
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      aria-label="Delete trade"
-                                      title="Delete"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setConfirmDeleteId(tradeId);
-                                      }}
-                                      className="w-7 h-7 rounded-[10px] inline-flex items-center justify-center text-white/30 opacity-0 group-hover:opacity-100 hover:text-red-300 hover:bg-red-500/15 transition cursor-pointer"
-                                    >
-                                      <i className="fa-solid fa-trash text-[11px]" />
-                                    </button>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </motion.tbody>
-                    </AnimatePresence>
-                  </table>
+                                disabled={i === 0}
+                                aria-label="Move up"
+                                className="w-6 h-6 rounded-[10px] flex items-center justify-center text-white/50 hover:text-white hover:bg-white/[0.06] transition cursor-pointer disabled:opacity-25 disabled:cursor-default"
+                              >
+                                <i className="fa-solid fa-chevron-up text-[10px]" />
+                              </button>
+                              <button
+                                onClick={() =>
+                                  i < columnOrder.length - 1 &&
+                                  moveColumn(key, columnOrder[i + 1])
+                                }
+                                disabled={i === columnOrder.length - 1}
+                                aria-label="Move down"
+                                className="w-6 h-6 rounded-[10px] flex items-center justify-center text-white/50 hover:text-white hover:bg-white/[0.06] transition cursor-pointer disabled:opacity-25 disabled:cursor-default"
+                              >
+                                <i className="fa-solid fa-chevron-down text-[10px]" />
+                              </button>
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                </>
               )}
-            </div>
-            {((trades?.length ?? 0) === 0 || filteredTrades?.length !== 0) && (
-              <div className="flex md:justify-between gap-2 mt-5 w-full max-w-[1500px]">
-                <div className="flex gap-2">
+            </AnimatePresence>
+          </div>
+          <div
+            ref={tableWrapRef}
+            className="relative w-full max-w-[1500px] rounded-2xl border border-white/10 bg-white/[0.03] md:backdrop-blur-md overflow-x-auto max-[1130px]:mt-0 mt-3 p-2 md:p-3"
+          >
+            {particleBurst && (
+              <MergeParticles
+                key={particleBurst.key}
+                x={particleBurst.x}
+                y={particleBurst.y}
+                width={particleBurst.width}
+                height={particleBurst.height}
+                onDone={() => setParticleBurst(null)}
+              />
+            )}
+            {filteredTrades?.length === 0 ? (
+              (trades?.length ?? 0) === 0 ? (
+                // Journal is genuinely empty - prompt to add the first trade
+                // right where the table would be.
+                <div className="flex flex-col items-center gap-3 text-center py-16 px-5">
+                  <div className="w-11 h-11 rounded-full bg-teal-500/15 border border-teal-500/25 flex items-center justify-center">
+                    <i className="fa-solid fa-feather-pointed text-teal-300 text-base" />
+                  </div>
+                  <div className="text-[15px] font-semibold tracking-tight">
+                    No trades yet
+                  </div>
+                  <div className="text-[13px] text-white/50 max-w-xs leading-relaxed">
+                    Add your first trade, or sync from your broker, to start
+                    tracking edge, streaks and strategy performance.
+                  </div>
                   <button
-                    data-tour="trades-add"
-                    className="inline-flex items-center justify-center gap-2 px-3 md:px-4 py-2 rounded-[15px] bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition cursor-pointer text-[12px] md:text-[13px] font-medium w-9 h-9 md:w-auto md:h-auto"
                     onClick={() => {
                       setEditingTrade(null);
                       setIsModalOpen(true);
                     }}
+                    className="mt-1 inline-flex items-center gap-2 px-4 py-2 rounded-[10px] bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition cursor-pointer text-[13px] font-medium"
                   >
                     <i className="fa-solid fa-plus text-[11px]" />
-                    <span className="md:inline hidden">Add trade</span>
+                    Add trade
                   </button>
-                  <button
-                    data-tour="trades-sync"
-                    className={`inline-flex items-center justify-center gap-2 px-3 md:px-4 py-2 rounded-[15px] bg-indigo-500/15 text-indigo-300 border border-indigo-500/25 transition text-[12px] md:text-[13px] font-medium w-9 h-9 md:w-auto md:h-auto ${
-                      syncing
-                        ? "cursor-not-allowed opacity-60"
-                        : "cursor-pointer hover:bg-indigo-500/25"
-                    }`}
-                    onClick={handleSync}
-                    disabled={syncing}
-                    title="Import any new trades from IBKR"
-                  >
-                    <i
-                      className={`fa-solid fa-rotate text-[11px] ${
-                        syncing ? "animate-spin" : ""
-                      }`}
+                </div>
+              ) : (
+                // Trades exist, but the active filters match none of them.
+                <div className="text-center text-[13px] text-white/40 py-10">
+                  No trades match the current filters.
+                </div>
+              )
+            ) : (
+              <table className="border-collapse table-auto min-w-full">
+                <thead>
+                  <tr>
+                    {/* Fixed quick-edit column - sits outside the
+                            user-customisable column set so it can't be
+                            reordered or hidden. */}
+                    <th
+                      className="pl-2 md:pl-3 pr-0 py-2 w-7"
+                      aria-label="Quick edit"
                     />
-                    <span className="md:inline hidden">
-                      {syncing ? "Syncing…" : "Sync IBKR"}
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowImported(true)}
-                    disabled={syncing}
-                    title="See what the last sync imported"
-                    aria-label="View last imported trades"
-                    className="inline-flex items-center justify-center gap-2 px-3 md:px-3 py-2 rounded-[10px] bg-white/[0.03] text-white/60 border border-white/10 hover:bg-white/[0.06] hover:text-white transition cursor-pointer text-[12px] md:text-[13px] font-medium w-9 h-9"
-                  >
-                    <i className="fa-solid fa-list-check text-[11px]" />
-                  </button>
-                  <button
-                    data-tour="trades-merge"
-                    type="button"
-                    onClick={() => {
-                      if (selectMode) exitSelectMode();
-                      else setSelectMode(true);
+                    {selectMode && (
+                      <th
+                        className="pl-1 pr-1 py-2 w-6 md:w-7"
+                        aria-label="Select"
+                      />
+                    )}
+                    {visibleColumns.map((key, ci) => {
+                      const isDragging = draggingKey === key;
+                      const isDragOver =
+                        dragOverKey === key && draggingKey !== key;
+                      const numeric = NUMERIC_COLUMNS.has(key);
+                      const sorted = sortKey === key;
+                      return (
+                        <th
+                          key={key}
+                          draggable
+                          onDragStart={(e) => {
+                            dragKey.current = key;
+                            setDraggingKey(key);
+                            // setData is required for Firefox to
+                            // actually start the drag.
+                            e.dataTransfer.setData("text/plain", key);
+                            e.dataTransfer.effectAllowed = "move";
+                          }}
+                          onDragOver={(e) => {
+                            if (!dragKey.current) return;
+                            e.preventDefault();
+                            e.dataTransfer.dropEffect = "move";
+                            if (dragOverKey !== key) setDragOverKey(key);
+                          }}
+                          onDragLeave={() => {
+                            if (dragOverKey === key) setDragOverKey(null);
+                          }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            if (dragKey.current && dragKey.current !== key) {
+                              moveColumn(dragKey.current, key);
+                            }
+                            dragKey.current = null;
+                            setDragOverKey(null);
+                            setDraggingKey(null);
+                          }}
+                          onDragEnd={() => {
+                            dragKey.current = null;
+                            setDragOverKey(null);
+                            setDraggingKey(null);
+                            // A drag just fired - swallow the click that
+                            // some browsers dispatch right after.
+                            suppressSortClick.current = true;
+                            setTimeout(() => {
+                              suppressSortClick.current = false;
+                            }, 0);
+                          }}
+                          onClick={() => {
+                            if (suppressSortClick.current) return;
+                            handleSort(key);
+                          }}
+                          title={`Sort by ${COLUMN_LABELS[key]}`}
+                          className={`${ci === 0 ? "pl-1 pr-1 md:pr-1.5" : "px-1 md:px-1.5"} py-2 whitespace-nowrap md:text-[11px] text-[10px] ${numeric ? "text-right" : "text-left"} tracking-[0.04em] font-medium cursor-pointer active:cursor-grabbing select-none transition ${
+                            isDragging
+                              ? "bg-white/[0.06] text-white"
+                              : isDragOver
+                                ? "text-white bg-teal-500/10"
+                                : sorted
+                                  ? "text-white/80"
+                                  : "text-white/40 hover:text-white/70"
+                          }`}
+                        >
+                          <span
+                            className={`inline-flex items-center gap-1 ${
+                              numeric ? "flex-row-reverse" : ""
+                            }`}
+                          >
+                            {COLUMN_LABELS[key]}
+                            {sorted && (
+                              <i
+                                className={`fa-solid ${
+                                  sortDir === "asc"
+                                    ? "fa-arrow-up"
+                                    : "fa-arrow-down"
+                                } text-[8px] text-teal-300`}
+                              />
+                            )}
+                          </span>
+                        </th>
+                      );
+                    })}
+                    {/* Trailing actions column (hover cluster). */}
+                    <th
+                      className="pr-2 md:pr-3 pl-0 py-2 w-16"
+                      aria-label="Actions"
+                    />
+                  </tr>
+                </thead>
+                <AnimatePresence mode="wait" initial={false} custom={pageDir}>
+                  <motion.tbody
+                    key={currentPage}
+                    custom={pageDir}
+                    variants={{
+                      enter: (dir: number) => ({
+                        opacity: 0,
+                        x: dir > 0 ? 24 : -24,
+                      }),
+                      center: { opacity: 1, x: 0 },
+                      exit: (dir: number) => ({
+                        opacity: 0,
+                        x: dir > 0 ? -24 : 24,
+                      }),
                     }}
-                    title={
-                      selectMode
-                        ? "Exit selection mode"
-                        : "Select trades to merge partial fills into one"
-                    }
-                    aria-label="Select trades to merge"
-                    className={`inline-flex items-center justify-center gap-2 px-3 md:px-4 py-2 rounded-[15px] border transition text-[12px] md:text-[13px] font-medium w-9 h-9 md:w-auto md:h-auto cursor-pointer ${
-                      selectMode
-                        ? "bg-teal-500/25 text-teal-200 border-teal-500/40 hover:bg-teal-500/30"
-                        : "bg-white/[0.03] text-white/60 border-white/10 hover:bg-white/[0.06] hover:text-white"
-                    }`}
+                    initial="enter"
+                    animate="center"
+                    exit="exit"
+                    transition={{ duration: 0.15, ease: "easeOut" }}
                   >
-                    <i className="fa-solid fa-object-group text-[11px]" />
-                    <span className="md:inline hidden">
-                      {selectMode ? "Cancel merge" : "Merge trades"}
-                    </span>
-                  </button>
-                </div>
-
-                {/* Rows-per-page control */}
-                <div className="hidden md:flex items-center gap-2">
-                  <span className="text-[12px] text-white/45">Rows</span>
-                  <select
-                    value={pageSize}
-                    onChange={(e) => {
-                      setPageSize(Number(e.target.value));
-                      setCurrentPage(1);
-                      setPageDir(1);
-                    }}
-                    className="px-2.5 py-1.5 text-[12.5px] bg-white/[0.03] rounded-lg border border-white/10 focus:border-white/25 focus:outline-none transition cursor-pointer"
-                  >
-                    {PAGE_SIZES.map((n) => (
-                      <option key={n} value={n}>
-                        {n}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            )}
-            {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-1.5 mt-5">
-                <button
-                  aria-label="First page"
-                  className="w-8 h-8 rounded-[10px] border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white transition cursor-pointer disabled:opacity-30 disabled:cursor-default flex items-center justify-center"
-                  disabled={currentPage === 1}
-                  onClick={() => goToPage(1)}
-                >
-                  <i className="fa-solid fa-angles-left text-[11px]" />
-                </button>
-                <button
-                  aria-label="Previous page"
-                  className="w-8 h-8 rounded-[10px] border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white transition cursor-pointer disabled:opacity-30 disabled:cursor-default flex items-center justify-center"
-                  disabled={currentPage === 1}
-                  onClick={() => goToPage(currentPage - 1)}
-                >
-                  <i className="fa-solid fa-chevron-left text-[11px]" />
-                </button>
-
-                <span className="px-3 text-[12px] text-white/55 tabular-nums">
-                  {currentPage} / {totalPages}
-                </span>
-
-                <button
-                  aria-label="Next page"
-                  className="w-8 h-8 rounded-[10px] border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white transition cursor-pointer disabled:opacity-30 disabled:cursor-default flex items-center justify-center"
-                  disabled={currentPage === totalPages}
-                  onClick={() => goToPage(currentPage + 1)}
-                >
-                  <i className="fa-solid fa-chevron-right text-[11px]" />
-                </button>
-                <button
-                  aria-label="Last page"
-                  className="w-8 h-8 rounded-[10px] border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white transition cursor-pointer disabled:opacity-30 disabled:cursor-default flex items-center justify-center"
-                  disabled={currentPage === totalPages}
-                  onClick={() => goToPage(totalPages)}
-                >
-                  <i className="fa-solid fa-angles-right text-[11px]" />
-                </button>
-              </div>
-            )}
-
-            {((trades?.length ?? 0) === 0 || filteredTrades?.length !== 0) && (
-              <Statistics
-                data={trades!}
-                status={filter}
-                filteredData={filteredTrades!}
-                option={option}
-                strategy={strategy}
-                symbol={symbol}
-              />
+                    {currentTrades?.map((trade, index) => {
+                      const tradeId = trade._id ?? "";
+                      const isSelected = selectedIds.has(tradeId);
+                      // Seed = the first-selected trade. Every
+                      // subsequent selection must match it, so
+                      // grey out any row that would be an invalid
+                      // merge partner rather than fail server-side.
+                      const seedId = selectedIds.values().next().value as
+                        | string
+                        | undefined;
+                      const seed =
+                        seedId && seedId !== tradeId
+                          ? (currentTrades.find((t) => t._id === seedId) ??
+                            filteredTrades?.find((t) => t._id === seedId) ??
+                            null)
+                          : null;
+                      const dimmed =
+                        selectMode &&
+                        !!seed &&
+                        !isSelected &&
+                        !isMergeableWithSeed(seed, trade);
+                      // Once a merge is confirmed, the selected rows slide
+                      // up toward the topmost selected row and the lower
+                      // ones fade, so they visibly collapse into one. Gated
+                      // on topSelectedId (set only after the server merges)
+                      // so it never fires optimistically.
+                      const mergingRow = topSelectedId != null && isSelected;
+                      const isTopSelected = tradeId === topSelectedId;
+                      return (
+                        <tr
+                          key={index}
+                          data-trade-id={tradeId}
+                          style={
+                            mergingRow
+                              ? {
+                                  transform: `translateY(${mergeOffsets[tradeId] ?? 0}px)`,
+                                  opacity: isTopSelected ? 1 : 0,
+                                  transition: `transform ${MERGE_ANIM_MS}ms cubic-bezier(0.4,0,0.2,1), opacity ${MERGE_ANIM_MS}ms ease`,
+                                  position: "relative",
+                                  zIndex: isTopSelected ? 2 : 1,
+                                  pointerEvents: "none",
+                                }
+                              : undefined
+                          }
+                          className={`group text-xs md:text-[13.5px] border-t border-white/[0.06] transition cursor-pointer ${
+                            isSelected
+                              ? "bg-teal-500/[0.08] hover:bg-teal-500/[0.12]"
+                              : dimmed
+                                ? "opacity-40 hover:bg-white/[0.02]"
+                                : "hover:bg-white/[0.02]"
+                          }`}
+                          onClick={() => {
+                            if (selectMode) {
+                              if (!tradeId) return;
+                              if (dimmed) return;
+                              toggleSelected(tradeId);
+                              return;
+                            }
+                            router.push(`/trades/${userId}/${trade._id}`);
+                          }}
+                        >
+                          {/* Pencil icon - quick-edit modal. Stops
+                                propagation so the row's row-click
+                                navigation doesn't fire. */}
+                          <td className="pl-2 md:pl-3 pr-0 py-1 w-7 align-middle">
+                            <button
+                              type="button"
+                              aria-label="Quick edit"
+                              title="Quick edit"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingTrade(trade);
+                                setIsModalOpen(true);
+                              }}
+                              className="w-7 h-7 rounded-[10px] inline-flex items-center justify-center text-white/35 group-hover:text-white/65 hover:text-white hover:bg-white/[0.08] transition cursor-pointer"
+                            >
+                              <i className="fa-solid fa-pen text-[11px]" />
+                            </button>
+                          </td>
+                          {selectMode && (
+                            <td className="pl-1 pr-1 py-1 w-6 md:w-7 align-middle">
+                              <input
+                                type="checkbox"
+                                aria-label="Select trade"
+                                checked={isSelected}
+                                disabled={dimmed}
+                                onChange={() => {
+                                  if (!tradeId) return;
+                                  toggleSelected(tradeId);
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                                className="w-4 h-4 accent-teal-400 cursor-pointer disabled:cursor-not-allowed"
+                              />
+                            </td>
+                          )}
+                          {visibleColumns.map((key, ci) => (
+                            <td
+                              key={key}
+                              className={`${ci === 0 ? "pl-1 pr-1 md:pr-1.5" : "px-1 md:px-1.5"} py-1 whitespace-nowrap transition ${
+                                key === "notes"
+                                  ? "text-center"
+                                  : NUMERIC_COLUMNS.has(key)
+                                    ? "text-right tabular-nums"
+                                    : ""
+                              } ${
+                                draggingKey === key
+                                  ? "bg-white/[0.06]"
+                                  : dragOverKey === key && draggingKey !== null
+                                    ? "bg-teal-500/[0.06]"
+                                    : ""
+                              }`}
+                            >
+                              {renderCell(key, trade)}
+                            </td>
+                          ))}
+                          {/* Hover actions - favourite + delete (with an
+                                  inline confirm). Hidden until the row is
+                                  hovered; stops propagation so the row-click
+                                  navigation doesn't fire. */}
+                          <td className="pr-2 md:pr-3 pl-0 py-1 w-16 align-middle text-right">
+                            <div className="inline-flex items-center justify-end gap-0.5">
+                              {confirmDeleteId === tradeId ? (
+                                <>
+                                  <button
+                                    type="button"
+                                    aria-label="Confirm delete"
+                                    title="Confirm delete"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteTrade(
+                                        tradeId,
+                                        userId,
+                                        setIsModalOpen,
+                                        setEditingTrade,
+                                        queryClient,
+                                      );
+                                      setConfirmDeleteId(null);
+                                    }}
+                                    className="w-7 h-7 rounded-[10px] inline-flex items-center justify-center text-red-300 hover:text-white hover:bg-red-500/20 transition cursor-pointer"
+                                  >
+                                    <i className="fa-solid fa-check text-[11px]" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    aria-label="Cancel delete"
+                                    title="Cancel"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setConfirmDeleteId(null);
+                                    }}
+                                    className="w-7 h-7 rounded-[10px] inline-flex items-center justify-center text-white/50 hover:text-white hover:bg-white/[0.08] transition cursor-pointer"
+                                  >
+                                    <i className="fa-solid fa-xmark text-[11px]" />
+                                  </button>
+                                </>
+                              ) : (
+                                <button
+                                  type="button"
+                                  aria-label="Delete trade"
+                                  title="Delete"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setConfirmDeleteId(tradeId);
+                                  }}
+                                  className="w-7 h-7 rounded-[10px] inline-flex items-center justify-center text-white/30 opacity-0 group-hover:opacity-100 hover:text-red-300 hover:bg-red-500/15 transition cursor-pointer"
+                                >
+                                  <i className="fa-solid fa-trash text-[11px]" />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </motion.tbody>
+                </AnimatePresence>
+              </table>
             )}
           </div>
+          {((trades?.length ?? 0) === 0 || filteredTrades?.length !== 0) && (
+            <div className="flex md:justify-between gap-2 mt-5 w-full max-w-[1500px]">
+              <div className="flex gap-2">
+                <button
+                  data-tour="trades-add"
+                  className="inline-flex items-center justify-center gap-2 px-3 md:px-4 py-2 rounded-[10px] bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition cursor-pointer text-[12px] md:text-[13px] font-medium w-9 h-9 md:w-auto md:h-auto"
+                  onClick={() => {
+                    setEditingTrade(null);
+                    setIsModalOpen(true);
+                  }}
+                >
+                  <i className="fa-solid fa-plus text-[11px]" />
+                  <span className="md:inline hidden">Add trade</span>
+                </button>
+                <button
+                  data-tour="trades-sync"
+                  className={`inline-flex items-center justify-center gap-2 px-3 md:px-4 py-2 rounded-[10px] bg-indigo-500/15 text-indigo-300 border border-indigo-500/25 transition text-[12px] md:text-[13px] font-medium w-9 h-9 md:w-auto md:h-auto ${
+                    syncing
+                      ? "cursor-not-allowed opacity-60"
+                      : "cursor-pointer hover:bg-indigo-500/25"
+                  }`}
+                  onClick={handleSync}
+                  disabled={syncing}
+                  title="Import any new trades from IBKR"
+                >
+                  <i
+                    className={`fa-solid fa-rotate text-[11px] ${
+                      syncing ? "animate-spin" : ""
+                    }`}
+                  />
+                  <span className="md:inline hidden">
+                    {syncing ? "Syncing…" : "Sync IBKR"}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowImported(true)}
+                  disabled={syncing}
+                  title="See what the last sync imported"
+                  aria-label="View last imported trades"
+                  className="inline-flex items-center justify-center gap-2 px-3 md:px-3 py-2 rounded-[10px] bg-white/[0.03] text-white/60 border border-white/10 hover:bg-white/[0.06] hover:text-white transition cursor-pointer text-[12px] md:text-[13px] font-medium w-9 h-9"
+                >
+                  <i className="fa-solid fa-list-check text-[11px]" />
+                </button>
+                <button
+                  data-tour="trades-merge"
+                  type="button"
+                  onClick={() => {
+                    if (selectMode) exitSelectMode();
+                    else setSelectMode(true);
+                  }}
+                  title={
+                    selectMode
+                      ? "Exit selection mode"
+                      : "Select trades to merge partial fills into one"
+                  }
+                  aria-label="Select trades to merge"
+                  className={`inline-flex items-center justify-center gap-2 px-3 md:px-4 py-2 rounded-[10px] border transition text-[12px] md:text-[13px] font-medium w-9 h-9 md:w-auto md:h-auto cursor-pointer ${
+                    selectMode
+                      ? "bg-teal-500/25 text-teal-200 border-teal-500/40 hover:bg-teal-500/30"
+                      : "bg-white/[0.03] text-white/60 border-white/10 hover:bg-white/[0.06] hover:text-white"
+                  }`}
+                >
+                  <i className="fa-solid fa-object-group text-[11px]" />
+                  <span className="md:inline hidden">
+                    {selectMode ? "Cancel merge" : "Merge trades"}
+                  </span>
+                </button>
+              </div>
+
+              {/* Rows-per-page control */}
+              <div className="hidden md:flex items-center gap-2">
+                <span className="text-[12px] text-white/45">Rows</span>
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setCurrentPage(1);
+                    setPageDir(1);
+                  }}
+                  className="px-2.5 py-1.5 text-[12.5px] bg-white/[0.03] rounded-lg border border-white/10 focus:border-white/25 focus:outline-none transition cursor-pointer"
+                >
+                  {PAGE_SIZES.map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-1.5 mt-5">
+              <button
+                aria-label="First page"
+                className="w-8 h-8 rounded-[10px] border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white transition cursor-pointer disabled:opacity-30 disabled:cursor-default flex items-center justify-center"
+                disabled={currentPage === 1}
+                onClick={() => goToPage(1)}
+              >
+                <i className="fa-solid fa-angles-left text-[11px]" />
+              </button>
+              <button
+                aria-label="Previous page"
+                className="w-8 h-8 rounded-[10px] border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white transition cursor-pointer disabled:opacity-30 disabled:cursor-default flex items-center justify-center"
+                disabled={currentPage === 1}
+                onClick={() => goToPage(currentPage - 1)}
+              >
+                <i className="fa-solid fa-chevron-left text-[11px]" />
+              </button>
+
+              <span className="px-3 text-[12px] text-white/55 tabular-nums">
+                {currentPage} / {totalPages}
+              </span>
+
+              <button
+                aria-label="Next page"
+                className="w-8 h-8 rounded-[10px] border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white transition cursor-pointer disabled:opacity-30 disabled:cursor-default flex items-center justify-center"
+                disabled={currentPage === totalPages}
+                onClick={() => goToPage(currentPage + 1)}
+              >
+                <i className="fa-solid fa-chevron-right text-[11px]" />
+              </button>
+              <button
+                aria-label="Last page"
+                className="w-8 h-8 rounded-[10px] border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white transition cursor-pointer disabled:opacity-30 disabled:cursor-default flex items-center justify-center"
+                disabled={currentPage === totalPages}
+                onClick={() => goToPage(totalPages)}
+              >
+                <i className="fa-solid fa-angles-right text-[11px]" />
+              </button>
+            </div>
+          )}
+
+          {((trades?.length ?? 0) === 0 || filteredTrades?.length !== 0) && (
+            <Statistics
+              data={trades!}
+              status={filter}
+              filteredData={filteredTrades!}
+              option={option}
+              strategy={strategy}
+              symbol={symbol}
+            />
+          )}
         </div>
+      </div>
 
       {isModalOpen && (
         <TradeModal
@@ -1836,9 +1824,7 @@ function computeMergedTrade(trades: Trade[]): Trade {
     base.profitLoss = profitLoss;
     base.dateClosed = new Date(
       Math.max(
-        ...trades.map((t) =>
-          new Date(t.dateClosed || t.dateBought).getTime(),
-        ),
+        ...trades.map((t) => new Date(t.dateClosed || t.dateBought).getTime()),
       ),
     ).toISOString();
     base.status = profitLoss >= 0 ? "WIN" : "LOSS";
