@@ -28,10 +28,10 @@ const day = (iso: string | null | undefined) =>
     : "-";
 
 // Review of what a sync found, split into new trades and skipped
-// (duplicate-looking) ones. Each row can be imported on its own (hover
-// button), and each section can be imported in bulk. Fetches the pending
-// stash itself; `reloadToken` forces a refetch (bump it after a sync), and
-// `onChanged` fires after any import/discard so the parent can refresh.
+// (duplicate-looking) ones. Each row can be imported on its own (the Import
+// button overlays its P/L on hover), and each section can be imported in
+// bulk. Fetches the pending stash itself; `reloadToken` forces a refetch
+// (bump it after a sync), and `onChanged` fires after any import/discard.
 export default function PendingImportReview({
   reloadToken = 0,
   onChanged,
@@ -84,6 +84,12 @@ export default function PendingImportReview({
     }
   };
 
+  const importBulk = async (kind: "new" | "skipped", keys: string[]) => {
+    setBulk(kind);
+    await importKeys(keys);
+    setBulk(null);
+  };
+
   const discardAll = async () => {
     setError("");
     setBulk("discard");
@@ -124,22 +130,19 @@ export default function PendingImportReview({
             <div className="text-[11px] tracking-[0.1em] text-teal-400/80 font-medium">
               New · {newTrades.length}
             </div>
-            <button
-              type="button"
+            <BulkButton
+              tone="teal"
+              busy={bulk === "new"}
               disabled={anyBusy}
-              onClick={() => {
-                setBulk("new");
-                importKeys(newTrades.map((t) => t._key)).finally(() =>
-                  setBulk(null),
-                );
-              }}
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11.5px] font-medium bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition cursor-pointer disabled:opacity-50"
-            >
-              <i
-                className={`fa-solid ${bulk === "new" ? "fa-circle-notch animate-spin" : "fa-check"} text-[10px]`}
-              />
-              Import all
-            </button>
+              label="Import all"
+              busyLabel="Importing…"
+              onClick={() =>
+                importBulk(
+                  "new",
+                  newTrades.map((t) => t._key),
+                )
+              }
+            />
           </div>
           <div className="flex flex-col gap-1.5">
             {newTrades.map((t) => (
@@ -157,26 +160,22 @@ export default function PendingImportReview({
       {skipped.length > 0 && (
         <section className="flex flex-col gap-2">
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5 text-[11px] tracking-[0.1em] text-amber-400/80 font-medium">
-              <i className="fa-solid fa-triangle-exclamation text-[10px]" />
+            <div className="text-[11px] tracking-[0.1em] text-amber-400/80 font-medium">
               Skipped · {skipped.length}
             </div>
-            <button
-              type="button"
+            <BulkButton
+              tone="plain"
+              busy={bulk === "skipped"}
               disabled={anyBusy}
-              onClick={() => {
-                setBulk("skipped");
-                importKeys(skipped.map((t) => t._key)).finally(() =>
-                  setBulk(null),
-                );
-              }}
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11.5px] font-medium bg-white/[0.04] text-white/70 border border-white/15 hover:bg-white/[0.08] hover:text-white transition cursor-pointer disabled:opacity-50"
-            >
-              <i
-                className={`fa-solid ${bulk === "skipped" ? "fa-circle-notch animate-spin" : "fa-arrow-up-from-bracket"} text-[10px]`}
-              />
-              Import anyway
-            </button>
+              label="Import anyway"
+              busyLabel="Importing…"
+              onClick={() =>
+                importBulk(
+                  "skipped",
+                  skipped.map((t) => t._key),
+                )
+              }
+            />
           </div>
           <div className="text-[11px] text-white/40 leading-relaxed">
             These look like duplicates of trades already in your journal, so
@@ -196,23 +195,48 @@ export default function PendingImportReview({
         </section>
       )}
 
-      <div className="flex items-center gap-3">
+      <div>
         <button
           type="button"
           onClick={discardAll}
           disabled={anyBusy}
-          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-white/10 bg-white/[0.03] text-white/60 hover:bg-white/[0.06] hover:text-white transition text-[12px] font-medium cursor-pointer disabled:opacity-50"
+          className="inline-flex items-center px-3.5 py-1.5 rounded-full border border-white/10 bg-white/[0.03] text-white/60 hover:bg-white/[0.06] hover:text-white transition text-[12px] font-medium cursor-pointer disabled:opacity-50 whitespace-nowrap"
         >
-          <i
-            className={`fa-solid ${bulk === "discard" ? "fa-circle-notch animate-spin" : "fa-xmark"} text-[11px]`}
-          />
-          Discard all
+          {bulk === "discard" ? "Discarding…" : "Discard all"}
         </button>
-        <span className="text-[11px] text-white/35">
-          Anything you don&apos;t import stays saved for next time.
-        </span>
       </div>
     </div>
+  );
+}
+
+function BulkButton({
+  tone,
+  busy,
+  disabled,
+  label,
+  busyLabel,
+  onClick,
+}: {
+  tone: "teal" | "plain";
+  busy: boolean;
+  disabled: boolean;
+  label: string;
+  busyLabel: string;
+  onClick: () => void;
+}) {
+  const styles =
+    tone === "teal"
+      ? "bg-teal-500/15 text-teal-300 border-teal-500/25 hover:bg-teal-500/25"
+      : "bg-white/[0.04] text-white/70 border-white/15 hover:bg-white/[0.08] hover:text-white";
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`shrink-0 inline-flex items-center px-3 py-1 rounded-full border text-[11.5px] font-medium transition cursor-pointer disabled:opacity-50 whitespace-nowrap ${styles}`}
+    >
+      {busy ? busyLabel : label}
+    </button>
   );
 }
 
@@ -262,29 +286,31 @@ function PendingRow({
         </div>
       </div>
 
-      <div
-        className={`shrink-0 text-right text-[13px] font-semibold tabular-nums ${
-          isOpen ? "text-white/50" : net >= 0 ? "text-green-300" : "text-red-300"
-        }`}
-      >
-        {isOpen ? "-" : `${net >= 0 ? "+" : "−"}$${Math.abs(net).toFixed(2)}`}
+      {/* P/L with the per-trade Import button overlaid. On hover (desktop) the
+          P/L fades and Import takes its place - no layout shift. On touch,
+          which has no hover, Import shows in its place instead. */}
+      <div className="relative shrink-0 min-w-[92px] h-7 flex items-center justify-end">
+        <span
+          className={`text-[13px] font-semibold tabular-nums transition-opacity group-hover:opacity-0 [@media(hover:none)]:opacity-0 ${
+            isOpen
+              ? "text-white/50"
+              : net >= 0
+                ? "text-green-300"
+                : "text-red-300"
+          }`}
+        >
+          {isOpen ? "-" : `${net >= 0 ? "+" : "−"}$${Math.abs(net).toFixed(2)}`}
+        </span>
+        <button
+          type="button"
+          onClick={onImport}
+          disabled={busy}
+          aria-label="Import this trade"
+          className="absolute inset-y-0 right-0 inline-flex items-center px-3 rounded-full text-[11.5px] font-medium bg-teal-500/15 text-teal-200 border border-teal-500/25 hover:bg-teal-500/25 transition cursor-pointer disabled:opacity-50 whitespace-nowrap opacity-0 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
+        >
+          {busy ? "Importing…" : "Import"}
+        </button>
       </div>
-
-      {/* Per-trade import. Hidden until hover on desktop; always shown on
-          touch (no hover there). */}
-      <button
-        type="button"
-        onClick={onImport}
-        disabled={busy}
-        aria-label="Import this trade"
-        title="Import this trade"
-        className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-teal-500/15 text-teal-200 border border-teal-500/25 hover:bg-teal-500/25 transition cursor-pointer disabled:opacity-50 opacity-100 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100"
-      >
-        <i
-          className={`fa-solid ${busy ? "fa-circle-notch animate-spin" : "fa-plus"} text-[10px]`}
-        />
-        Import
-      </button>
     </div>
   );
 }
