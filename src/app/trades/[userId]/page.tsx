@@ -1433,7 +1433,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                 <div className="flex gap-2">
                   <button
                     data-tour="trades-add"
-                    className="inline-flex items-center justify-center gap-2 px-3 md:px-4 py-2 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition cursor-pointer text-[12px] md:text-[13px] font-medium w-9 h-9 md:w-auto md:h-auto"
+                    className="inline-flex items-center justify-center gap-2 px-3 md:px-4 py-2 rounded-[15px] bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition cursor-pointer text-[12px] md:text-[13px] font-medium w-9 h-9 md:w-auto md:h-auto"
                     onClick={() => {
                       setEditingTrade(null);
                       setIsModalOpen(true);
@@ -1444,7 +1444,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                   </button>
                   <button
                     data-tour="trades-sync"
-                    className={`inline-flex items-center justify-center gap-2 px-3 md:px-4 py-2 rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-500/25 transition text-[12px] md:text-[13px] font-medium w-9 h-9 md:w-auto md:h-auto ${
+                    className={`inline-flex items-center justify-center gap-2 px-3 md:px-4 py-2 rounded-[15px] bg-indigo-500/15 text-indigo-300 border border-indigo-500/25 transition text-[12px] md:text-[13px] font-medium w-9 h-9 md:w-auto md:h-auto ${
                       syncing
                         ? "cursor-not-allowed opacity-60"
                         : "cursor-pointer hover:bg-indigo-500/25"
@@ -1485,7 +1485,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                         : "Select trades to merge partial fills into one"
                     }
                     aria-label="Select trades to merge"
-                    className={`inline-flex items-center justify-center gap-2 px-3 md:px-4 py-2 rounded-full border transition text-[12px] md:text-[13px] font-medium w-9 h-9 md:w-auto md:h-auto cursor-pointer ${
+                    className={`inline-flex items-center justify-center gap-2 px-3 md:px-4 py-2 rounded-[15px] border transition text-[12px] md:text-[13px] font-medium w-9 h-9 md:w-auto md:h-auto cursor-pointer ${
                       selectMode
                         ? "bg-teal-500/25 text-teal-200 border-teal-500/40 hover:bg-teal-500/30"
                         : "bg-white/[0.03] text-white/60 border-white/10 hover:bg-white/[0.06] hover:text-white"
