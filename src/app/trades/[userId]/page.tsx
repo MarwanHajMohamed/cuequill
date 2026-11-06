@@ -1044,7 +1044,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                                   }
                                   disabled={i === 0}
                                   aria-label="Move up"
-                                  className="w-6 h-6 rounded-md flex items-center justify-center text-white/50 hover:text-white hover:bg-white/[0.06] transition cursor-pointer disabled:opacity-25 disabled:cursor-default"
+                                  className="w-6 h-6 rounded-[10px] flex items-center justify-center text-white/50 hover:text-white hover:bg-white/[0.06] transition cursor-pointer disabled:opacity-25 disabled:cursor-default"
                                 >
                                   <i className="fa-solid fa-chevron-up text-[10px]" />
                                 </button>
@@ -1055,7 +1055,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                                   }
                                   disabled={i === columnOrder.length - 1}
                                   aria-label="Move down"
-                                  className="w-6 h-6 rounded-md flex items-center justify-center text-white/50 hover:text-white hover:bg-white/[0.06] transition cursor-pointer disabled:opacity-25 disabled:cursor-default"
+                                  className="w-6 h-6 rounded-[10px] flex items-center justify-center text-white/50 hover:text-white hover:bg-white/[0.06] transition cursor-pointer disabled:opacity-25 disabled:cursor-default"
                                 >
                                   <i className="fa-solid fa-chevron-down text-[10px]" />
                                 </button>
@@ -1103,7 +1103,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                         setEditingTrade(null);
                         setIsModalOpen(true);
                       }}
-                      className="mt-1 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition cursor-pointer text-[13px] font-medium"
+                      className="mt-1 inline-flex items-center gap-2 px-4 py-2 rounded-[10px] bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition cursor-pointer text-[13px] font-medium"
                     >
                       <i className="fa-solid fa-plus text-[11px]" />
                       Add trade
@@ -1322,7 +1322,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                                     setEditingTrade(trade);
                                     setIsModalOpen(true);
                                   }}
-                                  className="w-7 h-7 rounded-md inline-flex items-center justify-center text-white/35 group-hover:text-white/65 hover:text-white hover:bg-white/[0.08] transition cursor-pointer"
+                                  className="w-7 h-7 rounded-[10px] inline-flex items-center justify-center text-white/35 group-hover:text-white/65 hover:text-white hover:bg-white/[0.08] transition cursor-pointer"
                                 >
                                   <i className="fa-solid fa-pen text-[11px]" />
                                 </button>
@@ -1387,7 +1387,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                                           );
                                           setConfirmDeleteId(null);
                                         }}
-                                        className="w-7 h-7 rounded-md inline-flex items-center justify-center text-red-300 hover:text-white hover:bg-red-500/20 transition cursor-pointer"
+                                        className="w-7 h-7 rounded-[10px] inline-flex items-center justify-center text-red-300 hover:text-white hover:bg-red-500/20 transition cursor-pointer"
                                       >
                                         <i className="fa-solid fa-check text-[11px]" />
                                       </button>
@@ -1399,7 +1399,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                                           e.stopPropagation();
                                           setConfirmDeleteId(null);
                                         }}
-                                        className="w-7 h-7 rounded-md inline-flex items-center justify-center text-white/50 hover:text-white hover:bg-white/[0.08] transition cursor-pointer"
+                                        className="w-7 h-7 rounded-[10px] inline-flex items-center justify-center text-white/50 hover:text-white hover:bg-white/[0.08] transition cursor-pointer"
                                       >
                                         <i className="fa-solid fa-xmark text-[11px]" />
                                       </button>
@@ -1413,7 +1413,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                                         e.stopPropagation();
                                         setConfirmDeleteId(tradeId);
                                       }}
-                                      className="w-7 h-7 rounded-md inline-flex items-center justify-center text-white/30 opacity-0 group-hover:opacity-100 hover:text-red-300 hover:bg-red-500/15 transition cursor-pointer"
+                                      className="w-7 h-7 rounded-[10px] inline-flex items-center justify-center text-white/30 opacity-0 group-hover:opacity-100 hover:text-red-300 hover:bg-red-500/15 transition cursor-pointer"
                                     >
                                       <i className="fa-solid fa-trash text-[11px]" />
                                     </button>
@@ -1468,7 +1468,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                     disabled={syncing}
                     title="See what the last sync imported"
                     aria-label="View last imported trades"
-                    className="inline-flex items-center justify-center gap-2 px-3 md:px-3 py-2 rounded-full bg-white/[0.03] text-white/60 border border-white/10 hover:bg-white/[0.06] hover:text-white transition cursor-pointer text-[12px] md:text-[13px] font-medium w-9 h-9"
+                    className="inline-flex items-center justify-center gap-2 px-3 md:px-3 py-2 rounded-[10px] bg-white/[0.03] text-white/60 border border-white/10 hover:bg-white/[0.06] hover:text-white transition cursor-pointer text-[12px] md:text-[13px] font-medium w-9 h-9"
                   >
                     <i className="fa-solid fa-list-check text-[11px]" />
                   </button>
@@ -1523,7 +1523,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
               <div className="flex justify-center items-center gap-1.5 mt-5">
                 <button
                   aria-label="First page"
-                  className="w-8 h-8 rounded-full border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white transition cursor-pointer disabled:opacity-30 disabled:cursor-default flex items-center justify-center"
+                  className="w-8 h-8 rounded-[10px] border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white transition cursor-pointer disabled:opacity-30 disabled:cursor-default flex items-center justify-center"
                   disabled={currentPage === 1}
                   onClick={() => goToPage(1)}
                 >
@@ -1531,7 +1531,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                 </button>
                 <button
                   aria-label="Previous page"
-                  className="w-8 h-8 rounded-full border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white transition cursor-pointer disabled:opacity-30 disabled:cursor-default flex items-center justify-center"
+                  className="w-8 h-8 rounded-[10px] border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white transition cursor-pointer disabled:opacity-30 disabled:cursor-default flex items-center justify-center"
                   disabled={currentPage === 1}
                   onClick={() => goToPage(currentPage - 1)}
                 >
@@ -1544,7 +1544,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
 
                 <button
                   aria-label="Next page"
-                  className="w-8 h-8 rounded-full border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white transition cursor-pointer disabled:opacity-30 disabled:cursor-default flex items-center justify-center"
+                  className="w-8 h-8 rounded-[10px] border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white transition cursor-pointer disabled:opacity-30 disabled:cursor-default flex items-center justify-center"
                   disabled={currentPage === totalPages}
                   onClick={() => goToPage(currentPage + 1)}
                 >
@@ -1552,7 +1552,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
                 </button>
                 <button
                   aria-label="Last page"
-                  className="w-8 h-8 rounded-full border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white transition cursor-pointer disabled:opacity-30 disabled:cursor-default flex items-center justify-center"
+                  className="w-8 h-8 rounded-[10px] border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white transition cursor-pointer disabled:opacity-30 disabled:cursor-default flex items-center justify-center"
                   disabled={currentPage === totalPages}
                   onClick={() => goToPage(totalPages)}
                 >
@@ -1626,7 +1626,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
             type="button"
             onClick={handleUndoMerge}
             disabled={undoing}
-            className="inline-flex items-center gap-1.5 px-3 md:px-3.5 py-1.5 rounded-full bg-white/[0.06] text-white border border-white/15 hover:bg-white/[0.12] transition text-[12.5px] md:text-[13px] font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 px-3 md:px-3.5 py-1.5 rounded-[10px] bg-white/[0.06] text-white border border-white/15 hover:bg-white/[0.12] transition text-[12.5px] md:text-[13px] font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {undoing ? (
               <>
@@ -1645,7 +1645,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
             aria-label="Dismiss"
             onClick={() => setLastMerge(null)}
             disabled={undoing}
-            className="w-6 h-6 rounded-full inline-flex items-center justify-center text-white/45 hover:text-white hover:bg-white/[0.08] transition cursor-pointer disabled:opacity-40"
+            className="w-6 h-6 rounded-[10px] inline-flex items-center justify-center text-white/45 hover:text-white hover:bg-white/[0.08] transition cursor-pointer disabled:opacity-40"
           >
             <i className="fa-solid fa-xmark text-[10px]" />
           </button>
@@ -1669,7 +1669,7 @@ function Page({ params }: { params: Promise<{ userId: string }> }) {
               type="button"
               disabled={selectedIds.size < 2 || merging}
               onClick={handleMerge}
-              className="shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-3 md:px-3.5 py-1.5 rounded-full bg-teal-500/25 text-teal-200 border border-teal-500/40 hover:bg-teal-500/35 transition text-[12.5px] md:text-[13px] font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              className="shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-3 md:px-3.5 py-1.5 rounded-[10px] bg-teal-500/25 text-teal-200 border border-teal-500/40 hover:bg-teal-500/35 transition text-[12.5px] md:text-[13px] font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {merging ? (
                 <i className="fa-solid fa-spinner animate-spin text-[11px]" />
