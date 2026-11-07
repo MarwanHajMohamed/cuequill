@@ -23,6 +23,8 @@ type ImportedTrade = {
   dateBought: string;
   dateClosed?: string | null;
   expiryDate?: string | null;
+  timeEntered?: string | null;
+  timeExited?: string | null;
   profitLoss?: number | null;
   fees?: number | null;
   status: "WIN" | "LOSS" | "OPEN";
@@ -868,7 +870,10 @@ function ImportedRow({
         </div>
         <div className="text-[10.5px] text-white/40 tabular-nums">
           {day(trade.dateBought)}
-          {trade.dateClosed ? ` › ${day(trade.dateClosed)}` : " · open"}
+          {trade.timeEntered ? ` ${trade.timeEntered}` : ""}
+          {trade.dateClosed
+            ? ` › ${day(trade.dateClosed)}${trade.timeExited ? ` ${trade.timeExited}` : ""}`
+            : " · open"}
         </div>
       </div>
 
