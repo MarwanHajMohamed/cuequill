@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import connectDb from "@/lib/db";
 import { User } from "@/lib/models/User";
+import { getPendingImport } from "@/lib/ibkrSync";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,14 +21,10 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  await connectDb();
-  const user = await User.findById(session.user.id).select(
-    "ibkrPendingImport ibkrPendingSkipped",
-  );
-
+  const trades = await getPendingImport(session.user.id);
   return NextResponse.json({
-    trades: user?.ibkrPendingImport ?? [],
-    skipped: user?.ibkrPendingSkipped ?? 0,
+    trades,
+    skipped: trades.filter((t) => t._skipped).length,
   });
 }
 

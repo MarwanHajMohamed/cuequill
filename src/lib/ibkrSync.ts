@@ -1,4 +1,3 @@
-import { randomUUID } from "crypto";
 import connectDb from "@/lib/db";
 import { User } from "@/lib/models/User";
 import Trade from "@/lib/models/Trade";
@@ -12,10 +11,19 @@ import { getBrokerAdapter, DEFAULT_BROKER, type BrokerId } from "@/lib/brokers";
 // A matched trade draft with its owner attached, ready to insert.
 type PlannedTrade = TradeDraft & { userID: string };
 
-// A trade staged in the pending stash. `_key` is a stable id so the UI can
-// import or drop individual trades; `_skipped` marks the ones that looked
-// like duplicates (skipped by default, but importable if the user insists).
+// What's stored in ibkrPendingImport: the draft plus a skipped flag. There's
+// deliberately no stored id - a trade's position in the array IS its key, so
+// selection can't break if a generated id fails to survive the round-trip.
+type StoredPending = PlannedTrade & { _skipped: boolean };
+
+// Client-facing pending trade: the stored fields plus `_key` (its index as a
+// string), which the UI sends back to import that specific trade.
 export type PendingTrade = PlannedTrade & { _key: string; _skipped: boolean };
+
+// Attach positional keys for the client.
+function withKeys(arr: StoredPending[]): PendingTrade[] {
+  return arr.map((t, i) => ({ ...t, _key: String(i) }));
+}
 
 // Pull-sync for an auto-sync broker (e.g. IBKR): fetch the user's fills
 // via the broker adapter (the IBKR Activity Flex query), then run the
@@ -203,15 +211,11 @@ export async function previewSyncForUser(
   const fills = await fetchSyncFills(userId, brokerId);
   const plan = await computeImportPlan(userId, fills);
 
-  // Stash new and skipped together, each with a stable key and a flag, so
-  // the UI can show both and let the user import any of them individually.
-  const keyed: PendingTrade[] = [
-    ...plan.newTrades.map((t) => ({ ...t, _key: randomUUID(), _skipped: false })),
-    ...plan.skippedTrades.map((t) => ({
-      ...t,
-      _key: randomUUID(),
-      _skipped: true,
-    })),
+  // Stash new and skipped together (skipped flagged), in order. Position in
+  // the array is the key the UI selects by.
+  const keyed: StoredPending[] = [
+    ...plan.newTrades.map((t) => ({ ...t, _skipped: false })),
+    ...plan.skippedTrades.map((t) => ({ ...t, _skipped: true })),
   ];
 
   await User.findByIdAndUpdate(userId, {
@@ -223,41 +227,48 @@ export async function previewSyncForUser(
     fetched: plan.fetched,
     matched: plan.matched,
     skipped: plan.skippedTrades.length,
-    trades: keyed,
+    trades: withKeys(keyed),
   };
 }
 
 // Read the pending stash (new + skipped), still-staged trades the user
-// hasn't imported.
+// hasn't imported, each with its positional key.
 export async function getPendingImport(userId: string): Promise<PendingTrade[]> {
   await connectDb();
   const user = await User.findById(userId).select("ibkrPendingImport");
-  return (user?.ibkrPendingImport ?? []) as PendingTrade[];
+  return withKeys((user?.ibkrPendingImport ?? []) as StoredPending[]);
 }
 
-// Commit staged trades. No IBKR call. With `keys`, import exactly those
-// (new or skipped - the user's explicit pick); without, import every NEW
-// trade and leave the skipped ones staged. Imported trades leave the
-// stash; the rest stay for later.
+// Commit staged trades. No IBKR call. With `keys` (positional indices as
+// strings), import exactly those (new or skipped - the user's explicit
+// pick); without, import every NEW trade and leave the skipped ones staged.
+// Imported trades leave the stash; the rest stay for later.
 export async function commitPendingImport(
   userId: string,
   keys?: string[],
 ): Promise<{ inserted: number; remaining: number; remainingSkipped: number }> {
   await connectDb();
   const user = await User.findById(userId).select("ibkrPendingImport");
-  const pending = (user?.ibkrPendingImport ?? []) as PendingTrade[];
+  const pending = (user?.ibkrPendingImport ?? []) as StoredPending[];
 
-  const keySet = keys ? new Set(keys) : null;
-  const selected = keySet
-    ? pending.filter((p) => keySet.has(p._key))
-    : pending.filter((p) => !p._skipped);
-  const selectedKeys = new Set(selected.map((p) => p._key));
-  const remaining = pending.filter((p) => !selectedKeys.has(p._key));
+  const selectedIdx = new Set<number>();
+  if (keys) {
+    for (const k of keys) {
+      const i = Number(k);
+      if (Number.isInteger(i) && i >= 0 && i < pending.length) selectedIdx.add(i);
+    }
+  } else {
+    pending.forEach((p, i) => {
+      if (!p._skipped) selectedIdx.add(i);
+    });
+  }
 
-  // Strip the stash-only fields before inserting into the journal.
+  const selected = pending.filter((_, i) => selectedIdx.has(i));
+  const remaining = pending.filter((_, i) => !selectedIdx.has(i));
+
+  // Strip the stash-only field before inserting into the journal.
   const toInsert: PlannedTrade[] = selected.map((p) => {
-    const rest = { ...p } as Partial<PendingTrade>;
-    delete rest._key;
+    const rest = { ...p } as Partial<StoredPending>;
     delete rest._skipped;
     return rest as PlannedTrade;
   });
