@@ -408,7 +408,7 @@ export default function BrokersTab() {
         <button
           onClick={handleImport}
           disabled={!file || busy}
-          className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border transition text-[13px] font-medium ${
+          className={`inline-flex items-center gap-2 px-4 py-2 rounded-[10px] border transition text-[13px] font-medium ${
             file && !busy
               ? "bg-teal-500/15 text-teal-300 border-teal-500/25 hover:bg-teal-500/25 cursor-pointer"
               : "bg-white/[0.02] text-white/30 border-white/10 cursor-not-allowed"
@@ -487,7 +487,7 @@ export default function BrokersTab() {
                   <button
                     key={s.id}
                     onClick={() => openSource(s)}
-                    className="group flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/20 transition px-3.5 py-3 text-left cursor-pointer"
+                    className="group flex items-center gap-3 rounded-[10px] border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/20 transition px-3.5 py-3 text-left cursor-pointer"
                   >
                     <BrokerLogo logo={s.logo} layoutId={`broker-logo-${s.id}`} />
                     <div className="min-w-0 flex flex-col gap-1.5">
@@ -531,7 +531,7 @@ export default function BrokersTab() {
               <button
                 onClick={backToGrid}
                 aria-label="Back to brokers"
-                className="shrink-0 w-8 h-8 rounded-full border border-white/10 bg-white/[0.03] text-white/60 hover:text-white hover:bg-white/[0.06] transition flex items-center justify-center cursor-pointer"
+                className="shrink-0 w-8 h-8 rounded-[10px] border border-white/10 bg-white/[0.03] text-white/60 hover:text-white hover:bg-white/[0.06] transition flex items-center justify-center cursor-pointer"
               >
                 <i className="fa-solid fa-chevron-left text-[12px]" />
               </button>
@@ -586,7 +586,7 @@ export default function BrokersTab() {
                             key={t.id}
                             type="button"
                             onClick={() => setView(t.id)}
-                            className={`relative px-3 py-1 rounded-full text-[12px] font-medium transition cursor-pointer ${
+                            className={`relative px-3 py-1 rounded-[10px] text-[12px] font-medium transition cursor-pointer ${
                               active
                                 ? "text-teal-300"
                                 : "text-white/55 hover:text-white"

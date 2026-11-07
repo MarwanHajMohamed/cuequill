@@ -221,7 +221,7 @@ function Page() {
                       totalXp: data.totalXp,
                     })
                   }
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/12 bg-white/[0.03] text-[11.5px] font-medium text-white/60 hover:text-white hover:border-white/25 transition cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] border border-white/12 bg-white/[0.03] text-[11.5px] font-medium text-white/60 hover:text-white hover:border-white/25 transition cursor-pointer"
                 >
                   <i className="fa-solid fa-share-nodes text-[10px]" />
                   Share level
@@ -617,7 +617,7 @@ function ChallengeCard({
               onClick={onShare}
               title="Share this achievement"
               aria-label="Share this achievement"
-              className="inline-flex items-center justify-center w-6 h-6 rounded-full border border-white/12 bg-white/[0.04] text-white/60 hover:text-white hover:border-white/30 transition cursor-pointer"
+              className="inline-flex items-center justify-center w-6 h-6 rounded-[10px] border border-white/12 bg-white/[0.04] text-white/60 hover:text-white hover:border-white/30 transition cursor-pointer"
             >
               <i className="fa-solid fa-share-nodes text-[10px]" />
             </button>
@@ -629,7 +629,7 @@ function ChallengeCard({
               whileTap={{ scale: 0.94 }}
               animate={{ scale: [1, 1.05, 1] }}
               transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
-              className="claim-btn relative overflow-hidden inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full transition text-[12px] font-bold cursor-pointer disabled:opacity-60"
+              className="claim-btn relative overflow-hidden inline-flex items-center gap-1.5 px-3.5 py-1 rounded-[10px] transition text-[12px] font-bold cursor-pointer disabled:opacity-60"
             >
               {/* Shimmer confined to the button. */}
               {!claiming && (

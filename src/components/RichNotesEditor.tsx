@@ -410,7 +410,7 @@ function ToolbarButton({
       onMouseDown={(e) => e.preventDefault()}
       title={label}
       aria-label={label}
-      className="w-8 h-8 rounded-md flex items-center justify-center text-white/55 hover:text-white hover:bg-white/[0.06] transition cursor-pointer"
+      className="w-8 h-8 rounded-[10px] flex items-center justify-center text-white/55 hover:text-white hover:bg-white/[0.06] transition cursor-pointer"
     >
       <i className={`${icon} text-[12px]`} />
     </button>

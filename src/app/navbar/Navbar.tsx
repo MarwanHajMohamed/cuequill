@@ -46,7 +46,7 @@ function CollapseToggle({
       onClick={onClick}
       aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
       title={collapsed ? "Expand" : "Collapse"}
-      className="shrink-0 w-7 h-7 inline-flex items-center justify-center rounded-lg text-white/45 hover:text-white hover:bg-white/[0.06] transition cursor-pointer"
+      className="shrink-0 w-7 h-7 inline-flex items-center justify-center rounded-[10px] text-white/45 hover:text-white hover:bg-white/[0.06] transition cursor-pointer"
     >
       <i
         className={`fa-solid ${
@@ -865,7 +865,7 @@ export default function Navbar() {
             <div ref={dropdownRef} className="relative">
               <button
                 onClick={() => setOpen((o) => !o)}
-                className={`w-full flex items-center rounded-xl hover:bg-white/[0.06] transition cursor-pointer ${
+                className={`w-full flex items-center rounded-[10px] hover:bg-white/[0.06] transition cursor-pointer ${
                   collapsed ? "justify-center px-0 py-2" : "gap-2.5 px-2 py-2"
                 }`}
                 aria-label="account menu"
@@ -941,7 +941,7 @@ export default function Navbar() {
                     {/* Account section - navigation links */}
                     <div className="px-2 pt-2 pb-1">
                       <button
-                        className="group w-full flex items-center gap-3 px-2.5 py-2 text-left text-[13px] rounded-lg cursor-pointer text-white/85 hover:bg-white/[0.06] hover:text-white transition"
+                        className="group w-full flex items-center gap-3 px-2.5 py-2 text-left text-[13px] rounded-[10px] cursor-pointer text-white/85 hover:bg-white/[0.06] hover:text-white transition"
                         onClick={() => {
                           handleRoute("settings");
                           setOpen(false);
@@ -952,7 +952,7 @@ export default function Navbar() {
                         <i className="fa-solid fa-chevron-right text-[9px] text-white/30 group-hover:text-white/55 transition" />
                       </button>
                       <button
-                        className="group w-full flex items-center gap-3 px-2.5 py-2 text-left text-[13px] rounded-lg cursor-pointer text-white/85 hover:bg-white/[0.06] hover:text-white transition"
+                        className="group w-full flex items-center gap-3 px-2.5 py-2 text-left text-[13px] rounded-[10px] cursor-pointer text-white/85 hover:bg-white/[0.06] hover:text-white transition"
                         onClick={() => {
                           handleRoute("pricing");
                           setOpen(false);
@@ -1001,7 +1001,7 @@ export default function Navbar() {
                     {/* Sign-out - visually separated, slightly louder hover */}
                     <div className="p-2 border-t border-white/[0.06]">
                       <button
-                        className="group w-full flex items-center gap-3 px-2.5 py-2 text-left text-[13px] rounded-lg cursor-pointer text-white/75 hover:bg-red-500/[0.08] hover:text-red-200 transition"
+                        className="group w-full flex items-center gap-3 px-2.5 py-2 text-left text-[13px] rounded-[10px] cursor-pointer text-white/75 hover:bg-red-500/[0.08] hover:text-red-200 transition"
                         onClick={() => {
                           clearAccent();
                           signOut({ callbackUrl: "/" });
@@ -1199,7 +1199,7 @@ export default function Navbar() {
                   aria-label="close"
                   onPointerDown={(e) => e.stopPropagation()}
                   onClick={() => setOpenMore(false)}
-                  className="w-8 h-8 rounded-full hover:bg-white/5 flex items-center justify-center text-white/60 hover:text-white transition"
+                  className="w-8 h-8 rounded-[10px] hover:bg-white/5 flex items-center justify-center text-white/60 hover:text-white transition"
                 >
                   <i className="fa-solid fa-xmark text-[13px]" />
                 </button>
@@ -1279,7 +1279,7 @@ export default function Navbar() {
                   clearAccent();
                   signOut({ callbackUrl: "/" });
                 }}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-red-500/10 text-red-300 border border-red-500/25 hover:bg-red-500/20 transition text-[13px] font-medium"
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-[10px] bg-red-500/10 text-red-300 border border-red-500/25 hover:bg-red-500/20 transition text-[13px] font-medium"
               >
                 <i className="fa-solid fa-right-from-bracket text-[12px]" />
                 logout

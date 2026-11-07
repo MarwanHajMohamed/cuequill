@@ -1022,7 +1022,7 @@ function Page() {
     <button
       data-tour="cal-share"
       onClick={() => setShowMonthShare(true)}
-      className="w-8 h-8 inline-flex items-center justify-center rounded-full border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/75 hover:text-white transition cursor-pointer"
+      className="w-8 h-8 inline-flex items-center justify-center rounded-[10px] border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/75 hover:text-white transition cursor-pointer"
       title={`Share this ${shareContext}'s P/L as an image`}
       aria-label={`Share this ${shareContext}`}
     >
@@ -1033,7 +1033,7 @@ function Page() {
   const todayButton = () => (
     <button
       onClick={goToToday}
-      className="inline-flex items-center px-3 py-1.5 rounded-full border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/75 hover:text-white transition text-[12px] font-medium cursor-pointer"
+      className="inline-flex items-center px-3 py-1.5 rounded-[10px] border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/75 hover:text-white transition text-[12px] font-medium cursor-pointer"
       title="Jump to today"
     >
       Today
@@ -1053,7 +1053,7 @@ function Page() {
       <button
         type="button"
         onClick={() => setView("month")}
-        className={`relative px-3 py-1 rounded-full text-[12px] font-medium transition-colors cursor-pointer ${
+        className={`relative px-3 py-1 rounded-[10px] text-[12px] font-medium transition-colors cursor-pointer ${
           view === "month" ? "text-white" : "text-white/55 hover:text-white"
         }`}
       >
@@ -1062,7 +1062,7 @@ function Page() {
       <button
         type="button"
         onClick={() => setView("week")}
-        className={`relative px-3 py-1 rounded-full text-[12px] font-medium transition-colors cursor-pointer ${
+        className={`relative px-3 py-1 rounded-[10px] text-[12px] font-medium transition-colors cursor-pointer ${
           view === "week" ? "text-white" : "text-white/55 hover:text-white"
         }`}
       >
@@ -1180,7 +1180,7 @@ function Page() {
                 <div className="hidden md:flex items-center gap-2">
                   <button
                     onClick={() => setDetailed((v) => !v)}
-                    className={`w-8 h-8 inline-flex items-center justify-center rounded-full border transition cursor-pointer ${
+                    className={`w-8 h-8 inline-flex items-center justify-center rounded-[10px] border transition cursor-pointer ${
                       detailed
                         ? "bg-teal-500/15 text-teal-300 border-teal-500/30 hover:bg-teal-500/25"
                         : "border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/75 hover:text-white"
@@ -1203,7 +1203,7 @@ function Page() {
             <div className="md:hidden flex items-center justify-end flex-wrap gap-2 px-3 mb-3">
               <button
                 onClick={() => setDetailed((v) => !v)}
-                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border transition cursor-pointer text-[12px] font-medium ${
+                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-[10px] border transition cursor-pointer text-[12px] font-medium ${
                   detailed
                     ? "bg-teal-500/15 text-teal-300 border-teal-500/30"
                     : "border-white/10 bg-white/[0.03] text-white/75"

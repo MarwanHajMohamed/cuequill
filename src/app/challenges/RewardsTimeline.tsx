@@ -247,7 +247,7 @@ function RewardsModal({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="ml-auto shrink-0 w-8 h-8 rounded-full border border-white/10 bg-white/[0.03] text-white/50 hover:text-white hover:border-white/25 transition flex items-center justify-center cursor-pointer"
+            className="ml-auto shrink-0 w-8 h-8 rounded-[10px] border border-white/10 bg-white/[0.03] text-white/50 hover:text-white hover:border-white/25 transition flex items-center justify-center cursor-pointer"
           >
             <i className="fa-solid fa-xmark text-[12px]" />
           </button>

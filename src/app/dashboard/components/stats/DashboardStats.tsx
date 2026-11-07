@@ -493,7 +493,7 @@ export default function DashboardStats({ userId }: { userId: string }) {
               <button
                 onClick={() => setAddOpen((o) => !o)}
                 disabled={disabledTiles.length === 0}
-                className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-1 rounded-md border border-white/10 bg-white/[0.04] text-white/75 hover:bg-white/[0.08] transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-1 rounded-[10px] border border-white/10 bg-white/[0.04] text-white/75 hover:bg-white/[0.08] transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
               >
                 <i className="fa-solid fa-plus text-[10px]" />
                 Add
@@ -515,7 +515,7 @@ export default function DashboardStats({ userId }: { userId: string }) {
                           persistTiles([...tiles, t.id]);
                           setAddOpen(false);
                         }}
-                        className="w-full text-left flex items-center gap-2 px-2 py-1.5 rounded-lg text-[13px] text-white/80 hover:bg-white/[0.06] transition cursor-pointer"
+                        className="w-full text-left flex items-center gap-2 px-2 py-1.5 rounded-[10px] text-[13px] text-white/80 hover:bg-white/[0.06] transition cursor-pointer"
                       >
                         <i className="fa-solid fa-plus text-[10px] text-white/40" />
                         {t.title}
@@ -531,7 +531,7 @@ export default function DashboardStats({ userId }: { userId: string }) {
               setEditing((v) => !v);
               setAddOpen(false);
             }}
-            className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-1 rounded-md border transition cursor-pointer ${
+            className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-1 rounded-[10px] border transition cursor-pointer ${
               editing
                 ? "border-teal-400/40 bg-teal-500/15 text-teal-200"
                 : "border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08]"
@@ -635,7 +635,7 @@ function SortableTile({
       </div>
       <button
         onClick={onRemove}
-        className="absolute -top-2 -right-2 w-5 h-5 flex items-center justify-center rounded-full bg-[var(--surface-2,#222)] border border-white/15 text-white/60 hover:text-red-300 hover:border-red-400/40 transition cursor-pointer shadow"
+        className="absolute -top-2 -right-2 w-5 h-5 flex items-center justify-center rounded-[10px] bg-[var(--surface-2,#222)] border border-white/15 text-white/60 hover:text-red-300 hover:border-red-400/40 transition cursor-pointer shadow"
         aria-label="Remove tile"
         title="Remove tile"
       >

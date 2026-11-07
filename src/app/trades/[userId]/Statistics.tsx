@@ -199,7 +199,7 @@ function MoveBtn({
     <button
       type="button"
       onClick={onClick}
-      className="w-6 h-6 flex items-center justify-center rounded-md border border-white/15 bg-[var(--surface-2,#1a1a1a)]/80 text-white/70 hover:text-white hover:bg-white/10 transition cursor-pointer shadow"
+      className="w-6 h-6 flex items-center justify-center rounded-[10px] border border-white/15 bg-[var(--surface-2,#1a1a1a)]/80 text-white/70 hover:text-white hover:bg-white/10 transition cursor-pointer shadow"
       aria-label={label}
       title={label}
     >
@@ -223,7 +223,7 @@ function DragHandle({
     <button
       type="button"
       onPointerDown={onPointerDown}
-      className={`inline-flex items-center gap-1.5 rounded-lg border border-dashed border-white/25 bg-[var(--surface-2,#1a1a1a)]/80 px-2 py-1 text-[11px] font-medium text-white/70 cursor-grab active:cursor-grabbing touch-none shadow ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded-[10px] border border-dashed border-white/25 bg-[var(--surface-2,#1a1a1a)]/80 px-2 py-1 text-[11px] font-medium text-white/70 cursor-grab active:cursor-grabbing touch-none shadow ${className}`}
       aria-label={label ? `Drag ${label}` : "Drag to reorder"}
     >
       <i className="fa-solid fa-grip-vertical text-[11px]" />
@@ -282,7 +282,7 @@ const CustomizeMenu = ({
         type="button"
         onClick={() => toggle(key)}
         title={on ? "Hide" : "Show"}
-        className="group flex items-center gap-2.5 w-full text-left px-2 py-1.5 rounded-lg hover:bg-white/[0.04] transition cursor-pointer"
+        className="group flex items-center gap-2.5 w-full text-left px-2 py-1.5 rounded-[10px] hover:bg-white/[0.04] transition cursor-pointer"
       >
         <span
           className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition ${
@@ -1085,7 +1085,7 @@ export default function Statistics({
               setTileOrder,
             )
           }
-          className="hidden md:flex w-5 h-5 items-center justify-center rounded-full bg-[var(--surface-2,#222)] border border-white/15 text-white/60 cursor-grab active:cursor-grabbing touch-none shadow"
+          className="hidden md:flex w-5 h-5 items-center justify-center rounded-[10px] bg-[var(--surface-2,#222)] border border-white/15 text-white/60 cursor-grab active:cursor-grabbing touch-none shadow"
           aria-label="Drag tile"
         >
           <i className="fa-solid fa-grip-vertical text-[9px]" />
@@ -2520,7 +2520,7 @@ export default function Statistics({
                 <button
                   onClick={handlePrevMonth}
                   aria-label="Previous month"
-                  className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white hover:border-white/20 transition cursor-pointer"
+                  className="inline-flex items-center justify-center w-9 h-9 rounded-[10px] border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white hover:border-white/20 transition cursor-pointer"
                 >
                   <i className="fa-solid fa-chevron-left text-[11px]" />
                 </button>
@@ -2543,7 +2543,7 @@ export default function Statistics({
                 <button
                   onClick={handleNextMonth}
                   aria-label="Next month"
-                  className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white hover:border-white/20 transition cursor-pointer"
+                  className="inline-flex items-center justify-center w-9 h-9 rounded-[10px] border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white hover:border-white/20 transition cursor-pointer"
                 >
                   <i className="fa-solid fa-chevron-right text-[11px]" />
                 </button>

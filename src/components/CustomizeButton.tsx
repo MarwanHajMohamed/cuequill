@@ -29,7 +29,7 @@ export default function CustomizeButton({
       title={title ?? label}
       aria-label={title ?? label}
       aria-expanded={ariaExpanded}
-      className={`inline-flex items-center gap-2 text-[12px] font-medium px-3 py-1.5 rounded-lg border transition cursor-pointer ${
+      className={`inline-flex items-center gap-2 text-[12px] font-medium px-3 py-1.5 rounded-[10px] border transition cursor-pointer ${
         active
           ? "border-teal-400/40 bg-teal-500/15 text-teal-200"
           : "border-white/10 bg-white/[0.04] text-white/70 hover:bg-white/[0.08]"

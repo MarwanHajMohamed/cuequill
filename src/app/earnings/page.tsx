@@ -143,7 +143,7 @@ function EarningsPage() {
                   type="button"
                   onClick={() => removeSymbol(s)}
                   aria-label={`Remove ${s}`}
-                  className="w-4 h-4 rounded-full flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition cursor-pointer"
+                  className="w-4 h-4 rounded-[10px] flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition cursor-pointer"
                 >
                   <i className="fa-solid fa-xmark text-[9px]" />
                 </button>
@@ -169,7 +169,7 @@ function EarningsPage() {
                 type="button"
                 onClick={addSymbol}
                 aria-label="Add ticker"
-                className="w-6 h-6 mr-1 rounded-full flex items-center justify-center text-teal-300 hover:bg-teal-500/15 transition cursor-pointer"
+                className="w-6 h-6 mr-1 rounded-[10px] flex items-center justify-center text-teal-300 hover:bg-teal-500/15 transition cursor-pointer"
               >
                 <i className="fa-solid fa-plus text-[11px]" />
               </button>

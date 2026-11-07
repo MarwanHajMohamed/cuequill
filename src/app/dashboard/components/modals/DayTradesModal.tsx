@@ -136,7 +136,7 @@ export default function DayTradesModal({
             <button
               onClick={onClose}
               aria-label="Close"
-              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/[0.06] hover:bg-white/[0.12] text-white/60 hover:text-white transition cursor-pointer flex items-center justify-center"
+              className="absolute top-4 right-4 w-8 h-8 rounded-[10px] bg-white/[0.06] hover:bg-white/[0.12] text-white/60 hover:text-white transition cursor-pointer flex items-center justify-center"
             >
               <i className="fa-solid fa-xmark text-[13px]" />
             </button>
@@ -241,7 +241,7 @@ export default function DayTradesModal({
                     <button
                       key={t._id || `${t.symbol}-${t.dateBought}-${i}`}
                       onClick={() => onTradeClick(t)}
-                      className="group flex items-center gap-3 px-3 py-2.5 rounded-xl border border-white/[0.07] bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.05] transition cursor-pointer text-left"
+                      className="group flex items-center gap-3 px-3 py-2.5 rounded-[10px] border border-white/[0.07] bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.05] transition cursor-pointer text-left"
                     >
                       <div className="flex flex-col gap-0.5 min-w-0 flex-1">
                         <div className="flex items-baseline gap-1.5">
@@ -290,7 +290,7 @@ export default function DayTradesModal({
           <div className="shrink-0 px-5 py-4 border-t border-white/10">
             <button
               onClick={onAddTrade}
-              className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-teal-500/15 hover:bg-teal-500/25 text-teal-300 border border-teal-500/30 transition font-semibold text-[13px] cursor-pointer"
+              className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-[10px] bg-teal-500/15 hover:bg-teal-500/25 text-teal-300 border border-teal-500/30 transition font-semibold text-[13px] cursor-pointer"
             >
               <i className="fa-solid fa-plus text-[11px]" />
               Add trade

@@ -184,7 +184,7 @@ export default function ShareImageModal({
                       ? `${s.label} - unlocks at level ${s.minLevel}`
                       : s.label
                   }
-                  className={`relative w-8 h-8 rounded-full border transition ${
+                  className={`relative w-8 h-8 rounded-[10px] border transition ${
                     locked
                       ? "opacity-40 cursor-not-allowed border-[#ffffff26]"
                       : active
@@ -217,7 +217,7 @@ export default function ShareImageModal({
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full border border-[#ffffff26] bg-[#ffffff0d] text-[#ffffffcc] hover:bg-[#ffffff17] hover:text-[#ffffff] transition text-[13px] font-medium cursor-pointer"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-[10px] border border-[#ffffff26] bg-[#ffffff0d] text-[#ffffffcc] hover:bg-[#ffffff17] hover:text-[#ffffff] transition text-[13px] font-medium cursor-pointer"
           >
             Close
           </button>
@@ -225,7 +225,7 @@ export default function ShareImageModal({
             type="button"
             onClick={handleSave}
             disabled={busy}
-            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full border border-[#ffffff26] bg-[#ffffff0d] text-[#ffffffd9] hover:bg-[#ffffff17] hover:text-[#ffffff] transition text-[13px] font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-[10px] border border-[#ffffff26] bg-[#ffffff0d] text-[#ffffffd9] hover:bg-[#ffffff17] hover:text-[#ffffff] transition text-[13px] font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <i className="fa-solid fa-download text-[12px]" />
             {busy ? "Working…" : "Save image"}
@@ -235,7 +235,7 @@ export default function ShareImageModal({
               type="button"
               onClick={handleShare}
               disabled={busy}
-              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-[#14b8a633] text-[#5eead4] border border-[#14b8a64d] hover:bg-[#14b8a64d] transition text-[13px] font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-[10px] bg-[#14b8a633] text-[#5eead4] border border-[#14b8a64d] hover:bg-[#14b8a64d] transition text-[13px] font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <i className="fa-solid fa-share-nodes text-[12px]" />
               Share

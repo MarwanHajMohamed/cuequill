@@ -377,7 +377,7 @@ function BillingToggle({
       <button
         type="button"
         onClick={() => onChange("monthly")}
-        className={`px-4 py-1.5 rounded-full text-[12px] tracking-[0.08em] font-medium transition cursor-pointer ${
+        className={`px-4 py-1.5 rounded-[10px] text-[12px] tracking-[0.08em] font-medium transition cursor-pointer ${
           cycle === "monthly"
             ? "bg-white/[0.08] text-white"
             : "text-white/55 hover:text-white"
@@ -388,7 +388,7 @@ function BillingToggle({
       <button
         type="button"
         onClick={() => onChange("annual")}
-        className={`px-4 py-1.5 rounded-full text-[12px] tracking-[0.08em] font-medium transition cursor-pointer inline-flex items-center gap-2 ${
+        className={`px-4 py-1.5 rounded-[10px] text-[12px] tracking-[0.08em] font-medium transition cursor-pointer inline-flex items-center gap-2 ${
           cycle === "annual"
             ? "bg-white/[0.08] text-white"
             : "text-white/55 hover:text-white"

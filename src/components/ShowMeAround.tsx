@@ -40,7 +40,7 @@ export default function ShowMeAround({
     <button
       type="button"
       onClick={start}
-      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/10 text-white/70 hover:text-white hover:bg-white/[0.08] transition text-[12px] font-medium cursor-pointer"
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-white/[0.04] border border-white/10 text-white/70 hover:text-white hover:bg-white/[0.08] transition text-[12px] font-medium cursor-pointer"
     >
       <i className="fa-regular fa-circle-question text-[11px]" />
       {label}

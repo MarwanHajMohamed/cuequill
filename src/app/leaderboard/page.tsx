@@ -149,7 +149,7 @@ function LeaderboardPage() {
                 type="button"
                 onClick={() => optInMut.mutate(true)}
                 disabled={optInMut.isPending}
-                className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-[#fff] text-[13px] font-semibold transition disabled:opacity-60 cursor-pointer"
+                className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-[10px] bg-teal-500 hover:bg-teal-400 text-[#fff] text-[13px] font-semibold transition disabled:opacity-60 cursor-pointer"
               >
                 <i className="fa-solid fa-ranking-star text-[12px]" />
                 Join leaderboard
@@ -188,7 +188,7 @@ function LeaderboardPage() {
                   key={b.id}
                   type="button"
                   onClick={() => setBoard(b.id)}
-                  className={`relative inline-flex items-center gap-2 px-3.5 md:px-4 py-2 rounded-xl text-[12.5px] md:text-[13px] font-medium transition cursor-pointer ${
+                  className={`relative inline-flex items-center gap-2 px-3.5 md:px-4 py-2 rounded-[10px] text-[12.5px] md:text-[13px] font-medium transition cursor-pointer ${
                     on ? "text-white" : "text-white/55 hover:text-white/80"
                   }`}
                 >
@@ -231,7 +231,7 @@ function LeaderboardPage() {
                   key={s.id}
                   type="button"
                   onClick={() => setScope(s.id)}
-                  className={`relative inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-[12.5px] md:text-[13px] font-medium transition cursor-pointer ${
+                  className={`relative inline-flex items-center gap-2 px-3.5 py-2 rounded-[10px] text-[12.5px] md:text-[13px] font-medium transition cursor-pointer ${
                     on ? "text-white" : "text-white/55 hover:text-white/80"
                   }`}
                 >

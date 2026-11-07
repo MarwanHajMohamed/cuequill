@@ -184,7 +184,7 @@ function DashboardGridInner({
               <button
                 onClick={() => setAddOpen((o) => !o)}
                 disabled={disabledWidgets.length === 0}
-                className="inline-flex items-center gap-2 text-[12px] font-medium px-3 py-1.5 rounded-lg border border-white/10 bg-white/[0.04] text-white/80 hover:bg-white/[0.08] transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                className="inline-flex items-center gap-2 text-[12px] font-medium px-3 py-1.5 rounded-[10px] border border-white/10 bg-white/[0.04] text-white/80 hover:bg-white/[0.08] transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
               >
                 <i className="fa-solid fa-plus text-[11px]" />
                 Add widget
@@ -203,7 +203,7 @@ function DashboardGridInner({
                       <button
                         key={w.id}
                         onClick={() => addWidget(w.id)}
-                        className="w-full text-left flex items-center gap-2 px-2 py-1.5 rounded-lg text-[13px] text-white/80 hover:bg-white/[0.06] transition cursor-pointer"
+                        className="w-full text-left flex items-center gap-2 px-2 py-1.5 rounded-[10px] text-[13px] text-white/80 hover:bg-white/[0.06] transition cursor-pointer"
                       >
                         <i className="fa-solid fa-plus text-[10px] text-white/40" />
                         {w.title}
@@ -215,7 +215,7 @@ function DashboardGridInner({
             </div>
             <button
               onClick={resetLayout}
-              className="inline-flex items-center gap-2 text-[12px] font-medium px-3 py-1.5 rounded-lg border border-white/10 bg-white/[0.04] text-white/70 hover:bg-white/[0.08] transition cursor-pointer"
+              className="inline-flex items-center gap-2 text-[12px] font-medium px-3 py-1.5 rounded-[10px] border border-white/10 bg-white/[0.04] text-white/70 hover:bg-white/[0.08] transition cursor-pointer"
             >
               <i className="fa-solid fa-rotate-left text-[11px]" />
               Reset
@@ -225,7 +225,7 @@ function DashboardGridInner({
                 setEditing(false);
                 setAddOpen(false);
               }}
-              className="inline-flex items-center gap-2 text-[12px] font-semibold px-3 py-1.5 rounded-lg bg-teal-500/90 text-white hover:bg-teal-400 transition cursor-pointer"
+              className="inline-flex items-center gap-2 text-[12px] font-semibold px-3 py-1.5 rounded-[10px] bg-teal-500/90 text-white hover:bg-teal-400 transition cursor-pointer"
             >
               <i className="fa-solid fa-check text-[11px]" />
               Done
@@ -456,7 +456,7 @@ function SortableWidget({
           {/* Width toggle - accessible alternative to dragging the edge. */}
           <button
             onClick={() => onResize(id, span === 2 ? 1 : 2)}
-            className="hidden lg:flex w-6 h-6 items-center justify-center rounded-md text-white/40 hover:text-white hover:bg-white/10 transition cursor-pointer"
+            className="hidden lg:flex w-6 h-6 items-center justify-center rounded-[10px] text-white/40 hover:text-white hover:bg-white/10 transition cursor-pointer"
             aria-label={span === 2 ? "Make half width" : "Make full width"}
             title={span === 2 ? "Half width" : "Full width"}
           >
@@ -469,7 +469,7 @@ function SortableWidget({
           {/* Height toggle - cycles 1 → 2 → 3 → 1 rows. */}
           <button
             onClick={() => onResizeRow(id, cycleRow())}
-            className="hidden lg:flex items-center gap-0.5 h-6 px-1.5 rounded-md text-white/40 hover:text-white hover:bg-white/10 transition cursor-pointer"
+            className="hidden lg:flex items-center gap-0.5 h-6 px-1.5 rounded-[10px] text-white/40 hover:text-white hover:bg-white/10 transition cursor-pointer"
             aria-label="Change height"
             title={`Height: ${rowSpan} row${rowSpan === 1 ? "" : "s"} - click to cycle`}
           >
@@ -478,7 +478,7 @@ function SortableWidget({
           </button>
           <button
             onClick={() => onRemove(id)}
-            className="w-6 h-6 flex items-center justify-center rounded-md text-white/40 hover:text-red-300 hover:bg-red-500/10 transition cursor-pointer"
+            className="w-6 h-6 flex items-center justify-center rounded-[10px] text-white/40 hover:text-red-300 hover:bg-red-500/10 transition cursor-pointer"
             aria-label={`Remove ${def.title}`}
             title="Remove widget"
           >

@@ -305,7 +305,7 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
               type="button"
               onClick={() => setCanvasExpanded(true)}
               title="Expand animation"
-              className="w-28 h-28 shrink-0 rounded-xl border border-white/10 overflow-hidden bg-[#0c0c11] flex items-center justify-center cursor-pointer hover:border-white/25 transition"
+              className="w-28 h-28 shrink-0 rounded-[10px] border border-white/10 overflow-hidden bg-[#0c0c11] flex items-center justify-center cursor-pointer hover:border-white/25 transition"
             >
               <SchematicPlayer
                 schematic={data.schematic}
@@ -319,7 +319,7 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
             onClick={() => setCanvasExpanded((v) => !v)}
             title={canvasExpanded ? "Collapse animation" : "Expand animation"}
             aria-label={canvasExpanded ? "Collapse animation" : "Expand animation"}
-            className="shrink-0 w-8 h-8 inline-flex items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/60 hover:bg-white/[0.06] hover:text-white transition cursor-pointer"
+            className="shrink-0 w-8 h-8 inline-flex items-center justify-center rounded-[10px] border border-white/10 bg-white/[0.03] text-white/60 hover:bg-white/[0.06] hover:text-white transition cursor-pointer"
           >
             <i
               className={`fa-solid ${
@@ -391,7 +391,7 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
                 <button
                   type="button"
                   onClick={() => setMode("edit")}
-                  className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-full border border-teal-500/30 bg-teal-500/15 text-teal-300 hover:bg-teal-500/25 transition text-[12.5px] font-medium cursor-pointer"
+                  className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-[10px] border border-teal-500/30 bg-teal-500/15 text-teal-300 hover:bg-teal-500/25 transition text-[12.5px] font-medium cursor-pointer"
                 >
                   <i className="fa-solid fa-pen text-[11px]" />
                   Add details
@@ -407,7 +407,7 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
           <button
             type="button"
             onClick={() => setDelConfirm(true)}
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full border border-red-500/25 bg-red-500/[0.08] text-red-300 hover:bg-red-500/15 transition text-[12.5px] font-medium cursor-pointer"
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-[10px] border border-red-500/25 bg-red-500/[0.08] text-red-300 hover:bg-red-500/15 transition text-[12.5px] font-medium cursor-pointer"
           >
             <i className="fa-solid fa-trash text-[11px]" />
             Delete
@@ -416,7 +416,7 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
             <button
               type="button"
               onClick={handleCancel}
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[12.5px] font-medium cursor-pointer"
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-[10px] border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[12.5px] font-medium cursor-pointer"
             >
               Cancel
             </button>
@@ -424,7 +424,7 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
               type="button"
               onClick={handleSave}
               disabled={!dirty || saving || !name.trim()}
-              className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border transition text-[12.5px] font-medium ${
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-[10px] border transition text-[12.5px] font-medium ${
                 dirty && !saving && name.trim()
                   ? "bg-teal-500/15 text-teal-300 border-teal-500/30 hover:bg-teal-500/25 cursor-pointer"
                   : "bg-white/[0.02] text-white/30 border-white/10 cursor-not-allowed"
@@ -453,14 +453,14 @@ function Page({ params }: { params: Promise<{ id: string }> }) {
             <div className="flex gap-2 w-full">
               <button
                 type="button"
-                className="flex-1 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer"
+                className="flex-1 px-4 py-2 rounded-[10px] border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer"
                 onClick={() => setDelConfirm(false)}
               >
                 Cancel
               </button>
               <button
                 type="button"
-                className="flex-1 px-4 py-2 rounded-full bg-red-500/15 text-red-300 border border-red-500/25 hover:bg-red-500/25 transition text-[13px] font-medium cursor-pointer"
+                className="flex-1 px-4 py-2 rounded-[10px] bg-red-500/15 text-red-300 border border-red-500/25 hover:bg-red-500/25 transition text-[13px] font-medium cursor-pointer"
                 onClick={handleDelete}
               >
                 Delete
@@ -546,7 +546,7 @@ function ExamplesGallery({ examples }: { examples: StrategyExample[] }) {
               <button
                 type="button"
                 onClick={() => setLightbox(it.src)}
-                className="group relative overflow-hidden rounded-lg border border-white/10 hover:border-white/25 transition cursor-zoom-in"
+                className="group relative overflow-hidden rounded-[10px] border border-white/10 hover:border-white/25 transition cursor-zoom-in"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -630,7 +630,7 @@ function ExamplesEditor({
             type="button"
             disabled={busy}
             onClick={() => fileInputRef.current?.click()}
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/15 bg-white/[0.04] text-white/80 hover:bg-white/[0.08] hover:text-white transition text-[11.5px] font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-[10px] border border-white/15 bg-white/[0.04] text-white/80 hover:bg-white/[0.08] hover:text-white transition text-[11.5px] font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <i
               className={`fa-solid ${
@@ -680,7 +680,7 @@ function ExamplesEditor({
                   type="button"
                   aria-label="Remove example"
                   onClick={() => remove(ex.id)}
-                  className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 text-white/80 hover:bg-red-500/80 hover:text-white transition flex items-center justify-center cursor-pointer"
+                  className="absolute top-1 right-1 w-6 h-6 rounded-[10px] bg-black/60 text-white/80 hover:bg-red-500/80 hover:text-white transition flex items-center justify-center cursor-pointer"
                 >
                   <i className="fa-solid fa-xmark text-[11px]" />
                 </button>
@@ -809,7 +809,7 @@ function DirectionToggle({
             key={d}
             type="button"
             onClick={() => onChange(d)}
-            className={`px-3 py-1 rounded-full text-[11px] font-semibold tracking-[0.08em] border transition cursor-pointer ${
+            className={`px-3 py-1 rounded-[10px] text-[11px] font-semibold tracking-[0.08em] border transition cursor-pointer ${
               active
                 ? tone
                 : "border-transparent text-white/55 hover:text-white"

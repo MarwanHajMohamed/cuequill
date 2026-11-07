@@ -163,7 +163,7 @@ function Page() {
             type="button"
             onClick={download}
             disabled={def.kind === "table" && empty}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/[0.06] text-white/90 border border-white/15 hover:bg-white/10 hover:border-white/25 transition text-[13px] font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-[10px] bg-white/[0.06] text-white/90 border border-white/15 hover:bg-white/10 hover:border-white/25 transition text-[13px] font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <i className="fa-solid fa-arrow-down text-[11px]" />
             Download {def.kind === "json" ? "JSON" : "CSV"}
@@ -197,7 +197,7 @@ function Page() {
                         transition={FILTER_TRANSITION}
                         type="button"
                         onClick={() => patch({ range: r.key as RangeKey })}
-                        className={`px-3 py-1.5 rounded-md text-[12px] font-medium whitespace-nowrap cursor-pointer ${
+                        className={`px-3 py-1.5 rounded-[10px] text-[12px] font-medium whitespace-nowrap cursor-pointer ${
                           active
                             ? "bg-white/[0.10] text-white"
                             : "text-white/55 hover:text-white/85"
@@ -247,7 +247,7 @@ function Page() {
               onClick={() => setFiltersOpen((o) => !o)}
               aria-label={filtersOpen ? "Collapse filters" : "Expand filters"}
               title={filtersOpen ? "Collapse filters" : "Expand filters"}
-              className="inline-flex items-center justify-center w-7 h-7 shrink-0 rounded-lg border border-white/10 bg-white/[0.04] text-white/55 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer"
+              className="inline-flex items-center justify-center w-7 h-7 shrink-0 rounded-[10px] border border-white/10 bg-white/[0.04] text-white/55 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer"
             >
               <i
                 className="fa-solid fa-chevron-left text-[11px]"

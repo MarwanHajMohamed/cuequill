@@ -152,7 +152,7 @@ function AffirmationsPage() {
             onClick={addAffirmation}
             disabled={!draft.trim() || saving}
             aria-label="Add affirmation"
-            className={`absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg inline-flex items-center justify-center transition ${
+            className={`absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-[10px] inline-flex items-center justify-center transition ${
               draft.trim() && !saving
                 ? "bg-teal-500/20 text-teal-300 hover:bg-teal-500/30 cursor-pointer"
                 : "text-white/25 cursor-not-allowed"
@@ -292,7 +292,7 @@ function AffirmationsPage() {
                     <button
                       onClick={() => removeAffirmation(text)}
                       aria-label="Remove affirmation"
-                      className="absolute top-1/2 -translate-y-1/2 right-1 w-7 h-7 rounded-full flex items-center justify-center text-white/25 opacity-0 group-hover:opacity-100 hover:text-red-300 hover:bg-red-500/10 transition cursor-pointer"
+                      className="absolute top-1/2 -translate-y-1/2 right-1 w-7 h-7 rounded-[10px] flex items-center justify-center text-white/25 opacity-0 group-hover:opacity-100 hover:text-red-300 hover:bg-red-500/10 transition cursor-pointer"
                     >
                       <i className="fa-solid fa-xmark text-[11px]" />
                     </button>

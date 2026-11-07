@@ -434,7 +434,7 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
                       setLightbox({ src: step.img!, alt: step.alt ?? "" })
                     }
                     aria-label="Enlarge screenshot"
-                    className="ml-9 max-w-2xl rounded-xl border border-white/10 overflow-hidden bg-white/[0.02] cursor-zoom-in block hover:border-white/25 transition"
+                    className="ml-9 max-w-2xl rounded-[10px] border border-white/10 overflow-hidden bg-white/[0.02] cursor-zoom-in block hover:border-white/25 transition"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img

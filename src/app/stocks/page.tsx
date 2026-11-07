@@ -119,7 +119,7 @@ export default function Page() {
             <button
               type="button"
               onClick={addRow}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/80 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-[10px] border border-white/10 bg-white/[0.03] text-white/80 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer"
             >
               <i className="fa-solid fa-plus text-[11px]" />
               Add row
@@ -128,7 +128,7 @@ export default function Page() {
               type="button"
               onClick={onSave}
               disabled={!dirty || save.isPending}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-medium transition cursor-pointer disabled:cursor-default border border-teal-400/40 bg-teal-500/15 text-teal-200 hover:bg-teal-500/25 disabled:border-white/10 disabled:bg-white/[0.03] disabled:text-white/35"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-[10px] text-[13px] font-medium transition cursor-pointer disabled:cursor-default border border-teal-400/40 bg-teal-500/15 text-teal-200 hover:bg-teal-500/25 disabled:border-white/10 disabled:bg-white/[0.03] disabled:text-white/35"
             >
               {save.isPending ? (
                 <>
@@ -228,7 +228,7 @@ export default function Page() {
                         type="button"
                         onClick={() => deleteRow(item.id)}
                         aria-label={`Delete ${item.name || "row"}`}
-                        className="w-7 h-7 rounded-full inline-flex items-center justify-center text-white/30 hover:text-red-300 hover:bg-red-500/10 transition md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 cursor-pointer"
+                        className="w-7 h-7 rounded-[10px] inline-flex items-center justify-center text-white/30 hover:text-red-300 hover:bg-red-500/10 transition md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 cursor-pointer"
                       >
                         <i className="fa-solid fa-trash-can text-[12px]" />
                       </button>

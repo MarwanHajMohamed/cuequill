@@ -164,7 +164,7 @@ function AlertPill({
         type="button"
         onClick={onClose}
         aria-label="Dismiss"
-        className="shrink-0 w-6 h-6 rounded-full inline-flex items-center justify-center text-white/40 hover:text-white hover:bg-white/[0.08] transition cursor-pointer"
+        className="shrink-0 w-6 h-6 rounded-[10px] inline-flex items-center justify-center text-white/40 hover:text-white hover:bg-white/[0.08] transition cursor-pointer"
       >
         <i className="fa-solid fa-xmark text-[11px]" />
       </button>

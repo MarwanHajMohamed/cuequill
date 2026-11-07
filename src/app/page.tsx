@@ -863,7 +863,7 @@ function HeroCarousel() {
             type="button"
             aria-label={`Show slide ${i + 1}`}
             onClick={() => setSlide(i)}
-            className={`h-1.5 rounded-full transition-all ${
+            className={`h-1.5 rounded-[10px] transition-all ${
               i === slide
                 ? "w-5 bg-teal-300"
                 : "w-1.5 bg-white/25 hover:bg-white/40"
