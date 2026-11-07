@@ -497,7 +497,7 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
         <div className="flex items-center gap-3 flex-wrap">
           <button
             onClick={handleSave}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[13px] font-medium cursor-pointer"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-[10px] bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[13px] font-medium cursor-pointer"
           >
             <i className="fa-solid fa-floppy-disk text-[11px]" />
             Save credentials
@@ -537,7 +537,7 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
           <button
             onClick={handleSync}
             disabled={syncDisabled}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border transition text-[13px] font-medium ${
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-[10px] border transition text-[13px] font-medium ${
               syncDisabled
                 ? "bg-white/[0.02] text-white/30 border-white/10 cursor-not-allowed"
                 : "bg-indigo-500/15 text-indigo-300 border-indigo-500/25 hover:bg-indigo-500/25 cursor-pointer"
@@ -586,7 +586,7 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
             <button
               type="button"
               onClick={handleToggleImported}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white transition text-[12px] font-medium cursor-pointer"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-[10px] border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white transition text-[12px] font-medium cursor-pointer"
             >
               <i
                 className={`fa-solid fa-chevron-right text-[9px] transition-transform ${importedOpen ? "rotate-90" : ""}`}
@@ -661,7 +661,7 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
                               <button
                                 type="button"
                                 onClick={() => setConfirmUndo(true)}
-                                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-200 hover:bg-amber-500/20 transition text-[12.5px] font-medium cursor-pointer"
+                                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-[10px] border border-amber-500/30 bg-amber-500/10 text-amber-200 hover:bg-amber-500/20 transition text-[12.5px] font-medium cursor-pointer"
                               >
                                 <i className="fa-solid fa-rotate-left text-[11px]" />
                                 Undo this import
@@ -672,7 +672,7 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
                                   type="button"
                                   onClick={handleUndoImport}
                                   disabled={undoing}
-                                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-red-500/30 bg-red-500/15 text-red-200 hover:bg-red-500/25 transition text-[12.5px] font-medium cursor-pointer disabled:opacity-50"
+                                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-[10px] border border-red-500/30 bg-red-500/15 text-red-200 hover:bg-red-500/25 transition text-[12.5px] font-medium cursor-pointer disabled:opacity-50"
                                 >
                                   <i
                                     className={`fa-solid ${undoing ? "fa-circle-notch animate-spin" : "fa-trash-can"} text-[11px]`}
@@ -685,7 +685,7 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
                                   type="button"
                                   onClick={() => setConfirmUndo(false)}
                                   disabled={undoing}
-                                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] transition text-[12.5px] font-medium cursor-pointer disabled:opacity-50"
+                                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-[10px] border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] transition text-[12.5px] font-medium cursor-pointer disabled:opacity-50"
                                 >
                                   Cancel
                                 </button>
@@ -782,7 +782,7 @@ function SetupLightbox({
         type="button"
         aria-label="Close"
         onClick={onClose}
-        className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition flex items-center justify-center cursor-pointer z-10"
+        className="absolute top-4 right-4 w-9 h-9 rounded-[10px] bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition flex items-center justify-center cursor-pointer z-10"
       >
         <i className="fa-solid fa-xmark text-[14px]" />
       </button>
@@ -901,7 +901,7 @@ function ImportedRow({
         disabled={deleting}
         aria-label="Delete trade"
         title="Delete this imported trade"
-        className={`shrink-0 w-8 h-8 rounded-full border flex items-center justify-center transition ${
+        className={`shrink-0 w-8 h-8 rounded-[10px] border flex items-center justify-center transition ${
           deleting
             ? "border-white/10 bg-white/[0.02] text-white/30 cursor-not-allowed"
             : "border-white/10 bg-white/[0.03] text-white/55 hover:text-red-300 hover:border-red-500/30 hover:bg-red-500/10 cursor-pointer"

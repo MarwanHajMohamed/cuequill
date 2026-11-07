@@ -200,7 +200,7 @@ export default function PendingImportReview({
           type="button"
           onClick={discardAll}
           disabled={anyBusy}
-          className="inline-flex items-center px-3.5 py-1.5 rounded-full border border-white/10 bg-white/[0.03] text-white/60 hover:bg-white/[0.06] hover:text-white transition text-[12px] font-medium cursor-pointer disabled:opacity-50 whitespace-nowrap"
+          className="inline-flex items-center px-3.5 py-1.5 rounded-[10px] border border-white/10 bg-white/[0.03] text-white/60 hover:bg-white/[0.06] hover:text-white transition text-[12px] font-medium cursor-pointer disabled:opacity-50 whitespace-nowrap"
         >
           {bulk === "discard" ? "Discarding…" : "Discard all"}
         </button>
@@ -233,7 +233,7 @@ function BulkButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`shrink-0 inline-flex items-center px-3 py-1 rounded-full border text-[11.5px] font-medium transition cursor-pointer disabled:opacity-50 whitespace-nowrap ${styles}`}
+      className={`shrink-0 inline-flex items-center px-3 py-1 rounded-[10px] border text-[11.5px] font-medium transition cursor-pointer disabled:opacity-50 whitespace-nowrap ${styles}`}
     >
       {busy ? busyLabel : label}
     </button>
@@ -306,7 +306,7 @@ function PendingRow({
           onClick={onImport}
           disabled={busy}
           aria-label="Import this trade"
-          className="absolute inset-y-0 right-0 inline-flex items-center px-3 rounded-full text-[11.5px] font-medium bg-teal-500/15 text-teal-200 border border-teal-500/25 hover:bg-teal-500/25 transition cursor-pointer disabled:opacity-50 whitespace-nowrap opacity-0 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
+          className="absolute inset-y-0 right-0 inline-flex items-center px-3 rounded-[10px] text-[11.5px] font-medium bg-teal-500/15 text-teal-200 border border-teal-500/25 hover:bg-teal-500/25 transition cursor-pointer disabled:opacity-50 whitespace-nowrap opacity-0 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
         >
           {busy ? "Importing…" : "Import"}
         </button>

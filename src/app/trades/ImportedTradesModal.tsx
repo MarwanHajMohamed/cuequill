@@ -231,7 +231,7 @@ export default function ImportedTradesModal({
               type="button"
               onClick={onClose}
               aria-label="Close"
-              className="shrink-0 w-8 h-8 rounded-full text-white/45 hover:text-white hover:bg-white/[0.06] transition cursor-pointer flex items-center justify-center"
+              className="shrink-0 w-8 h-8 rounded-[10px] text-white/45 hover:text-white hover:bg-white/[0.06] transition cursor-pointer flex items-center justify-center"
             >
               <i className="fa-solid fa-xmark text-[13px]" />
             </button>
@@ -285,7 +285,7 @@ export default function ImportedTradesModal({
                         type="button"
                         onClick={() => handleMergeGroup(group)}
                         disabled={busy}
-                        className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                        className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[10px] text-[11px] font-semibold bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                       >
                         <i
                           className={`fa-solid ${
@@ -336,7 +336,7 @@ export default function ImportedTradesModal({
                 type="button"
                 onClick={handleMergeAll}
                 disabled={busy}
-                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[12px] font-semibold bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-[10px] text-[12px] font-semibold bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <i
                   className={`fa-solid ${
@@ -419,7 +419,7 @@ function ImportedRow({
         onClick={onDelete}
         disabled={deleting}
         aria-label="Delete trade"
-        className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white/35 hover:text-red-300 hover:bg-red-500/10 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+        className="shrink-0 w-8 h-8 rounded-[10px] flex items-center justify-center text-white/35 hover:text-red-300 hover:bg-red-500/10 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
       >
         <i
           className={`fa-solid ${deleting ? "fa-circle-notch animate-spin" : "fa-trash-can"} text-[11px]`}
