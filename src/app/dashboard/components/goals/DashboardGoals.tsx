@@ -73,7 +73,7 @@ function TaskRow({ g }: { g: Goal }) {
       <button
         onClick={() => update.mutate({ id: g.id, done: !g.done })}
         aria-label={g.done ? "Mark not done" : "Mark done"}
-        className={`shrink-0 w-5 h-5 rounded-md border flex items-center justify-center transition cursor-pointer ${
+        className={`shrink-0 w-5 h-5 rounded-[10px] border flex items-center justify-center transition cursor-pointer ${
           g.done
             ? "bg-teal-500/25 border-teal-400/50 text-teal-200"
             : "border-white/20 text-transparent hover:border-white/40"
@@ -166,7 +166,7 @@ export default function DashboardGoals() {
               onClick={() => setTasksFirst((v) => !v)}
               title={tasksFirst ? "Show targets first" : "Show tasks first"}
               aria-label="Swap section order"
-              className="w-7 h-7 inline-flex items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/55 hover:bg-white/[0.06] hover:text-white transition cursor-pointer"
+              className="w-7 h-7 inline-flex items-center justify-center rounded-[10px] border border-white/10 bg-white/[0.03] text-white/55 hover:bg-white/[0.06] hover:text-white transition cursor-pointer"
             >
               <i className="fa-solid fa-arrow-down-up-across-line text-[10px]" />
             </button>

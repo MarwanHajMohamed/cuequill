@@ -552,7 +552,7 @@ export default function PlanTab() {
                     <button
                       onClick={handleResume}
                       disabled={resuming}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-[#fff] text-[14px] font-semibold transition cursor-pointer disabled:opacity-60 shadow-[0_8px_30px_-8px_rgba(20,184,166,0.6)]"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[10px] bg-teal-500 hover:bg-teal-400 text-[#fff] text-[14px] font-semibold transition cursor-pointer disabled:opacity-60 shadow-[0_8px_30px_-8px_rgba(20,184,166,0.6)]"
                     >
                       {resuming && (
                         <i className="fa-solid fa-circle-notch animate-spin text-[11px]" />
@@ -687,7 +687,7 @@ export default function PlanTab() {
               <button
                 onClick={openCardModal}
                 disabled={openingCard}
-                className="shrink-0 inline-flex items-center gap-2 px-3.5 py-2 rounded-full border border-white/15 bg-white/[0.03] text-white/80 hover:bg-white/[0.06] hover:text-white transition text-[12.5px] font-medium cursor-pointer disabled:opacity-50"
+                className="shrink-0 inline-flex items-center gap-2 px-3.5 py-2 rounded-[10px] border border-white/15 bg-white/[0.03] text-white/80 hover:bg-white/[0.06] hover:text-white transition text-[12.5px] font-medium cursor-pointer disabled:opacity-50"
               >
                 {openingCard && (
                   <i className="fa-solid fa-circle-notch animate-spin text-[10px]" />
@@ -739,7 +739,7 @@ export default function PlanTab() {
             <button
               onClick={switchToAnnual}
               disabled={switching}
-              className="shrink-0 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-teal-500/15 text-teal-200 border border-teal-500/30 hover:bg-teal-500/25 transition text-[12.5px] font-medium cursor-pointer disabled:opacity-50"
+              className="shrink-0 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-[10px] bg-teal-500/15 text-teal-200 border border-teal-500/30 hover:bg-teal-500/25 transition text-[12.5px] font-medium cursor-pointer disabled:opacity-50"
             >
               {switching && (
                 <i className="fa-solid fa-circle-notch animate-spin text-[10px]" />

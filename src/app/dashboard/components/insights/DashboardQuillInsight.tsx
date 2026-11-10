@@ -32,7 +32,7 @@ export default function DashboardQuillInsight() {
             disabled={refresh.isPending || isLoading}
             title="Regenerate"
             aria-label="Regenerate insight"
-            className="shrink-0 w-7 h-7 inline-flex items-center justify-center rounded-md text-white/40 hover:text-white hover:bg-white/[0.06] transition cursor-pointer disabled:opacity-40"
+            className="shrink-0 w-7 h-7 inline-flex items-center justify-center rounded-[10px] text-white/40 hover:text-white hover:bg-white/[0.06] transition cursor-pointer disabled:opacity-40"
           >
             <i
               className={`fa-solid fa-arrows-rotate text-[12px] ${

@@ -169,7 +169,7 @@ export function SiteHeader() {
             onClick={() => setMenuOpen((o) => !o)}
             aria-label={menuOpen ? "Close menu" : "Open menu"}
             aria-expanded={menuOpen}
-            className="sm:hidden inline-flex items-center justify-center w-9 h-9 rounded-full border border-white/15 text-white/80 hover:text-white hover:border-white/30 transition cursor-pointer"
+            className="sm:hidden inline-flex items-center justify-center w-9 h-9 rounded-[10px] border border-white/15 text-white/80 hover:text-white hover:border-white/30 transition cursor-pointer"
           >
             <i
               className={`fa-solid ${menuOpen ? "fa-xmark" : "fa-bars"} text-[14px]`}

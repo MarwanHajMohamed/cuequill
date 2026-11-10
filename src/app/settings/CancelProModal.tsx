@@ -74,7 +74,7 @@ export default function CancelProModal({
     <button
       type="button"
       onClick={onClose}
-      className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-teal-500 hover:bg-teal-400 text-[#fff] text-[14px] font-semibold transition cursor-pointer shadow-[0_8px_30px_-8px_rgba(20,184,166,0.6)]"
+      className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-[10px] bg-teal-500 hover:bg-teal-400 text-[#fff] text-[14px] font-semibold transition cursor-pointer shadow-[0_8px_30px_-8px_rgba(20,184,166,0.6)]"
     >
       <i className="fa-solid fa-crown text-[12px]" />
       Keep my Pro
@@ -106,7 +106,7 @@ export default function CancelProModal({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="w-7 h-7 inline-flex items-center justify-center rounded-full text-white/45 hover:text-white hover:bg-white/[0.06] transition cursor-pointer"
+            className="w-7 h-7 inline-flex items-center justify-center rounded-[10px] text-white/45 hover:text-white hover:bg-white/[0.06] transition cursor-pointer"
           >
             <i className="fa-solid fa-xmark text-[13px]" />
           </button>
@@ -167,7 +167,7 @@ export default function CancelProModal({
                   type="button"
                   onClick={onSwitchAnnual}
                   disabled={switching}
-                  className="mt-3 w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-teal-500 hover:bg-teal-400 text-[#fff] text-[13px] font-semibold transition cursor-pointer disabled:opacity-60"
+                  className="mt-3 w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-[10px] bg-teal-500 hover:bg-teal-400 text-[#fff] text-[13px] font-semibold transition cursor-pointer disabled:opacity-60"
                 >
                   {switching && (
                     <i className="fa-solid fa-circle-notch animate-spin text-[11px]" />
@@ -204,7 +204,7 @@ export default function CancelProModal({
                       key={r}
                       type="button"
                       onClick={() => setReason(r)}
-                      className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border text-left text-[13px] transition cursor-pointer ${
+                      className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-[10px] border text-left text-[13px] transition cursor-pointer ${
                         on
                           ? "border-teal-500/40 bg-teal-500/10 text-white"
                           : "border-white/10 bg-white/[0.02] text-white/70 hover:border-white/20"
@@ -271,7 +271,7 @@ export default function CancelProModal({
                   type="button"
                   onClick={onConfirmCancel}
                   disabled={!ack || cancelling}
-                  className="w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border border-red-500/40 bg-red-500/10 text-red-300 hover:bg-red-500/20 text-[13px] font-medium transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-[10px] border border-red-500/40 bg-red-500/10 text-red-300 hover:bg-red-500/20 text-[13px] font-medium transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {cancelling && (
                     <i className="fa-solid fa-circle-notch animate-spin text-[11px]" />

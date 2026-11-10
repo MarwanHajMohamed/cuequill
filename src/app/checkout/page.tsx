@@ -209,7 +209,7 @@ function PaymentPanel({ initialCycle }: { initialCycle: Cycle }) {
               key={c}
               type="button"
               onClick={() => setCycle(c)}
-              className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left transition cursor-pointer ${
+              className={`flex items-center justify-between gap-3 rounded-[10px] border px-4 py-3 text-left transition cursor-pointer ${
                 on
                   ? "border-teal-500/50 bg-teal-500/[0.08]"
                   : "border-white/10 bg-white/[0.02] hover:border-white/20"
@@ -283,7 +283,7 @@ function PaymentPanel({ initialCycle }: { initialCycle: Cycle }) {
                 type="button"
                 onClick={applyPromo}
                 disabled={!promo.trim() || checkingPromo}
-                className="shrink-0 px-3.5 py-2.5 rounded-xl border border-white/12 bg-white/[0.03] text-white/80 hover:text-white hover:border-white/25 text-[12.5px] font-medium transition cursor-pointer disabled:opacity-50"
+                className="shrink-0 px-3.5 py-2.5 rounded-[10px] border border-white/12 bg-white/[0.03] text-white/80 hover:text-white hover:border-white/25 text-[12.5px] font-medium transition cursor-pointer disabled:opacity-50"
               >
                 {checkingPromo ? "…" : "Apply"}
               </button>
@@ -348,7 +348,7 @@ function PaymentPanel({ initialCycle }: { initialCycle: Cycle }) {
       <button
         type="submit"
         disabled={!stripe || submitting}
-        className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-teal-500 hover:bg-teal-400 text-[#fff] text-[14px] font-semibold transition cursor-pointer disabled:opacity-60 shadow-[0_10px_40px_-10px_rgba(20,184,166,0.7)]"
+        className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-[10px] bg-teal-500 hover:bg-teal-400 text-[#fff] text-[14px] font-semibold transition cursor-pointer disabled:opacity-60 shadow-[0_10px_40px_-10px_rgba(20,184,166,0.7)]"
       >
         {submitting && (
           <i className="fa-solid fa-circle-notch animate-spin text-[12px]" />

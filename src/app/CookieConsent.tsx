@@ -56,7 +56,7 @@ export default function CookieConsent() {
             <button
               type="button"
               onClick={accept}
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[12.5px] font-medium cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-[10px] bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[12.5px] font-medium cursor-pointer"
             >
               Got it
             </button>

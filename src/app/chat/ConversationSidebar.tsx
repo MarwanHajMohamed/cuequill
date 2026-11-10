@@ -76,7 +76,7 @@ export default function ConversationSidebar({
                       e.stopPropagation();
                       onDelete(c.id);
                     }}
-                    className="shrink-0 w-6 h-6 rounded-full inline-flex items-center justify-center text-white/30 hover:text-red-300 hover:bg-red-500/10 transition opacity-0 group-hover:opacity-100 focus:opacity-100 cursor-pointer"
+                    className="shrink-0 w-6 h-6 rounded-[10px] inline-flex items-center justify-center text-white/30 hover:text-red-300 hover:bg-red-500/10 transition opacity-0 group-hover:opacity-100 focus:opacity-100 cursor-pointer"
                   >
                     <i className="fa-regular fa-trash-can text-[11px]" />
                   </button>

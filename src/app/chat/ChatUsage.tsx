@@ -72,7 +72,7 @@ export default function ChatUsage({ className = "" }: { className?: string }) {
         type="button"
         onClick={() => setOpen((o) => !o)}
         title="Quill AI usage"
-        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border backdrop-blur text-[12px] font-medium cursor-pointer transition ${
+        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] border backdrop-blur text-[12px] font-medium cursor-pointer transition ${
           nearDaily
             ? "border-red-400/40 bg-red-500/10 text-red-200 hover:bg-red-500/20"
             : "border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white"

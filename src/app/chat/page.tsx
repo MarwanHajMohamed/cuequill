@@ -882,7 +882,7 @@ function Page() {
               onClick={toggleSidebar}
               title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
               aria-label="Toggle conversation sidebar"
-              className="hidden md:inline-flex items-center justify-center w-9 h-9 rounded-full border border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white transition cursor-pointer"
+              className="hidden md:inline-flex items-center justify-center w-9 h-9 rounded-[10px] border border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white transition cursor-pointer"
             >
               <i
                 className={`fa-solid ${
@@ -894,7 +894,7 @@ function Page() {
               type="button"
               onClick={newChat}
               title="New chat"
-              className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/10 bg-white/[0.04] text-[12px] font-medium text-white/60 hover:bg-white/[0.08] hover:text-white transition cursor-pointer"
+              className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] border border-white/10 bg-white/[0.04] text-[12px] font-medium text-white/60 hover:bg-white/[0.08] hover:text-white transition cursor-pointer"
             >
               <i className="fa-solid fa-plus text-[10px]" />
               New chat
@@ -974,7 +974,7 @@ function Page() {
                   exit={{ opacity: 0, y: 6, scale: 0.9 }}
                   transition={{ duration: 0.15, ease: "easeOut" }}
                   aria-label="Scroll to latest"
-                  className="absolute left-1/2 -translate-x-1/2 bottom-3 z-20 w-9 h-9 inline-flex items-center justify-center rounded-full border border-white/15 bg-[var(--background)]/90 backdrop-blur-md text-white/70 hover:text-white hover:bg-white/[0.08] shadow-lg transition cursor-pointer"
+                  className="absolute left-1/2 -translate-x-1/2 bottom-3 z-20 w-9 h-9 inline-flex items-center justify-center rounded-[10px] border border-white/15 bg-[var(--background)]/90 backdrop-blur-md text-white/70 hover:text-white hover:bg-white/[0.08] shadow-lg transition cursor-pointer"
                 >
                   <i className="fa-solid fa-arrow-down text-[13px]" />
                 </motion.button>
@@ -1022,7 +1022,7 @@ function Page() {
                         prev.filter((_, idx) => idx !== i),
                       )
                     }
-                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-black/80 border border-white/20 text-white/80 hover:text-white flex items-center justify-center cursor-pointer"
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-[10px] bg-black/80 border border-white/20 text-white/80 hover:text-white flex items-center justify-center cursor-pointer"
                     aria-label="Remove attachment"
                   >
                     <i className="fa-solid fa-xmark text-[10px]" />
@@ -1072,7 +1072,7 @@ function Page() {
               disabled={pendingImages.length >= MAX_IMAGES || streaming}
               title="Attach a screenshot"
               aria-label="Attach a screenshot"
-              className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full border border-white/10 bg-white/[0.02] text-white/50 hover:bg-white/[0.06] hover:text-white/80 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-[10px] border border-white/10 bg-white/[0.02] text-white/50 hover:bg-white/[0.06] hover:text-white/80 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <i className="fa-solid fa-paperclip text-[12px]" />
             </button>
@@ -1097,7 +1097,7 @@ function Page() {
                 aria-label={
                   speech.listening ? "Stop listening" : "Speak to Quill"
                 }
-                className={`shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full border transition cursor-pointer ${
+                className={`shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-[10px] border transition cursor-pointer ${
                   speech.listening
                     ? "bg-red-500/20 text-red-300 border-red-500/40 animate-pulse"
                     : "bg-white/[0.02] text-white/50 border-white/10 hover:bg-white/[0.06] hover:text-white/80"
@@ -1109,7 +1109,7 @@ function Page() {
               <button
                 type="submit"
                 disabled={!hasContent || streaming}
-                className={`shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full border transition ${
+                className={`shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-[10px] border transition ${
                   !hasContent || streaming
                     ? "bg-white/[0.02] text-white/30 border-white/10 cursor-not-allowed"
                     : "bg-teal-500/15 text-teal-300 border-teal-500/25 hover:bg-teal-500/25 cursor-pointer"
@@ -1244,14 +1244,14 @@ function PromptShortcuts({
             <button
               type="button"
               onClick={cancel}
-              className="px-2.5 py-1 rounded-full text-[11.5px] text-white/50 hover:text-white transition cursor-pointer"
+              className="px-2.5 py-1 rounded-[10px] text-[11.5px] text-white/50 hover:text-white transition cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="button"
               onClick={saveAll}
-              className="px-2.5 py-1 rounded-full text-[11.5px] font-medium bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition cursor-pointer"
+              className="px-2.5 py-1 rounded-[10px] text-[11.5px] font-medium bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition cursor-pointer"
             >
               Save
             </button>
@@ -1260,7 +1260,7 @@ function PromptShortcuts({
           <button
             type="button"
             onClick={startEdit}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11.5px] text-white/50 hover:text-white hover:bg-white/[0.05] transition cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[10px] text-[11.5px] text-white/50 hover:text-white hover:bg-white/[0.05] transition cursor-pointer"
           >
             <i className="fa-solid fa-pen text-[9px]" />
             Customise
@@ -1290,7 +1290,7 @@ function PromptShortcuts({
                   type="button"
                   onClick={() => remove(s.id)}
                   aria-label="Remove shortcut"
-                  className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-white/30 hover:text-red-300 hover:bg-red-500/10 transition cursor-pointer"
+                  className="shrink-0 w-6 h-6 rounded-[10px] flex items-center justify-center text-white/30 hover:text-red-300 hover:bg-red-500/10 transition cursor-pointer"
                 >
                   <i className="fa-solid fa-xmark text-[11px]" />
                 </button>
@@ -1310,7 +1310,7 @@ function PromptShortcuts({
             <button
               type="button"
               onClick={add}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-white/15 text-[12px] font-medium text-white/55 hover:text-white/85 hover:border-white/30 transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] border border-dashed border-white/15 text-[12px] font-medium text-white/55 hover:text-white/85 hover:border-white/30 transition cursor-pointer"
             >
               <i className="fa-solid fa-plus text-[10px]" />
               Add shortcut
@@ -1328,7 +1328,7 @@ function PromptShortcuts({
         <button
           type="button"
           onClick={startEdit}
-          className="w-full rounded-xl border border-dashed border-white/15 bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/25 transition px-3.5 py-4 text-[12.5px] text-white/45 hover:text-white/70 cursor-pointer"
+          className="w-full rounded-[10px] border border-dashed border-white/15 bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/25 transition px-3.5 py-4 text-[12.5px] text-white/45 hover:text-white/70 cursor-pointer"
         >
           <i className="fa-solid fa-plus text-[10px] mr-1.5" />
           Add a shortcut
@@ -1339,7 +1339,7 @@ function PromptShortcuts({
             <button
               key={s.id}
               onClick={() => onSend(s.prompt)}
-              className="group text-left rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/20 transition px-3.5 py-3 cursor-pointer"
+              className="group text-left rounded-[10px] border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/20 transition px-3.5 py-3 cursor-pointer"
             >
               <div className="flex items-center gap-2.5">
                 <i
@@ -1481,7 +1481,7 @@ function TradeCard({ id }: { id: string }) {
       <button
         type="button"
         onClick={onClick}
-        className="block w-full text-left rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/20 transition px-3.5 py-2.5 my-1.5 cursor-pointer"
+        className="block w-full text-left rounded-[10px] border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/20 transition px-3.5 py-2.5 my-1.5 cursor-pointer"
       >
         <div className="flex items-center gap-2 text-xs text-white/45">
           <i className="fa-solid fa-receipt text-[11px] text-white/30" />
@@ -1529,7 +1529,7 @@ function TradeCard({ id }: { id: string }) {
     <button
       type="button"
       onClick={onClick}
-      className={`block w-full text-left rounded-xl border transition px-3.5 py-2.5 my-1.5 cursor-pointer ${tone}`}
+      className={`block w-full text-left rounded-[10px] border transition px-3.5 py-2.5 my-1.5 cursor-pointer ${tone}`}
       aria-label={`View trade ${trade.symbol} ${trade.option}`}
     >
       <div className="flex items-baseline gap-2 flex-wrap">

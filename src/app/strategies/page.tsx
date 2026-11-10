@@ -172,7 +172,7 @@ function Page() {
               type="button"
               onClick={handleImportClick}
               disabled={importing}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11.5px] font-medium border border-white/12 bg-white/[0.03] text-white/75 hover:text-white hover:border-white/25 transition disabled:opacity-60 cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] text-[11.5px] font-medium border border-white/12 bg-white/[0.03] text-white/75 hover:text-white hover:border-white/25 transition disabled:opacity-60 cursor-pointer"
             >
               <i
                 className={`fa-solid ${
@@ -190,7 +190,7 @@ function Page() {
                   ? "No strategies to export"
                   : "Download all strategies as JSON"
               }
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11.5px] font-medium border border-white/12 bg-white/[0.03] text-white/75 hover:text-white hover:border-white/25 transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] text-[11.5px] font-medium border border-white/12 bg-white/[0.03] text-white/75 hover:text-white hover:border-white/25 transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
               <i className="fa-solid fa-file-export text-[11px]" />
               Export all
@@ -273,7 +273,7 @@ function Column({
           type="button"
           onClick={onCreate}
           disabled={!canCreate || creating}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11.5px] font-semibold tracking-[0.04em] border transition ${
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] text-[11.5px] font-semibold tracking-[0.04em] border transition ${
             canCreate && !creating
               ? "border-white/15 bg-white/[0.04] text-white/80 hover:bg-white/[0.08] hover:text-white cursor-pointer"
               : "border-white/8 bg-white/[0.02] text-white/30 cursor-not-allowed"

@@ -117,14 +117,14 @@ function CardForm({
           type="button"
           onClick={onClose}
           disabled={submitting}
-          className="px-3.5 py-2 rounded-full border border-white/12 bg-white/[0.03] text-white/70 hover:text-white hover:border-white/25 text-[13px] font-medium transition cursor-pointer disabled:opacity-60"
+          className="px-3.5 py-2 rounded-[10px] border border-white/12 bg-white/[0.03] text-white/70 hover:text-white hover:border-white/25 text-[13px] font-medium transition cursor-pointer disabled:opacity-60"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={!stripe || submitting}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-500 hover:bg-teal-400 text-[#fff] text-[13px] font-semibold transition cursor-pointer disabled:opacity-60"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-[10px] bg-teal-500 hover:bg-teal-400 text-[#fff] text-[13px] font-semibold transition cursor-pointer disabled:opacity-60"
         >
           {submitting && (
             <i className="fa-solid fa-circle-notch animate-spin text-[11px]" />
@@ -161,7 +161,7 @@ export default function BillingCardModal({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="w-7 h-7 inline-flex items-center justify-center rounded-full text-white/45 hover:text-white hover:bg-white/[0.06] transition cursor-pointer"
+            className="w-7 h-7 inline-flex items-center justify-center rounded-[10px] text-white/45 hover:text-white hover:bg-white/[0.06] transition cursor-pointer"
           >
             <i className="fa-solid fa-xmark text-[13px]" />
           </button>

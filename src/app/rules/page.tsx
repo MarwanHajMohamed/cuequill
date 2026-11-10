@@ -55,7 +55,7 @@ function Page() {
             <button
               data-tour="rules-edit"
               onClick={() => setEditMode((v) => !v)}
-              className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-[12px] font-medium transition cursor-pointer ${
+              className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-[10px] border text-[12px] font-medium transition cursor-pointer ${
                 editMode
                   ? "bg-teal-500/15 text-teal-300 border-teal-500/30"
                   : "bg-white/[0.03] text-white/65 border-white/10 hover:bg-white/[0.06] hover:text-white"
@@ -104,7 +104,7 @@ function Page() {
               {editMode && (
                 <button
                   onClick={addSection}
-                  className="flex items-center gap-2 rounded-xl border border-dashed border-white/15 bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/25 transition px-5 py-4 text-[13px] font-medium text-white/55 hover:text-white/80 cursor-pointer"
+                  className="flex items-center gap-2 rounded-[10px] border border-dashed border-white/15 bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/25 transition px-5 py-4 text-[13px] font-medium text-white/55 hover:text-white/80 cursor-pointer"
                 >
                   <i className="fa-solid fa-plus text-[11px]" />
                   Add section

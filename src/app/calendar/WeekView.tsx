@@ -253,7 +253,7 @@ const WeekView = forwardRef<WeekViewHandle, WeekViewProps>(function WeekView(
         <button
           onClick={() => handleWeekChange("prev")}
           aria-label="Previous week"
-          className="w-8 h-8 rounded-full border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/70 hover:text-white transition cursor-pointer flex items-center justify-center"
+          className="w-8 h-8 rounded-[10px] border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/70 hover:text-white transition cursor-pointer flex items-center justify-center"
         >
           <i className="fa-solid fa-chevron-left text-[11px]" />
         </button>
@@ -271,7 +271,7 @@ const WeekView = forwardRef<WeekViewHandle, WeekViewProps>(function WeekView(
         <button
           onClick={() => handleWeekChange("next")}
           aria-label="Next week"
-          className="w-8 h-8 rounded-full border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/70 hover:text-white transition cursor-pointer flex items-center justify-center"
+          className="w-8 h-8 rounded-[10px] border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/70 hover:text-white transition cursor-pointer flex items-center justify-center"
         >
           <i className="fa-solid fa-chevron-right text-[11px]" />
         </button>
@@ -326,7 +326,7 @@ const WeekView = forwardRef<WeekViewHandle, WeekViewProps>(function WeekView(
                 {/* Day card */}
                 <button
                   type="button"
-                  className={`rounded-xl border md:h-[calc(100vh-300px)] flex-1 md:flex-initial min-h-0 cursor-pointer flex flex-col justify-between text-left transition ${
+                  className={`rounded-[10px] border md:h-[calc(100vh-300px)] flex-1 md:flex-initial min-h-0 cursor-pointer flex flex-col justify-between text-left transition ${
                     isToday
                       ? "border-teal-500/25 bg-teal-500/[0.04] hover:bg-teal-500/[0.08]"
                       : "border-white/10 bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/20"

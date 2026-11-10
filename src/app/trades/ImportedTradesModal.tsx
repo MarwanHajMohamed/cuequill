@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import React, { useEffect, useMemo, useState } from "react";
 import { useScrollLock } from "@/hooks/useScrollLock";
 import { hapticNotify } from "@/lib/haptics";
+import PendingImportReview from "@/components/PendingImportReview";
 
 type ImportedTrade = {
   _id: string;
@@ -14,6 +15,8 @@ type ImportedTrade = {
   dateBought: string;
   dateClosed?: string | null;
   expiryDate?: string | null;
+  timeEntered?: string | null;
+  timeExited?: string | null;
   profitLoss?: number | null;
   fees?: number | null;
   status: "WIN" | "LOSS" | "OPEN";
@@ -215,8 +218,8 @@ export default function ImportedTradesModal({
                     role="tooltip"
                     className="pointer-events-none absolute left-1/2 top-full mt-2 -translate-x-1/2 w-56 rounded-lg border border-white/10 bg-[var(--surface)] shadow-[0_12px_40px_var(--shadow)] px-3 py-2 text-[11.5px] leading-snug text-white/75 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition z-10"
                   >
-                    Trades brought in by the last IBKR sync. Review and delete
-                    anything that shouldn&apos;t be here.
+                    Trades the last IBKR sync found. Import the ones you want
+                    (new or skipped), then review or delete imported ones.
                   </span>
                 </span>
               </div>
@@ -230,7 +233,7 @@ export default function ImportedTradesModal({
               type="button"
               onClick={onClose}
               aria-label="Close"
-              className="shrink-0 w-8 h-8 rounded-full text-white/45 hover:text-white hover:bg-white/[0.06] transition cursor-pointer flex items-center justify-center"
+              className="shrink-0 w-8 h-8 rounded-[10px] text-white/45 hover:text-white hover:bg-white/[0.06] transition cursor-pointer flex items-center justify-center"
             >
               <i className="fa-solid fa-xmark text-[13px]" />
             </button>
@@ -238,6 +241,18 @@ export default function ImportedTradesModal({
 
           {/* List */}
           <div className="flex-1 overflow-y-auto px-3 pb-3">
+            {/* Trades the last sync staged but hasn't imported (new +
+                skipped). Importing any of them refreshes the imported list
+                below and the trades table. */}
+            <div className="px-2 pt-1 pb-2 empty:hidden">
+              <PendingImportReview
+                onChanged={() => {
+                  load();
+                  onDeleted?.("");
+                }}
+              />
+            </div>
+
             {error && (
               <div className="text-[12px] text-red-300 border border-red-500/25 bg-red-500/10 rounded-xl px-3 py-2 mb-2 mx-2">
                 {error}
@@ -249,11 +264,14 @@ export default function ImportedTradesModal({
                 Loading…
               </div>
             ) : trades.length === 0 ? (
-              <div className="text-[12px] text-white/40 px-3 py-10 text-center">
-                Nothing from the last sync remains.
+              <div className="text-[12px] text-white/40 px-3 py-6 text-center">
+                No imported trades from the last sync yet.
               </div>
             ) : (
               <div className="flex flex-col gap-1.5">
+                <div className="px-2 pt-1 text-[11px] tracking-[0.1em] text-white/45 font-medium">
+                  In your journal · {trades.length}
+                </div>
                 {/* Auto-mergeable groups - outlined together so the partial
                     fills that will collapse into one row are obvious. */}
                 {mergeGroups.map((group, gi) => {
@@ -269,7 +287,7 @@ export default function ImportedTradesModal({
                         type="button"
                         onClick={() => handleMergeGroup(group)}
                         disabled={busy}
-                        className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                        className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[10px] text-[11px] font-semibold bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                       >
                         <i
                           className={`fa-solid ${
@@ -320,7 +338,7 @@ export default function ImportedTradesModal({
                 type="button"
                 onClick={handleMergeAll}
                 disabled={busy}
-                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[12px] font-semibold bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-[10px] text-[12px] font-semibold bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <i
                   className={`fa-solid ${
@@ -386,7 +404,10 @@ function ImportedRow({
         </div>
         <div className="text-[11px] text-white/40 tabular-nums">
           {day(trade.dateBought)}
-          {trade.dateClosed ? ` › ${day(trade.dateClosed)}` : " · open"}
+          {trade.timeEntered ? ` ${trade.timeEntered}` : ""}
+          {trade.dateClosed
+            ? ` › ${day(trade.dateClosed)}${trade.timeExited ? ` ${trade.timeExited}` : ""}`
+            : " · open"}
         </div>
       </div>
 
@@ -403,7 +424,7 @@ function ImportedRow({
         onClick={onDelete}
         disabled={deleting}
         aria-label="Delete trade"
-        className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white/35 hover:text-red-300 hover:bg-red-500/10 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+        className="shrink-0 w-8 h-8 rounded-[10px] flex items-center justify-center text-white/35 hover:text-red-300 hover:bg-red-500/10 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
       >
         <i
           className={`fa-solid ${deleting ? "fa-circle-notch animate-spin" : "fa-trash-can"} text-[11px]`}

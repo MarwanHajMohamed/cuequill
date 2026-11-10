@@ -116,14 +116,14 @@ export default function AutoImportNotifier() {
                 <button
                   type="button"
                   onClick={dismiss}
-                  className="flex-1 inline-flex items-center justify-center py-2.5 rounded-full border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer"
+                  className="flex-1 inline-flex items-center justify-center py-2.5 rounded-[10px] border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer"
                 >
                   Dismiss
                 </button>
                 <button
                   type="button"
                   onClick={openImported}
-                  className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 rounded-full bg-teal-500/20 text-teal-200 border border-teal-500/40 hover:bg-teal-500/30 transition text-[13px] font-semibold cursor-pointer"
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 rounded-[10px] bg-teal-500/20 text-teal-200 border border-teal-500/40 hover:bg-teal-500/30 transition text-[13px] font-semibold cursor-pointer"
                 >
                   <i className="fa-solid fa-list-check text-[11px]" />
                   See imported

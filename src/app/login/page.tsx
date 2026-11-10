@@ -165,7 +165,7 @@ function Login() {
                   type="button"
                   onClick={() => handleOAuth("google")}
                   disabled={oauthLoading !== null}
-                  className="inline-flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-full border border-[#dadce0] bg-[#ffffff] text-[#1f1f1f] hover:bg-[#f5f6f7] transition text-[13.5px] font-medium cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="inline-flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-[10px] border border-[#dadce0] bg-[#ffffff] text-[#1f1f1f] hover:bg-[#f5f6f7] transition text-[13.5px] font-medium cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {oauthLoading === "google" ? (
                     <i className="fa-solid fa-circle-notch animate-spin text-[12px]" />
@@ -180,7 +180,7 @@ function Login() {
                   type="button"
                   onClick={() => handleOAuth("apple")}
                   disabled={oauthLoading !== null}
-                  className="inline-flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-full border border-transparent bg-[#000000] text-[#ffffff] hover:bg-[#1a1a1a] transition text-[13.5px] font-medium cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="inline-flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-[10px] border border-transparent bg-[#000000] text-[#ffffff] hover:bg-[#1a1a1a] transition text-[13.5px] font-medium cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {oauthLoading === "apple" ? (
                     <i className="fa-solid fa-circle-notch animate-spin text-[12px]" />
@@ -252,7 +252,7 @@ function Login() {
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
                 aria-label={showPassword ? "Hide password" : "Show password"}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-md text-white/45 hover:text-white hover:bg-white/[0.05] transition cursor-pointer flex items-center justify-center"
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-[10px] text-white/45 hover:text-white hover:bg-white/[0.05] transition cursor-pointer flex items-center justify-center"
               >
                 <i
                   className={`fa-solid ${showPassword ? "fa-eye-slash" : "fa-eye"} text-[11px]`}
@@ -275,7 +275,7 @@ function Login() {
           <button
             type="submit"
             disabled={!canSubmit}
-            className={`inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full border transition text-[13.5px] font-medium ${
+            className={`inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-[10px] border transition text-[13.5px] font-medium ${
               canSubmit
                 ? "bg-teal-500/15 text-teal-300 border-teal-500/25 hover:bg-teal-500/25 cursor-pointer"
                 : "bg-white/[0.02] text-white/30 border-white/10 cursor-not-allowed"

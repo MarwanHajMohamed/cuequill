@@ -205,7 +205,7 @@ export default function UserProfileModal({
                   type="button"
                   onClick={onClose}
                   aria-label="Close"
-                  className="w-8 h-8 inline-flex items-center justify-center rounded-full text-white/45 hover:text-white hover:bg-white/[0.06] transition cursor-pointer"
+                  className="w-8 h-8 inline-flex items-center justify-center rounded-[10px] text-white/45 hover:text-white hover:bg-white/[0.06] transition cursor-pointer"
                 >
                   <i className="fa-solid fa-xmark text-[14px]" />
                 </button>

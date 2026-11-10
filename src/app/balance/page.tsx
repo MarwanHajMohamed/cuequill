@@ -354,7 +354,7 @@ function Page() {
                         <button
                           key={r}
                           onClick={() => setRange(r)}
-                          className={`px-3 py-1 rounded-full text-[12px] font-medium transition cursor-pointer ${
+                          className={`px-3 py-1 rounded-[10px] text-[12px] font-medium transition cursor-pointer ${
                             range === r
                               ? "bg-white/10 text-white border border-white/15"
                               : "text-white/55 hover:text-white"
@@ -375,7 +375,7 @@ function Page() {
                           <button
                             key={m}
                             onClick={() => setMode(m)}
-                            className={`px-3 py-1 rounded-full text-[12px] font-medium transition cursor-pointer ${
+                            className={`px-3 py-1 rounded-[10px] text-[12px] font-medium transition cursor-pointer ${
                               mode === m
                                 ? "bg-white/10 text-white border border-white/15"
                                 : "text-white/55 hover:text-white"
@@ -606,7 +606,7 @@ function Page() {
                         setTxType(t);
                         setStatus("");
                       }}
-                      className={`px-3 py-1.5 rounded-lg text-[12px] font-medium transition cursor-pointer ${
+                      className={`px-3 py-1.5 rounded-[10px] text-[12px] font-medium transition cursor-pointer ${
                         txType === t
                           ? t === "DEPOSIT"
                             ? "bg-teal-500/20 text-teal-300"
@@ -648,7 +648,7 @@ function Page() {
                 <button
                   onClick={handleAdd}
                   disabled={saving}
-                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border transition text-[13px] font-medium ${
+                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-[10px] border transition text-[13px] font-medium ${
                     saving
                       ? "bg-white/[0.02] text-white/30 border-white/10 cursor-not-allowed"
                       : txType === "ADJUST"
@@ -735,7 +735,7 @@ function Page() {
                           onClick={() => handleDelete(f._id)}
                           aria-label="Delete"
                           title="Delete this entry"
-                          className="shrink-0 w-8 h-8 rounded-full border border-white/10 bg-white/[0.03] text-white/45 hover:text-red-300 hover:border-red-500/30 hover:bg-red-500/10 transition flex items-center justify-center cursor-pointer md:opacity-0 md:group-hover:opacity-100"
+                          className="shrink-0 w-8 h-8 rounded-[10px] border border-white/10 bg-white/[0.03] text-white/45 hover:text-red-300 hover:border-red-500/30 hover:bg-red-500/10 transition flex items-center justify-center cursor-pointer md:opacity-0 md:group-hover:opacity-100"
                         >
                           <i className="fa-solid fa-trash-can text-[11px]" />
                         </button>

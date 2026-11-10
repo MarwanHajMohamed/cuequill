@@ -96,7 +96,7 @@ function AddGoal({ onDone }: { onDone: () => void }) {
           <button
             key={k}
             onClick={() => setKind(k)}
-            className={`px-3 py-1 rounded-full transition cursor-pointer ${
+            className={`px-3 py-1 rounded-[10px] transition cursor-pointer ${
               kind === k
                 ? "bg-white/[0.08] text-white"
                 : "text-white/55 hover:text-white"
@@ -228,14 +228,14 @@ function AddGoal({ onDone }: { onDone: () => void }) {
       <div className="flex items-center gap-2 self-end">
         <button
           onClick={onDone}
-          className="px-3.5 py-1.5 rounded-full border border-white/10 text-white/70 hover:bg-white/[0.06] hover:text-white transition text-[12.5px] cursor-pointer"
+          className="px-3.5 py-1.5 rounded-[10px] border border-white/10 text-white/70 hover:bg-white/[0.06] hover:text-white transition text-[12.5px] cursor-pointer"
         >
           Cancel
         </button>
         <button
           onClick={submit}
           disabled={create.isPending}
-          className="px-4 py-1.5 rounded-full border border-teal-400/40 bg-teal-500/15 text-teal-200 hover:bg-teal-500/25 transition text-[12.5px] font-medium cursor-pointer disabled:opacity-60"
+          className="px-4 py-1.5 rounded-[10px] border border-teal-400/40 bg-teal-500/15 text-teal-200 hover:bg-teal-500/25 transition text-[12.5px] font-medium cursor-pointer disabled:opacity-60"
         >
           {create.isPending ? "Adding…" : "Add goal"}
         </button>
@@ -278,7 +278,7 @@ function MetricGoalCard({ g }: { g: Goal }) {
         <button
           onClick={() => remove.mutate(g.id)}
           aria-label="Delete goal"
-          className="shrink-0 w-7 h-7 rounded-full inline-flex items-center justify-center text-white/30 hover:text-red-300 hover:bg-red-500/10 transition md:opacity-0 md:group-hover:opacity-100 cursor-pointer"
+          className="shrink-0 w-7 h-7 rounded-[10px] inline-flex items-center justify-center text-white/30 hover:text-red-300 hover:bg-red-500/10 transition md:opacity-0 md:group-hover:opacity-100 cursor-pointer"
         >
           <i className="fa-regular fa-trash-can text-[12px]" />
         </button>
@@ -316,7 +316,7 @@ function ManualGoalRow({ g }: { g: Goal }) {
       <button
         onClick={() => update.mutate({ id: g.id, done: !g.done })}
         aria-label={g.done ? "Mark not done" : "Mark done"}
-        className={`shrink-0 w-5 h-5 rounded-md border flex items-center justify-center transition cursor-pointer ${
+        className={`shrink-0 w-5 h-5 rounded-[10px] border flex items-center justify-center transition cursor-pointer ${
           g.done
             ? "bg-teal-500/25 border-teal-400/50 text-teal-200"
             : "border-white/20 text-transparent hover:border-white/40"
@@ -342,7 +342,7 @@ function ManualGoalRow({ g }: { g: Goal }) {
       <button
         onClick={() => remove.mutate(g.id)}
         aria-label="Delete task"
-        className="shrink-0 w-7 h-7 rounded-full inline-flex items-center justify-center text-white/30 hover:text-red-300 hover:bg-red-500/10 transition md:opacity-0 md:group-hover:opacity-100 cursor-pointer"
+        className="shrink-0 w-7 h-7 rounded-[10px] inline-flex items-center justify-center text-white/30 hover:text-red-300 hover:bg-red-500/10 transition md:opacity-0 md:group-hover:opacity-100 cursor-pointer"
       >
         <i className="fa-regular fa-trash-can text-[12px]" />
       </button>
@@ -384,7 +384,7 @@ function Page() {
             <button
               data-tour="goals-add"
               onClick={() => setAdding(true)}
-              className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-full border border-teal-400/40 bg-teal-500/15 text-teal-200 hover:bg-teal-500/25 transition text-[13px] font-medium cursor-pointer"
+              className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-[10px] border border-teal-400/40 bg-teal-500/15 text-teal-200 hover:bg-teal-500/25 transition text-[13px] font-medium cursor-pointer"
             >
               <i className="fa-solid fa-plus text-[11px]" />
               New goal

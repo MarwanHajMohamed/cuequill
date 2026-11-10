@@ -88,7 +88,7 @@ export default function NotesModal({
               type="button"
               onClick={onClose}
               aria-label="Close"
-              className="w-8 h-8 rounded-full text-white/45 hover:text-white hover:bg-white/[0.06] transition cursor-pointer flex items-center justify-center"
+              className="w-8 h-8 rounded-[10px] text-white/45 hover:text-white hover:bg-white/[0.06] transition cursor-pointer flex items-center justify-center"
             >
               <i className="fa-solid fa-xmark text-[13px]" />
             </button>
@@ -122,7 +122,7 @@ export default function NotesModal({
               <button
                 onClick={onClose}
                 type="button"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-[10px] border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer"
               >
                 Cancel
               </button>
@@ -130,7 +130,7 @@ export default function NotesModal({
                 onClick={handleSave}
                 disabled={!canSave}
                 type="button"
-                className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border transition text-[13px] font-medium ${
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-[10px] border transition text-[13px] font-medium ${
                   canSave
                     ? "bg-teal-500/15 text-teal-300 border-teal-500/25 hover:bg-teal-500/25 cursor-pointer"
                     : "bg-white/[0.02] text-white/30 border-white/10 cursor-not-allowed"

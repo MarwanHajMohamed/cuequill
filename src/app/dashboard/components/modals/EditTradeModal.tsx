@@ -280,7 +280,7 @@ export default function EditTradeModal({
               onClick={onClose}
               aria-label="Close"
               type="button"
-              className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full text-white/40 hover:text-white hover:bg-white/5 transition cursor-pointer"
+              className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-[10px] text-white/40 hover:text-white hover:bg-white/5 transition cursor-pointer"
             >
               <i className="fa-solid fa-xmark text-base"></i>
             </button>
@@ -291,7 +291,7 @@ export default function EditTradeModal({
                   onClick={onCancel}
                   aria-label="Back"
                   type="button"
-                  className="inline-flex items-center justify-center w-6 h-6 -ml-1 rounded-full text-white/45 hover:text-white hover:bg-white/5 transition cursor-pointer"
+                  className="inline-flex items-center justify-center w-6 h-6 -ml-1 rounded-[10px] text-white/45 hover:text-white hover:bg-white/5 transition cursor-pointer"
                 >
                   <i className="fa-solid fa-chevron-left text-[13px]"></i>
                 </button>
@@ -317,7 +317,7 @@ export default function EditTradeModal({
                   setSelectedOption("CALL");
                   clearInvalid("option");
                 }}
-                className={`px-3 py-2 rounded-lg border text-sm font-semibold transition cursor-pointer ${
+                className={`px-3 py-2 rounded-[10px] border text-sm font-semibold transition cursor-pointer ${
                   isCall
                     ? "bg-green-500/25 border-green-500 text-green-400"
                     : "border-white/10 text-white/60 hover:bg-white/5"
@@ -331,7 +331,7 @@ export default function EditTradeModal({
                   setSelectedOption("PUT");
                   clearInvalid("option");
                 }}
-                className={`px-3 py-2 rounded-lg border text-sm font-semibold transition cursor-pointer ${
+                className={`px-3 py-2 rounded-[10px] border text-sm font-semibold transition cursor-pointer ${
                   isPut
                     ? "bg-red-500/25 border-red-500 text-red-400"
                     : "border-white/10 text-white/60 hover:bg-white/5"
@@ -378,7 +378,7 @@ export default function EditTradeModal({
                       // becomes irrelevant - drop it.
                       if (s.value === "OPEN") clearInvalid("closingContractPrice");
                     }}
-                    className={`px-3 py-2 rounded-lg border text-sm font-semibold transition cursor-pointer ${
+                    className={`px-3 py-2 rounded-[10px] border text-sm font-semibold transition cursor-pointer ${
                       active
                         ? s.activeClass
                         : "border-white/10 text-white/60 hover:bg-white/5"
@@ -577,7 +577,7 @@ export default function EditTradeModal({
                 <button
                   type="button"
                   onClick={() => setDelModal(true)}
-                  className="inline-flex items-center justify-center gap-2 w-9 h-9 rounded-full bg-red-500/10 text-red-300 border border-red-500/25 hover:bg-red-500/20 transition cursor-pointer"
+                  className="inline-flex items-center justify-center gap-2 w-9 h-9 rounded-[10px] bg-red-500/10 text-red-300 border border-red-500/25 hover:bg-red-500/20 transition cursor-pointer"
                   aria-label="Delete trade"
                 >
                   <i className="fa-solid fa-trash-can text-[12px]" />
@@ -588,7 +588,7 @@ export default function EditTradeModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-[10px] border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer"
               >
                 Cancel
               </button>
@@ -596,7 +596,7 @@ export default function EditTradeModal({
                 type="button"
                 onClick={submit}
                 disabled={saving}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[13px] font-medium cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-[10px] bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[13px] font-medium cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 <i
                   className={`fa-solid ${
@@ -635,14 +635,14 @@ export default function EditTradeModal({
             <div className="flex gap-2 w-full">
               <button
                 type="button"
-                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer"
+                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-[10px] border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer"
                 onClick={() => setDelModal(false)}
               >
                 Cancel
               </button>
               <button
                 type="button"
-                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-red-500/15 text-red-300 border border-red-500/25 hover:bg-red-500/25 transition text-[13px] font-medium cursor-pointer"
+                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-[10px] bg-red-500/15 text-red-300 border border-red-500/25 hover:bg-red-500/25 transition text-[13px] font-medium cursor-pointer"
                 onClick={() => {
                   onDelete(initialTrade._id!);
                   toast(`Trade deleted successfully!`);
@@ -908,7 +908,7 @@ function TagsInput({
               type="button"
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => commit(input.trim())}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs border border-teal-500/40 text-teal-300 bg-teal-500/[0.08] hover:bg-teal-500/[0.18] transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[10px] text-xs border border-teal-500/40 text-teal-300 bg-teal-500/[0.08] hover:bg-teal-500/[0.18] transition cursor-pointer"
             >
               <i className="fa-solid fa-plus text-[10px]" />
               Create &quot;{input.trim()}&quot;
@@ -920,7 +920,7 @@ function TagsInput({
               type="button"
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => commit(s.label)}
-              className={`px-2.5 py-1 rounded-full text-xs border transition cursor-pointer border-white/10 text-white/65 hover:bg-white/[0.06] hover:text-white`}
+              className={`px-2.5 py-1 rounded-[10px] text-xs border transition cursor-pointer border-white/10 text-white/65 hover:bg-white/[0.06] hover:text-white`}
             >
               {s.label}
             </button>

@@ -302,7 +302,7 @@ function TradeDetailPage() {
                 <button
                   type="button"
                   onClick={() => setEditing(true)}
-                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-white/12 bg-white/[0.03] text-white/80 hover:bg-white/[0.06] hover:text-white transition text-[12.5px] font-medium cursor-pointer"
+                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-[10px] border border-white/12 bg-white/[0.03] text-white/80 hover:bg-white/[0.06] hover:text-white transition text-[12.5px] font-medium cursor-pointer"
                 >
                   <i className="fa-solid fa-pen text-[10px]" />
                   Edit
@@ -323,7 +323,7 @@ function TradeDetailPage() {
                 <button
                   type="button"
                   onClick={() => setField("option", "CALL")}
-                  className={`px-2 py-1.5 rounded-lg border text-[12.5px] font-semibold transition cursor-pointer ${
+                  className={`px-2 py-1.5 rounded-[10px] border text-[12.5px] font-semibold transition cursor-pointer ${
                     isCall
                       ? "bg-green-500/20 border-green-500/70 text-green-400"
                       : "border-white/10 text-white/55 hover:bg-white/5"
@@ -335,7 +335,7 @@ function TradeDetailPage() {
                 <button
                   type="button"
                   onClick={() => setField("option", "PUT")}
-                  className={`px-2 py-1.5 rounded-lg border text-[12.5px] font-semibold transition cursor-pointer ${
+                  className={`px-2 py-1.5 rounded-[10px] border text-[12.5px] font-semibold transition cursor-pointer ${
                     isPut
                       ? "bg-red-500/20 border-red-500/70 text-red-400"
                       : "border-white/10 text-white/55 hover:bg-white/5"
@@ -364,7 +364,7 @@ function TradeDetailPage() {
                       key={s.v}
                       type="button"
                       onClick={() => setField("status", s.v)}
-                      className={`px-1.5 py-1.5 rounded-lg border text-[12px] font-semibold transition cursor-pointer ${
+                      className={`px-1.5 py-1.5 rounded-[10px] border text-[12px] font-semibold transition cursor-pointer ${
                         active
                           ? s.active
                           : "border-white/10 text-white/55 hover:bg-white/5"
@@ -529,7 +529,7 @@ function TradeDetailPage() {
                   type="button"
                   onClick={handleSave}
                   disabled={!dirty || saving}
-                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border transition text-[12.5px] font-medium ${
+                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-[10px] border transition text-[12.5px] font-medium ${
                     dirty && !saving
                       ? "bg-teal-500/15 text-teal-300 border-teal-500/30 hover:bg-teal-500/25 cursor-pointer"
                       : "bg-white/[0.02] text-white/30 border-white/10 cursor-not-allowed"
@@ -541,7 +541,7 @@ function TradeDetailPage() {
                 <button
                   type="button"
                   onClick={handleCancel}
-                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[12.5px] font-medium cursor-pointer"
+                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-[10px] border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[12.5px] font-medium cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -554,7 +554,7 @@ function TradeDetailPage() {
               onClick={() => setShareOpen(true)}
               aria-label="Share"
               title="Share"
-              className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition cursor-pointer"
+              className="inline-flex items-center justify-center w-9 h-9 rounded-[10px] border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition cursor-pointer"
             >
               <i className="fa-solid fa-share-nodes text-[12px]" />
             </button>
@@ -563,7 +563,7 @@ function TradeDetailPage() {
               onClick={() => setDelConfirm(true)}
               aria-label="Delete"
               title="Delete"
-              className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-red-500/25 bg-red-500/[0.08] text-red-300 hover:bg-red-500/15 transition cursor-pointer"
+              className="inline-flex items-center justify-center w-9 h-9 rounded-[10px] border border-red-500/25 bg-red-500/[0.08] text-red-300 hover:bg-red-500/15 transition cursor-pointer"
             >
               <i className="fa-solid fa-trash text-[12px]" />
             </button>
@@ -593,14 +593,14 @@ function TradeDetailPage() {
             <div className="flex gap-2 w-full">
               <button
                 type="button"
-                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer"
+                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-[10px] border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer"
                 onClick={() => setDelConfirm(false)}
               >
                 Cancel
               </button>
               <button
                 type="button"
-                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-red-500/15 text-red-300 border border-red-500/25 hover:bg-red-500/25 transition text-[13px] font-medium cursor-pointer"
+                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-[10px] bg-red-500/15 text-red-300 border border-red-500/25 hover:bg-red-500/25 transition text-[13px] font-medium cursor-pointer"
                 onClick={handleDelete}
               >
                 Delete
@@ -1079,7 +1079,7 @@ function TagsRow({
               type="button"
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => add(s.label)}
-              className="px-2.5 py-1 rounded-full text-xs border transition cursor-pointer border-white/10 text-white/65 hover:bg-white/[0.06] hover:text-white"
+              className="px-2.5 py-1 rounded-[10px] text-xs border transition cursor-pointer border-white/10 text-white/65 hover:bg-white/[0.06] hover:text-white"
             >
               {s.label}
             </button>

@@ -796,7 +796,7 @@ export default function SchematicEditor({ value, onChange }: Props) {
             aria-label={t.label}
             title={t.label}
             onClick={() => setTool(t.id)}
-            className={`shrink-0 w-8 h-8 rounded-lg border flex items-center justify-center transition cursor-pointer ${
+            className={`shrink-0 w-8 h-8 rounded-[10px] border flex items-center justify-center transition cursor-pointer ${
               tool === t.id
                 ? "border-teal-500/40 bg-teal-500/15 text-teal-300"
                 : "border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white"
@@ -972,7 +972,7 @@ export default function SchematicEditor({ value, onChange }: Props) {
             onClick={playPreview}
             disabled={previewElapsed !== null}
             title="Preview animation"
-            className={`absolute top-2 right-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-medium transition ${
+            className={`absolute top-2 right-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[10px] border text-[11px] font-medium transition ${
               previewElapsed !== null
                 ? "border-white/10 bg-black/40 text-white/50 cursor-default"
                 : "border-white/15 bg-black/50 text-white/80 hover:bg-black/70 hover:text-white cursor-pointer"
@@ -1043,7 +1043,7 @@ export default function SchematicEditor({ value, onChange }: Props) {
           <button
             type="button"
             onClick={() => setAnimationMode(false)}
-            className={`py-1 rounded-full text-[11px] font-semibold transition cursor-pointer ${
+            className={`py-1 rounded-[10px] text-[11px] font-semibold transition cursor-pointer ${
               !animationMode
                 ? "bg-white/10 text-white"
                 : "text-white/50 hover:text-white"
@@ -1054,7 +1054,7 @@ export default function SchematicEditor({ value, onChange }: Props) {
           <button
             type="button"
             onClick={() => setAnimationMode(true)}
-            className={`py-1 rounded-full text-[11px] font-semibold transition cursor-pointer ${
+            className={`py-1 rounded-[10px] text-[11px] font-semibold transition cursor-pointer ${
               animationMode
                 ? "bg-teal-500/20 text-teal-300"
                 : "text-white/50 hover:text-white"
@@ -1095,7 +1095,7 @@ export default function SchematicEditor({ value, onChange }: Props) {
             <button
               type="button"
               onClick={() => removeElements(selectedIds)}
-              className="mt-1 inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-full border border-red-500/25 bg-red-500/[0.08] text-red-300 hover:bg-red-500/15 transition text-[12px] font-medium cursor-pointer"
+              className="mt-1 inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-[10px] border border-red-500/25 bg-red-500/[0.08] text-red-300 hover:bg-red-500/15 transition text-[12px] font-medium cursor-pointer"
             >
               <i className="fa-solid fa-trash text-[10px]" />
               Delete selected
@@ -1165,7 +1165,7 @@ function AnimationPanel({
         type="button"
         onClick={() => onSet(selectedIds, undefined)}
         disabled={!isExplicit}
-        className={`inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-full border text-[12px] font-medium transition ${
+        className={`inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-[10px] border text-[12px] font-medium transition ${
           isExplicit
             ? "border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white cursor-pointer"
             : "border-white/5 bg-white/[0.02] text-white/25 cursor-not-allowed"
@@ -1651,7 +1651,7 @@ function PropertyPanel({
       <button
         type="button"
         onClick={onDelete}
-        className="mt-2 inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-full border border-red-500/25 bg-red-500/[0.08] text-red-300 hover:bg-red-500/15 transition text-[12px] font-medium cursor-pointer"
+        className="mt-2 inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-[10px] border border-red-500/25 bg-red-500/[0.08] text-red-300 hover:bg-red-500/15 transition text-[12px] font-medium cursor-pointer"
       >
         <i className="fa-solid fa-trash text-[10px]" />
         Delete
@@ -1772,7 +1772,7 @@ function Toggle({
       <button
         type="button"
         onClick={() => onChange(!checked)}
-        className={`relative w-9 h-5 rounded-full transition ${
+        className={`relative w-9 h-5 rounded-[10px] transition ${
           checked ? "bg-green-500/70" : "bg-white/15"
         }`}
         aria-pressed={checked}
@@ -1882,7 +1882,7 @@ function ContextItem({
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[12.5px] text-left transition ${
+      className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-[10px] text-[12.5px] text-left transition ${
         disabled
           ? "text-white/25 cursor-not-allowed"
           : tone === "danger"
@@ -1914,7 +1914,7 @@ function HistoryButton({
       title={label}
       disabled={disabled}
       onClick={onClick}
-      className={`shrink-0 w-8 h-8 rounded-lg border flex items-center justify-center transition ${
+      className={`shrink-0 w-8 h-8 rounded-[10px] border flex items-center justify-center transition ${
         disabled
           ? "border-white/5 bg-white/[0.02] text-white/25 cursor-not-allowed"
           : "border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white cursor-pointer"
@@ -2100,7 +2100,7 @@ export function SchematicPlayer({
               : "rgba(0,0,0,0.55)",
             borderColor: "rgba(255,255,255,0.25)",
           }}
-          className={`absolute top-2 right-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-medium transition ${
+          className={`absolute top-2 right-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[10px] border text-[11px] font-medium transition ${
             playing ? "cursor-default" : "hover:brightness-125 cursor-pointer"
           }`}
         >

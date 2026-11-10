@@ -578,7 +578,7 @@ const Account = () => {
         <button
           type="submit"
           disabled={!dirty || save.kind === "saving"}
-          className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border transition text-[13px] font-medium ${
+          className={`inline-flex items-center gap-2 px-4 py-2 rounded-[10px] border transition text-[13px] font-medium ${
             !dirty || save.kind === "saving"
               ? "bg-white/[0.02] text-white/30 border-white/10 cursor-not-allowed"
               : "bg-teal-500/15 text-teal-300 border-teal-500/25 hover:bg-teal-500/25 cursor-pointer"
@@ -595,7 +595,7 @@ const Account = () => {
           <button
             type="button"
             onClick={handleReset}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-[10px] border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer"
           >
             Discard
           </button>
@@ -645,7 +645,7 @@ const Account = () => {
               // (Settings itself, once we mount one there).
               window.dispatchEvent(new CustomEvent("cuequill:start-tour"));
             }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-teal-500/25 bg-teal-500/10 text-teal-300 hover:bg-teal-500/20 transition text-[13px] font-medium cursor-pointer"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-[10px] border border-teal-500/25 bg-teal-500/10 text-teal-300 hover:bg-teal-500/20 transition text-[13px] font-medium cursor-pointer"
           >
             <i className="fa-regular fa-circle-question text-[11px]" />
             Restart the tour
@@ -668,7 +668,7 @@ const Account = () => {
             type="button"
             onClick={handleExport}
             disabled={exporting}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/80 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer disabled:opacity-50"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-[10px] border border-white/10 bg-white/[0.03] text-white/80 hover:bg-white/[0.06] hover:text-white transition text-[13px] font-medium cursor-pointer disabled:opacity-50"
           >
             <i
               className={`fa-solid ${
@@ -684,7 +684,7 @@ const Account = () => {
               setDelAllText("");
               setDelAllOpen(true);
             }}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full border border-red-500/30 bg-red-500/10 text-red-300 hover:bg-red-500/20 transition text-[13px] font-medium cursor-pointer"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-[10px] border border-red-500/30 bg-red-500/10 text-red-300 hover:bg-red-500/20 transition text-[13px] font-medium cursor-pointer"
           >
             <i className="fa-solid fa-trash-can text-[11px]" />
             Delete all trades
@@ -697,7 +697,7 @@ const Account = () => {
                 setConfirmDelete(true);
                 setDangerError(null);
               }}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full border border-red-500/30 bg-red-500/10 text-red-300 hover:bg-red-500/20 transition text-[13px] font-medium cursor-pointer"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-[10px] border border-red-500/30 bg-red-500/10 text-red-300 hover:bg-red-500/20 transition text-[13px] font-medium cursor-pointer"
             >
               <i className="fa-solid fa-trash text-[11px]" />
               Delete account
@@ -727,7 +727,7 @@ const Account = () => {
                 type="button"
                 onClick={handleDelete}
                 disabled={deleteText !== "DELETE" || deleting}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-red-500/90 text-white hover:bg-red-500 transition text-[13px] font-semibold cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-[10px] bg-red-500/90 text-white hover:bg-red-500 transition text-[13px] font-semibold cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {deleting ? (
                   <i className="fa-solid fa-circle-notch animate-spin text-[11px]" />
@@ -744,7 +744,7 @@ const Account = () => {
                   setDangerError(null);
                 }}
                 disabled={deleting}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] transition text-[13px] font-medium cursor-pointer disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-[10px] border border-white/10 bg-white/[0.03] text-white/75 hover:bg-white/[0.06] transition text-[13px] font-medium cursor-pointer disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -797,7 +797,7 @@ const Account = () => {
             <div className="flex gap-2 w-full">
               <button
                 type="button"
-                className="flex-1 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/80 hover:bg-white/[0.06] hover:text-white transition cursor-pointer text-[13px]"
+                className="flex-1 px-4 py-2 rounded-[10px] border border-white/10 bg-white/[0.03] text-white/80 hover:bg-white/[0.06] hover:text-white transition cursor-pointer text-[13px]"
                 onClick={() => setDelAllOpen(false)}
               >
                 Cancel
@@ -805,7 +805,7 @@ const Account = () => {
               <button
                 type="button"
                 disabled={!canDeleteTrades}
-                className={`flex-1 px-4 py-2 rounded-full border transition text-[13px] font-medium ${
+                className={`flex-1 px-4 py-2 rounded-[10px] border transition text-[13px] font-medium ${
                   canDeleteTrades
                     ? "bg-red-500/15 text-red-300 border-red-500/25 hover:bg-red-500/25 cursor-pointer"
                     : "bg-white/[0.02] text-white/30 border-white/10 cursor-not-allowed"

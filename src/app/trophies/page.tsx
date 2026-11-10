@@ -130,7 +130,7 @@ function Page() {
                       type="button"
                       onClick={() => equipTitle(t)}
                       disabled={equipping}
-                      className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border text-[12.5px] font-medium transition disabled:opacity-60 cursor-pointer ${
+                      className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-[10px] border text-[12.5px] font-medium transition disabled:opacity-60 cursor-pointer ${
                         active
                           ? "border-amber-400/50 bg-amber-500/15 text-amber-200 shadow-[0_0_20px_-6px_rgba(245,158,11,0.5)]"
                           : "border-white/12 bg-white/[0.03] text-white/70 hover:border-white/25 hover:text-white/90"

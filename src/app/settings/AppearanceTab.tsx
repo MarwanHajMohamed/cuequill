@@ -55,7 +55,7 @@ export default function AppearanceTab() {
               key={t}
               type="button"
               onClick={() => setTheme(t)}
-              className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-lg text-[13px] font-medium capitalize transition cursor-pointer ${
+              className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-[10px] text-[13px] font-medium capitalize transition cursor-pointer ${
                 theme === t
                   ? "bg-white/10 text-white border border-white/15"
                   : "text-white/55 hover:text-white"
@@ -88,7 +88,7 @@ export default function AppearanceTab() {
                 aria-label={
                   locked ? `${c.label} - unlocks at level ${c.minLevel}` : c.label
                 }
-                className={`relative w-9 h-9 rounded-full bg-gradient-to-br ${c.gradient} border transition ${
+                className={`relative w-9 h-9 rounded-[10px] bg-gradient-to-br ${c.gradient} border transition ${
                   locked
                     ? "opacity-40 cursor-not-allowed border-white/15"
                     : avatarColor === c.id
@@ -134,7 +134,7 @@ export default function AppearanceTab() {
                 aria-label={
                   locked ? `${f.label} - unlocks at level ${f.minLevel}` : f.label
                 }
-                className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition ${
+                className={`relative w-10 h-10 rounded-[10px] flex items-center justify-center border transition ${
                   locked
                     ? "opacity-40 cursor-not-allowed border-white/10"
                     : active
@@ -183,7 +183,7 @@ export default function AppearanceTab() {
                 aria-label={
                   locked ? `${a.label} - unlocks at level ${a.minLevel}` : a.label
                 }
-                className={`relative w-9 h-9 rounded-full bg-gradient-to-br ${a.swatch} border transition ${
+                className={`relative w-9 h-9 rounded-[10px] bg-gradient-to-br ${a.swatch} border transition ${
                   locked
                     ? "opacity-40 cursor-not-allowed border-white/15"
                     : active

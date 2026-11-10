@@ -108,7 +108,7 @@ export function StrategyChart({
           <button
             type="button"
             onClick={handlePlay}
-            className="ml-auto text-xs text-white/70 hover:text-white border border-white/15 hover:border-white/30 rounded-md px-2.5 py-1 flex items-center gap-1.5 transition"
+            className="ml-auto text-xs text-white/70 hover:text-white border border-white/15 hover:border-white/30 rounded-[10px] px-2.5 py-1 flex items-center gap-1.5 transition"
             aria-label={playing ? "pause schematic" : "play schematic"}
           >
             <i

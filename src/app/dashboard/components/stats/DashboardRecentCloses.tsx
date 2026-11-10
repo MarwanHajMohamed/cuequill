@@ -67,7 +67,7 @@ export default function DashboardRecentCloses({ userId }: { userId: string }) {
               <li key={t._id}>
                 <button
                   onClick={() => setSelected(t)}
-                  className="w-full text-left flex items-center gap-3 p-2 rounded-md hover:bg-white/5 transition cursor-pointer"
+                  className="w-full text-left flex items-center gap-3 p-2 rounded-[10px] hover:bg-white/5 transition cursor-pointer"
                 >
                   <span
                     className={`w-1 h-8 rounded-full shrink-0 ${

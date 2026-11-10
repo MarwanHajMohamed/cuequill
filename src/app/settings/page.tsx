@@ -94,7 +94,7 @@ function Page() {
                     tab.title === "Plan" ? "settings-plan" : undefined
                   }
                   onClick={() => setSelectedSetting(tab.title)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl whitespace-nowrap text-left transition cursor-pointer text-[13px] font-medium ${
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-[10px] whitespace-nowrap text-left transition cursor-pointer text-[13px] font-medium ${
                     active
                       ? "bg-teal-500/10 text-white border border-teal-500/25"
                       : "border border-transparent text-white/65 hover:bg-white/[0.04] hover:text-white"

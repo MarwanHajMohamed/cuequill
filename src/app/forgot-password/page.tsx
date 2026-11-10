@@ -135,7 +135,7 @@ export default function ForgotPasswordPage() {
               <button
                 type="submit"
                 disabled={!canSubmit}
-                className={`inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full border transition text-[13.5px] font-medium ${
+                className={`inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-[10px] border transition text-[13.5px] font-medium ${
                   canSubmit
                     ? "bg-teal-500/15 text-teal-300 border-teal-500/25 hover:bg-teal-500/25 cursor-pointer"
                     : "bg-white/[0.02] text-white/30 border-white/10 cursor-not-allowed"

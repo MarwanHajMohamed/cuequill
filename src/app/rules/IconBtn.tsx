@@ -21,7 +21,7 @@ export default function IconBtn({
       title={label}
       disabled={disabled}
       onClick={onClick}
-      className={`w-7 h-7 rounded-md flex items-center justify-center text-[11px] transition cursor-pointer disabled:opacity-25 disabled:cursor-default ${
+      className={`w-7 h-7 rounded-[10px] flex items-center justify-center text-[11px] transition cursor-pointer disabled:opacity-25 disabled:cursor-default ${
         danger
           ? "text-white/40 hover:text-red-400 hover:bg-white/[0.06]"
           : "text-white/50 hover:text-white hover:bg-white/[0.06]"

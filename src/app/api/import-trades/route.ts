@@ -65,6 +65,20 @@ function parseExpiry(expiryStr: string) {
   return new Date(year, month, day);
 }
 
+// A fill's execution time as an "HH:mm" 24h string in market (ET) time -
+// matches the manual-entry timeEntered/timeExited convention so imported
+// trades carry their entry/exit time.
+function etTime(d: Date): string {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  })
+    .format(d)
+    .replace(/^24:/, "00:");
+}
+
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
@@ -133,8 +147,10 @@ export async function POST(req: Request) {
             qty: matchQty,
             contractPrice: parseFloat(buyRow.TradePrice),
             dateBought: parseDateTime(buyRow.DateTime).toLocaleString(),
+            timeEntered: etTime(parseDateTime(buyRow.DateTime)),
             expiryDate: parseExpiry(buyRow.Expiry).toLocaleString(),
             dateClosed: parseDateTime(row.DateTime).toLocaleString(),
+            timeExited: etTime(parseDateTime(row.DateTime)),
             closingContractPrice: parseFloat(row.TradePrice),
             profitLoss: (parseFloat(row.FifoPnlRealized) / qty) * matchQty,
             status:
@@ -168,6 +184,7 @@ export async function POST(req: Request) {
         qty: buyRow.remainingQty,
         contractPrice: parseFloat(buyRow.TradePrice),
         dateBought: parseDateTime(buyRow.DateTime),
+        timeEntered: etTime(parseDateTime(buyRow.DateTime)),
         expiryDate: parseExpiry(buyRow.Expiry),
         status: "OPEN",
         simulated: false,

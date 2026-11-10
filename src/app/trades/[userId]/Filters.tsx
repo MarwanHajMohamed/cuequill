@@ -95,7 +95,7 @@ export default function Filters({
             <button
               key={val}
               onClick={() => setFilter(val)}
-              className={`px-3 py-1 rounded-full border cursor-pointer transition text-xs xl:text-sm font-medium ${
+              className={`px-3 py-1 rounded-[10px] border cursor-pointer transition text-xs xl:text-sm font-medium ${
                 filter === val
                   ? val === "All"
                     ? "bg-white/10 text-white border-white/15"
@@ -163,7 +163,7 @@ export default function Filters({
             <button
               key={val}
               onClick={() => setOption(val)}
-              className={`px-3 py-1 text-xs xl:text-sm rounded-full border cursor-pointer transition font-medium ${
+              className={`px-3 py-1 text-xs xl:text-sm rounded-[10px] border cursor-pointer transition font-medium ${
                 option === val
                   ? val === "All"
                     ? "bg-white/10 text-white border-white/15"
@@ -387,7 +387,7 @@ export default function Filters({
                 setStartDate("");
                 setEndDate("");
               }}
-              className="w-full py-2 text-xs text-white/60 border border-white/15 rounded-lg hover:text-white hover:border-white/30 transition duration-150 cursor-pointer"
+              className="w-full py-2 text-xs text-white/60 border border-white/15 rounded-[10px] hover:text-white hover:border-white/30 transition duration-150 cursor-pointer"
             >
               Clear all filters
             </button>

@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
 import { useIsPro } from "@/hooks/useIsPro";
 import { useScrollLock } from "@/hooks/useScrollLock";
+import PendingImportReview from "@/components/PendingImportReview";
 
 const COOLDOWN_MS = 30 * 60 * 1000;
 
@@ -22,6 +23,8 @@ type ImportedTrade = {
   dateBought: string;
   dateClosed?: string | null;
   expiryDate?: string | null;
+  timeEntered?: string | null;
+  timeExited?: string | null;
   profitLoss?: number | null;
   fees?: number | null;
   status: "WIN" | "LOSS" | "OPEN";
@@ -55,15 +58,10 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
     null,
   );
 
-  // Preview (dry-run) of a manual sync: what it WOULD import, pending the
-  // user's confirmation. Null when there's nothing staged.
-  const [preview, setPreview] = useState<{
-    fetched: number;
-    matched: number;
-    skipped: number;
-    trades: ImportedTrade[];
-  } | null>(null);
-  const [committing, setCommitting] = useState(false);
+  // Bumped after a sync so the pending-import review refetches and shows the
+  // freshly staged trades. The review (new + skipped, per-trade import) lives
+  // in the shared PendingImportReview component.
+  const [pendingReload, setPendingReload] = useState(0);
 
   // Last-imported viewer state
   const [importedOpen, setImportedOpen] = useState(false);
@@ -87,6 +85,8 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
         setLastInserted(data.ibkrLastSyncInserted ?? null);
         setLastSkipped(data.ibkrLastSyncSkipped ?? null);
       });
+    // The pending-import review (below) resurfaces any trades staged by a
+    // previous sync on its own, so there's nothing to fetch here for it.
   }, []);
 
   useEffect(() => {
@@ -138,33 +138,33 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
     }
   };
 
-  // Step 1: preview. Fetch from IBKR and show what WOULD be imported; the
-  // user confirms before anything is written.
+  // Sync: fetch from IBKR, which SAVES the found trades (new + skipped) to
+  // the pending stash. Nothing is written to the journal - the review below
+  // (PendingImportReview) shows them and lets the user import any of them.
   const handleSync = async () => {
     setSyncing(true);
     setSyncStatus("Checking IBKR for new trades…");
-    setPreview(null);
 
     const res = await fetch("/api/ibkr/sync", { method: "POST" });
     const data = await res.json();
 
     setSyncing(false);
     if (res.ok) {
-      const nowIso = new Date().toISOString();
-      setLastManualSync(nowIso);
-      const trades: ImportedTrade[] = data.trades ?? [];
-      setPreview({
-        fetched: data.fetched ?? 0,
-        matched: data.matched ?? 0,
-        skipped: data.skipped ?? 0,
-        trades,
-      });
-      if (trades.length > 0) {
+      setLastManualSync(new Date().toISOString());
+      // Refresh the review with the freshly staged trades.
+      setPendingReload((n) => n + 1);
+      const found = (data.trades ?? []).filter(
+        (t: { _skipped?: boolean }) => !t._skipped,
+      ).length;
+      const skipped = data.skipped ?? 0;
+      if (found > 0) {
         setSyncStatus(
-          `${trades.length} new trade${trades.length !== 1 ? "s" : ""} found - review below and confirm.`,
+          `${found} new trade${found !== 1 ? "s" : ""} found - review below.`,
         );
-      } else if ((data.matched ?? 0) > 0) {
-        setSyncStatus("No new trades - everything IBKR returned is already in your journal.");
+      } else if (skipped > 0) {
+        setSyncStatus(
+          `No new trades - ${skipped} look like duplicates (review below to import anyway).`,
+        );
       } else if ((data.fetched ?? 0) === 0) {
         setSyncStatus(
           "IBKR returned no trades. The Activity Flex query settles on T+1, so trades usually appear the next business day after they're taken.",
@@ -186,38 +186,21 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
     }
   };
 
-  // Step 2: confirm. Insert exactly the previewed trades (no IBKR call).
-  const handleConfirmImport = async () => {
-    setCommitting(true);
-    try {
-      const res = await fetch("/api/ibkr/sync/commit", { method: "POST" });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Import failed");
-      const nowIso = new Date().toISOString();
-      setLastSync(nowIso);
-      setLastInserted(data.inserted);
-      setLastSkipped(data.skipped);
-      setPreview(null);
-      setSyncStatus(
-        `Done - ${data.inserted} trade${data.inserted !== 1 ? "s" : ""} imported.`,
-      );
-      // Refresh the live imported list + the trades table / net P/L.
-      setImportedTrades([]);
-      setHaveLoadedImported(false);
-      refreshTradeData();
-      if (importedOpen) loadImported();
-    } catch (e) {
-      setSyncStatus(
-        `Error: ${e instanceof Error ? e.message : "Import failed"}`,
-      );
-    } finally {
-      setCommitting(false);
-    }
-  };
-
-  const handleCancelPreview = () => {
-    setPreview(null);
-    setSyncStatus("Import cancelled - nothing was added.");
+  // After the review imports/discards anything, refresh the last-imported
+  // list, the "last synced" counts, and the trades table / net P/L.
+  const handlePendingChanged = () => {
+    setImportedTrades([]);
+    setHaveLoadedImported(false);
+    refreshTradeData();
+    if (importedOpen) loadImported();
+    fetch("/api/user/ibkr-settings")
+      .then((r) => r.json())
+      .then((data) => {
+        setLastSync(data.ibkrLastSync ?? null);
+        setLastInserted(data.ibkrLastSyncInserted ?? null);
+        setLastSkipped(data.ibkrLastSyncSkipped ?? null);
+      })
+      .catch(() => {});
   };
 
   const loadImported = async () => {
@@ -453,7 +436,7 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
                       setLightbox({ src: step.img!, alt: step.alt ?? "" })
                     }
                     aria-label="Enlarge screenshot"
-                    className="ml-9 max-w-2xl rounded-xl border border-white/10 overflow-hidden bg-white/[0.02] cursor-zoom-in block hover:border-white/25 transition"
+                    className="ml-9 max-w-2xl rounded-[10px] border border-white/10 overflow-hidden bg-white/[0.02] cursor-zoom-in block hover:border-white/25 transition"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
@@ -516,7 +499,7 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
         <div className="flex items-center gap-3 flex-wrap">
           <button
             onClick={handleSave}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[13px] font-medium cursor-pointer"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-[10px] bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[13px] font-medium cursor-pointer"
           >
             <i className="fa-solid fa-floppy-disk text-[11px]" />
             Save credentials
@@ -556,7 +539,7 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
           <button
             onClick={handleSync}
             disabled={syncDisabled}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border transition text-[13px] font-medium ${
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-[10px] border transition text-[13px] font-medium ${
               syncDisabled
                 ? "bg-white/[0.02] text-white/30 border-white/10 cursor-not-allowed"
                 : "bg-indigo-500/15 text-indigo-300 border-indigo-500/25 hover:bg-indigo-500/25 cursor-pointer"
@@ -576,54 +559,14 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
           )}
         </div>
 
-        {/* Preview: what the sync WOULD import, pending confirmation.
-            Nothing is written until the user clicks Import. */}
-        {preview && preview.trades.length > 0 && (
-          <div className="mt-1 flex flex-col gap-3 rounded-2xl border border-indigo-500/25 bg-indigo-500/[0.06] p-4">
-            <div className="flex items-center justify-between gap-2">
-              <div className="text-[13px] font-medium text-white">
-                Ready to import {preview.trades.length} trade
-                {preview.trades.length === 1 ? "" : "s"}
-              </div>
-              {preview.skipped > 0 && (
-                <span className="text-[11px] text-white/45">
-                  {preview.skipped} already in your journal
-                </span>
-              )}
-            </div>
-            <div className="text-[11.5px] text-white/50 leading-relaxed">
-              Review these below. Nothing is added until you confirm.
-            </div>
-            <div className="flex flex-col gap-1.5 max-h-80 overflow-y-auto pr-1">
-              {preview.trades.map((t, i) => (
-                <PreviewRow key={i} trade={t} />
-              ))}
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={handleConfirmImport}
-                disabled={committing}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-teal-500/25 bg-teal-500/15 text-teal-200 hover:bg-teal-500/25 transition text-[13px] font-medium cursor-pointer disabled:opacity-50"
-              >
-                <i
-                  className={`fa-solid ${committing ? "fa-circle-notch animate-spin" : "fa-check"} text-[11px]`}
-                />
-                {committing
-                  ? "Importing…"
-                  : `Import ${preview.trades.length} trade${preview.trades.length === 1 ? "" : "s"}`}
-              </button>
-              <button
-                type="button"
-                onClick={handleCancelPreview}
-                disabled={committing}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] transition text-[13px] font-medium cursor-pointer disabled:opacity-50"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
+        {/* Pending-import review: trades the last sync found (new + skipped),
+            each importable on its own or in bulk. Saved until imported,
+            discarded, or replaced by a newer sync - so it reappears on
+            return. Self-fetches; `pendingReload` nudges it after a sync. */}
+        <PendingImportReview
+          reloadToken={pendingReload}
+          onChanged={handlePendingChanged}
+        />
 
         {/* Imported-trades viewer. Once the live list has loaded we
             use its length for the pill count; before that we fall
@@ -645,7 +588,7 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
             <button
               type="button"
               onClick={handleToggleImported}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white transition text-[12px] font-medium cursor-pointer"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-[10px] border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white transition text-[12px] font-medium cursor-pointer"
             >
               <i
                 className={`fa-solid fa-chevron-right text-[9px] transition-transform ${importedOpen ? "rotate-90" : ""}`}
@@ -720,7 +663,7 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
                               <button
                                 type="button"
                                 onClick={() => setConfirmUndo(true)}
-                                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-200 hover:bg-amber-500/20 transition text-[12.5px] font-medium cursor-pointer"
+                                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-[10px] border border-amber-500/30 bg-amber-500/10 text-amber-200 hover:bg-amber-500/20 transition text-[12.5px] font-medium cursor-pointer"
                               >
                                 <i className="fa-solid fa-rotate-left text-[11px]" />
                                 Undo this import
@@ -731,7 +674,7 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
                                   type="button"
                                   onClick={handleUndoImport}
                                   disabled={undoing}
-                                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-red-500/30 bg-red-500/15 text-red-200 hover:bg-red-500/25 transition text-[12.5px] font-medium cursor-pointer disabled:opacity-50"
+                                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-[10px] border border-red-500/30 bg-red-500/15 text-red-200 hover:bg-red-500/25 transition text-[12.5px] font-medium cursor-pointer disabled:opacity-50"
                                 >
                                   <i
                                     className={`fa-solid ${undoing ? "fa-circle-notch animate-spin" : "fa-trash-can"} text-[11px]`}
@@ -744,7 +687,7 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
                                   type="button"
                                   onClick={() => setConfirmUndo(false)}
                                   disabled={undoing}
-                                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] transition text-[12.5px] font-medium cursor-pointer disabled:opacity-50"
+                                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-[10px] border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] transition text-[12.5px] font-medium cursor-pointer disabled:opacity-50"
                                 >
                                   Cancel
                                 </button>
@@ -787,70 +730,6 @@ export default function IBKRTab({ embedded = false }: { embedded?: boolean }) {
           />
         )}
       </AnimatePresence>
-    </div>
-  );
-}
-
-// Read-only row for a trade staged in the sync preview (not yet imported).
-// Like ImportedRow but with no delete action and no stored id.
-function PreviewRow({ trade }: { trade: ImportedTrade }) {
-  const isCall = trade.option === "CALL";
-  const net = (trade.profitLoss ?? 0) - (trade.fees ?? 0);
-  const day = (iso: string | null | undefined) =>
-    iso
-      ? new Date(iso).toLocaleDateString(undefined, {
-          month: "short",
-          day: "numeric",
-        })
-      : "-";
-
-  return (
-    <div className="flex items-center gap-3 px-3 py-2 rounded-xl border border-white/10 bg-white/[0.02]">
-      <span
-        className={`shrink-0 inline-flex items-center justify-center w-12 text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full border ${
-          isCall
-            ? "bg-green-500/10 text-green-300 border-green-500/25"
-            : "bg-red-500/10 text-red-300 border-red-500/25"
-        }`}
-      >
-        {trade.option}
-      </span>
-
-      <div className="flex flex-col min-w-0 flex-1">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="text-[13.5px] font-semibold text-white truncate">
-            {trade.symbol}
-          </span>
-          <span className="text-[11.5px] text-white/45 tabular-nums">
-            {trade.strike} × {trade.qty}
-          </span>
-        </div>
-        <div className="text-[10.5px] text-white/40 tabular-nums">
-          {day(trade.dateBought)}
-          {trade.dateClosed ? ` › ${day(trade.dateClosed)}` : " · open"}
-        </div>
-      </div>
-
-      <div className="shrink-0 text-right">
-        <div
-          className={`text-[13px] font-semibold tabular-nums ${
-            trade.status === "OPEN"
-              ? "text-white/50"
-              : net >= 0
-                ? "text-green-300"
-                : "text-red-300"
-          }`}
-        >
-          {trade.status === "OPEN"
-            ? "-"
-            : `${net >= 0 ? "+" : "−"}$${Math.abs(net).toFixed(2)}`}
-        </div>
-        {trade.fees ? (
-          <div className="text-[9.5px] text-white/35 tabular-nums">
-            fees ${trade.fees.toFixed(2)}
-          </div>
-        ) : null}
-      </div>
     </div>
   );
 }
@@ -905,7 +784,7 @@ function SetupLightbox({
         type="button"
         aria-label="Close"
         onClick={onClose}
-        className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition flex items-center justify-center cursor-pointer z-10"
+        className="absolute top-4 right-4 w-9 h-9 rounded-[10px] bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition flex items-center justify-center cursor-pointer z-10"
       >
         <i className="fa-solid fa-xmark text-[14px]" />
       </button>
@@ -991,7 +870,10 @@ function ImportedRow({
         </div>
         <div className="text-[10.5px] text-white/40 tabular-nums">
           {day(trade.dateBought)}
-          {trade.dateClosed ? ` › ${day(trade.dateClosed)}` : " · open"}
+          {trade.timeEntered ? ` ${trade.timeEntered}` : ""}
+          {trade.dateClosed
+            ? ` › ${day(trade.dateClosed)}${trade.timeExited ? ` ${trade.timeExited}` : ""}`
+            : " · open"}
         </div>
       </div>
 
@@ -1024,7 +906,7 @@ function ImportedRow({
         disabled={deleting}
         aria-label="Delete trade"
         title="Delete this imported trade"
-        className={`shrink-0 w-8 h-8 rounded-full border flex items-center justify-center transition ${
+        className={`shrink-0 w-8 h-8 rounded-[10px] border flex items-center justify-center transition ${
           deleting
             ? "border-white/10 bg-white/[0.02] text-white/30 cursor-not-allowed"
             : "border-white/10 bg-white/[0.03] text-white/55 hover:text-red-300 hover:border-red-500/30 hover:bg-red-500/10 cursor-pointer"
