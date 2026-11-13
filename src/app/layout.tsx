@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { DM_Mono } from "next/font/google";
+import { DM_Sans } from "next/font/google";
 import "./globals.css";
 import "react-calendar/dist/Calendar.css";
 import "@/app/calendar/custom-calendar.css";
@@ -14,10 +14,11 @@ import CookieConsent from "./CookieConsent";
 import DocumentTitle from "./DocumentTitle";
 
 // Single typeface for the whole app - headings inherit this via
-// globals.css, so there's no separate display/serif font.
-const dmMono = DM_Mono({
+// globals.css, so there's no separate display/serif font. DM Sans is a
+// variable font, so omitting `weight` loads the full axis (400-700 used
+// across the UI).
+const dmSans = DM_Sans({
   subsets: ["latin"],
-  weight: ["300", "400", "500"],
   style: ["normal", "italic"],
   display: "swap",
 });
@@ -111,7 +112,7 @@ export default function RootLayout({
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css"
         />
       </head>
-      <body className={dmMono.className}>
+      <body className={dmSans.className}>
         <Providers>
           <ToastProvider>
             <SidebarProvider>

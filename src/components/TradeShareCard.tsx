@@ -1,13 +1,12 @@
 import React, { forwardRef } from "react";
-import { DM_Mono } from "next/font/google";
+import { DM_Sans } from "next/font/google";
 import { Trade } from "@/app/types/Trades";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
 import { type CardSkin, skinById } from "@/lib/cardSkins";
 
-// The app-wide typeface (DM Mono), so the exported card matches the site.
-const shareFont = DM_Mono({
+// The app-wide typeface (DM Sans), so the exported card matches the site.
+const shareFont = DM_Sans({
   subsets: ["latin"],
-  weight: ["300", "400", "500"],
 });
 
 // A self-contained, always-dark share card for a single trade. Brand +
