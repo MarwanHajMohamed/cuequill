@@ -143,7 +143,7 @@ export function SiteHeader() {
           {authed ? (
             <Link
               href="/dashboard"
-              className="hidden sm:inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[12.5px] font-medium"
+              className="hidden sm:inline-flex items-center gap-2 px-4 py-1.5 rounded-[10px] bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[12.5px] font-medium"
             >
               Go to Dashboard
               <i className="fa-solid fa-chevron-right text-[10px]" />
@@ -158,7 +158,7 @@ export function SiteHeader() {
               </Link>
               <Link
                 href="/signup"
-                className="hidden sm:inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[12.5px] font-medium"
+                className="hidden sm:inline-flex items-center gap-2 px-4 py-1.5 rounded-[10px] bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[12.5px] font-medium"
               >
                 Sign up
               </Link>

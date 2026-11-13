@@ -1258,7 +1258,7 @@ function Signoff() {
           </Link>
           <Link
             href="/pricing"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-white/15 text-white/80 hover:text-white hover:border-white/30 transition text-[12.5px]"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-[10px] border border-white/15 text-white/80 hover:text-white hover:border-white/30 transition text-[12.5px]"
           >
             See pricing
           </Link>
