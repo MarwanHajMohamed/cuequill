@@ -2,11 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import {
-  SectionMark,
-  SiteFooter,
-  SiteHeader,
-} from "../_marketing/Chrome";
+import { SectionMark, SiteFooter, SiteHeader } from "../_marketing/Chrome";
 
 // ─── Data ────────────────────────────────────────────────────────────
 
@@ -33,7 +29,7 @@ const GROUPS: FeatureGroup[] = [
     heading: (
       <>
         Put a trade in once.{" "}
-        <span className="italic text-teal-300">Keep it forever.</span>
+        <span className="text-teal-300">Keep it forever.</span>
       </>
     ),
     lede: "Two ways in - by hand or from your broker. Both end up in the same journal, deduped, with commissions and taxes already counted.",
@@ -75,8 +71,8 @@ const GROUPS: FeatureGroup[] = [
     label: "Review",
     heading: (
       <>
-        The part you{" "}
-        <span className="italic text-teal-300">were going to do</span> in Excel.
+        The part you <span className="text-teal-300">were going to do</span> in
+        Excel.
       </>
     ),
     lede: "A calendar that loads in two seconds, a day modal with every fill, and a statistics page that actually filters.",
@@ -124,7 +120,7 @@ const GROUPS: FeatureGroup[] = [
     heading: (
       <>
         An assistant that has{" "}
-        <span className="italic text-teal-300">read your journal.</span>
+        <span className="text-teal-300">read your journal.</span>
       </>
     ),
     lede: "Plain-English questions against your own trades - analysis, comparisons, mistake-spotting, fresh fills.",
@@ -166,8 +162,7 @@ const GROUPS: FeatureGroup[] = [
     label: "Reference",
     heading: (
       <>
-        The playbook you{" "}
-        <span className="italic text-teal-300">stop forgetting.</span>
+        The playbook you <span className="text-teal-300">stop forgetting.</span>
       </>
     ),
     lede: "Strategy schematics, a rules board, and a daily affirmation page - the bits of trading discipline you keep meaning to write down.",
@@ -239,9 +234,7 @@ function FeaturesHero() {
           className="text-[40px] sm:text-[60px] md:text-[76px] leading-[0.98] font-medium tracking-[-0.025em] max-w-4xl"
         >
           Everything in the journal,{" "}
-          <span className="italic font-normal text-teal-300">
-            on one page.
-          </span>
+          <span className="font-normal text-teal-300">on one page.</span>
         </motion.h1>
 
         <motion.p
@@ -263,14 +256,14 @@ function FeaturesHero() {
         >
           <Link
             href="/login"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 transition text-[13px] font-medium"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[10px] text-teal-300 border border-teal-500/30 hover:bg-teal-500/15 transition text-[13px] font-medium"
           >
             Open your journal
             <i className="fa-solid fa-chevron-right text-[10px]" />
           </Link>
           <Link
             href="/pricing"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-white/15 text-white/75 hover:text-white hover:border-white/30 transition text-[12.5px]"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[10px] border border-white/15 text-white/75 hover:text-white hover:border-white/30 transition text-[12.5px]"
           >
             See pricing
             <i className="fa-solid fa-chevron-right text-[10px]" />
@@ -293,12 +286,6 @@ function FeatureGroupSection({ group }: { group: FeatureGroup }) {
           <h2 className="mt-6 text-[30px] md:text-[38px] leading-[1.06] font-medium tracking-[-0.02em]">
             {group.heading}
           </h2>
-          <p className="mt-5 max-w-sm text-[13px] text-white/55 leading-relaxed">
-            {group.lede}
-          </p>
-          <p className="mt-6 text-[10.5px] tracking-[0.1em] text-white/35 tabular-nums">
-            {group.items.length} entries
-          </p>
         </div>
 
         {/* Feature list */}
@@ -374,28 +361,24 @@ function ClosingCTA() {
   return (
     <section className="px-6 md:px-10 py-20 md:py-28">
       <div className="max-w-[1200px] mx-auto rounded-3xl border border-white/10 bg-white/[0.02] backdrop-blur-md shadow-[0_8px_40px_var(--shadow-soft)] p-8 md:p-14">
-        <SectionMark label="Get started" />
         <h2 className="mt-6 text-[36px] sm:text-[48px] md:text-[60px] leading-[0.98] font-medium tracking-[-0.025em] max-w-3xl">
           That&apos;s the tour.{" "}
-          <span className="italic text-teal-300">Open the journal.</span>
+          <span className="text-teal-300">Open the journal.</span>
         </h2>
         <div className="mt-10 flex items-center gap-3 flex-wrap">
           <Link
             href="/login"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 transition text-[13px] font-medium"
+            className="inline-flex items-center gap-2 px-6 py-2 rounded-[10px] text-teal-300 border border-teal-500/30 hover:bg-teal-500/15 transition text-[13px] font-medium"
           >
             Sign in
             <i className="fa-solid fa-chevron-right text-[10px]" />
           </Link>
           <Link
             href="/pricing"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-white/15 text-white/80 hover:text-white hover:border-white/30 transition text-[12.5px]"
+            className="inline-flex items-center gap-2 px-6 py-2 rounded-[10px] border border-white/15 text-white/80 hover:text-white hover:border-white/30 transition text-[12.5px]"
           >
             See pricing
           </Link>
-          <span className="text-[11.5px] tracking-[0.1em] text-white/35 ml-1">
-            Free forever to start
-          </span>
         </div>
       </div>
     </section>

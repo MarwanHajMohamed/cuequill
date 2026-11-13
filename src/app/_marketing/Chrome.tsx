@@ -116,126 +116,126 @@ export function SiteHeader() {
     >
       <AnnouncementBar />
       <div className="w-full flex flex-col items-center px-3 md:px-10">
-      <div className="pointer-events-auto flex justify-between items-center w-full max-w-[1200px] mt-3 md:mt-5 py-2 pl-3 pr-2 bg-white/[0.03] backdrop-blur-md rounded-full border border-white/10 shadow-[0_2px_24px_var(--shadow-soft)]">
-        <Link
-          href="/"
-          className="flex items-center gap-2 pl-2 pr-3 py-1"
-          onClick={() => setMenuOpen(false)}
-        >
-          <CuequillLogo className="h-6 w-auto" />
-          <span className="text-[13.5px] font-semibold tracking-tight">
-            Cuequill
-          </span>
-        </Link>
-        <div className="flex items-center gap-2">
+        <div className="pointer-events-auto flex justify-between items-center w-full max-w-[1200px] mt-3 md:mt-5 py-2 pl-3 pr-2 bg-white/[0.03] backdrop-blur-md rounded-full border border-white/10 shadow-[0_2px_24px_var(--shadow-soft)]">
           <Link
-            href="/features"
-            className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-full text-white/55 hover:text-white transition text-[12.5px]"
+            href="/"
+            className="flex items-center gap-2 pl-2 pr-3 py-1"
+            onClick={() => setMenuOpen(false)}
           >
-            Features
+            <CuequillLogo className="h-6 w-auto" />
+            <span className="text-[13.5px] font-semibold tracking-tight">
+              Cuequill
+            </span>
           </Link>
-          <Link
-            href="/pricing"
-            className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-full text-white/55 hover:text-white transition text-[12.5px]"
-          >
-            Pricing
-          </Link>
-          {authed ? (
+          <div className="flex items-center gap-2">
             <Link
-              href="/dashboard"
-              className="hidden sm:inline-flex items-center gap-2 px-4 py-1.5 rounded-[10px] bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[12.5px] font-medium"
+              href="/features"
+              className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-full text-white/55 hover:text-white transition text-[12.5px]"
             >
-              Go to Dashboard
-              <i className="fa-solid fa-chevron-right text-[10px]" />
+              Features
             </Link>
-          ) : (
-            <>
+            <Link
+              href="/pricing"
+              className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-full text-white/55 hover:text-white transition text-[12.5px]"
+            >
+              Pricing
+            </Link>
+            {authed ? (
               <Link
-                href="/login"
-                className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-full text-white/55 hover:text-white transition text-[12.5px]"
+                href="/dashboard"
+                className="hidden sm:inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-teal-300 border border-teal-500/0 hover:bg-teal-500/15 hover:border-teal-500/25 transition text-[12.5px] font-medium"
               >
-                Sign in
+                Dashboard
+                <i className="fa-solid fa-chevron-right text-[10px]" />
               </Link>
-              <Link
-                href="/signup"
-                className="hidden sm:inline-flex items-center gap-2 px-4 py-1.5 rounded-[10px] bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[12.5px] font-medium"
-              >
-                Sign up
-              </Link>
-            </>
-          )}
-          <button
-            type="button"
-            onClick={() => setMenuOpen((o) => !o)}
-            aria-label={menuOpen ? "Close menu" : "Open menu"}
-            aria-expanded={menuOpen}
-            className="sm:hidden inline-flex items-center justify-center w-9 h-9 rounded-[10px] border border-white/15 text-white/80 hover:text-white hover:border-white/30 transition cursor-pointer"
-          >
-            <i
-              className={`fa-solid ${menuOpen ? "fa-xmark" : "fa-bars"} text-[14px]`}
-            />
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile sheet menu - drops below the pill, matches its glass. */}
-      <AnimatePresence>
-        {menuOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.18, ease: "easeOut" }}
-            className="sm:hidden pointer-events-auto w-full max-w-[1200px] mt-2"
-          >
-            <div className="flex flex-col rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md shadow-[0_2px_24px_var(--shadow-soft)] overflow-hidden">
-              <Link
-                href="/features"
-                onClick={() => setMenuOpen(false)}
-                className="px-5 py-3.5 text-[14px] text-white/80 hover:text-white hover:bg-white/[0.04] border-b border-[var(--rule)] transition"
-              >
-                Features
-              </Link>
-              <Link
-                href="/pricing"
-                onClick={() => setMenuOpen(false)}
-                className="px-5 py-3.5 text-[14px] text-white/80 hover:text-white hover:bg-white/[0.04] border-b border-[var(--rule)] transition"
-              >
-                Pricing
-              </Link>
-              {authed ? (
+            ) : (
+              <>
                 <Link
-                  href="/dashboard"
-                  onClick={() => setMenuOpen(false)}
-                  className="px-5 py-3.5 text-[14px] font-medium text-teal-300 hover:bg-teal-500/[0.08] transition inline-flex items-center justify-between"
+                  href="/login"
+                  className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-full text-white/55 hover:text-white transition text-[12.5px]"
                 >
-                  Go to Dashboard
-                  <i className="fa-solid fa-chevron-right text-[11px]" />
+                  Sign in
                 </Link>
-              ) : (
-                <>
+                <Link
+                  href="/signup"
+                  className="hidden sm:inline-flex items-center gap-2 px-4 py-1.5 rounded-[10px] bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[12.5px] font-medium"
+                >
+                  Sign up
+                </Link>
+              </>
+            )}
+            <button
+              type="button"
+              onClick={() => setMenuOpen((o) => !o)}
+              aria-label={menuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={menuOpen}
+              className="sm:hidden inline-flex items-center justify-center w-9 h-9 rounded-[10px] border border-white/15 text-white/80 hover:text-white hover:border-white/30 transition cursor-pointer"
+            >
+              <i
+                className={`fa-solid ${menuOpen ? "fa-xmark" : "fa-bars"} text-[14px]`}
+              />
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile sheet menu - drops below the pill, matches its glass. */}
+        <AnimatePresence>
+          {menuOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.18, ease: "easeOut" }}
+              className="sm:hidden pointer-events-auto w-full max-w-[1200px] mt-2"
+            >
+              <div className="flex flex-col rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md shadow-[0_2px_24px_var(--shadow-soft)] overflow-hidden">
+                <Link
+                  href="/features"
+                  onClick={() => setMenuOpen(false)}
+                  className="px-5 py-3.5 text-[14px] text-white/80 hover:text-white hover:bg-white/[0.04] border-b border-[var(--rule)] transition"
+                >
+                  Features
+                </Link>
+                <Link
+                  href="/pricing"
+                  onClick={() => setMenuOpen(false)}
+                  className="px-5 py-3.5 text-[14px] text-white/80 hover:text-white hover:bg-white/[0.04] border-b border-[var(--rule)] transition"
+                >
+                  Pricing
+                </Link>
+                {authed ? (
                   <Link
-                    href="/login"
-                    onClick={() => setMenuOpen(false)}
-                    className="px-5 py-3.5 text-[14px] text-white/80 hover:text-white hover:bg-white/[0.04] border-b border-[var(--rule)] transition inline-flex items-center justify-between"
-                  >
-                    Sign in
-                    <i className="fa-solid fa-chevron-right text-[11px]" />
-                  </Link>
-                  <Link
-                    href="/signup"
+                    href="/dashboard"
                     onClick={() => setMenuOpen(false)}
                     className="px-5 py-3.5 text-[14px] font-medium text-teal-300 hover:bg-teal-500/[0.08] transition inline-flex items-center justify-between"
                   >
-                    Sign up
+                    Go to Dashboard
                     <i className="fa-solid fa-chevron-right text-[11px]" />
                   </Link>
-                </>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                ) : (
+                  <>
+                    <Link
+                      href="/login"
+                      onClick={() => setMenuOpen(false)}
+                      className="px-5 py-3.5 text-[14px] text-white/80 hover:text-white hover:bg-white/[0.04] border-b border-[var(--rule)] transition inline-flex items-center justify-between"
+                    >
+                      Sign in
+                      <i className="fa-solid fa-chevron-right text-[11px]" />
+                    </Link>
+                    <Link
+                      href="/signup"
+                      onClick={() => setMenuOpen(false)}
+                      className="px-5 py-3.5 text-[14px] font-medium text-teal-300 hover:bg-teal-500/[0.08] transition inline-flex items-center justify-between"
+                    >
+                      Sign up
+                      <i className="fa-solid fa-chevron-right text-[11px]" />
+                    </Link>
+                  </>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </header>
   );
@@ -254,8 +254,8 @@ export function SiteFooter() {
             </span>
           </Link>
           <p className="max-w-[30ch] text-[13px] text-white/55 leading-relaxed">
-            A trading journal that remembers for you. Built for discretionary
-            US options traders.
+            A trading journal that remembers for you. Built for discretionary US
+            options traders.
           </p>
         </div>
 
@@ -285,7 +285,9 @@ export function SiteFooter() {
         />
         <FooterCol
           title="Contact"
-          links={[{ label: "info@cuequill.com", href: "mailto:info@cuequill.com" }]}
+          links={[
+            { label: "info@cuequill.com", href: "mailto:info@cuequill.com" },
+          ]}
         />
       </div>
 
@@ -549,8 +551,8 @@ export function FaqRow({
 // across the signed-in app. (Replaced the old serif Roman-numeral mark.)
 export function SectionMark({ label }: { label: string }) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[10.5px] tracking-[0.1em] text-white/55">
-      <span className="w-1.5 h-1.5 rounded-full bg-teal-400" />
+    <span className="inline-flex items-center gap-2 text-[10.5px] tracking-[0.1em] text-white/55 border-b p-1">
+      {/* <span className="w-1.5 h-1.5 rounded-full bg-teal-400" /> */}
       {label}
     </span>
   );
