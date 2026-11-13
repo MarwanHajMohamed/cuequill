@@ -1,6 +1,7 @@
 import React, { forwardRef } from "react";
 import { DM_Sans } from "next/font/google";
 import { type CardSkin, skinById } from "@/lib/cardSkins";
+import { QUILL_LOGO_SRC, QUILL_LOGO_RATIO } from "@/lib/quillLogo";
 
 // Match the app's typeface (DM Sans) so the exported card reads as Cuequill.
 const dmSans = DM_Sans({
@@ -65,11 +66,15 @@ const AchievementShareCard = forwardRef<
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <BrandQuill size={26} />
+          <img
+            src={QUILL_LOGO_SRC}
+            alt=""
+            style={{ height: 30, width: 30 * QUILL_LOGO_RATIO, display: "block" }}
+          />
           <span
             style={{
               fontSize: 15,
-              fontWeight: 300,
+              fontWeight: 200,
               letterSpacing: "0.22em",
               textIndent: "0.22em",
               color: skin.ink,
@@ -296,33 +301,5 @@ function Tile({
         {value}
       </div>
     </div>
-  );
-}
-
-// The Cuequill quill mark, rendered as a folded metallic silver blade with
-// a teal brand dot at the base (shared design with the other share cards).
-function BrandQuill({ size = 26 }: { size?: number }) {
-  const w = (size * 80) / 176;
-  const rid = React.useId().replace(/[:]/g, "");
-  const gl = `ql-${rid}`;
-  const gr = `qr-${rid}`;
-  return (
-    <svg width={w} height={size} viewBox="0 0 80 176" fill="none" aria-hidden>
-      <defs>
-        <linearGradient id={gl} x1="40" y1="6" x2="40" y2="152" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="#ffffff" />
-          <stop offset="0.55" stopColor="#e2e7ee" />
-          <stop offset="1" stopColor="#bcc4d0" />
-        </linearGradient>
-        <linearGradient id={gr} x1="40" y1="6" x2="40" y2="152" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="#e7ebf1" />
-          <stop offset="0.55" stopColor="#c2cad5" />
-          <stop offset="1" stopColor="#929bab" />
-        </linearGradient>
-      </defs>
-      <path d="M40 6 C 22 48 8 98 40 152 L 40 6 Z" fill={`url(#${gl})`} />
-      <path d="M40 6 C 58 48 72 98 40 152 L 40 6 Z" fill={`url(#${gr})`} />
-      <circle cx="40" cy="163" r="5" fill="#2dd4bf" />
-    </svg>
   );
 }

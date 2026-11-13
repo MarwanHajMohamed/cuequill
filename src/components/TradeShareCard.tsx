@@ -3,6 +3,7 @@ import { DM_Sans } from "next/font/google";
 import { Trade } from "@/app/types/Trades";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
 import { type CardSkin, skinById } from "@/lib/cardSkins";
+import { QUILL_LOGO_SRC, QUILL_LOGO_RATIO } from "@/lib/quillLogo";
 
 // The app-wide typeface (DM Sans), so the exported card matches the site.
 const shareFont = DM_Sans({
@@ -138,7 +139,7 @@ const TradeShareCard = forwardRef<
           <span
             style={{
               fontSize: 52,
-              fontWeight: 300,
+              fontWeight: 200,
               letterSpacing: "0.14em",
               textTransform: "uppercase",
               lineHeight: 1,
@@ -164,12 +165,16 @@ const TradeShareCard = forwardRef<
             justifyContent: "center",
           }}
         >
-          <BrandQuill size={138} />
+          <img
+            src={QUILL_LOGO_SRC}
+            alt=""
+            style={{ height: 150, width: 150 * QUILL_LOGO_RATIO, display: "block" }}
+          />
           <span
             style={{
               marginTop: 14,
               fontSize: 14,
-              fontWeight: 300,
+              fontWeight: 200,
               letterSpacing: "0.3em",
               textIndent: "0.3em",
               color: MUTED,
@@ -227,34 +232,3 @@ const TradeShareCard = forwardRef<
 );
 
 export default TradeShareCard;
-
-// The Cuequill quill mark, rendered as a folded metallic silver blade with
-// a teal brand dot at the base - inlined so the capture doesn't depend on
-// an external asset or icon font. The two halves carry slightly different
-// vertical gradients so the central spine reads as a crease. The dot keeps
-// the brand teal across every skin (matching the reference design).
-function BrandQuill({ size = 138 }: { size?: number }) {
-  const w = (size * 80) / 176;
-  const rid = React.useId().replace(/[:]/g, "");
-  const gl = `ql-${rid}`;
-  const gr = `qr-${rid}`;
-  return (
-    <svg width={w} height={size} viewBox="0 0 80 176" fill="none" aria-hidden>
-      <defs>
-        <linearGradient id={gl} x1="40" y1="6" x2="40" y2="152" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="#ffffff" />
-          <stop offset="0.55" stopColor="#e2e7ee" />
-          <stop offset="1" stopColor="#bcc4d0" />
-        </linearGradient>
-        <linearGradient id={gr} x1="40" y1="6" x2="40" y2="152" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="#e7ebf1" />
-          <stop offset="0.55" stopColor="#c2cad5" />
-          <stop offset="1" stopColor="#929bab" />
-        </linearGradient>
-      </defs>
-      <path d="M40 6 C 22 48 8 98 40 152 L 40 6 Z" fill={`url(#${gl})`} />
-      <path d="M40 6 C 58 48 72 98 40 152 L 40 6 Z" fill={`url(#${gr})`} />
-      <circle cx="40" cy="163" r="5" fill="#2dd4bf" />
-    </svg>
-  );
-}
