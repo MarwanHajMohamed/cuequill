@@ -1,14 +1,9 @@
-import React, { forwardRef } from "react";
-import { DM_Sans } from "next/font/google";
+import { forwardRef } from "react";
 import { Trade } from "@/app/types/Trades";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
 import { type CardSkin, skinById } from "@/lib/cardSkins";
 import { QUILL_LOGO_SRC, QUILL_LOGO_RATIO } from "@/lib/quillLogo";
-
-// The app-wide typeface (DM Sans), so the exported card matches the site.
-const shareFont = DM_Sans({
-  subsets: ["latin"],
-});
+import { SHARE_FONT_FAMILY } from "@/lib/shareFont";
 
 // A self-contained, always-dark share card for a single trade. The layout
 // is three balanced zones on one centered line - ticker on the left, the
@@ -96,7 +91,7 @@ const TradeShareCard = forwardRef<
           width: CARD_W,
           height: CARD_H,
           boxSizing: "border-box",
-          fontFamily: shareFont.style.fontFamily,
+          fontFamily: SHARE_FONT_FAMILY,
           // Skin-defined base + glow. Captured to PNG so it's always a
           // literal colour (identical in any app theme).
           background: skin.bg,

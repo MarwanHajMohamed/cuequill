@@ -1,12 +1,7 @@
-import React, { forwardRef } from "react";
-import { DM_Sans } from "next/font/google";
+import { forwardRef } from "react";
 import { type CardSkin, skinById } from "@/lib/cardSkins";
 import { QUILL_LOGO_SRC, QUILL_LOGO_RATIO } from "@/lib/quillLogo";
-
-// Match the app's typeface (DM Sans) so the exported card reads as Cuequill.
-const dmSans = DM_Sans({
-  subsets: ["latin"],
-});
+import { SHARE_FONT_FAMILY } from "@/lib/shareFont";
 
 // A self-contained, always-dark share card for a period's performance -
 // same visual language as TradeShareCard (period title left, centered quill
@@ -73,7 +68,7 @@ const MonthlyShareCard = forwardRef<
           width: CARD_W,
           height: CARD_H,
           boxSizing: "border-box",
-          fontFamily: dmSans.style.fontFamily,
+          fontFamily: SHARE_FONT_FAMILY,
           background: skin.bg,
           borderRadius: 22,
           border: `1px solid ${HAIR}`,
