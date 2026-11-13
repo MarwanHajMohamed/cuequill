@@ -158,7 +158,7 @@ function Hero() {
           >
             <Link
               href="/login"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 transition text-[13px] font-medium"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[10px] bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 transition text-[13px] font-medium"
             >
               Open your journal
               <i className="fa-solid fa-chevron-right text-[10px]" />
@@ -1251,7 +1251,7 @@ function Signoff() {
         <div className="mt-10 flex items-center gap-3 flex-wrap">
           <Link
             href="/login"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 transition text-[13px] font-medium"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-[10px] bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 transition text-[13px] font-medium"
           >
             Open your journal
             <i className="fa-solid fa-chevron-right text-[10px]" />
