@@ -485,10 +485,10 @@
 }
 
 /* Headings (and the `.font-display` marketing aliases) inherit the body
-   typeface - DM Mono - so the whole app shares one font with no serif.
+   typeface - DM Sans - so the whole app shares one font with no serif.
    `font-variation-settings: normal` clears the opsz axis the old serif
    used; the inline opsz styles left in the marketing pages are inert on
-   a monospace face. */
+   DM Sans. */
 h1,
 h2,
 h3,
