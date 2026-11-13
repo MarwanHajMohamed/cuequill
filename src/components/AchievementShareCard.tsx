@@ -8,10 +8,11 @@ const dmSans = DM_Sans({
 });
 
 // A self-contained, PNG-capturable share card for a challenge milestone:
-// either a "level up" or a "challenge complete". Same 600×300 family as the
-// trade / month cards, painted with a skin so every colour is literal and
-// the export looks identical in any app theme. All iconography is inline
-// SVG (the capture runs with skipFonts, so Font Awesome would not render).
+// either a "level up" or a "challenge complete". Same family as the trade /
+// month cards - the metallic Cuequill quill in the header, light, widely
+// tracked type - painted with a skin so every colour is literal and the
+// export looks identical in any app theme. All iconography is inline SVG
+// (the capture runs with skipFonts, so Font Awesome would not render).
 
 export const CARD_W = 600;
 export const CARD_H = 300;
@@ -63,14 +64,15 @@ const AchievementShareCard = forwardRef<
           justifyContent: "space-between",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-          <QuillLogo size={20} color={skin.accentSolid} inner={skin.logoInner} />
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <BrandQuill size={26} />
           <span
             style={{
-              fontSize: 17,
-              fontWeight: 600,
-              letterSpacing: "-0.01em",
-              color: skin.accent,
+              fontSize: 15,
+              fontWeight: 300,
+              letterSpacing: "0.22em",
+              textIndent: "0.22em",
+              color: skin.ink,
             }}
           >
             Cuequill
@@ -78,8 +80,9 @@ const AchievementShareCard = forwardRef<
         </div>
         <span
           style={{
-            fontSize: 12,
-            letterSpacing: "0.08em",
+            fontSize: 13,
+            fontWeight: 300,
+            letterSpacing: "0.14em",
             textTransform: "uppercase",
             color: skin.muted,
           }}
@@ -89,7 +92,7 @@ const AchievementShareCard = forwardRef<
       </div>
 
       {/* Middle: medallion + headline */}
-      <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 26 }}>
         <Medallion skin={skin} data={data} />
         <div style={{ minWidth: 0, flex: 1 }}>
           {isLevel ? (
@@ -97,8 +100,8 @@ const AchievementShareCard = forwardRef<
               <div
                 style={{
                   fontSize: 46,
-                  fontWeight: 700,
-                  letterSpacing: "-0.02em",
+                  fontWeight: 300,
+                  letterSpacing: "0.04em",
                   lineHeight: 1,
                 }}
               >
@@ -106,9 +109,10 @@ const AchievementShareCard = forwardRef<
               </div>
               <div
                 style={{
-                  marginTop: 12,
+                  marginTop: 14,
                   fontSize: 20,
-                  fontWeight: 600,
+                  fontWeight: 300,
+                  letterSpacing: "0.04em",
                   color: skin.accent,
                   lineHeight: 1.2,
                 }}
@@ -121,9 +125,9 @@ const AchievementShareCard = forwardRef<
               <div
                 style={{
                   fontSize: 32,
-                  fontWeight: 700,
-                  letterSpacing: "-0.02em",
-                  lineHeight: 1.1,
+                  fontWeight: 300,
+                  letterSpacing: "0.02em",
+                  lineHeight: 1.15,
                   display: "-webkit-box",
                   WebkitLineClamp: 2,
                   WebkitBoxOrient: "vertical",
@@ -136,8 +140,10 @@ const AchievementShareCard = forwardRef<
                 style={{
                   marginTop: 10,
                   fontSize: 15,
+                  fontWeight: 300,
+                  letterSpacing: "0.02em",
                   color: skin.muted,
-                  lineHeight: 1.35,
+                  lineHeight: 1.4,
                   display: "-webkit-box",
                   WebkitLineClamp: 2,
                   WebkitBoxOrient: "vertical",
@@ -217,8 +223,8 @@ function Medallion({
           <span
             style={{
               fontSize: 46,
-              fontWeight: 800,
-              letterSpacing: "-0.02em",
+              fontWeight: 400,
+              letterSpacing: "0.02em",
               color: skin.ink,
               lineHeight: 1,
             }}
@@ -264,13 +270,23 @@ function Tile({
         textAlign: "center",
       }}
     >
-      <div style={{ fontSize: 12, color: skin.muted, marginBottom: 5 }}>
+      <div
+        style={{
+          fontSize: 12,
+          fontWeight: 300,
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          color: skin.muted,
+          marginBottom: 6,
+        }}
+      >
         {label}
       </div>
       <div
         style={{
           fontSize: 18,
-          fontWeight: 600,
+          fontWeight: 400,
+          letterSpacing: "0.01em",
           color: accent ? skin.accent : skin.ink,
           whiteSpace: "nowrap",
           overflow: "hidden",
@@ -283,38 +299,30 @@ function Tile({
   );
 }
 
-// Inlined Cuequill quill mark (shared with the other share cards).
-function QuillLogo({
-  size = 20,
-  color,
-  inner,
-}: {
-  size?: number;
-  color: string;
-  inner: string;
-}) {
+// The Cuequill quill mark, rendered as a folded metallic silver blade with
+// a teal brand dot at the base (shared design with the other share cards).
+function BrandQuill({ size = 26 }: { size?: number }) {
+  const w = (size * 80) / 176;
+  const rid = React.useId().replace(/[:]/g, "");
+  const gl = `ql-${rid}`;
+  const gr = `qr-${rid}`;
   return (
-    <svg
-      width={(size * 30) / 52}
-      height={size}
-      viewBox="16 25 30 52"
-      fill="none"
-      aria-hidden
-    >
-      <path
-        d="M31 27.2C37 39.8 43.5 61.2 40.5 62.6C37.5 64 31 75.2 31 75.2C31 75.2 24.5 64.5 21.5 62.6C18.5 60.7 25 39.8 31 27.2Z"
-        fill={color}
-      />
-      <path
-        d="M31 47V75"
-        stroke={inner}
-        strokeWidth="1.32"
-        strokeLinecap="round"
-      />
-      <path
-        d="M31 54.56C31.8616 54.56 32.56 53.8616 32.56 53C32.56 52.1384 31.8616 51.44 31 51.44C30.1384 51.44 29.44 52.1384 29.44 53C29.44 53.8616 30.1384 54.56 31 54.56Z"
-        fill={inner}
-      />
+    <svg width={w} height={size} viewBox="0 0 80 176" fill="none" aria-hidden>
+      <defs>
+        <linearGradient id={gl} x1="40" y1="6" x2="40" y2="152" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#ffffff" />
+          <stop offset="0.55" stopColor="#e2e7ee" />
+          <stop offset="1" stopColor="#bcc4d0" />
+        </linearGradient>
+        <linearGradient id={gr} x1="40" y1="6" x2="40" y2="152" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#e7ebf1" />
+          <stop offset="0.55" stopColor="#c2cad5" />
+          <stop offset="1" stopColor="#929bab" />
+        </linearGradient>
+      </defs>
+      <path d="M40 6 C 22 48 8 98 40 152 L 40 6 Z" fill={`url(#${gl})`} />
+      <path d="M40 6 C 58 48 72 98 40 152 L 40 6 Z" fill={`url(#${gr})`} />
+      <circle cx="40" cy="163" r="5" fill="#2dd4bf" />
     </svg>
   );
 }
