@@ -3,6 +3,7 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toBlob } from "html-to-image";
 import { CARD_SKINS, skinById, type CardSkin } from "@/lib/cardSkins";
+import { SHARE_FONT_FACE_CSS } from "@/lib/shareFont";
 import { useScrollLock } from "@/hooks/useScrollLock";
 
 // Generic "preview a fixed-size card and save/share it as a PNG" modal.
@@ -83,6 +84,18 @@ export default function ShareImageModal({
 
   const capture = async (): Promise<Blob | null> => {
     if (!cardRef.current) return null;
+    // Make sure the embedded share font is decoded before snapshotting, so
+    // the PNG renders in DM Sans and not a fallback serif.
+    try {
+      await Promise.all([
+        document.fonts.load("200 16px DMSansShare"),
+        document.fonts.load("400 16px DMSansShare"),
+        document.fonts.load("700 16px DMSansShare"),
+      ]);
+      await document.fonts.ready;
+    } catch {
+      /* non-fatal - fall through to capture */
+    }
     return toBlob(cardRef.current, {
       pixelRatio: 3,
       cacheBust: true,
@@ -91,7 +104,10 @@ export default function ShareImageModal({
       backgroundColor: undefined,
       width: cardW,
       height: cardH,
-      skipFonts: true,
+      // Hand html-to-image the share font directly (inlined woff2). This
+      // both guarantees DM Sans in the export and sidesteps scanning the
+      // document's cross-origin stylesheets (e.g. the Font Awesome CDN).
+      fontEmbedCSS: SHARE_FONT_FACE_CSS,
     });
   };
 
@@ -142,6 +158,8 @@ export default function ShareImageModal({
       className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto"
       onClick={onClose}
     >
+      {/* Embed the share font so the live preview matches the exported PNG. */}
+      <style dangerouslySetInnerHTML={{ __html: SHARE_FONT_FACE_CSS }} />
       <div
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-xl flex flex-col items-center gap-4 my-auto"

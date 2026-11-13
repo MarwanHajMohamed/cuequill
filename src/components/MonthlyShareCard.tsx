@@ -1,21 +1,18 @@
-import React, { forwardRef } from "react";
-import { DM_Mono } from "next/font/google";
+import { forwardRef } from "react";
 import { type CardSkin, skinById } from "@/lib/cardSkins";
+import { QUILL_LOGO_SRC, QUILL_LOGO_RATIO } from "@/lib/quillLogo";
+import { SHARE_FONT_FAMILY } from "@/lib/shareFont";
 
-// Match the app's typeface (DM Mono) so the exported card reads as Cuequill.
-const dmMono = DM_Mono({
-  subsets: ["latin"],
-  weight: ["300", "400", "500"],
-});
-
-// A self-contained, always-dark share card for a month's performance -
-// same visual language as TradeShareCard (brand top-left, hero Net P/L on
-// the right, stat tiles beneath) so trade and month shares feel like one
-// family. Every colour is hard-coded because the app remaps theme vars in
-// light mode; the exported PNG must look identical in any theme.
+// A self-contained, always-dark share card for a period's performance -
+// same visual language as TradeShareCard (period title left, centered quill
+// mark, Net P/L right, label top-right) so trade and month shares feel like
+// one family. Every colour is hard-coded because the app remaps theme vars
+// in light mode; the exported PNG must look identical in any theme. Only the
+// skin's background is per-skin - the quill is a fixed metallic silver with
+// a teal brand dot.
 
 export const CARD_W = 600;
-export const CARD_H = 250;
+export const CARD_H = 270;
 
 const fmtMoneySigned = (n: number) => {
   const sign = n >= 0 ? "+" : "-";
@@ -54,13 +51,15 @@ const MonthlyShareCard = forwardRef<
     const MUTED = skin.muted;
     const HAIR = skin.hair;
     const TEAL = skin.accent;
-    const TEAL_SOLID = skin.accentSolid;
     const RED = skin.red;
-    const LOGO_INNER = skin.logoInner;
 
     const hasClosed = stats.closed > 0;
     const positive = stats.netPL >= 0;
     const accent = !hasClosed ? TEAL : positive ? TEAL : RED;
+
+    const title = stats.title ?? stats.monthName;
+    const cornerLabel = stats.periodLabel ?? `${stats.monthName} ${stats.year}`;
+    const noun = stats.periodNoun ?? "month";
 
     return (
       <div
@@ -69,115 +68,142 @@ const MonthlyShareCard = forwardRef<
           width: CARD_W,
           height: CARD_H,
           boxSizing: "border-box",
-          fontFamily: dmMono.style.fontFamily,
+          fontFamily: SHARE_FONT_FAMILY,
           background: skin.bg,
           borderRadius: 22,
           border: `1px solid ${HAIR}`,
           overflow: "hidden",
           color: INK,
           position: "relative",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-between",
-          padding: "26px 30px",
         }}
       >
-        {/* Header: brand + month */}
-        <div
+        {/* Period label, tucked top-right */}
+        <span
           style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
+            position: "absolute",
+            top: 26,
+            right: 34,
+            fontSize: 15,
+            fontWeight: 300,
+            letterSpacing: "0.06em",
+            color: MUTED,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-            <QuillLogo size={20} color={TEAL_SOLID} inner={LOGO_INNER} />
-            <span
-              style={{
-                fontSize: 17,
-                fontWeight: 600,
-                letterSpacing: "-0.01em",
-                color: TEAL,
-              }}
-            >
-              Cuequill
-            </span>
-          </div>
+          {cornerLabel}
+        </span>
+
+        {/* Period title + trade count, left, vertically centered */}
+        <div
+          style={{
+            position: "absolute",
+            left: 38,
+            top: 0,
+            bottom: 0,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            maxWidth: 230,
+          }}
+        >
+          <span
+            style={{
+              fontSize: 42,
+              fontWeight: 200,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              lineHeight: 1.05,
+              color: INK,
+              overflowWrap: "break-word",
+            }}
+          >
+            {title}
+          </span>
+          <span
+            style={{
+              marginTop: 12,
+              fontSize: 14,
+              fontWeight: 300,
+              letterSpacing: "0.04em",
+              color: MUTED,
+            }}
+          >
+            {stats.trades} {stats.trades === 1 ? "trade" : "trades"} this {noun}
+          </span>
         </div>
 
-        {/* Middle: title + Net P/L, the two focal points. Centered in the
-            space left by the removed stat tiles. */}
+        {/* Centered quill mark + wordmark */}
         <div
           style={{
-            flex: 1,
+            position: "absolute",
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: 0,
             display: "flex",
+            flexDirection: "column",
             alignItems: "center",
-            justifyContent: "space-between",
-            gap: 20,
+            justifyContent: "center",
           }}
         >
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div
-              style={{
-                fontSize: 44,
-                fontWeight: 700,
-                letterSpacing: "-0.02em",
-                lineHeight: 1.05,
-                overflowWrap: "break-word",
-              }}
-            >
-              {stats.title ?? stats.monthName}
-            </div>
-            <div
-              style={{
-                marginTop: 12,
-                fontSize: 14,
-                color: MUTED,
-                lineHeight: 1.35,
-              }}
-            >
-              {stats.trades} {stats.trades === 1 ? "trade" : "trades"} this{" "}
-              {stats.periodNoun ?? "month"}
-            </div>
-          </div>
+          <img
+            src={QUILL_LOGO_SRC}
+            alt=""
+            style={{ height: 150, width: 150 * QUILL_LOGO_RATIO, display: "block" }}
+          />
+          <span
+            style={{
+              marginTop: 14,
+              fontSize: 14,
+              fontWeight: 200,
+              letterSpacing: "0.3em",
+              textIndent: "0.3em",
+              color: MUTED,
+            }}
+          >
+            Cuequill
+          </span>
+        </div>
 
-          <div style={{ textAlign: "right", flexShrink: 0 }}>
-            <div
+        {/* Net P/L + win rate, right, vertically centered */}
+        <div
+          style={{
+            position: "absolute",
+            right: 38,
+            top: 0,
+            bottom: 0,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-end",
+            justifyContent: "center",
+            textAlign: "right",
+          }}
+        >
+          <span
+            style={{
+              fontSize: 48,
+              fontWeight: 300,
+              letterSpacing: "0.02em",
+              lineHeight: 1,
+              whiteSpace: "nowrap",
+              color: accent,
+            }}
+          >
+            {hasClosed ? fmtMoneySigned(stats.netPL) : "-"}
+          </span>
+          {stats.winRate != null && (
+            <span
               style={{
-                fontSize: 12,
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
-                color: MUTED,
-              }}
-            >
-              Net P/L
-            </div>
-            <div
-              style={{
-                marginTop: 4,
-                fontSize: 46,
-                fontWeight: 700,
-                letterSpacing: "-0.02em",
-                lineHeight: 1.05,
+                marginTop: 10,
+                fontSize: 22,
+                fontWeight: 300,
+                letterSpacing: "0.03em",
+                lineHeight: 1,
                 color: accent,
-                whiteSpace: "nowrap",
               }}
             >
-              {hasClosed ? fmtMoneySigned(stats.netPL) : "-"}
-            </div>
-            {stats.winRate != null && (
-              <div
-                style={{
-                  marginTop: 8,
-                  fontSize: 17,
-                  fontWeight: 600,
-                  color: accent,
-                }}
-              >
-                {stats.winRate.toFixed(0)}% win rate
-              </div>
-            )}
-          </div>
+              {stats.winRate.toFixed(0)}% win rate
+            </span>
+          )}
         </div>
       </div>
     );
@@ -185,40 +211,3 @@ const MonthlyShareCard = forwardRef<
 );
 
 export default MonthlyShareCard;
-
-// Inlined Cuequill quill mark so the capture doesn't depend on an external
-// asset or icon font.
-function QuillLogo({
-  size = 20,
-  color,
-  inner,
-}: {
-  size?: number;
-  color: string;
-  inner: string;
-}) {
-  return (
-    <svg
-      width={(size * 30) / 52}
-      height={size}
-      viewBox="16 25 30 52"
-      fill="none"
-      aria-hidden
-    >
-      <path
-        d="M31 27.2C37 39.8 43.5 61.2 40.5 62.6C37.5 64 31 75.2 31 75.2C31 75.2 24.5 64.5 21.5 62.6C18.5 60.7 25 39.8 31 27.2Z"
-        fill={color}
-      />
-      <path
-        d="M31 47V75"
-        stroke={inner}
-        strokeWidth="1.32"
-        strokeLinecap="round"
-      />
-      <path
-        d="M31 54.56C31.8616 54.56 32.56 53.8616 32.56 53C32.56 52.1384 31.8616 51.44 31 51.44C30.1384 51.44 29.44 52.1384 29.44 53C29.44 53.8616 30.1384 54.56 31 54.56Z"
-        fill={inner}
-      />
-    </svg>
-  );
-}
