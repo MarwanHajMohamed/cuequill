@@ -40,7 +40,7 @@ export default function Home() {
             <>
               A calendar tinted by
               <br />
-              your <span className="italic text-teal-300">daily P/L.</span>
+              your <span className="text-teal-300">daily P/L.</span>
             </>
           }
           body="A calendar tinted by your P/L. Click any day, see what you did and why. No CSV exports. No pivot tables. Just the part you were going to do in Excel anyway, except you'll open it."
@@ -60,7 +60,7 @@ export default function Home() {
               Ask your trades
               <br />
               anything, in{" "}
-              <span className="italic text-teal-300">plain English.</span>
+              <span className="text-teal-300">plain English.</span>
             </>
           }
           body="Ask in plain English. Cuequill's AI answers from your trades, not the internet's. It can log a fresh fill in one sentence, then call it back when you ask."
@@ -79,7 +79,7 @@ export default function Home() {
             <>
               Expectancy, win rate,
               <br />
-              <span className="italic text-teal-300">profit factor.</span>
+              <span className="text-teal-300">profit factor.</span>
             </>
           }
           body="Expectancy. Profit factor. Win rate sliced by strategy, symbol, hour. A risk budget you can't bury. Numbers chosen by a trader, not picked off a finance API."
@@ -98,7 +98,7 @@ export default function Home() {
             <>
               Every IBKR fill,
               <br />
-              <span className="italic text-teal-300">synced every morning.</span>
+              <span className="text-teal-300">synced every morning.</span>
             </>
           }
           body="Drop a Flex Web Service token in settings. Cuequill imports every fill each morning - commissions and taxes included. Manual entry still works."
@@ -134,7 +134,7 @@ function Hero() {
             className="text-[40px] sm:text-[60px] md:text-[68px] leading-[0.98] font-medium tracking-[-0.025em]"
           >
             Find the edge{" "}
-            <span className="italic font-normal text-teal-300">
+            <span className="font-normal text-teal-300">
               in your own trades.
             </span>
           </motion.h1>
@@ -1215,7 +1215,7 @@ function FaqSection() {
           <h2 className="text-[32px] md:text-[40px] leading-[1.04] font-medium tracking-[-0.02em]">
             Questions, before
             <br />
-            <span className="italic text-teal-300">you start.</span>
+            <span className="text-teal-300">you start.</span>
           </h2>
           <p className="mt-5 max-w-xs text-[13px] text-white/55 leading-relaxed">
             More on the pricing page, or write directly.
@@ -1246,7 +1246,7 @@ function Signoff() {
       <div className="max-w-[1200px] mx-auto rounded-3xl border border-white/10 bg-white/[0.02] backdrop-blur-md shadow-[0_8px_40px_var(--shadow-soft)] p-8 md:p-14">
         <h2 className="text-[36px] sm:text-[52px] md:text-[68px] leading-[0.98] font-medium tracking-[-0.025em] max-w-4xl">
           Your next month doesn&apos;t have to look like{" "}
-          <span className="italic text-teal-300">last month.</span>
+          <span className="text-teal-300">last month.</span>
         </h2>
         <div className="mt-10 flex items-center gap-3 flex-wrap">
           <Link
@@ -1983,7 +1983,7 @@ function QuillAIPreview() {
               <span className="ml-0.5 inline-block w-[6px] h-[14px] bg-teal-300 animate-pulse" />
             </>
           ) : (
-            <span className="text-white/40 italic">
+            <span className="text-white/40">
               Ask about your last five losses…
             </span>
           )}
