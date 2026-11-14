@@ -107,12 +107,28 @@ const MonthlyShareCard = forwardRef<
           maxWidth: 230,
         }}
       >
+        {stats.eyebrow && (
+          <span
+            style={{
+              marginBottom: 7,
+              fontSize: 14,
+              fontWeight: 300,
+              letterSpacing: "0.12em",
+              color: MUTED,
+            }}
+          >
+            {stats.eyebrow}
+          </span>
+        )}
         <span
           style={{
             fontSize: 38,
             fontWeight: 200,
             letterSpacing: "0.1em",
-            textTransform: "uppercase",
+            // The card's big titles are all-caps (like a ticker), but when an
+            // eyebrow sits above (e.g. "Week of"), keep the value in its
+            // natural case so the date reads "Nov 2" rather than "NOV 2".
+            textTransform: stats.eyebrow ? "none" : "uppercase",
             lineHeight: 1.05,
             color: INK,
             overflowWrap: "break-word",
