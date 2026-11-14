@@ -41,6 +41,7 @@ export type MonthlyShareStats = {
   periodLabel?: string; // header-right label (defaults to `${monthName} ${year}`)
   periodNoun?: string; // "month" | "week" | "year" - used in "N trades this ___"
   periodPhrase?: string; // overrides the whole "this ___" suffix on the subline
+  eyebrow?: string; // small sentence-case label above the title (e.g. "Week of")
 };
 
 const MonthlyShareCard = forwardRef<
