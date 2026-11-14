@@ -326,10 +326,11 @@ function Page() {
     };
   };
 
-  // The displayed week (Mon–Sun), for the week-view share card.
+  // The displayed trading week (Mon–Fri), for the week-view share card.
+  // Weekends are markets-closed, so the card covers the 5 weekdays only.
   const weekShareStats = (): MonthlyShareStats => {
     const start = displayedWeekStart;
-    const end = addDays(start, 6);
+    const end = addDays(start, 4);
     const startKey = format(start, "yyyy-MM-dd");
     const endKey = format(end, "yyyy-MM-dd");
     const inWeek = (trades ?? []).filter((t) => {
