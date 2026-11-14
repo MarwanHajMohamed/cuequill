@@ -58,7 +58,7 @@ const MonthlyShareCard = forwardRef<
     const accent = !hasClosed ? TEAL : positive ? TEAL : RED;
 
     const title = stats.title ?? stats.monthName;
-    const cornerLabel = stats.periodLabel ?? `${stats.monthName} ${stats.year}`;
+    const cornerLabel = stats.periodLabel ?? stats.year;
     const noun = stats.periodNoun ?? "month";
 
     return (
@@ -107,7 +107,7 @@ const MonthlyShareCard = forwardRef<
         >
           <span
             style={{
-              fontSize: 42,
+              fontSize: 38,
               fontWeight: 200,
               letterSpacing: "0.1em",
               textTransform: "uppercase",
@@ -180,7 +180,7 @@ const MonthlyShareCard = forwardRef<
         >
           <span
             style={{
-              fontSize: 48,
+              fontSize: 42,
               fontWeight: 300,
               letterSpacing: "0.02em",
               lineHeight: 1,
@@ -194,7 +194,7 @@ const MonthlyShareCard = forwardRef<
             <span
               style={{
                 marginTop: 10,
-                fontSize: 22,
+                fontSize: 18,
                 fontWeight: 300,
                 letterSpacing: "0.03em",
                 lineHeight: 1,
