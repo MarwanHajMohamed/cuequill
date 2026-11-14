@@ -11,7 +11,7 @@ import { SHARE_FONT_FAMILY } from "@/lib/shareFont";
 // skin's background is per-skin - the quill is a fixed metallic silver with
 // a teal brand dot.
 
-export const CARD_W = 600;
+export const CARD_W = 700;
 export const CARD_H = 270;
 
 const fmtMoneySigned = (n: number) => {
@@ -47,169 +47,171 @@ const MonthlyShareCard = forwardRef<
   HTMLDivElement,
   { stats: MonthlyShareStats; skin?: CardSkin }
 >(function MonthlyShareCard({ stats, skin: skinProp }, ref) {
-    const skin = skinProp ?? skinById(null);
-    const INK = skin.ink;
-    const MUTED = skin.muted;
-    const HAIR = skin.hair;
-    const TEAL = skin.accent;
-    const RED = skin.red;
+  const skin = skinProp ?? skinById(null);
+  const INK = skin.ink;
+  const MUTED = skin.muted;
+  const HAIR = skin.hair;
+  const TEAL = skin.accent;
+  const RED = skin.red;
 
-    const hasClosed = stats.closed > 0;
-    const positive = stats.netPL >= 0;
-    const accent = !hasClosed ? TEAL : positive ? TEAL : RED;
+  const hasClosed = stats.closed > 0;
+  const positive = stats.netPL >= 0;
+  const accent = !hasClosed ? TEAL : positive ? TEAL : RED;
 
-    const title = stats.title ?? stats.monthName;
-    const cornerLabel = stats.periodLabel ?? stats.year;
-    const noun = stats.periodNoun ?? "month";
-    const periodPhrase = stats.periodPhrase ?? `this ${noun}`;
+  const title = stats.title ?? stats.monthName;
+  const cornerLabel = stats.periodLabel ?? stats.year;
+  const noun = stats.periodNoun ?? "month";
 
-    return (
-      <div
-        ref={ref}
+  return (
+    <div
+      ref={ref}
+      style={{
+        width: CARD_W,
+        height: CARD_H,
+        boxSizing: "border-box",
+        fontFamily: SHARE_FONT_FAMILY,
+        background: skin.bg,
+        borderRadius: 22,
+        border: `1px solid ${HAIR}`,
+        overflow: "hidden",
+        color: INK,
+        position: "relative",
+      }}
+    >
+      {/* Period label, tucked top-right */}
+      <span
         style={{
-          width: CARD_W,
-          height: CARD_H,
-          boxSizing: "border-box",
-          fontFamily: SHARE_FONT_FAMILY,
-          background: skin.bg,
-          borderRadius: 22,
-          border: `1px solid ${HAIR}`,
-          overflow: "hidden",
-          color: INK,
-          position: "relative",
+          position: "absolute",
+          top: 26,
+          right: 34,
+          fontSize: 15,
+          fontWeight: 300,
+          letterSpacing: "0.06em",
+          color: MUTED,
         }}
       >
-        {/* Period label, tucked top-right */}
+        {cornerLabel}
+      </span>
+
+      {/* Period title + trade count, left, vertically centered */}
+      <div
+        style={{
+          position: "absolute",
+          left: 38,
+          top: 0,
+          bottom: 0,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          maxWidth: 230,
+        }}
+      >
         <span
           style={{
-            position: "absolute",
-            top: 26,
-            right: 34,
-            fontSize: 15,
+            fontSize: 38,
+            fontWeight: 200,
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+            lineHeight: 1.05,
+            color: INK,
+            overflowWrap: "break-word",
+          }}
+        >
+          {title}
+        </span>
+        <span
+          style={{
+            marginTop: 12,
+            fontSize: 14,
             fontWeight: 300,
-            letterSpacing: "0.06em",
+            letterSpacing: "0.04em",
             color: MUTED,
           }}
         >
-          {cornerLabel}
+          {stats.trades} {stats.trades === 1 ? "trade" : "trades"} this {noun}
         </span>
+      </div>
 
-        {/* Period title + trade count, left, vertically centered */}
-        <div
+      {/* Centered quill mark + wordmark */}
+      <div
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          top: 0,
+          bottom: 0,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <img
+          src={QUILL_LOGO_SRC}
+          alt=""
           style={{
-            position: "absolute",
-            left: 38,
-            top: 0,
-            bottom: 0,
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            maxWidth: 230,
+            height: 150,
+            width: 150 * QUILL_LOGO_RATIO,
+            display: "block",
+          }}
+        />
+        <span
+          style={{
+            marginTop: 14,
+            fontSize: 14,
+            fontWeight: 200,
+            letterSpacing: "0.3em",
+            textIndent: "0.3em",
+            color: MUTED,
           }}
         >
+          Cuequill
+        </span>
+      </div>
+
+      {/* Net P/L + win rate, right, vertically centered */}
+      <div
+        style={{
+          position: "absolute",
+          right: 38,
+          top: 0,
+          bottom: 0,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-end",
+          justifyContent: "center",
+          textAlign: "right",
+        }}
+      >
+        <span
+          style={{
+            fontSize: 42,
+            fontWeight: 300,
+            letterSpacing: "0.02em",
+            lineHeight: 1,
+            whiteSpace: "nowrap",
+            color: accent,
+          }}
+        >
+          {hasClosed ? fmtMoneySigned(stats.netPL) : "-"}
+        </span>
+        {stats.winRate != null && (
           <span
             style={{
-              fontSize: 38,
-              fontWeight: 200,
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-              lineHeight: 1.05,
-              color: INK,
-              overflowWrap: "break-word",
-            }}
-          >
-            {title}
-          </span>
-          <span
-            style={{
-              marginTop: 12,
-              fontSize: 14,
+              marginTop: 10,
+              fontSize: 18,
               fontWeight: 300,
-              letterSpacing: "0.04em",
-              color: MUTED,
-            }}
-          >
-            {stats.trades} {stats.trades === 1 ? "trade" : "trades"} {periodPhrase}
-          </span>
-        </div>
-
-        {/* Centered quill mark + wordmark */}
-        <div
-          style={{
-            position: "absolute",
-            left: 0,
-            right: 0,
-            top: 0,
-            bottom: 0,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <img
-            src={QUILL_LOGO_SRC}
-            alt=""
-            style={{ height: 150, width: 150 * QUILL_LOGO_RATIO, display: "block" }}
-          />
-          <span
-            style={{
-              marginTop: 14,
-              fontSize: 14,
-              fontWeight: 200,
-              letterSpacing: "0.3em",
-              textIndent: "0.3em",
-              color: MUTED,
-            }}
-          >
-            Cuequill
-          </span>
-        </div>
-
-        {/* Net P/L + win rate, right, vertically centered */}
-        <div
-          style={{
-            position: "absolute",
-            right: 38,
-            top: 0,
-            bottom: 0,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "flex-end",
-            justifyContent: "center",
-            textAlign: "right",
-          }}
-        >
-          <span
-            style={{
-              fontSize: 42,
-              fontWeight: 300,
-              letterSpacing: "0.02em",
+              letterSpacing: "0.03em",
               lineHeight: 1,
-              whiteSpace: "nowrap",
               color: accent,
             }}
           >
-            {hasClosed ? fmtMoneySigned(stats.netPL) : "-"}
+            {stats.winRate.toFixed(0)}% win rate
           </span>
-          {stats.winRate != null && (
-            <span
-              style={{
-                marginTop: 10,
-                fontSize: 18,
-                fontWeight: 300,
-                letterSpacing: "0.03em",
-                lineHeight: 1,
-                color: accent,
-              }}
-            >
-              {stats.winRate.toFixed(0)}% win rate
-            </span>
-          )}
-        </div>
+        )}
       </div>
-    );
-  },
-);
+    </div>
+  );
+});
 
 export default MonthlyShareCard;

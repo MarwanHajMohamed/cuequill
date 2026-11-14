@@ -45,8 +45,8 @@ export default function Home() {
           }
           body="A calendar tinted by your P/L. Click any day, see what you did and why. No CSV exports. No pivot tables. Just the part you were going to do in Excel anyway, except you'll open it."
           stats={[
-            ["Loads in", "2s"],
-            ["Click to detail", "Yes"],
+            ["Add your", "Tags"],
+            ["Label the", "Strategy"],
             ["Net of fees", "Yes"],
           ]}
           preview={<CalendarPreview />}
@@ -59,8 +59,7 @@ export default function Home() {
             <>
               Ask your trades
               <br />
-              anything, in{" "}
-              <span className="text-teal-300">plain English.</span>
+              anything, in <span className="text-teal-300">plain English.</span>
             </>
           }
           body="Ask in plain English. Cuequill's AI answers from your trades, not the internet's. It can log a fresh fill in one sentence, then call it back when you ask."
@@ -158,7 +157,7 @@ function Hero() {
           >
             <Link
               href="/login"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[10px] bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 transition text-[13px] font-medium"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[10px] text-teal-300 border border-teal-500/30 hover:bg-teal-500/10 transition text-[13px] font-medium"
             >
               Open your journal
               <i className="fa-solid fa-chevron-right text-[10px]" />
@@ -187,21 +186,43 @@ type HeroCell = { pl?: number; tone: "win" | "loss" | "flat" };
 // 6 weeks × 5 weekdays (Mon-Fri). Weekends are skipped entirely so
 // the calendar reads as a trading-days grid, not a full month.
 const HERO_MONTH: HeroCell[] = [
-  { tone: "flat" }, { tone: "win", pl: 120 }, { tone: "flat" }, { tone: "loss", pl: -80 }, { tone: "win", pl: 260 },
-  { tone: "win", pl: 90 }, { tone: "flat" }, { tone: "win", pl: 540 }, { tone: "loss", pl: -210 }, { tone: "flat" },
-  { tone: "win", pl: 75 }, { tone: "flat" }, { tone: "win", pl: 320 }, { tone: "flat" }, { tone: "win", pl: 180 },
-  { tone: "flat" }, { tone: "loss", pl: -60 }, { tone: "win", pl: 410 }, { tone: "flat" }, { tone: "win", pl: 95 },
-  { tone: "flat" }, { tone: "win", pl: 230 }, { tone: "flat" }, { tone: "loss", pl: -140 }, { tone: "win", pl: 680 },
-  { tone: "flat" }, { tone: "win", pl: 150 }, { tone: "flat" }, { tone: "win", pl: 200 }, { tone: "flat" },
+  { tone: "flat" },
+  { tone: "win", pl: 120 },
+  { tone: "flat" },
+  { tone: "loss", pl: -80 },
+  { tone: "win", pl: 260 },
+  { tone: "win", pl: 90 },
+  { tone: "flat" },
+  { tone: "win", pl: 540 },
+  { tone: "loss", pl: -210 },
+  { tone: "flat" },
+  { tone: "win", pl: 75 },
+  { tone: "flat" },
+  { tone: "win", pl: 320 },
+  { tone: "flat" },
+  { tone: "win", pl: 180 },
+  { tone: "flat" },
+  { tone: "loss", pl: -60 },
+  { tone: "win", pl: 410 },
+  { tone: "flat" },
+  { tone: "win", pl: 95 },
+  { tone: "flat" },
+  { tone: "win", pl: 230 },
+  { tone: "flat" },
+  { tone: "loss", pl: -140 },
+  { tone: "win", pl: 680 },
+  { tone: "flat" },
+  { tone: "win", pl: 150 },
+  { tone: "flat" },
+  { tone: "win", pl: 200 },
+  { tone: "flat" },
 ];
 const HERO_DOW = ["M", "T", "W", "T", "F"];
 
 function fmtCellPL(n: number): string {
   const sign = n >= 0 ? "+" : "-";
   const abs = Math.abs(n);
-  return abs >= 1000
-    ? `${sign}${(abs / 1000).toFixed(1)}k`
-    : `${sign}${abs}`;
+  return abs >= 1000 ? `${sign}${(abs / 1000).toFixed(1)}k` : `${sign}${abs}`;
 }
 
 const heroGrid = {
@@ -286,13 +307,7 @@ function HeroCalendar() {
   // target, nothing else moves) and the action phase (zoom / modal), which
   // fires on arrival - so the zoom is synced to the cursor's click.
   const [phase, setPhase] = useState<
-    | "idle"
-    | "aimDay"
-    | "trades"
-    | "aimTrade"
-    | "detail"
-    | "closing"
-    | "unzoom"
+    "idle" | "aimDay" | "trades" | "aimTrade" | "detail" | "closing" | "unzoom"
   >("idle");
   useEffect(() => {
     let cancelled = false;
@@ -471,7 +486,8 @@ function HeroCalendar() {
 
           <div className="flex items-center gap-4 mt-3 pt-3 border-t border-white/[0.06] text-[11px]">
             <span className="text-white/45">
-              Win rate <span className="text-white/80 font-medium">{winRate}%</span>
+              Win rate{" "}
+              <span className="text-white/80 font-medium">{winRate}%</span>
             </span>
             <span className="text-white/45">
               Trades <span className="text-white/80 font-medium">{closed}</span>
@@ -628,8 +644,14 @@ function HeroCalendar() {
                 <i className="fa-solid fa-xmark text-white/35 text-[11px] mt-0.5" />
               </div>
               <div className="grid grid-cols-3 gap-2 mb-3">
-                <DetailStat label="Entry" value={`$${detailTrade.entry.toFixed(2)}`} />
-                <DetailStat label="Exit" value={`$${detailTrade.exit.toFixed(2)}`} />
+                <DetailStat
+                  label="Entry"
+                  value={`$${detailTrade.entry.toFixed(2)}`}
+                />
+                <DetailStat
+                  label="Exit"
+                  value={`$${detailTrade.exit.toFixed(2)}`}
+                />
                 <DetailStat label="Held" value={detailTrade.held} />
               </div>
               <div className="pt-2.5 border-t border-white/10 flex items-center justify-between">
@@ -1140,10 +1162,7 @@ function FeatureSpread({
 }) {
   const textOnLeft = align === "left";
   return (
-    <section
-      id={id}
-      className="px-6 md:px-10 py-20 md:py-28"
-    >
+    <section id={id} className="px-6 md:px-10 py-20 md:py-28">
       <div className="max-w-[1200px] mx-auto grid md:grid-cols-12 gap-10 md:gap-12 items-start">
         <motion.div
           initial={{ opacity: 0, y: 14 }}
@@ -1406,8 +1425,22 @@ function CalendarPreview() {
         kind: "win",
         netPL: 412,
         trades: [
-          { sym: "SPY", opt: "CALL", strike: 580, qty: 3, pl: 270, strat: "MA 40" },
-          { sym: "QQQ", opt: "CALL", strike: 490, qty: 2, pl: 142, strat: "MA 40" },
+          {
+            sym: "SPY",
+            opt: "CALL",
+            strike: 580,
+            qty: 3,
+            pl: 270,
+            strat: "MA 40",
+          },
+          {
+            sym: "QQQ",
+            opt: "CALL",
+            strike: 490,
+            qty: 2,
+            pl: 142,
+            strat: "MA 40",
+          },
         ],
       },
       {
@@ -1415,7 +1448,14 @@ function CalendarPreview() {
         kind: "loss",
         netPL: -180,
         trades: [
-          { sym: "AAPL", opt: "PUT", strike: 225, qty: 2, pl: -180, strat: "First Red" },
+          {
+            sym: "AAPL",
+            opt: "PUT",
+            strike: 225,
+            qty: 2,
+            pl: -180,
+            strat: "First Red",
+          },
         ],
       },
       {
@@ -1423,7 +1463,14 @@ function CalendarPreview() {
         kind: "win",
         netPL: 96,
         trades: [
-          { sym: "TSLA", opt: "CALL", strike: 360, qty: 1, pl: 96, strat: "Channel Brk" },
+          {
+            sym: "TSLA",
+            opt: "CALL",
+            strike: 360,
+            qty: 1,
+            pl: 96,
+            strat: "Channel Brk",
+          },
         ],
       },
       { day: 6, kind: "fed" },
@@ -1432,9 +1479,30 @@ function CalendarPreview() {
         kind: "win",
         netPL: 612,
         trades: [
-          { sym: "NVDA", opt: "CALL", strike: 138, qty: 3, pl: 285, strat: "Bullish Gap" },
-          { sym: "SPY", opt: "CALL", strike: 583, qty: 4, pl: 220, strat: "MA 40" },
-          { sym: "MSFT", opt: "CALL", strike: 440, qty: 2, pl: 107, strat: "Hard Floor" },
+          {
+            sym: "NVDA",
+            opt: "CALL",
+            strike: 138,
+            qty: 3,
+            pl: 285,
+            strat: "Bullish Gap",
+          },
+          {
+            sym: "SPY",
+            opt: "CALL",
+            strike: 583,
+            qty: 4,
+            pl: 220,
+            strat: "MA 40",
+          },
+          {
+            sym: "MSFT",
+            opt: "CALL",
+            strike: 440,
+            qty: 2,
+            pl: 107,
+            strat: "Hard Floor",
+          },
         ],
       },
     ],
@@ -1444,8 +1512,22 @@ function CalendarPreview() {
         kind: "win",
         netPL: 245,
         trades: [
-          { sym: "AMZN", opt: "CALL", strike: 215, qty: 2, pl: 168, strat: "MA 40" },
-          { sym: "META", opt: "CALL", strike: 590, qty: 1, pl: 77, strat: "MA 40" },
+          {
+            sym: "AMZN",
+            opt: "CALL",
+            strike: 215,
+            qty: 2,
+            pl: 168,
+            strat: "MA 40",
+          },
+          {
+            sym: "META",
+            opt: "CALL",
+            strike: 590,
+            qty: 1,
+            pl: 77,
+            strat: "MA 40",
+          },
         ],
       },
       { day: 11, kind: "empty" },
@@ -1454,8 +1536,22 @@ function CalendarPreview() {
         kind: "loss",
         netPL: -312,
         trades: [
-          { sym: "TSLA", opt: "PUT", strike: 350, qty: 2, pl: -185, strat: "Gap Floor Brk" },
-          { sym: "SPY", opt: "PUT", strike: 575, qty: 1, pl: -127, strat: "Hanger Daily" },
+          {
+            sym: "TSLA",
+            opt: "PUT",
+            strike: 350,
+            qty: 2,
+            pl: -185,
+            strat: "Gap Floor Brk",
+          },
+          {
+            sym: "SPY",
+            opt: "PUT",
+            strike: 575,
+            qty: 1,
+            pl: -127,
+            strat: "Hanger Daily",
+          },
         ],
       },
       {
@@ -1463,10 +1559,38 @@ function CalendarPreview() {
         kind: "win",
         netPL: 847,
         trades: [
-          { sym: "SPY", opt: "CALL", strike: 600, qty: 5, pl: 420, strat: "MA 40" },
-          { sym: "AAPL", opt: "PUT", strike: 230, qty: 3, pl: 285, strat: "First Red" },
-          { sym: "NVDA", opt: "CALL", strike: 140, qty: 2, pl: -58, strat: "Bullish Gap" },
-          { sym: "TSLA", opt: "CALL", strike: 380, qty: 4, pl: 200, strat: "Channel Brk" },
+          {
+            sym: "SPY",
+            opt: "CALL",
+            strike: 600,
+            qty: 5,
+            pl: 420,
+            strat: "MA 40",
+          },
+          {
+            sym: "AAPL",
+            opt: "PUT",
+            strike: 230,
+            qty: 3,
+            pl: 285,
+            strat: "First Red",
+          },
+          {
+            sym: "NVDA",
+            opt: "CALL",
+            strike: 140,
+            qty: 2,
+            pl: -58,
+            strat: "Bullish Gap",
+          },
+          {
+            sym: "TSLA",
+            opt: "CALL",
+            strike: 380,
+            qty: 4,
+            pl: 200,
+            strat: "Channel Brk",
+          },
         ],
       },
       {
@@ -1474,7 +1598,14 @@ function CalendarPreview() {
         kind: "win",
         netPL: 192,
         trades: [
-          { sym: "MSFT", opt: "CALL", strike: 445, qty: 2, pl: 192, strat: "MA 40" },
+          {
+            sym: "MSFT",
+            opt: "CALL",
+            strike: 445,
+            qty: 2,
+            pl: 192,
+            strat: "MA 40",
+          },
         ],
       },
     ],
@@ -1484,7 +1615,14 @@ function CalendarPreview() {
         kind: "win",
         netPL: 158,
         trades: [
-          { sym: "GOOG", opt: "CALL", strike: 180, qty: 2, pl: 158, strat: "MA 40" },
+          {
+            sym: "GOOG",
+            opt: "CALL",
+            strike: 180,
+            qty: 2,
+            pl: 158,
+            strat: "MA 40",
+          },
         ],
       },
       {
@@ -1492,9 +1630,30 @@ function CalendarPreview() {
         kind: "win",
         netPL: 502,
         trades: [
-          { sym: "SPY", opt: "CALL", strike: 595, qty: 3, pl: 240, strat: "MA 40" },
-          { sym: "QQQ", opt: "CALL", strike: 500, qty: 2, pl: 165, strat: "MA 40" },
-          { sym: "META", opt: "CALL", strike: 600, qty: 1, pl: 97, strat: "Bullish Gap" },
+          {
+            sym: "SPY",
+            opt: "CALL",
+            strike: 595,
+            qty: 3,
+            pl: 240,
+            strat: "MA 40",
+          },
+          {
+            sym: "QQQ",
+            opt: "CALL",
+            strike: 500,
+            qty: 2,
+            pl: 165,
+            strat: "MA 40",
+          },
+          {
+            sym: "META",
+            opt: "CALL",
+            strike: 600,
+            qty: 1,
+            pl: 97,
+            strat: "Bullish Gap",
+          },
         ],
       },
       {
@@ -1502,7 +1661,14 @@ function CalendarPreview() {
         kind: "loss",
         netPL: -94,
         trades: [
-          { sym: "AAPL", opt: "PUT", strike: 220, qty: 1, pl: -94, strat: "First Red" },
+          {
+            sym: "AAPL",
+            opt: "PUT",
+            strike: 220,
+            qty: 1,
+            pl: -94,
+            strat: "First Red",
+          },
         ],
       },
       { day: 20, kind: "empty" },
@@ -1511,8 +1677,22 @@ function CalendarPreview() {
         kind: "win",
         netPL: 380,
         trades: [
-          { sym: "NVDA", opt: "CALL", strike: 142, qty: 3, pl: 235, strat: "Bullish Gap" },
-          { sym: "TSLA", opt: "CALL", strike: 385, qty: 2, pl: 145, strat: "Channel Brk" },
+          {
+            sym: "NVDA",
+            opt: "CALL",
+            strike: 142,
+            qty: 3,
+            pl: 235,
+            strat: "Bullish Gap",
+          },
+          {
+            sym: "TSLA",
+            opt: "CALL",
+            strike: 385,
+            qty: 2,
+            pl: 145,
+            strat: "Channel Brk",
+          },
         ],
       },
     ],
@@ -1540,7 +1720,11 @@ function CalendarPreview() {
 
   const [openDay, setOpenDay] = useState<number | null>(null);
   const openCell = openDay
-    ? weeks.flat().find((c) => c.day === openDay && (c.kind === "win" || c.kind === "loss"))
+    ? weeks
+        .flat()
+        .find(
+          (c) => c.day === openDay && (c.kind === "win" || c.kind === "loss"),
+        )
     : null;
   const openTradeable =
     openCell && (openCell.kind === "win" || openCell.kind === "loss")
@@ -1561,12 +1745,12 @@ function CalendarPreview() {
         </div>
         <div className="flex items-center gap-2 text-[11px] tabular-nums">
           <span className="px-2 py-0.5 rounded-full bg-green-500/10 text-green-300 border border-green-500/25">
-            10W
+            9W
           </span>
           <span className="px-2 py-0.5 rounded-full bg-red-500/10 text-red-300 border border-red-500/25">
             3L
           </span>
-          <span className="text-white/40">77% Win rate</span>
+          <span className="text-white/40">75% Win rate</span>
         </div>
       </div>
 
@@ -1693,7 +1877,7 @@ function CalendarPreview() {
             +$847
           </span>
         </span>
-        <span className="tabular-nums">14 traded</span>
+        <span className="tabular-nums">23 traded</span>
       </div>
 
       {/* Day-trades overlay - opens over the figure when a tile is
@@ -1860,8 +2044,7 @@ function QuillAIPreview() {
     { kind: "thinking", durMs: 900 },
     {
       kind: "ai-answer",
-      text:
-        "Hard Floor - 10 closed this month, 40% win rate, expectancy −$18.40/trade. Want to see them?",
+      text: "Hard Floor - 10 closed this month, 40% win rate, expectancy −$18.40/trade. Want to see them?",
       durMs: 2200,
     },
     {
@@ -1877,8 +2060,7 @@ function QuillAIPreview() {
     { kind: "thinking", durMs: 1100 },
     {
       kind: "ai-answer",
-      text:
-        "Before 11am: 62% over 21 trades, +$34/trade. After 11am: 38% over 16, −$21/trade. The edge is all in the first 90 minutes.",
+      text: "Before 11am: 62% over 21 trades, +$34/trade. After 11am: 38% over 16, −$21/trade. The edge is all in the first 90 minutes.",
       durMs: 2900,
     },
     {
@@ -1894,8 +2076,7 @@ function QuillAIPreview() {
     { kind: "thinking", durMs: 900 },
     {
       kind: "ai-answer",
-      text:
-        "Partly - FROC is 58% before 11am and 47% after, but it stays net-positive in both windows (+$12 vs +$4/trade).",
+      text: "Partly - FROC is 58% before 11am and 47% after, but it stays net-positive in both windows (+$12 vs +$4/trade).",
       durMs: 2800,
     },
     {
@@ -1911,8 +2092,7 @@ function QuillAIPreview() {
     { kind: "thinking", durMs: 700 },
     {
       kind: "ai-answer",
-      text:
-        "Saved. 3× SPY 600 CALL opened today at $1.20/contract, expiring 2026-06-13.",
+      text: "Saved. 3× SPY 600 CALL opened today at $1.20/contract, expiring 2026-06-13.",
       durMs: 1900,
     },
   ];
@@ -1937,8 +2117,7 @@ function QuillAIPreview() {
 
   // The composer mirrors whatever the user is currently typing. Once
   // the message is sent it clears, then waits for the next typing step.
-  const composerText =
-    current?.kind === "typing-user" ? "" : ""; // start empty - typewriter feeds it
+  const composerText = current?.kind === "typing-user" ? "" : ""; // start empty - typewriter feeds it
   const typing = current?.kind === "typing-user" ? current.text : "";
   const composer = useTypewriter(typing, 32, inView && !!typing);
   const showCaret = !!typing;
@@ -2183,9 +2362,30 @@ function IBKRPreview() {
 
   const fills = [
     { sym: "AAPL", opt: "PUT", strike: 230, qty: 3, time: "14:30", price: 1.2 },
-    { sym: "SPY", opt: "CALL", strike: 600, qty: 5, time: "13:00", price: 2.85 },
-    { sym: "NVDA", opt: "CALL", strike: 140, qty: 2, time: "11:00", price: 0.95 },
-    { sym: "TSLA", opt: "CALL", strike: 380, qty: 4, time: "10:30", price: 1.4 },
+    {
+      sym: "SPY",
+      opt: "CALL",
+      strike: 600,
+      qty: 5,
+      time: "13:00",
+      price: 2.85,
+    },
+    {
+      sym: "NVDA",
+      opt: "CALL",
+      strike: 140,
+      qty: 2,
+      time: "11:00",
+      price: 0.95,
+    },
+    {
+      sym: "TSLA",
+      opt: "CALL",
+      strike: 380,
+      qty: 4,
+      time: "10:30",
+      price: 1.4,
+    },
   ];
 
   return (
@@ -2212,7 +2412,9 @@ function IBKRPreview() {
               IBKR auto-sync
             </p>
             <p className="text-[13px] text-white/80 tabular-nums">
-              {phase === "syncing" ? "Pulling last session…" : "Synced just now"}
+              {phase === "syncing"
+                ? "Pulling last session…"
+                : "Synced just now"}
             </p>
           </div>
         </div>
@@ -2282,13 +2484,15 @@ function IBKRPreview() {
             v: phase === "done" ? Math.round(imported).toString() : "-",
             tone: "good" as const,
           },
-          { k: "Skipped", v: phase === "done" ? "0" : "-", tone: "neutral" as const },
+          {
+            k: "Skipped",
+            v: phase === "done" ? "0" : "-",
+            tone: "neutral" as const,
+          },
           { k: "Next run", v: "22:00 ET", tone: "neutral" as const },
         ].map((s) => (
           <div key={s.k} className="flex flex-col gap-0.5">
-            <p className="text-[10px] tracking-[0.08em] text-white/40">
-              {s.k}
-            </p>
+            <p className="text-[10px] tracking-[0.08em] text-white/40">{s.k}</p>
             <p
               className={`text-[20px] tabular-nums tracking-[-0.01em] font-medium ${
                 s.tone === "good" ? "text-green-300" : "text-white/85"
