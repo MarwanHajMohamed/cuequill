@@ -136,15 +136,19 @@ const SOURCES: ImportSource[] = [
     label: "Cuequill",
     logo: { img: "/cuequill-icon.png" },
     endpoint: "cuequill",
-    blurb: "Re-import a CSV you exported from Cuequill.",
+    blurb: "Re-import a CSV or JSON backup you exported from Cuequill.",
     steps: [
       <>
-        Go to <span className="text-white">Reports &rsaquo; All trades</span>.
+        Go to{" "}
+        <span className="text-white">
+          Reports &rsaquo; All trades
+        </span>{" "}
+        (CSV) or <span className="text-white">Full backup</span> (JSON).
       </>,
       <>
-        Click <span className="text-white">Download CSV</span>.
+        Click <span className="text-white">Download</span>.
       </>,
-      <>Drop that CSV below. Trades you already have are skipped.</>,
+      <>Drop that file below. Trades you already have are skipped.</>,
     ],
   },
 ];
@@ -289,10 +293,21 @@ export default function BrokersTab() {
     return () => clearTimeout(t);
   }, [selected, contentReady]);
 
+  // The Cuequill re-import also accepts a JSON backup (Reports → Full
+  // backup); every other source is CSV only.
+  const allowsJson = selected?.endpoint === "cuequill";
+
   const pickFile = (f: File | null) => {
     if (!f) return;
-    if (!/\.csv$/i.test(f.name) && f.type !== "text/csv") {
-      setStatus("Error: Please choose a .csv file.");
+    const isCsv = /\.csv$/i.test(f.name) || f.type === "text/csv";
+    const isJson = /\.json$/i.test(f.name) || f.type === "application/json";
+    const ok = allowsJson ? isCsv || isJson : isCsv;
+    if (!ok) {
+      setStatus(
+        allowsJson
+          ? "Error: Please choose a .csv or .json file."
+          : "Error: Please choose a .csv file.",
+      );
       return;
     }
     setFile(f);
@@ -355,7 +370,7 @@ export default function BrokersTab() {
       {/* Drop zone */}
       <input
         type="file"
-        accept=".csv,text/csv"
+        accept={allowsJson ? ".csv,.json,text/csv,application/json" : ".csv,text/csv"}
         ref={fileInputRef}
         className="hidden"
         onChange={(e) => pickFile(e.target.files?.[0] ?? null)}
@@ -384,7 +399,7 @@ export default function BrokersTab() {
             <span className="text-white/90 font-medium">{file.name}</span>
           ) : (
             <>
-              Drop your CSV here, or{" "}
+              Drop your {allowsJson ? "CSV or JSON" : "CSV"} here, or{" "}
               <span className="text-teal-300">browse</span>
             </>
           )}
