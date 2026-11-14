@@ -336,12 +336,21 @@ function Page() {
       const k = bucketDateFor(t);
       return k >= startKey && k <= endKey;
     });
+    // Only call it "This week" when the displayed week really is the current
+    // one; otherwise label it by its start date so a past/future week isn't
+    // mislabelled.
+    const currentWeekKey = format(
+      startOfWeek(new Date(), { weekStartsOn: 1 }),
+      "yyyy-MM-dd",
+    );
+    const isCurrentWeek = startKey === currentWeekKey;
     return statsFor(inWeek, {
       monthName: format(start, "MMM d"),
       year: `${start.getFullYear()}`,
-      title: "This week",
+      title: isCurrentWeek ? "This week" : `Week of ${format(start, "MMM d")}`,
       periodLabel: `${format(start, "MMM d")} – ${format(end, "MMM d")}`,
       periodNoun: "week",
+      periodPhrase: isCurrentWeek ? "this week" : "that week",
     });
   };
 

@@ -40,6 +40,7 @@ export type MonthlyShareStats = {
   title?: string; // big headline (defaults to monthName)
   periodLabel?: string; // header-right label (defaults to `${monthName} ${year}`)
   periodNoun?: string; // "month" | "week" | "year" - used in "N trades this ___"
+  periodPhrase?: string; // overrides the whole "this ___" suffix on the subline
 };
 
 const MonthlyShareCard = forwardRef<
@@ -60,6 +61,7 @@ const MonthlyShareCard = forwardRef<
     const title = stats.title ?? stats.monthName;
     const cornerLabel = stats.periodLabel ?? stats.year;
     const noun = stats.periodNoun ?? "month";
+    const periodPhrase = stats.periodPhrase ?? `this ${noun}`;
 
     return (
       <div
@@ -127,7 +129,7 @@ const MonthlyShareCard = forwardRef<
               color: MUTED,
             }}
           >
-            {stats.trades} {stats.trades === 1 ? "trade" : "trades"} this {noun}
+            {stats.trades} {stats.trades === 1 ? "trade" : "trades"} {periodPhrase}
           </span>
         </div>
 
