@@ -89,7 +89,11 @@ const COMPARE: CompareGroup[] = [
   {
     title: "Journaling",
     rows: [
-      { feature: "Manual trade logging", starter: "Unlimited", pro: "Unlimited" },
+      {
+        feature: "Manual trade logging",
+        starter: "Unlimited",
+        pro: "Unlimited",
+      },
       {
         feature: "Calendar P&L",
         note: "Net of commissions · economic-event pills",
@@ -326,17 +330,6 @@ function PricingHero() {
     <section className="px-6 md:px-10">
       <div className="max-w-[1200px] mx-auto py-20 md:py-28">
         <div className="flex flex-col">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.4 }}
-            className="mb-8"
-          >
-            <span className="text-[11px] tracking-[0.1em] text-teal-300">
-              Pricing
-            </span>
-          </motion.div>
-
           <motion.h1
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -344,7 +337,7 @@ function PricingHero() {
             className="text-[40px] sm:text-[60px] md:text-[76px] leading-[0.98] font-medium tracking-[-0.025em]"
           >
             Free for as long as you want.{" "}
-            <span className="italic font-normal text-teal-300">
+            <span className="font-normal text-teal-300">
               Paid when you mean it.
             </span>
           </motion.h1>
@@ -419,12 +412,9 @@ function PlansSpread({
   return (
     <section className="px-6 md:px-10 py-20 md:py-28">
       <div className="max-w-[1100px] mx-auto">
-        <span className="text-[11px] tracking-[0.1em] text-teal-300">Plans</span>
-
         <div className="mt-6 flex flex-col md:flex-row md:items-end md:justify-between gap-6 md:gap-10">
           <h2 className="text-[32px] md:text-[48px] leading-[1.04] font-medium tracking-[-0.02em] max-w-3xl">
-            Two tiers.{" "}
-            <span className="italic text-teal-300">No hidden fees.</span>
+            Two tiers. <span className="text-teal-300">No hidden fees.</span>
           </h2>
           <BillingToggle cycle={cycle} onChange={setCycle} />
         </div>
@@ -545,7 +535,7 @@ function PlanColumn({
         )}
       </div>
       {plan.tagline && (
-        <p className="mt-1.5 text-[12px] text-white/55 leading-snug italic">
+        <p className="mt-1.5 text-[12px] text-white/55 leading-snug">
           {plan.tagline}
         </p>
       )}
@@ -592,8 +582,8 @@ function PlanColumn({
         <div className="mt-4 flex items-center gap-2 rounded-lg border border-teal-500/20 bg-teal-500/[0.06] px-3 py-2 text-[11.5px] text-teal-200">
           <i className="fa-solid fa-tag text-[10px] shrink-0" />
           <span>
-            Use <span className="font-semibold tracking-wide">LAUNCH26</span> for
-            50% off your first 6 months
+            Use <span className="font-semibold tracking-wide">LAUNCH26</span>{" "}
+            for 50% off your first 6 months
           </span>
         </div>
       )}
@@ -653,7 +643,9 @@ function CompareSection({ cycle }: { cycle: Cycle }) {
   return (
     <section className="px-6 md:px-10 py-20 md:py-28">
       <div className="max-w-[1200px] mx-auto">
-        <span className="text-[11px] tracking-[0.1em] text-teal-300">Compare</span>
+        <span className="text-[11px] tracking-[0.1em] text-teal-300">
+          Compare
+        </span>
         <h2 className="mt-6 text-[32px] md:text-[40px] leading-[1.04] font-medium tracking-[-0.02em]">
           What sits inside each tier.
         </h2>
@@ -693,7 +685,7 @@ function CompareSection({ cycle }: { cycle: Cycle }) {
                         {row.feature}
                       </div>
                       {row.note && (
-                        <div className="text-[11px] text-white/40 leading-snug mt-0.5 italic">
+                        <div className="text-[11px] text-white/40 leading-snug mt-0.5 ">
                           {row.note}
                         </div>
                       )}
@@ -766,12 +758,11 @@ function FaqSection() {
     <section className="px-6 md:px-10 py-20 md:py-28">
       <div className="max-w-[1200px] mx-auto grid md:grid-cols-12 gap-10">
         <div className="md:col-span-4">
-          <span className="text-[11px] tracking-[0.1em] text-teal-300">FAQ</span>
           <h2 className="mt-6 text-[32px] md:text-[40px] leading-[1.04] font-medium tracking-[-0.02em]">
-            Frequently <span className="italic text-teal-300">asked.</span>
+            Frequently <span className="text-teal-300">asked.</span>
           </h2>
           <p className="mt-5 max-w-xs text-[13px] text-white/55 leading-relaxed">
-            Or write to me directly - I usually reply same day.
+            Or write to me directly.
           </p>
           <a
             href="mailto:info@cuequill.com"
@@ -797,26 +788,23 @@ function Signoff() {
   return (
     <section className="px-6 md:px-10 py-20 md:py-28">
       <div className="max-w-[1200px] mx-auto rounded-3xl border border-white/10 bg-white/[0.02] backdrop-blur-md shadow-[0_8px_40px_var(--shadow-soft)] p-8 md:p-14">
-        <span className="text-[11px] tracking-[0.1em] text-teal-300">Get started</span>
         <h2 className="mt-6 text-[36px] sm:text-[52px] md:text-[64px] leading-[0.98] font-medium tracking-[-0.025em] max-w-4xl">
           Start free, today.{" "}
-          <span className="italic text-teal-300">
-            Upgrade when you mean it.
-          </span>
+          <span className="text-teal-300">Upgrade when you mean it.</span>
         </h2>
         <div className="mt-10 flex items-center gap-3 flex-wrap">
           <Link
             href="/login"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 transition text-[13px] font-medium"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-[10px] text-teal-300 border border-teal-500/30 hover:bg-teal-500/10 transition text-[13px] font-medium"
           >
-            open your journal
+            Open your journal
             <i className="fa-solid fa-chevron-right text-[10px]" />
           </Link>
           <a
             href="mailto:info@cuequill.com"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-white/15 text-white/80 hover:text-white hover:border-white/30 transition text-[12.5px]"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-[10px] border border-white/15 text-white/80 hover:text-white hover:border-white/30 transition text-[12.5px]"
           >
-            get in touch
+            Get in touch
           </a>
         </div>
       </div>
