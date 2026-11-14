@@ -336,9 +336,8 @@ function Page() {
       const k = bucketDateFor(t);
       return k >= startKey && k <= endKey;
     });
-    // Only call it "This week" when the displayed week really is the current
-    // one; otherwise label it by its start date so a past/future week isn't
-    // mislabelled.
+    // Label the card by the week's start date under a "Week of" eyebrow, so
+    // a past/future week is never mislabelled as the current one.
     const currentWeekKey = format(
       startOfWeek(new Date(), { weekStartsOn: 1 }),
       "yyyy-MM-dd",
@@ -347,7 +346,8 @@ function Page() {
     return statsFor(inWeek, {
       monthName: format(start, "MMM d"),
       year: `${start.getFullYear()}`,
-      title: isCurrentWeek ? "This week" : `Week of ${format(start, "MMM d")}`,
+      eyebrow: "Week of",
+      title: format(start, "MMM d"),
       periodLabel: `${format(start, "MMM d")} – ${format(end, "MMM d")}`,
       periodNoun: "week",
       periodPhrase: isCurrentWeek ? "this week" : "that week",
