@@ -383,14 +383,47 @@ export async function POST(req: Request) {
     toInsert.push(c);
   }
 
+  // MongoDB caps a single document at 16MB. A trade whose notes embed large
+  // base64 images (the rich-notes editor inlines them) can exceed that. With
+  // an ordered insert, one oversized document aborts every trade queued after
+  // it, so the import "stops" partway. Strip the inline image data from any
+  // oversized note - keeping the surrounding text - so the trade still fits.
+  const MAX_DOC_BYTES = 15_000_000;
+  const stripDataUris = (s: string) => s.replace(/data:[^"')\s>]+/gi, "");
+  let trimmed = 0;
+  for (const c of toInsert) {
+    if (Buffer.byteLength(JSON.stringify(c)) <= MAX_DOC_BYTES) continue;
+    const before = c.notes;
+    c.notes = stripDataUris(c.notes);
+    if (Buffer.byteLength(JSON.stringify(c)) > MAX_DOC_BYTES) {
+      c.notes = c.notes.slice(0, 100_000); // last-resort cap on huge text
+    }
+    if (c.notes !== before) trimmed += 1;
+  }
+
+  let inserted = 0;
+  let failed = 0;
   if (toInsert.length > 0) {
-    await Trade.insertMany(toInsert);
+    try {
+      // Unordered: a single bad row no longer stops the rest of the batch.
+      const docs = await Trade.insertMany(toInsert, { ordered: false });
+      inserted = docs.length;
+    } catch (err) {
+      // On a partial failure the thrown BulkWriteError still carries the docs
+      // that inserted successfully; count those and report the rest as failed.
+      const e = err as { insertedDocs?: unknown[] };
+      inserted = Array.isArray(e?.insertedDocs) ? e.insertedDocs.length : 0;
+      failed = toInsert.length - inserted;
+      console.error("[import-trades/cuequill] partial insert", err);
+    }
   }
 
   return NextResponse.json({
     success: true,
-    inserted: toInsert.length,
+    inserted,
     duplicates,
     skipped,
+    failed,
+    trimmed,
   });
 }

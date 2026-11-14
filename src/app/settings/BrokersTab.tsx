@@ -340,6 +340,8 @@ export default function BrokersTab() {
       const bits = [`Imported ${data.inserted ?? 0}`];
       const dupes = (data.duplicates ?? 0) + (data.skipped ?? 0);
       if (dupes) bits.push(`${dupes} already existed`);
+      if (data.trimmed) bits.push(`${data.trimmed} had oversized images trimmed`);
+      if (data.failed) bits.push(`${data.failed} couldn't be imported`);
       setStatus(bits.join(" · "));
       setFile(null);
       queryClient.invalidateQueries({ queryKey: ["trades", userId] });
