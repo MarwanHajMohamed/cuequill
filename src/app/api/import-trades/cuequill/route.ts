@@ -8,6 +8,9 @@ import Papa from "papaparse";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+// Backups with embedded base64 images can be large; give the import room so a
+// big batch isn't cut off mid-insert.
+export const maxDuration = 120;
 
 // Imports a Cuequill self-export back into the journal. Two formats are
 // accepted, both produced by the Reports page:
@@ -401,20 +404,29 @@ export async function POST(req: Request) {
     if (c.notes !== before) trimmed += 1;
   }
 
+  // Insert in small chunks; if a chunk fails for any reason, fall back to
+  // inserting its rows one at a time so a single bad row can never stop the
+  // others. This is belt-and-braces over the trimming above - whatever makes
+  // one trade unstorable, the rest of the import still goes through.
   let inserted = 0;
   let failed = 0;
-  if (toInsert.length > 0) {
+  const CHUNK = 25;
+  for (let i = 0; i < toInsert.length; i += CHUNK) {
+    const chunk = toInsert.slice(i, i + CHUNK);
     try {
-      // Unordered: a single bad row no longer stops the rest of the batch.
-      const docs = await Trade.insertMany(toInsert, { ordered: false });
-      inserted = docs.length;
-    } catch (err) {
-      // On a partial failure the thrown BulkWriteError still carries the docs
-      // that inserted successfully; count those and report the rest as failed.
-      const e = err as { insertedDocs?: unknown[] };
-      inserted = Array.isArray(e?.insertedDocs) ? e.insertedDocs.length : 0;
-      failed = toInsert.length - inserted;
-      console.error("[import-trades/cuequill] partial insert", err);
+      const docs = await Trade.insertMany(chunk, { ordered: false });
+      inserted += docs.length;
+    } catch (chunkErr) {
+      console.error("[import-trades/cuequill] chunk insert failed", chunkErr);
+      for (const doc of chunk) {
+        try {
+          await Trade.create(doc);
+          inserted += 1;
+        } catch (rowErr) {
+          failed += 1;
+          console.error("[import-trades/cuequill] row insert failed", rowErr);
+        }
+      }
     }
   }
 
