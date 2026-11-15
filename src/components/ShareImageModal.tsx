@@ -83,7 +83,8 @@ export default function ShareImageModal({
   }, [onClose]);
 
   const capture = async (): Promise<Blob | null> => {
-    if (!cardRef.current) return null;
+    const node = cardRef.current;
+    if (!node) return null;
     // Make sure the embedded share font is decoded before snapshotting, so
     // the PNG renders in DM Sans and not a fallback serif.
     try {
@@ -96,19 +97,43 @@ export default function ShareImageModal({
     } catch {
       /* non-fatal - fall through to capture */
     }
-    return toBlob(cardRef.current, {
+    // Make sure every image (the inline quill logo) is fully decoded before
+    // the snapshot. On WebKit/iOS Safari an undecoded image renders blank in
+    // html-to-image's SVG, which is why the logo could go missing.
+    try {
+      await Promise.all(
+        Array.from(node.querySelectorAll("img")).map((img) =>
+          img.decode ? img.decode().catch(() => undefined) : Promise.resolve(),
+        ),
+      );
+    } catch {
+      /* non-fatal */
+    }
+
+    const opts = {
       pixelRatio: 3,
       cacheBust: true,
       // Transparent outside the card's rounded corners so light skins
       // (e.g. Paper) don't get dark corner wedges.
-      backgroundColor: undefined,
+      backgroundColor: undefined as string | undefined,
       width: cardW,
       height: cardH,
       // Hand html-to-image the share font directly (inlined woff2). This
       // both guarantees DM Sans in the export and sidesteps scanning the
       // document's cross-origin stylesheets (e.g. the Font Awesome CDN).
       fontEmbedCSS: SHARE_FONT_FACE_CSS,
-    });
+    };
+
+    // WebKit/iOS Safari often rasterizes embedded images as blank on the
+    // first html-to-image pass (the images aren't loaded into the cloned
+    // SVG in time). Running the capture a few times and keeping the last
+    // result is the established workaround; the earlier passes warm the
+    // image cache so the final one contains the logo.
+    let blob: Blob | null = null;
+    for (let i = 0; i < 3; i++) {
+      blob = await toBlob(node, opts);
+    }
+    return blob;
   };
 
   const handleSave = async () => {

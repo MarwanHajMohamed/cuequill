@@ -143,7 +143,7 @@ export function SiteHeader() {
             {authed ? (
               <Link
                 href="/dashboard"
-                className="hidden sm:inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-teal-300 border border-teal-500/0 hover:bg-teal-500/15 hover:border-teal-500/25 transition text-[12.5px] font-medium"
+                className="hidden sm:inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-teal-300 border border-teal-500/30 hover:bg-teal-500/10 transition text-[12.5px] font-medium"
               >
                 Dashboard
                 <i className="fa-solid fa-chevron-right text-[10px]" />
@@ -158,7 +158,7 @@ export function SiteHeader() {
                 </Link>
                 <Link
                   href="/signup"
-                  className="hidden sm:inline-flex items-center gap-2 px-4 py-1.5 rounded-[10px] bg-teal-500/15 text-teal-300 border border-teal-500/25 hover:bg-teal-500/25 transition text-[12.5px] font-medium"
+                  className="hidden sm:inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-teal-300 border border-teal-500/30 hover:bg-teal-500/10 transition text-[12.5px] font-medium"
                 >
                   Sign up
                 </Link>
@@ -209,7 +209,7 @@ export function SiteHeader() {
                     onClick={() => setMenuOpen(false)}
                     className="px-5 py-3.5 text-[14px] font-medium text-teal-300 hover:bg-teal-500/[0.08] transition inline-flex items-center justify-between"
                   >
-                    Go to Dashboard
+                    Dashboard
                     <i className="fa-solid fa-chevron-right text-[11px]" />
                   </Link>
                 ) : (

@@ -2,16 +2,26 @@ import { useQuery } from "@tanstack/react-query";
 import { CPI_RELEASE_DATES } from "@/lib/cpiDates";
 import { PPI_RELEASE_DATES } from "@/lib/ppiDates";
 import { PCE_RELEASE_DATES } from "@/lib/pceDates";
+import { FOMC_MEETING_DATES, FOMC_MINUTES_DATES } from "@/lib/fomcDates";
 
-// Economic-report release dates (CPI / PPI / PCE) as arrays of "yyyy-MM-dd".
-// Sourced from /api/econ-dates (FRED-backed, with a hard-coded fallback). A
-// single React Query so the three per-series hooks share one request.
-export type EconDates = { cpi: string[]; ppi: string[]; pce: string[] };
+// Economic-calendar dates (CPI / PPI / PCE / FOMC) as arrays of "yyyy-MM-dd".
+// Sourced from /api/econ-dates (FRED-backed for CPI/PPI/PCE, Fed-calendar for
+// FOMC, with hard-coded fallbacks). A single React Query so every consumer
+// shares one request.
+export type EconDates = {
+  cpi: string[];
+  ppi: string[];
+  pce: string[];
+  fomc: string[]; // FOMC rate-decision days
+  fomcMinutes: string[]; // FOMC minutes-release days (~3 weeks after)
+};
 
 const FALLBACK: EconDates = {
   cpi: CPI_RELEASE_DATES,
   ppi: PPI_RELEASE_DATES,
   pce: PCE_RELEASE_DATES,
+  fomc: FOMC_MEETING_DATES,
+  fomcMinutes: FOMC_MINUTES_DATES,
 };
 
 async function fetchEconDates(): Promise<EconDates> {
@@ -22,6 +32,10 @@ async function fetchEconDates(): Promise<EconDates> {
     cpi: Array.isArray(d.cpi) ? d.cpi : FALLBACK.cpi,
     ppi: Array.isArray(d.ppi) ? d.ppi : FALLBACK.ppi,
     pce: Array.isArray(d.pce) ? d.pce : FALLBACK.pce,
+    fomc: Array.isArray(d.fomc) ? d.fomc : FALLBACK.fomc,
+    fomcMinutes: Array.isArray(d.fomcMinutes)
+      ? d.fomcMinutes
+      : FALLBACK.fomcMinutes,
   };
 }
 

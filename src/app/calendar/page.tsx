@@ -326,22 +326,32 @@ function Page() {
     };
   };
 
-  // The displayed week (Mon–Sun), for the week-view share card.
+  // The displayed trading week (Mon–Fri), for the week-view share card.
+  // Weekends are markets-closed, so the card covers the 5 weekdays only.
   const weekShareStats = (): MonthlyShareStats => {
     const start = displayedWeekStart;
-    const end = addDays(start, 6);
+    const end = addDays(start, 4);
     const startKey = format(start, "yyyy-MM-dd");
     const endKey = format(end, "yyyy-MM-dd");
     const inWeek = (trades ?? []).filter((t) => {
       const k = bucketDateFor(t);
       return k >= startKey && k <= endKey;
     });
+    // Label the card by the week's start date under a "Week of" eyebrow, so
+    // a past/future week is never mislabelled as the current one.
+    const currentWeekKey = format(
+      startOfWeek(new Date(), { weekStartsOn: 1 }),
+      "yyyy-MM-dd",
+    );
+    const isCurrentWeek = startKey === currentWeekKey;
     return statsFor(inWeek, {
       monthName: format(start, "MMM d"),
       year: `${start.getFullYear()}`,
-      title: "This week",
+      eyebrow: "Week of",
+      title: format(start, "MMM d"),
       periodLabel: `${format(start, "MMM d")} – ${format(end, "MMM d")}`,
       periodNoun: "week",
+      periodPhrase: isCurrentWeek ? "this week" : "that week",
     });
   };
 
