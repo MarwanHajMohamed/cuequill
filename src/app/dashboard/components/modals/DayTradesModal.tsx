@@ -19,38 +19,14 @@ export type DayEvent = {
 
 const EVENT_STYLE: Record<
   DayEvent["kind"],
-  { icon: string; dot: string; chip: string }
+  { icon: string; text: string }
 > = {
-  fed: {
-    icon: "fa-landmark",
-    dot: "bg-purple-400",
-    chip: "bg-purple-500/12 text-purple-200 border-purple-400/30",
-  },
-  cpi: {
-    icon: "fa-arrow-trend-up",
-    dot: "bg-amber-400",
-    chip: "bg-amber-500/12 text-amber-200 border-amber-400/30",
-  },
-  ppi: {
-    icon: "fa-industry",
-    dot: "bg-orange-400",
-    chip: "bg-orange-500/12 text-orange-200 border-orange-400/30",
-  },
-  pce: {
-    icon: "fa-gauge-high",
-    dot: "bg-sky-400",
-    chip: "bg-sky-500/12 text-sky-200 border-sky-400/30",
-  },
-  holiday: {
-    icon: "fa-lock",
-    dot: "bg-red-400",
-    chip: "bg-red-500/12 text-red-200 border-red-400/30",
-  },
-  earnings: {
-    icon: "fa-bullhorn",
-    dot: "bg-teal-400",
-    chip: "bg-teal-500/12 text-teal-200 border-teal-400/30",
-  },
+  fed: { icon: "fa-landmark", text: "text-purple-300" },
+  cpi: { icon: "fa-arrow-trend-up", text: "text-amber-300" },
+  ppi: { icon: "fa-industry", text: "text-orange-300" },
+  pce: { icon: "fa-gauge-high", text: "text-sky-300" },
+  holiday: { icon: "fa-lock", text: "text-red-300" },
+  earnings: { icon: "fa-bullhorn", text: "text-teal-300" },
 };
 
 type Props = {
@@ -192,18 +168,24 @@ export default function DayTradesModal({
           {/* Events on this day */}
           {events.length > 0 && (
             <div className="shrink-0 px-5 pb-4 pt-1">
-              <div className="flex flex-col gap-1.5">
+              <div className="text-[11px] tracking-wide text-white/40 font-semibold mb-2 flex items-center gap-2">
+                Events
+                <span className="text-white/35 tabular-nums font-bold">
+                  {events.length}
+                </span>
+              </div>
+              <div className="flex flex-col gap-1">
                 {events.map((ev, i) => {
                   const s = EVENT_STYLE[ev.kind];
                   return (
                     <div
                       key={`${ev.kind}-${ev.label}-${i}`}
-                      className={`inline-flex items-center gap-2.5 px-3 py-2 rounded-xl border ${s.chip}`}
+                      className="flex items-center gap-2.5 py-0.5"
                     >
                       <i
-                        className={`fa-solid ${s.icon} text-[12px] w-4 text-center opacity-90`}
+                        className={`fa-solid ${s.icon} text-[12px] w-4 text-center ${s.text}`}
                       />
-                      <span className="text-[12.5px] font-medium">
+                      <span className="text-[12.5px] font-medium text-white/80">
                         {ev.label}
                       </span>
                       {ev.detail && (
