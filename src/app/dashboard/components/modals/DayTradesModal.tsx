@@ -66,12 +66,14 @@ export default function DayTradesModal({
   const isToday =
     format(date, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
 
-  // A hairline of accent colour along the very top, keyed to the day's result.
+  // An accent bar along the very top, keyed to the day's result. Carries the
+  // colour most of the way across (not just a fading hairline) so the day's
+  // win/loss state reads at a glance.
   const topAccent = !showNet
-    ? "from-orange-400/70"
+    ? "from-orange-400 via-orange-400/80"
     : positive
-      ? "from-green-400/70"
-      : "from-red-400/70";
+      ? "from-green-400 via-green-400/80"
+      : "from-red-400 via-red-400/80";
 
   return (
     <AnimatePresence>
@@ -102,9 +104,9 @@ export default function DayTradesModal({
           className="relative flex flex-col bg-[var(--background)] border border-white/10 rounded-3xl w-full max-w-md text-white max-h-full md:max-h-[85vh] overflow-hidden shadow-[0_24px_80px_var(--shadow)]"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Top accent hairline */}
+          {/* Top accent bar */}
           <div
-            className={`absolute inset-x-0 top-0 h-px bg-gradient-to-r ${topAccent} via-white/10 to-transparent`}
+            className={`absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r ${topAccent} to-transparent`}
           />
 
           {/* Header */}
