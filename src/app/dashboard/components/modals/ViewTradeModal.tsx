@@ -88,7 +88,7 @@ export default function ViewTradeModal({
       >
         {/* ── Hero header (fixed) ── */}
         <div
-          className={`relative shrink-0 px-5 md:px-6 pt-5 md:pt-6 pb-5 md:pb-6 border-b border-white/5 ${
+          className={`relative shrink-0 px-5 md:px-6 pt-5 md:pt-6 pb-5 md:pb-6 ${
             isWin
               ? "bg-gradient-to-br from-green-500/15 via-transparent to-transparent"
               : isLoss
