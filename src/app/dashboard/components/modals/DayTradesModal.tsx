@@ -7,7 +7,7 @@ import { useScrollLock } from "@/hooks/useScrollLock";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
 import { motion, AnimatePresence } from "framer-motion";
 
-import { fmtMoneySignedCompact } from "@/lib/helpers/fmt";
+import { fmtMoneySignedFull } from "@/lib/helpers/fmt";
 
 // An economic event or company earnings landing on the day. Computed by the
 // calendar and passed in so the modal stays presentational.
@@ -144,7 +144,7 @@ export default function DayTradesModal({
                       positive ? "fa-arrow-up" : "fa-arrow-down"
                     } text-[18px]`}
                   />
-                  {fmtMoneySignedCompact(netPL)}
+                  {fmtMoneySignedFull(netPL)}
                 </div>
               </div>
             ) : opens > 0 ? (
@@ -253,7 +253,7 @@ export default function DayTradesModal({
                             pl >= 0 ? "text-green-300" : "text-red-300"
                           }`}
                         >
-                          {fmtMoneySignedCompact(pl)}
+                          {fmtMoneySignedFull(pl)}
                         </div>
                       ) : (
                         <div className="text-[12px] font-medium text-orange-300/80 shrink-0">
