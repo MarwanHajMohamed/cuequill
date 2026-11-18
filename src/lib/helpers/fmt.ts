@@ -104,6 +104,21 @@ export function fmtMoneyFull(value: number): string {
   );
 }
 
+// Full, un-abbreviated money with an explicit +/- sign (e.g. "+$12,345.67",
+// "-$980.00"). Like fmtMoneySignedCompact but never abbreviated.
+export function fmtMoneySignedFull(value: number): string {
+  if (!Number.isFinite(value)) return "+" + currencySymbol + "0.00";
+  const sign = value >= 0 ? "+" : "-";
+  return (
+    sign +
+    currencySymbol +
+    Math.abs(value).toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })
+  );
+}
+
 function compact(abs: number): string {
   if (abs < 1_000) return abs.toFixed(2);
   if (abs < 10_000) return (abs / 1_000).toFixed(2) + "k";

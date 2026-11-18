@@ -7,7 +7,7 @@ import { useScrollLock } from "@/hooks/useScrollLock";
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
 import { motion, AnimatePresence } from "framer-motion";
 
-import { fmtMoneySignedCompact } from "@/lib/helpers/fmt";
+import { fmtMoneySignedFull } from "@/lib/helpers/fmt";
 
 // An economic event or company earnings landing on the day. Computed by the
 // calendar and passed in so the modal stays presentational.
@@ -19,38 +19,14 @@ export type DayEvent = {
 
 const EVENT_STYLE: Record<
   DayEvent["kind"],
-  { icon: string; dot: string; chip: string }
+  { icon: string; text: string }
 > = {
-  fed: {
-    icon: "fa-landmark",
-    dot: "bg-purple-400",
-    chip: "bg-purple-500/12 text-purple-200 border-purple-400/30",
-  },
-  cpi: {
-    icon: "fa-arrow-trend-up",
-    dot: "bg-amber-400",
-    chip: "bg-amber-500/12 text-amber-200 border-amber-400/30",
-  },
-  ppi: {
-    icon: "fa-industry",
-    dot: "bg-orange-400",
-    chip: "bg-orange-500/12 text-orange-200 border-orange-400/30",
-  },
-  pce: {
-    icon: "fa-gauge-high",
-    dot: "bg-sky-400",
-    chip: "bg-sky-500/12 text-sky-200 border-sky-400/30",
-  },
-  holiday: {
-    icon: "fa-lock",
-    dot: "bg-red-400",
-    chip: "bg-red-500/12 text-red-200 border-red-400/30",
-  },
-  earnings: {
-    icon: "fa-bullhorn",
-    dot: "bg-teal-400",
-    chip: "bg-teal-500/12 text-teal-200 border-teal-400/30",
-  },
+  fed: { icon: "fa-landmark", text: "text-purple-300" },
+  cpi: { icon: "fa-arrow-trend-up", text: "text-amber-300" },
+  ppi: { icon: "fa-industry", text: "text-orange-300" },
+  pce: { icon: "fa-gauge-high", text: "text-sky-300" },
+  holiday: { icon: "fa-lock", text: "text-red-300" },
+  earnings: { icon: "fa-bullhorn", text: "text-teal-300" },
 };
 
 type Props = {
@@ -90,12 +66,14 @@ export default function DayTradesModal({
   const isToday =
     format(date, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
 
-  // A hairline of accent colour along the very top, keyed to the day's result.
-  const topAccent = !showNet
-    ? "from-orange-400/70"
-    : positive
-      ? "from-green-400/70"
-      : "from-red-400/70";
+  // Header wash keyed to the day's result, mirroring how ViewTradeModal tints
+  // its hero header: green for a winning day, red for a losing one, blue when
+  // there's nothing closed to score yet.
+  const headerAccent = showNet
+    ? positive
+      ? "bg-gradient-to-br from-green-500/15 via-transparent to-transparent"
+      : "bg-gradient-to-br from-red-500/15 via-transparent to-transparent"
+    : "bg-gradient-to-br from-blue-500/10 via-transparent to-transparent";
 
   return (
     <AnimatePresence>
@@ -126,13 +104,8 @@ export default function DayTradesModal({
           className="relative flex flex-col bg-[var(--background)] border border-white/10 rounded-3xl w-full max-w-md text-white max-h-full md:max-h-[85vh] overflow-hidden shadow-[0_24px_80px_var(--shadow)]"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Top accent hairline */}
-          <div
-            className={`absolute inset-x-0 top-0 h-px bg-gradient-to-r ${topAccent} via-white/10 to-transparent`}
-          />
-
           {/* Header */}
-          <div className="relative shrink-0 px-5 pt-5 pb-4">
+          <div className={`relative shrink-0 px-5 pt-5 pb-4 ${headerAccent}`}>
             <button
               onClick={onClose}
               aria-label="Close"
@@ -168,7 +141,7 @@ export default function DayTradesModal({
                       positive ? "fa-arrow-up" : "fa-arrow-down"
                     } text-[18px]`}
                   />
-                  {fmtMoneySignedCompact(netPL)}
+                  {fmtMoneySignedFull(netPL)}
                 </div>
               </div>
             ) : opens > 0 ? (
@@ -192,18 +165,24 @@ export default function DayTradesModal({
           {/* Events on this day */}
           {events.length > 0 && (
             <div className="shrink-0 px-5 pb-4 pt-1">
-              <div className="flex flex-col gap-1.5">
+              <div className="text-[11px] tracking-wide text-white/40 font-semibold mb-2 flex items-center gap-2">
+                Events
+                <span className="text-white/35 tabular-nums font-bold">
+                  {events.length}
+                </span>
+              </div>
+              <div className="flex flex-col gap-1">
                 {events.map((ev, i) => {
                   const s = EVENT_STYLE[ev.kind];
                   return (
                     <div
                       key={`${ev.kind}-${ev.label}-${i}`}
-                      className={`inline-flex items-center gap-2.5 px-3 py-2 rounded-xl border ${s.chip}`}
+                      className="flex items-center gap-2.5 py-0.5"
                     >
                       <i
-                        className={`fa-solid ${s.icon} text-[12px] w-4 text-center opacity-90`}
+                        className={`fa-solid ${s.icon} text-[12px] w-4 text-center ${s.text}`}
                       />
-                      <span className="text-[12.5px] font-medium">
+                      <span className="text-[12.5px] font-medium text-white/80">
                         {ev.label}
                       </span>
                       {ev.detail && (
@@ -271,7 +250,7 @@ export default function DayTradesModal({
                             pl >= 0 ? "text-green-300" : "text-red-300"
                           }`}
                         >
-                          {fmtMoneySignedCompact(pl)}
+                          {fmtMoneySignedFull(pl)}
                         </div>
                       ) : (
                         <div className="text-[12px] font-medium text-orange-300/80 shrink-0">
