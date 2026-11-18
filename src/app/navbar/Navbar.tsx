@@ -246,6 +246,9 @@ export default function Navbar() {
     useState<string[]>(DEFAULT_BOTTOM_IDS);
   const [editorOpen, setEditorOpen] = useState(false);
   const [draftIds, setDraftIds] = useState<string[]>(DEFAULT_BOTTOM_IDS);
+  // True while the bar is being pressed, so it can grow slightly to show the
+  // long-press is registering.
+  const [pressing, setPressing] = useState(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressFired = useRef(false);
   const pressStart = useRef<{ x: number; y: number } | null>(null);
@@ -282,12 +285,14 @@ export default function Navbar() {
   const beginLongPress = (e: React.PointerEvent) => {
     pressStart.current = { x: e.clientX, y: e.clientY };
     longPressFired.current = false;
+    setPressing(true);
     if (longPressTimer.current) clearTimeout(longPressTimer.current);
     longPressTimer.current = setTimeout(() => {
       longPressFired.current = true;
       hapticTap("medium");
       setDraftIds(bottomTabIds);
       setEditorOpen(true);
+      setPressing(false);
     }, 480);
   };
   const moveLongPress = (e: React.PointerEvent) => {
@@ -300,6 +305,7 @@ export default function Navbar() {
     }
   };
   const endLongPress = () => {
+    setPressing(false);
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
@@ -1228,7 +1234,7 @@ export default function Navbar() {
           paddingBottom: "max(env(safe-area-inset-bottom) - 10px, 6px)",
         }}
       >
-        <div
+        <motion.div
           ref={bottomBarRef}
           onPointerDown={beginLongPress}
           onPointerMove={moveLongPress}
@@ -1237,6 +1243,8 @@ export default function Navbar() {
           onPointerLeave={endLongPress}
           onContextMenu={(e) => e.preventDefault()}
           style={{ WebkitTouchCallout: "none", userSelect: "none" }}
+          animate={{ scale: pressing ? 1.035 : 1 }}
+          transition={{ type: "spring", stiffness: 500, damping: 30 }}
           className="pointer-events-auto relative flex items-stretch w-[calc(100%-24px)] max-w-[440px] mx-3 mb-1 px-1.5 py-1 bg-white/[0.06] backdrop-blur-xl border border-white/15 rounded-full shadow-[0_8px_32px_var(--shadow)]"
         >
           {/* Single sliding indicator pill - measured from each tab's
@@ -1342,7 +1350,7 @@ export default function Navbar() {
               More
             </span>
           </button>
-        </div>
+        </motion.div>
       </nav>
 
       {/* MOBILE "More" BOTTOM SHEET */}
