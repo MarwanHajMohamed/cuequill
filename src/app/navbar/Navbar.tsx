@@ -109,6 +109,32 @@ function NavCountBadge({
   );
 }
 
+// Canonical ids of every destination that can live in the mobile bottom tab
+// bar, used to validate the stored preference. Keep in sync with TAB_CATALOG.
+const BOTTOM_TAB_IDS = [
+  "home",
+  "trades",
+  "calendar",
+  "chat",
+  "affirmations",
+  "goals",
+  "challenges",
+  "trophies",
+  "leaderboard",
+  "strategies",
+  "stocks",
+  "earnings",
+  "rules",
+  "reports",
+  "balance",
+  "pricing",
+  "settings",
+];
+const DEFAULT_BOTTOM_IDS = ["home", "trades", "calendar", "chat"];
+const BOTTOM_TABS_KEY = "cuequill:bottom-tab-ids";
+const MIN_TABS = 2;
+const MAX_TABS = 5;
+
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname() ?? "";
@@ -212,6 +238,94 @@ export default function Navbar() {
     setMounted(true);
   }, []);
 
+  // ---- Customizable bottom tab bar ----
+  // Which destinations the user has pinned to the bottom bar (ids, canonical
+  // order applied at render). Persisted per-device in localStorage; editable
+  // via a long-press on the bar.
+  const [bottomTabIds, setBottomTabIds] =
+    useState<string[]>(DEFAULT_BOTTOM_IDS);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [draftIds, setDraftIds] = useState<string[]>(DEFAULT_BOTTOM_IDS);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressFired = useRef(false);
+  const pressStart = useRef<{ x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(BOTTOM_TABS_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return;
+      const known = new Set(BOTTOM_TAB_IDS);
+      const cleaned = Array.from(
+        new Set(parsed.filter((x) => typeof x === "string" && known.has(x))),
+      );
+      if (cleaned.length >= MIN_TABS) {
+        setBottomTabIds(cleaned.slice(0, MAX_TABS));
+      }
+    } catch {
+      /* ignore malformed pref */
+    }
+  }, []);
+
+  const persistBottomTabIds = (ids: string[]) => {
+    setBottomTabIds(ids);
+    try {
+      localStorage.setItem(BOTTOM_TABS_KEY, JSON.stringify(ids));
+    } catch {
+      /* quota / availability - non-fatal */
+    }
+  };
+
+  // Long-press on the bar opens the editor. Track the pointer so a scroll /
+  // drag cancels it, and suppress the click that would otherwise navigate.
+  const beginLongPress = (e: React.PointerEvent) => {
+    pressStart.current = { x: e.clientX, y: e.clientY };
+    longPressFired.current = false;
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    longPressTimer.current = setTimeout(() => {
+      longPressFired.current = true;
+      hapticTap("medium");
+      setDraftIds(bottomTabIds);
+      setEditorOpen(true);
+    }, 480);
+  };
+  const moveLongPress = (e: React.PointerEvent) => {
+    if (!pressStart.current) return;
+    if (
+      Math.abs(e.clientX - pressStart.current.x) > 10 ||
+      Math.abs(e.clientY - pressStart.current.y) > 10
+    ) {
+      endLongPress();
+    }
+  };
+  const endLongPress = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
+  const toggleDraft = (id: string) => {
+    setDraftIds((prev) => {
+      if (prev.includes(id)) {
+        return prev.length <= MIN_TABS ? prev : prev.filter((x) => x !== id);
+      }
+      return prev.length >= MAX_TABS ? prev : [...prev, id];
+    });
+  };
+  const applyDraft = () => {
+    persistBottomTabIds(draftIds);
+    setEditorOpen(false);
+  };
+
+  // Clear a pending long-press timer if the component unmounts mid-press.
+  useEffect(() => {
+    return () => {
+      if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    };
+  }, []);
+
   /* ---------------- HELPERS ---------------- */
 
   // Build the href Next.js will navigate to. "/" is dashboard; bare
@@ -260,68 +374,127 @@ export default function Navbar() {
 
   /* ---------------- DATA ---------------- */
 
-  // Bottom navigation tabs on mobile - the four most-used routes.
-  // Everything else lives behind the "More" tab.
-  const bottomTabs = [
-    { icon: "fa-solid fa-house", label: "Home", slug: "/" },
+  // Simulated (paper) trading is a sandbox for practising trades - the
+  // progression, competitive and reporting surfaces don't apply to it, so
+  // hide them while simulated mode is on.
+  const SIM_HIDDEN_SLUGS = new Set([
+    "goals",
+    "challenges",
+    "trophies",
+    "leaderboard",
+    "reports",
+  ]);
+
+  // Full catalog of mobile destinations in canonical order. The bottom tab bar
+  // shows a user-chosen subset (bottomTabIds, editable via long-press on the
+  // bar); everything else falls into the "More" sheet.
+  const TAB_CATALOG: {
+    id: string;
+    icon: string;
+    label: string;
+    slug: string;
+  }[] = [
+    { id: "home", icon: "fa-solid fa-house", label: "Home", slug: "/" },
     {
+      id: "trades",
       icon: "fa-solid fa-chart-column",
       label: "Trades",
       slug: `trades/${userId}`,
     },
-    { icon: "fa-solid fa-calendar-days", label: "Calendar", slug: "calendar" },
     {
+      id: "calendar",
+      icon: "fa-solid fa-calendar-days",
+      label: "Calendar",
+      slug: "calendar",
+    },
+    {
+      id: "chat",
       icon: "fa-solid fa-wand-magic-sparkles",
       label: "Quill AI",
       slug: "chat",
     },
-  ];
-
-  // Secondary destinations shown in the bottom-sheet "More" menu.
-  // Quill AI (chat) lives in the bottom tab bar, so it's not repeated here.
-  const moreItemsAll = [
     {
+      id: "affirmations",
       icon: "fa-regular fa-circle-check",
       label: "Affirmations",
       slug: "affirmations",
     },
+    { id: "goals", icon: "fa-solid fa-bullseye", label: "Goals", slug: "goals" },
     {
-      icon: "fa-solid fa-bullseye",
-      label: "Goals",
-      slug: "goals",
-    },
-    {
+      id: "challenges",
       icon: "fa-solid fa-trophy",
       label: "Challenges",
       slug: "challenges",
     },
     {
+      id: "trophies",
       icon: "fa-solid fa-award",
       label: "Trophies",
       slug: "trophies",
     },
     {
+      id: "leaderboard",
       icon: "fa-solid fa-ranking-star",
       label: "Leaderboard",
       slug: "leaderboard",
     },
     {
+      id: "strategies",
       icon: "fa-solid fa-bezier-curve",
       label: "Strategies",
       slug: "strategies",
     },
-    { icon: "fa-solid fa-coins", label: "Stocks & ETFs", slug: "stocks" },
     {
+      id: "stocks",
+      icon: "fa-solid fa-coins",
+      label: "Stocks & ETFs",
+      slug: "stocks",
+    },
+    {
+      id: "earnings",
       icon: "fa-regular fa-calendar-days",
       label: "Earnings",
       slug: "earnings",
     },
-    { icon: "fa-solid fa-list-check", label: "Rules", slug: "rules" },
-    { icon: "fa-solid fa-file-arrow-down", label: "Reports", slug: "reports" },
-    { icon: "fa-solid fa-wallet", label: "Balance", slug: "balance" },
-    { icon: "fa-solid fa-tag", label: "Plans & pricing", slug: "pricing" },
-    { icon: "fa-solid fa-gear", label: "Settings", slug: "settings" },
+    { id: "rules", icon: "fa-solid fa-list-check", label: "Rules", slug: "rules" },
+    {
+      id: "reports",
+      icon: "fa-solid fa-file-arrow-down",
+      label: "Reports",
+      slug: "reports",
+    },
+    {
+      id: "balance",
+      icon: "fa-solid fa-wallet",
+      label: "Balance",
+      slug: "balance",
+    },
+    {
+      id: "pricing",
+      icon: "fa-solid fa-tag",
+      label: "Plans & pricing",
+      slug: "pricing",
+    },
+    {
+      id: "settings",
+      icon: "fa-solid fa-gear",
+      label: "Settings",
+      slug: "settings",
+    },
   ];
+
+  const pinnedSet = new Set(bottomTabIds);
+  // Pinned key drives the pill re-measure when the selection changes.
+  const pinnedKey = bottomTabIds.join(",");
+
+  // Tabs shown in the bottom bar, in canonical order. In simulated mode the
+  // hidden surfaces drop out even if pinned.
+  const bottomTabs = TAB_CATALOG.filter(
+    (t) => pinnedSet.has(t.id) && !(simulated && SIM_HIDDEN_SLUGS.has(t.id)),
+  );
+
+  // Everything not pinned to the bottom bar lives in "More".
+  const moreItemsAll = TAB_CATALOG.filter((t) => !pinnedSet.has(t.id));
 
   // Desktop sidebar: a flat list of links, split into visual sections by
   // an unlabeled divider line. Each former group member is now its own
@@ -385,16 +558,7 @@ export default function Navbar() {
     ],
   ];
 
-  // Simulated (paper) trading is a sandbox for practising trades - the
-  // progression, competitive and reporting surfaces don't apply to it, so
-  // hide them while simulated mode is on.
-  const SIM_HIDDEN_SLUGS = new Set([
-    "goals",
-    "challenges",
-    "trophies",
-    "leaderboard",
-    "reports",
-  ]);
+  // SIM_HIDDEN_SLUGS is defined above (next to TAB_CATALOG).
   const moreItems = simulated
     ? moreItemsAll.filter((m) => !SIM_HIDDEN_SLUGS.has(m.slug))
     : moreItemsAll;
@@ -424,6 +588,7 @@ export default function Navbar() {
   // shared ref-counted lock (handles <html>/iOS and won't clobber other
   // modals' locks) instead of poking body.style directly.
   useScrollLock(openMore);
+  useScrollLock(editorOpen);
 
   // Which key in itemRefs is currently active? Computed from activePath
   // so the measurement effect re-runs as soon as a click optimistically
@@ -492,7 +657,7 @@ export default function Navbar() {
       window.removeEventListener("pageshow", measure);
       document.removeEventListener("visibilitychange", measure);
     };
-  }, [activeBottomKey, mounted]);
+  }, [activeBottomKey, mounted, pinnedKey, simulated]);
 
   // Mirror bottomPill state into motion values so the pill animates
   // smoothly on tab change but is still draggable via direct
@@ -1055,11 +1220,20 @@ export default function Navbar() {
             active indicator. */}
       <nav
         className="md:hidden fixed bottom-0 inset-x-0 z-50 flex justify-center pointer-events-none"
-        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        style={{
+          paddingBottom: "max(env(safe-area-inset-bottom) - 10px, 6px)",
+        }}
       >
         <div
           ref={bottomBarRef}
-          className="pointer-events-auto relative flex items-stretch w-[calc(100%-24px)] max-w-[440px] mx-3 mb-3 px-1.5 py-1 bg-white/[0.06] backdrop-blur-xl border border-white/15 rounded-full shadow-[0_8px_32px_var(--shadow)]"
+          onPointerDown={beginLongPress}
+          onPointerMove={moveLongPress}
+          onPointerUp={endLongPress}
+          onPointerCancel={endLongPress}
+          onPointerLeave={endLongPress}
+          onContextMenu={(e) => e.preventDefault()}
+          style={{ WebkitTouchCallout: "none", userSelect: "none" }}
+          className="pointer-events-auto relative flex items-stretch w-[calc(100%-24px)] max-w-[440px] mx-3 mb-1 px-1.5 py-1 bg-white/[0.06] backdrop-blur-xl border border-white/15 rounded-full shadow-[0_8px_32px_var(--shadow)]"
         >
           {/* Single sliding indicator pill - measured from each tab's
                 offsetLeft / width relative to the bar. Draggable: hold
@@ -1106,6 +1280,10 @@ export default function Navbar() {
                 prefetch
                 onClick={(e) => {
                   e.preventDefault();
+                  if (longPressFired.current) {
+                    longPressFired.current = false;
+                    return;
+                  }
                   handleNavClick(tab.slug);
                 }}
                 className="relative flex flex-col items-center justify-center flex-1 py-2 cursor-pointer"
@@ -1131,7 +1309,13 @@ export default function Navbar() {
             ref={(el) => {
               bottomTabRefs.current["__more__"] = el;
             }}
-            onClick={() => setOpenMore((v) => !v)}
+            onClick={() => {
+              if (longPressFired.current) {
+                longPressFired.current = false;
+                return;
+              }
+              setOpenMore((v) => !v);
+            }}
             className="relative flex flex-col items-center justify-center flex-1 py-2 cursor-pointer"
           >
             <span className="relative inline-flex items-center justify-center">
@@ -1287,6 +1471,106 @@ export default function Navbar() {
             </div>
             </div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* MOBILE TAB-BAR EDITOR - opened by long-pressing the bottom bar. */}
+      <AnimatePresence>
+        {editorOpen && (
+          <>
+            <motion.div
+              key="tabedit-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setEditorOpen(false)}
+              className="md:hidden fixed inset-0 bg-black/70 z-50"
+            />
+            <motion.div
+              key="tabedit-sheet"
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", stiffness: 380, damping: 36 }}
+              className="md:hidden fixed bottom-0 inset-x-0 z-50 max-h-[78vh] flex flex-col overflow-hidden bg-[var(--surface-2)] border-t border-white/10 rounded-t-3xl shadow-[0_-12px_40px_var(--shadow)]"
+              style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+            >
+              <div className="shrink-0">
+                <div className="flex justify-center pt-2">
+                  <span className="w-10 h-1 rounded-full bg-white/20" />
+                </div>
+                <div className="px-4 pt-3 pb-1 flex items-center justify-between">
+                  <span className="text-[11px] tracking-[0.1em] text-white/40 font-medium">
+                    Edit tab bar
+                  </span>
+                  <button
+                    onClick={applyDraft}
+                    className="px-3 py-1.5 rounded-[10px] bg-teal-500/15 hover:bg-teal-500/25 text-teal-300 border border-teal-500/30 transition text-[12.5px] font-semibold"
+                  >
+                    Done
+                  </button>
+                </div>
+                <div className="px-4 pb-3 flex items-center justify-between">
+                  <span className="text-[12px] text-white/50 leading-snug">
+                    Choose {MIN_TABS}–{MAX_TABS} shortcuts for the bottom bar.
+                    The rest stay under More.
+                  </span>
+                  <span className="shrink-0 ml-3 text-[12px] tabular-nums text-white/40 font-semibold">
+                    {draftIds.length}/{MAX_TABS}
+                  </span>
+                </div>
+              </div>
+
+              <div className="overflow-y-auto flex-1 min-h-0 px-3 pb-4 grid grid-cols-1 gap-1">
+                {TAB_CATALOG.map((item) => {
+                  const selected = draftIds.includes(item.id);
+                  const atMax = draftIds.length >= MAX_TABS;
+                  const atMin = draftIds.length <= MIN_TABS;
+                  const disabled = selected ? atMin : atMax;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => toggleDraft(item.id)}
+                      disabled={disabled}
+                      className={`flex items-center gap-4 px-4 py-3 rounded-xl transition text-left ${
+                        selected
+                          ? "bg-teal-500/10 text-white"
+                          : "text-white/80 hover:bg-white/5"
+                      } ${disabled ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}`}
+                    >
+                      <i
+                        className={`${item.icon} w-5 text-center text-[15px] ${
+                          selected ? "text-teal-300" : "text-white/55"
+                        }`}
+                      />
+                      <span className="flex-1 text-[14px] font-medium">
+                        {item.label}
+                      </span>
+                      <span
+                        aria-hidden
+                        className={`shrink-0 w-5 h-5 rounded-full border flex items-center justify-center transition ${
+                          selected
+                            ? "bg-teal-500/80 border-teal-400 text-white"
+                            : "border-white/25 text-transparent"
+                        }`}
+                      >
+                        <i className="fa-solid fa-check text-[10px]" />
+                      </span>
+                    </button>
+                  );
+                })}
+
+                <button
+                  type="button"
+                  onClick={() => setDraftIds(DEFAULT_BOTTOM_IDS)}
+                  className="mt-1 mx-1 self-start text-[12.5px] text-white/45 hover:text-white/70 transition"
+                >
+                  Reset to default
+                </button>
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </>
