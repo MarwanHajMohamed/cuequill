@@ -1298,20 +1298,14 @@ export default function Navbar() {
                   }
                   handleNavClick(tab.slug);
                 }}
-                className="relative flex flex-col items-center justify-center flex-1 py-2 cursor-pointer"
+                aria-label={tab.label}
+                className="relative flex flex-col items-center justify-center flex-1 py-3 cursor-pointer"
               >
                 <i
-                  className={`relative ${tab.icon} text-[15px] transition-colors ${
+                  className={`relative ${tab.icon} text-[18px] transition-colors ${
                     active ? "text-teal-300" : "text-white/55"
                   }`}
                 />
-                <span
-                  className={`relative text-[10px] mt-0.5 transition-colors ${
-                    active ? "text-teal-300" : "text-white/55"
-                  }`}
-                >
-                  {tab.label}
-                </span>
               </Link>
             );
           })}
@@ -1328,26 +1322,18 @@ export default function Navbar() {
               }
               setOpenMore((v) => !v);
             }}
-            className="relative flex flex-col items-center justify-center flex-1 py-2 cursor-pointer"
+            aria-label="More"
+            className="relative flex flex-col items-center justify-center flex-1 py-3 cursor-pointer"
           >
             <span className="relative inline-flex items-center justify-center">
               <i
-                className={`relative fa-solid fa-ellipsis text-[15px] transition-colors ${
+                className={`relative fa-solid fa-ellipsis text-[18px] transition-colors ${
                   activeBottomKey === "__more__"
                     ? "text-teal-300"
                     : "text-white/55"
                 }`}
               />
               <NavCountBadge count={unclaimedRewards} corner />
-            </span>
-            <span
-              className={`relative text-[10px] mt-0.5 transition-colors ${
-                activeBottomKey === "__more__"
-                  ? "text-teal-300"
-                  : "text-white/55"
-              }`}
-            >
-              More
             </span>
           </button>
         </motion.div>
