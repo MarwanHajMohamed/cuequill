@@ -126,6 +126,18 @@ export interface IUser extends Document {
   // sent, so the hourly cron doesn't spam the same person more than
   // once a day.
   emailAffirmationsLastSentDate?: string;
+  // Native push notification preferences (iOS app). Opt-in - a device must
+  // also be registered (see PushDevice) and the user must have granted OS
+  // permission for anything to actually arrive.
+  //   pushEconReminder    - heads-up the day before FOMC/CPI/PPI/PCE events.
+  //   pushJournalReminder - end-of-day nudge to log the day's trades.
+  pushEconReminder?: boolean;
+  pushJournalReminder?: boolean;
+  // Dedupe stamps for the push crons (same idea as the email one above).
+  // Econ key is "yyyy-MM-dd:<kind>" so each distinct event fires once;
+  // journal is a plain local yyyy-MM-dd.
+  pushEconLastSentKey?: string;
+  pushJournalLastSentDate?: string;
   // Customisable dashboard: ordered list of enabled widget ids. Empty /
   // unset means "use the client default layout". Validated client-side
   // against the widget registry before render.
@@ -281,6 +293,11 @@ const UserSchema = new Schema<IUser>({
   chatMonthTokens: { type: Number, default: 0 },
   emailAffirmationsReminder: { type: Boolean, default: true },
   emailAffirmationsLastSentDate: { type: String, default: "" },
+  // Native push prefs - opt-IN, so default false (email stays opt-out).
+  pushEconReminder: { type: Boolean, default: false },
+  pushJournalReminder: { type: Boolean, default: false },
+  pushEconLastSentKey: { type: String, default: "" },
+  pushJournalLastSentDate: { type: String, default: "" },
   dashboardLayout: { type: [String], default: undefined },
   dashboardGlanceTiles: { type: [String], default: undefined },
   dashboardWidgetSizes: { type: Schema.Types.Mixed, default: undefined },

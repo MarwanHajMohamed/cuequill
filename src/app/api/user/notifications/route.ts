@@ -8,7 +8,11 @@ import { User } from "@/lib/models/User";
 // PATCH → merge partial prefs. Only known keys are accepted so a
 // tampered payload can't set arbitrary schema fields.
 
-const ALLOWED_KEYS = new Set(["emailAffirmationsReminder"]);
+const ALLOWED_KEYS = new Set([
+  "emailAffirmationsReminder",
+  "pushEconReminder",
+  "pushJournalReminder",
+]);
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -17,12 +21,21 @@ export async function GET() {
   }
   await connectDB();
   const user = await User.findById(session.user.id)
-    .select("emailAffirmationsReminder")
-    .lean<{ emailAffirmationsReminder?: boolean }>();
-  // Default = true. Explicitly-false only when the user has opted out.
-  const emailAffirmationsReminder =
-    user?.emailAffirmationsReminder !== false;
-  return NextResponse.json({ emailAffirmationsReminder });
+    .select(
+      "emailAffirmationsReminder pushEconReminder pushJournalReminder",
+    )
+    .lean<{
+      emailAffirmationsReminder?: boolean;
+      pushEconReminder?: boolean;
+      pushJournalReminder?: boolean;
+    }>();
+  // Email reminder defaults ON (opt-out). Push reminders default OFF
+  // (opt-in) - they need OS permission + a registered device anyway.
+  return NextResponse.json({
+    emailAffirmationsReminder: user?.emailAffirmationsReminder !== false,
+    pushEconReminder: user?.pushEconReminder === true,
+    pushJournalReminder: user?.pushJournalReminder === true,
+  });
 }
 
 export async function PATCH(req: NextRequest) {
