@@ -20,7 +20,10 @@ they do in Safari.
 | `src/app/NativeBridge.tsx` | Web-side native integration (no-op outside the shell) |
 
 Installed plugins: `app`, `haptics`, `keyboard`, `splash-screen`,
-`status-bar`.
+`status-bar`, `push-notifications`.
+
+Native push notifications (APNs) have their own setup guide:
+[`docs/push-notifications.md`](./push-notifications.md).
 
 ## Prerequisites (one-time)
 
