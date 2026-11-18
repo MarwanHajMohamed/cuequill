@@ -887,7 +887,7 @@ export default function Navbar() {
         {/* -------- DESKTOP NAV -------- */}
         <div
           ref={desktopBarRef}
-          className={`hidden md:flex flex-col fixed left-4 top-4 bottom-4 z-50 py-4 bg-white/[0.03] backdrop-blur-md rounded-3xl border border-white/10 shadow-[0_2px_24px_var(--shadow-soft)] transition-[width] duration-300 ease-out ${
+          className={`hidden md:flex flex-col fixed left-4 top-4 bottom-4 z-50 py-4 bg-white/[0.03] backdrop-blur-md rounded-3xl border border-white/10 shadow-[0_2px_24px_var(--shadow-soft)] transition-[width,padding] duration-[460ms] ease-[cubic-bezier(0.34,1.4,0.6,1)] ${
             collapsed ? "w-[60px] px-2" : "w-[228px] px-3"
           }`}
         >
@@ -1298,20 +1298,14 @@ export default function Navbar() {
                   }
                   handleNavClick(tab.slug);
                 }}
-                className="relative flex flex-col items-center justify-center flex-1 py-2 cursor-pointer"
+                aria-label={tab.label}
+                className="relative flex flex-col items-center justify-center flex-1 py-3 cursor-pointer"
               >
                 <i
-                  className={`relative ${tab.icon} text-[15px] transition-colors ${
+                  className={`relative ${tab.icon} text-[18px] transition-colors ${
                     active ? "text-teal-300" : "text-white/55"
                   }`}
                 />
-                <span
-                  className={`relative text-[10px] mt-0.5 transition-colors ${
-                    active ? "text-teal-300" : "text-white/55"
-                  }`}
-                >
-                  {tab.label}
-                </span>
               </Link>
             );
           })}
@@ -1328,26 +1322,18 @@ export default function Navbar() {
               }
               setOpenMore((v) => !v);
             }}
-            className="relative flex flex-col items-center justify-center flex-1 py-2 cursor-pointer"
+            aria-label="More"
+            className="relative flex flex-col items-center justify-center flex-1 py-3 cursor-pointer"
           >
             <span className="relative inline-flex items-center justify-center">
               <i
-                className={`relative fa-solid fa-ellipsis text-[15px] transition-colors ${
+                className={`relative fa-solid fa-ellipsis text-[18px] transition-colors ${
                   activeBottomKey === "__more__"
                     ? "text-teal-300"
                     : "text-white/55"
                 }`}
               />
               <NavCountBadge count={unclaimedRewards} corner />
-            </span>
-            <span
-              className={`relative text-[10px] mt-0.5 transition-colors ${
-                activeBottomKey === "__more__"
-                  ? "text-teal-300"
-                  : "text-white/55"
-              }`}
-            >
-              More
             </span>
           </button>
         </motion.div>
