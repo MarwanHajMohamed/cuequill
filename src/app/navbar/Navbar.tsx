@@ -977,7 +977,9 @@ export default function Navbar() {
                       }}
                       onMouseLeave={() => setNavTip(null)}
                       className={`flex items-center rounded-xl cursor-pointer transition-colors ${
-                        collapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2"
+                        collapsed
+                          ? "justify-center px-0 py-2.5"
+                          : "gap-3 px-3 py-2"
                       } ${
                         active
                           ? "bg-white/[0.08] text-white"
@@ -988,9 +990,7 @@ export default function Navbar() {
                         <i
                           className={`${item.icon} w-4 text-center text-[13px]`}
                         />
-                        {collapsed && (
-                          <NavCountBadge count={badge} corner />
-                        )}
+                        {collapsed && <NavCountBadge count={badge} corner />}
                       </span>
                       {!collapsed && <span>{item.label}</span>}
                       {!collapsed && <NavCountBadge count={badge} />}
@@ -1036,7 +1036,9 @@ export default function Navbar() {
                 aria-label="account menu"
                 title={collapsed ? userFullName || "Account" : undefined}
               >
-                <div className={`w-8 h-8 shrink-0 rounded-full bg-gradient-to-br ${avatarGrad} ${avatarRing} border border-white/15 flex items-center justify-center text-[12.5px] font-semibold text-white`}>
+                <div
+                  className={`w-8 h-8 shrink-0 rounded-full bg-gradient-to-br ${avatarGrad} ${avatarRing} border border-white/15 flex items-center justify-center text-[12.5px] font-semibold text-white`}
+                >
                   {userInitial}
                 </div>
                 {!collapsed && (
@@ -1074,7 +1076,9 @@ export default function Navbar() {
                     {/* Identity header */}
                     {session?.user && (
                       <div className="px-4 py-3.5 border-b border-white/10 flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${avatarGrad} ${avatarRing} border border-white/15 flex items-center justify-center text-[14px] font-semibold shrink-0`}>
+                        <div
+                          className={`w-10 h-10 rounded-full bg-gradient-to-br ${avatarGrad} ${avatarRing} border border-white/15 flex items-center justify-center text-[14px] font-semibold shrink-0`}
+                        >
                           {userInitial}
                         </div>
                         <div className="min-w-0 flex-1">
@@ -1335,7 +1339,7 @@ export default function Navbar() {
                   : "text-white/55"
               }`}
             >
-              more
+              More
             </span>
           </button>
         </div>
@@ -1376,9 +1380,7 @@ export default function Navbar() {
               </div>
 
               <div className="px-4 pt-3 pb-3 flex items-center justify-between">
-                <span className="text-[11px] tracking-[0.1em] text-white/40 font-medium">
-                  more
-                </span>
+                <span></span>
                 <button
                   aria-label="close"
                   onPointerDown={(e) => e.stopPropagation()}
@@ -1391,84 +1393,84 @@ export default function Navbar() {
             </div>
 
             <div className="overflow-y-auto flex-1 min-h-0">
-            <div className="px-3 pb-3 grid grid-cols-1 gap-1">
-              {moreItems.map((item) => {
-                const active = isActive(item.slug);
-                const badge =
-                  item.slug === "challenges" ? unclaimedRewards : 0;
-                return (
-                  <Link
-                    key={item.slug}
-                    href={hrefFor(item.slug)}
-                    prefetch
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleNavClick(item.slug);
-                    }}
-                    className={`flex items-center gap-4 px-4 py-3 rounded-xl transition ${
-                      active
-                        ? "bg-teal-500/10 text-white"
-                        : "text-white/80 hover:bg-white/5"
-                    }`}
-                  >
-                    <i
-                      className={`${item.icon} w-5 text-center text-[15px] ${active ? "text-teal-300" : "text-white/55"}`}
-                    />
-                    <span className="text-[14px] font-medium">
-                      {item.label}
-                    </span>
-                    <NavCountBadge count={badge} />
-                  </Link>
-                );
-              })}
-            </div>
-
-            {/* Compact toggles - side by side to save vertical space. */}
-            <div className="mx-4 mb-3 grid grid-cols-2 gap-2">
-              <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-between gap-2">
-                <span className="text-[12.5px] text-white/85 font-medium">
-                  Appearance
-                </span>
-                <ThemeToggle />
+              <div className="px-3 pb-3 grid grid-cols-1 gap-1">
+                {moreItems.map((item) => {
+                  const active = isActive(item.slug);
+                  const badge =
+                    item.slug === "challenges" ? unclaimedRewards : 0;
+                  return (
+                    <Link
+                      key={item.slug}
+                      href={hrefFor(item.slug)}
+                      prefetch
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleNavClick(item.slug);
+                      }}
+                      className={`flex items-center gap-4 px-4 py-3 rounded-xl transition ${
+                        active
+                          ? "bg-teal-500/10 text-white"
+                          : "text-white/80 hover:bg-white/5"
+                      }`}
+                    >
+                      <i
+                        className={`${item.icon} w-5 text-center text-[15px] ${active ? "text-teal-300" : "text-white/55"}`}
+                      />
+                      <span className="text-[14px] font-medium">
+                        {item.label}
+                      </span>
+                      <NavCountBadge count={badge} />
+                    </Link>
+                  );
+                })}
               </div>
-              <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-between gap-2">
-                <span className="text-[12.5px] text-white/85 font-medium">
-                  Simulated
-                </span>
-                <label className="inline-flex items-center cursor-pointer shrink-0">
-                  <input
-                    type="checkbox"
-                    checked={simulated}
-                    onChange={(e) => {
-                      setSimulated(e.target.checked);
-                      window.location.reload();
-                    }}
-                    className="sr-only peer"
-                  />
-                  <div
-                    className="relative w-10 h-5 bg-white/10 rounded-full peer
+
+              {/* Compact toggles - side by side to save vertical space. */}
+              <div className="mx-4 mb-3 grid grid-cols-2 gap-2">
+                <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-between gap-2">
+                  <span className="text-[12.5px] text-white/85 font-medium">
+                    Appearance
+                  </span>
+                  <ThemeToggle />
+                </div>
+                <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-between gap-2">
+                  <span className="text-[12.5px] text-white/85 font-medium">
+                    Simulated
+                  </span>
+                  <label className="inline-flex items-center cursor-pointer shrink-0">
+                    <input
+                      type="checkbox"
+                      checked={simulated}
+                      onChange={(e) => {
+                        setSimulated(e.target.checked);
+                        window.location.reload();
+                      }}
+                      className="sr-only peer"
+                    />
+                    <div
+                      className="relative w-10 h-5 bg-white/10 rounded-full peer
                       peer-checked:after:translate-x-full
                       after:content-[''] after:absolute after:top-[2px]
                       after:start-[2px] after:bg-white after:rounded-full
                       after:h-4 after:w-4 after:transition-all
                       peer-checked:bg-teal-500"
-                  />
-                </label>
+                    />
+                  </label>
+                </div>
               </div>
-            </div>
 
-            <div className="px-3 pb-4">
-              <button
-                onClick={() => {
-                  clearAccent();
-                  signOut({ callbackUrl: "/" });
-                }}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-[10px] bg-red-500/10 text-red-300 border border-red-500/25 hover:bg-red-500/20 transition text-[13px] font-medium"
-              >
-                <i className="fa-solid fa-right-from-bracket text-[12px]" />
-                logout
-              </button>
-            </div>
+              <div className="px-3 pb-4">
+                <button
+                  onClick={() => {
+                    clearAccent();
+                    signOut({ callbackUrl: "/" });
+                  }}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-[10px] bg-red-500/10 text-red-300 border border-red-500/25 hover:bg-red-500/20 transition text-[13px] font-medium"
+                >
+                  <i className="fa-solid fa-right-from-bracket text-[12px]" />
+                  logout
+                </button>
+              </div>
             </div>
           </motion.div>
         )}
