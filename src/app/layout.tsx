@@ -10,6 +10,7 @@ import { SidebarProvider } from "./navbar/SidebarContext";
 import { ToastProvider } from "@/hooks/useToast";
 import PWARegister from "./PWARegister";
 import NativeBridge from "./NativeBridge";
+import PushRegister from "./PushRegister";
 import CookieConsent from "./CookieConsent";
 import DocumentTitle from "./DocumentTitle";
 
@@ -122,6 +123,7 @@ export default function RootLayout({
             <DocumentTitle />
             <PWARegister />
             <NativeBridge />
+            <PushRegister />
             <CookieConsent />
           </ToastProvider>
         </Providers>
