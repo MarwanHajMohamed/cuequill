@@ -1242,7 +1242,14 @@ export default function Navbar() {
           onPointerCancel={endLongPress}
           onPointerLeave={endLongPress}
           onContextMenu={(e) => e.preventDefault()}
-          style={{ WebkitTouchCallout: "none", userSelect: "none" }}
+          style={{
+            WebkitTouchCallout: "none",
+            userSelect: "none",
+            WebkitUserSelect: "none",
+            // Kill the grey/blue iOS tap-highlight flash on press-and-hold
+            // (inherited by the tab links / More button inside).
+            WebkitTapHighlightColor: "transparent",
+          }}
           animate={{ scale: pressing ? 1.035 : 1 }}
           transition={{ type: "spring", stiffness: 500, damping: 30 }}
           className="pointer-events-auto relative flex items-stretch w-[calc(100%-24px)] max-w-[440px] mx-3 mb-1 px-1.5 py-1 bg-white/[0.06] backdrop-blur-xl border border-white/15 rounded-full shadow-[0_8px_32px_var(--shadow)]"
