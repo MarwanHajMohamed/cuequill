@@ -887,7 +887,7 @@ export default function Navbar() {
         {/* -------- DESKTOP NAV -------- */}
         <div
           ref={desktopBarRef}
-          className={`hidden md:flex flex-col fixed left-4 top-4 bottom-4 z-50 py-4 bg-white/[0.03] backdrop-blur-md rounded-3xl border border-white/10 shadow-[0_2px_24px_var(--shadow-soft)] transition-[width] duration-300 ease-out ${
+          className={`hidden md:flex flex-col fixed left-4 top-4 bottom-4 z-50 py-4 bg-white/[0.03] backdrop-blur-md rounded-3xl border border-white/10 shadow-[0_2px_24px_var(--shadow-soft)] transition-[width,padding] duration-[460ms] ease-[cubic-bezier(0.34,1.4,0.6,1)] ${
             collapsed ? "w-[60px] px-2" : "w-[228px] px-3"
           }`}
         >

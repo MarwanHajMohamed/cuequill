@@ -760,7 +760,9 @@ body {
 @media (min-width: 768px) {
   .content-shell {
     padding-left: 252px;
-    transition: padding-left 0.3s ease;
+    /* Springy easing (slight overshoot) matched to the sidebar's own
+       transition so the content and the sidebar move as one. */
+    transition: padding-left 0.46s cubic-bezier(0.34, 1.4, 0.6, 1);
   }
   :root.nav-collapsed .content-shell {
     padding-left: 84px;
@@ -769,7 +771,7 @@ body {
      the sidebar (full width minus the rail) and animates with it. */
   .market-alerts-bar {
     left: 244px;
-    transition: left 0.3s ease;
+    transition: left 0.46s cubic-bezier(0.34, 1.4, 0.6, 1);
   }
   :root.nav-collapsed .market-alerts-bar {
     left: 76px;
