@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { toBlob } from "html-to-image";
 import { CARD_SKINS, skinById, type CardSkin } from "@/lib/cardSkins";
 import { SHARE_FONT_FACE_CSS } from "@/lib/shareFont";
 import { useScrollLock } from "@/hooks/useScrollLock";
@@ -129,6 +128,10 @@ export default function ShareImageModal({
     // SVG in time). Running the capture a few times and keeping the last
     // result is the established workaround; the earlier passes warm the
     // image cache so the final one contains the logo.
+    // Load html-to-image on demand (it's sizeable and only needed when the
+    // user actually exports a card), rather than bundling it into every page
+    // that can open a share modal.
+    const { toBlob } = await import("html-to-image");
     let blob: Blob | null = null;
     for (let i = 0; i < 3; i++) {
       blob = await toBlob(node, opts);

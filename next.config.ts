@@ -3,7 +3,20 @@ import { withSentryConfig } from "@sentry/nextjs";
 import withBundleAnalyzerInit from "@next/bundle-analyzer";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Tree-shake heavy barrel-exporting packages so routes only pull the
+  // pieces they use instead of the whole library.
+  experimental: {
+    optimizePackageImports: [
+      "recharts",
+      "framer-motion",
+      "date-fns",
+      "@mui/x-charts",
+      "@dnd-kit/core",
+      "@dnd-kit/sortable",
+      "react-markdown",
+      "react-select",
+    ],
+  },
 };
 
 // Bundle analyzer - only active when ANALYZE=true (e.g. `ANALYZE=true npm run

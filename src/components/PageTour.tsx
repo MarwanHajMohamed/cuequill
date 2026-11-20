@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { driver, type Config } from "driver.js";
+import type { Config } from "driver.js";
 import "driver.js/dist/driver.css";
 import "./page-tour.css";
 import { TOURS } from "@/lib/tutorials";
@@ -28,7 +28,10 @@ export default function PageTour({ pageId }: { pageId: string }) {
 
     let cancelled = false;
 
-    const launch = () => {
+    const launch = async () => {
+      // Load driver.js on demand - the tour runs at most once per page, so it
+      // shouldn't sit in the bundle of every page that mounts PageTour.
+      const { driver } = await import("driver.js");
       const config: Config = {
         showProgress: tour.steps.length > 1,
         allowClose: true,
