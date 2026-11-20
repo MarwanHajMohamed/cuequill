@@ -178,9 +178,11 @@
   display: none !important;
 }
 
+/* Neighboring-month cells stay in the layout but visually fade so the
+   active month stands out - same treatment as the dashboard calendar. */
 .react-calendar.custom-calendar_full-view
   .react-calendar__month-view__days__day--neighboringMonth {
-  visibility: hidden !important;
+  opacity: 0.25 !important;
   pointer-events: none !important;
 }
 
