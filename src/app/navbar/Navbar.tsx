@@ -31,6 +31,7 @@ import ProTag from "@/components/ProTag";
 import { isMarketOpenAt } from "@/lib/marketHolidays";
 import { useSidebar } from "./SidebarContext";
 import { hapticTap } from "@/lib/haptics";
+import QuillAIIcon from "./QuillAIIcon";
 
 // Small chevron button that collapses / expands the desktop sidebar.
 function CollapseToggle({
@@ -130,6 +131,23 @@ const BOTTOM_TAB_IDS = [
   "pricing",
   "settings",
 ];
+// Renders a nav item's glyph: the custom Quill AI SVG for the chat item,
+// otherwise the item's Font Awesome icon. `rest` carries the sizing/colour
+// classes (the FA icon class is applied only to the <i> so it can't leak a
+// phantom glyph onto the SVG span).
+function NavIcon({
+  slug,
+  iconClass,
+  rest,
+}: {
+  slug: string;
+  iconClass: string;
+  rest: string;
+}) {
+  if (slug === "chat") return <QuillAIIcon className={rest} />;
+  return <i className={`${iconClass} ${rest}`} />;
+}
+
 const DEFAULT_BOTTOM_IDS = ["home", "trades", "calendar", "chat"];
 const BOTTOM_TABS_KEY = "cuequill:bottom-tab-ids";
 const MIN_TABS = 2;
@@ -993,8 +1011,10 @@ export default function Navbar() {
                       }`}
                     >
                       <span className="relative flex items-center justify-center">
-                        <i
-                          className={`${item.icon} w-4 text-center text-[13px]`}
+                        <NavIcon
+                          slug={item.slug}
+                          iconClass={item.icon}
+                          rest="w-4 text-center text-[13px]"
                         />
                         {collapsed && <NavCountBadge count={badge} corner />}
                       </span>
@@ -1308,8 +1328,10 @@ export default function Navbar() {
                 aria-label={tab.label}
                 className="relative flex flex-col items-center justify-center flex-1 py-3 cursor-pointer"
               >
-                <i
-                  className={`relative ${tab.icon} text-[18px] transition-colors ${
+                <NavIcon
+                  slug={tab.slug}
+                  iconClass={tab.icon}
+                  rest={`relative text-[18px] transition-colors ${
                     active ? "text-teal-300" : "text-white/55"
                   }`}
                 />
@@ -1414,8 +1436,10 @@ export default function Navbar() {
                           : "text-white/80 hover:bg-white/5"
                       }`}
                     >
-                      <i
-                        className={`${item.icon} w-5 text-center text-[15px] ${active ? "text-teal-300" : "text-white/55"}`}
+                      <NavIcon
+                        slug={item.slug}
+                        iconClass={item.icon}
+                        rest={`w-5 text-center text-[15px] ${active ? "text-teal-300" : "text-white/55"}`}
                       />
                       <span className="text-[14px] font-medium">
                         {item.label}
@@ -1542,8 +1566,10 @@ export default function Navbar() {
                           : "text-white/80 hover:bg-white/5"
                       } ${disabled ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}`}
                     >
-                      <i
-                        className={`${item.icon} w-5 text-center text-[15px] ${
+                      <NavIcon
+                        slug={item.slug}
+                        iconClass={item.icon}
+                        rest={`w-5 text-center text-[15px] ${
                           selected ? "text-teal-300" : "text-white/55"
                         }`}
                       />
