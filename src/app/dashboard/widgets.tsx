@@ -1,9 +1,21 @@
 "use client";
 
 import React from "react";
+import dynamic from "next/dynamic";
 import DashboardStats from "./components/stats/DashboardStats";
-import DashboardEquity from "./components/stats/DashboardEquity";
-import DashboardBalance from "./components/stats/DashboardBalance";
+// The two recharts-backed widgets are code-split so the (large) charting
+// library loads with the widget, not with the dashboard's initial bundle.
+const chartWidgetLoading = () => (
+  <div className="h-full w-full rounded-2xl bg-white/[0.03] animate-pulse" />
+);
+const DashboardEquity = dynamic(
+  () => import("./components/stats/DashboardEquity"),
+  { ssr: false, loading: chartWidgetLoading },
+);
+const DashboardBalance = dynamic(
+  () => import("./components/stats/DashboardBalance"),
+  { ssr: false, loading: chartWidgetLoading },
+);
 import DashboardChallenges from "./components/stats/DashboardChallenges";
 import DashboardRiskBudget from "./components/insights/DashboardRiskBudget";
 import DashboardOpenPositions from "./components/stats/DashboardOpenPositions";

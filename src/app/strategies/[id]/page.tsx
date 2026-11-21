@@ -1,6 +1,7 @@
 "use client";
 
 import React, { use, useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -16,8 +17,10 @@ import { useToast } from "@/hooks/useToast";
 import { Skeleton } from "@/components/Loaders";
 import { fileToDownscaledDataUrl } from "@/lib/imageDataUrl";
 import type { StrategyExample, ExampleOutcome } from "@/lib/strategySeed";
-import StrategyStats from "./StrategyStats";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+// recharts-backed; code-split so the charting library isn't in the route's
+// initial bundle.
+const StrategyStats = dynamic(() => import("./StrategyStats"), { ssr: false });
 import { useScrollLock } from "@/hooks/useScrollLock";
 
 type Direction = "CALL" | "PUT" | "BOTH";

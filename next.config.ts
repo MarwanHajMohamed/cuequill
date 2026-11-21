@@ -10,7 +10,6 @@ const nextConfig: NextConfig = {
       "recharts",
       "framer-motion",
       "date-fns",
-      "@mui/x-charts",
       "@dnd-kit/core",
       "@dnd-kit/sortable",
       "react-markdown",
@@ -39,5 +38,14 @@ export default process.env.SENTRY_DSN
       silent: !process.env.CI,
       widenClientFileUpload: true,
       disableLogger: true,
+      // Tree-shake code we don't use from the client SDK. We don't use
+      // Session Replay, so drop all of its helpers; also strip debug-log
+      // statements. Trims the Sentry client bundle.
+      bundleSizeOptimizations: {
+        excludeDebugStatements: true,
+        excludeReplayShadowDom: true,
+        excludeReplayIframe: true,
+        excludeReplayWorker: true,
+      },
     })
   : withAnalyzer;

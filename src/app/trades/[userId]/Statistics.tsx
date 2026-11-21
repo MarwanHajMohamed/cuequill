@@ -1,8 +1,7 @@
 "use client";
 
 import CustomizeButton from "@/components/CustomizeButton";
-import Bar from "@/app/dashboard/components/charts/Bar";
-import Pie from "@/app/dashboard/components/charts/Pie";
+import dynamic from "next/dynamic";
 import { TAG_KIND_BY_LABEL } from "@/app/data/tradeTags";
 import { Trade } from "@/app/types/Trades";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
@@ -14,7 +13,7 @@ import React, {
   useState,
 } from "react";
 import { createPortal } from "react-dom";
-import EquityCurve from "./EquityCurve";
+const EquityCurve = dynamic(() => import("./EquityCurve"), { ssr: false });
 import { tradeNetPL } from "@/lib/helpers/tradeNet";
 import { motion, AnimatePresence } from "framer-motion";
 import ProGate from "@/components/ProGate";
