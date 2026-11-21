@@ -7,17 +7,16 @@ import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { format } from "date-fns";
 import { AnimatePresence, motion } from "framer-motion";
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  ReferenceLine,
-  Tooltip as ReTooltip,
-} from "recharts";
+import dynamic from "next/dynamic";
+
+// recharts is heavy; code-split the report chart so it loads with the chart
+// rather than in the reports route's initial bundle.
+const ReportChart = dynamic(() => import("./ReportChart"), {
+  ssr: false,
+  loading: () => (
+    <div className="shrink-0 h-[300px] rounded-xl border border-white/10 bg-[var(--surface-2)] animate-pulse" />
+  ),
+});
 import { withAuth } from "@/lib/withAuth";
 import { useTrades } from "@/hooks/useTrades";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
@@ -541,69 +540,6 @@ function ScrollTable({
           </div>,
           document.body,
         )}
-    </div>
-  );
-}
-
-// Net-P/L bar chart for single-category aggregate reports: first column
-// is the category, the "Net P/L" column is the value. Bars are tinted by
-// sign, matching the table.
-function ReportChart({ table }: { table: ReportTable }) {
-  const netIdx = table.columns.indexOf("Net P/L");
-  if (netIdx < 0) return null;
-
-  const data = table.rows.map((r) => ({
-    label: String(r[0]),
-    net: typeof r[netIdx] === "number" ? (r[netIdx] as number) : 0,
-  }));
-  // Angle the labels once they'd collide, and reserve enough axis height
-  // for the longest one so nothing gets clipped.
-  const angled = data.length > 6;
-  const longest = data.reduce((m, d) => Math.max(m, d.label.length), 0);
-  const axisH = angled ? Math.min(120, 30 + longest * 6) : 24;
-
-  return (
-    <div className="shrink-0 h-[300px] rounded-xl border border-white/10 bg-[var(--surface-2)] p-3">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 8, right: 8, left: 4, bottom: 4 }}>
-          <CartesianGrid stroke="var(--hairline)" vertical={false} />
-          <XAxis
-            dataKey="label"
-            tick={{ fontSize: 10, fill: "var(--foreground)" }}
-            interval={0}
-            angle={angled ? -35 : 0}
-            textAnchor={angled ? "end" : "middle"}
-            height={axisH}
-          />
-          <YAxis
-            tick={{ fontSize: 10, fill: "var(--foreground)" }}
-            width={52}
-            tickFormatter={(v) => fmtUsd(Number(v))}
-          />
-          <ReferenceLine y={0} stroke="var(--hairline)" />
-          <ReTooltip
-            cursor={{ fill: "rgb(var(--fg-rgb) / 0.05)" }}
-            contentStyle={{
-              background: "var(--surface)",
-              border: "1px solid var(--hairline)",
-              borderRadius: 8,
-              fontSize: 12,
-              color: "var(--foreground)",
-            }}
-            // Recharts colours the item/label text inline (black by default),
-            // overriding contentStyle - set them explicitly so the text stays
-            // legible in dark mode.
-            itemStyle={{ color: "var(--foreground)" }}
-            labelStyle={{ color: "var(--foreground)" }}
-            formatter={(v: number | string) => [fmtUsd(Number(v)), "Net P/L"]}
-          />
-          <Bar dataKey="net" radius={[3, 3, 0, 0]}>
-            {data.map((d, i) => (
-              <Cell key={i} fill={d.net >= 0 ? "#22c55e" : "#ef4444"} />
-            ))}
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
     </div>
   );
 }
