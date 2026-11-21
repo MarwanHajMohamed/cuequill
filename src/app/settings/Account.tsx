@@ -3,7 +3,17 @@
 import { useSession, signOut } from "next-auth/react";
 import React, { useEffect, useMemo, useState } from "react";
 import { GroupBase, InputProps, components } from "react-select";
-import TimezoneSelect, { type ITimezone } from "react-timezone-select";
+import dynamic from "next/dynamic";
+import { type ITimezone } from "react-timezone-select";
+
+// The timezone picker ships a full tz database (~160 kB). Load it lazily so
+// it only downloads on the Account tab, not with the rest of settings.
+const TimezoneSelect = dynamic(() => import("./TimezoneSelectLazy"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-10 rounded-xl bg-white/[0.03] border border-white/10" />
+  ),
+});
 import { useQueryClient } from "@tanstack/react-query";
 import ProTag from "@/components/ProTag";
 import { useProfile } from "@/hooks/useProfile";
