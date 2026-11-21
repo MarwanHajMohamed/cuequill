@@ -139,15 +139,12 @@ function NavIcon({
   slug,
   iconClass,
   rest,
-  active = false,
 }: {
   slug: string;
   iconClass: string;
   rest: string;
-  active?: boolean;
 }) {
-  if (slug === "chat")
-    return <QuillAIIcon className={rest} active={active} />;
+  if (slug === "chat") return <QuillAIIcon className={rest} />;
   return <i className={`${iconClass} ${rest}`} />;
 }
 
@@ -1018,7 +1015,6 @@ export default function Navbar() {
                           slug={item.slug}
                           iconClass={item.icon}
                           rest="w-4 text-center text-[13px]"
-                          active={active}
                         />
                         {collapsed && <NavCountBadge count={badge} corner />}
                       </span>
@@ -1338,7 +1334,6 @@ export default function Navbar() {
                   rest={`relative text-[18px] transition-colors ${
                     active ? "text-teal-300" : "text-white/55"
                   }`}
-                  active={active}
                 />
               </Link>
             );
@@ -1445,7 +1440,6 @@ export default function Navbar() {
                         slug={item.slug}
                         iconClass={item.icon}
                         rest={`w-5 text-center text-[15px] ${active ? "text-teal-300" : "text-white/55"}`}
-                        active={active}
                       />
                       <span className="text-[14px] font-medium">
                         {item.label}
@@ -1578,7 +1572,6 @@ export default function Navbar() {
                         rest={`w-5 text-center text-[15px] ${
                           selected ? "text-teal-300" : "text-white/55"
                         }`}
-                        active={selected}
                       />
                       <span className="flex-1 text-[14px] font-medium">
                         {item.label}
