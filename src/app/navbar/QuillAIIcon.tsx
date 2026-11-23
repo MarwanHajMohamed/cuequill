@@ -4,7 +4,12 @@ import React from "react";
 // chat/Quill AI item. Sizes to the surrounding font-size (height: 1.3em) so the
 // same `text-[Npx]` utility classes that size the other nav icons size this
 // too; keeps its own flat fill rather than tinting with state.
-export default function QuillAIIcon({ className }: { className?: string }) {
+export default function QuillAIIcon({
+  className,
+}: {
+  className?: string;
+  active?: boolean;
+}) {
   return (
     <span
       aria-hidden

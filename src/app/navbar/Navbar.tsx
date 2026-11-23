@@ -32,6 +32,7 @@ import { isMarketOpenAt } from "@/lib/marketHolidays";
 import { useSidebar } from "./SidebarContext";
 import { hapticTap } from "@/lib/haptics";
 import QuillAIIcon from "./QuillAIIcon";
+import HomeIcon from "./HomeIcon";
 
 // Small chevron button that collapses / expands the desktop sidebar.
 function CollapseToggle({
@@ -126,7 +127,18 @@ const BOTTOM_TAB_IDS = [
   "pricing",
   "settings",
 ];
-// Renders a nav item's glyph: the custom Quill AI SVG for the chat item,
+// Custom SVG glyphs keyed by nav slug. Each takes the sizing classes and the
+// active flag (so it can animate on the active state); everything else falls
+// back to its Font Awesome icon.
+const CUSTOM_NAV_ICONS: Record<
+  string,
+  React.ComponentType<{ className?: string; active?: boolean }>
+> = {
+  "/": HomeIcon,
+  chat: QuillAIIcon,
+};
+
+// Renders a nav item's glyph: a custom SVG for slugs in CUSTOM_NAV_ICONS,
 // otherwise the item's Font Awesome icon. `rest` carries the sizing/colour
 // classes (the FA icon class is applied only to the <i> so it can't leak a
 // phantom glyph onto the SVG span).
@@ -134,12 +146,15 @@ function NavIcon({
   slug,
   iconClass,
   rest,
+  active = false,
 }: {
   slug: string;
   iconClass: string;
   rest: string;
+  active?: boolean;
 }) {
-  if (slug === "chat") return <QuillAIIcon className={rest} />;
+  const Custom = CUSTOM_NAV_ICONS[slug];
+  if (Custom) return <Custom className={rest} active={active} />;
   return <i className={`${iconClass} ${rest}`} />;
 }
 
@@ -1010,6 +1025,7 @@ export default function Navbar() {
                           slug={item.slug}
                           iconClass={item.icon}
                           rest="w-4 text-center text-[13px]"
+                          active={active}
                         />
                         {collapsed && <NavCountBadge count={badge} corner />}
                       </span>
@@ -1329,6 +1345,7 @@ export default function Navbar() {
                   rest={`relative text-[18px] transition-colors ${
                     active ? "text-teal-300" : "text-white/55"
                   }`}
+                  active={active}
                 />
               </Link>
             );
@@ -1435,6 +1452,7 @@ export default function Navbar() {
                         slug={item.slug}
                         iconClass={item.icon}
                         rest={`w-5 text-center text-[15px] ${active ? "text-teal-300" : "text-white/55"}`}
+                        active={active}
                       />
                       <span className="text-[14px] font-medium">
                         {item.label}
