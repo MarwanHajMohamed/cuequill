@@ -33,6 +33,11 @@ import { useSidebar } from "./SidebarContext";
 import { hapticTap } from "@/lib/haptics";
 import QuillAIIcon from "./QuillAIIcon";
 import HomeIcon from "./HomeIcon";
+import TradesIcon from "./TradesIcon";
+import CalendarIcon from "./CalendarIcon";
+import StrategiesIcon from "./StrategiesIcon";
+import ReportsIcon from "./ReportsIcon";
+import BalanceIcon from "./BalanceIcon";
 
 // Small chevron button that collapses / expands the desktop sidebar.
 function CollapseToggle({
@@ -130,11 +135,19 @@ const BOTTOM_TAB_IDS = [
 // Custom SVG glyphs keyed by nav slug. Each takes the sizing classes and the
 // active flag (so it can animate on the active state); everything else falls
 // back to its Font Awesome icon.
+// Custom SVG glyphs keyed by the base of a nav slug (first path segment; "/"
+// -> "home"). Each takes the sizing classes and the active flag; everything
+// else falls back to its Font Awesome icon.
 const CUSTOM_NAV_ICONS: Record<
   string,
   React.ComponentType<{ className?: string; active?: boolean }>
 > = {
-  "/": HomeIcon,
+  home: HomeIcon,
+  trades: TradesIcon,
+  calendar: CalendarIcon,
+  strategies: StrategiesIcon,
+  reports: ReportsIcon,
+  balance: BalanceIcon,
   chat: QuillAIIcon,
 };
 
@@ -153,7 +166,8 @@ function NavIcon({
   rest: string;
   active?: boolean;
 }) {
-  const Custom = CUSTOM_NAV_ICONS[slug];
+  const base = slug.split("/")[0] || "home";
+  const Custom = CUSTOM_NAV_ICONS[base];
   if (Custom) return <Custom className={rest} active={active} />;
   return <i className={`${iconClass} ${rest}`} />;
 }

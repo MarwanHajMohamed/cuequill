@@ -1,9 +1,6 @@
-import React from "react";
+import { NavGlyph } from "./NavGlyph";
 
-// The Quill AI nav glyph. Rendered in place of a Font Awesome icon for the
-// chat/Quill AI item. Sizes to the surrounding font-size (height: 1.3em) so the
-// same `text-[Npx]` utility classes that size the other nav icons size this
-// too; keeps its own flat fill rather than tinting with state.
+// The Quill AI nav glyph.
 export default function QuillAIIcon({
   className,
 }: {
@@ -11,27 +8,18 @@ export default function QuillAIIcon({
   active?: boolean;
 }) {
   return (
-    <span
-      aria-hidden
-      className={className}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <svg
-        viewBox="0 0 44 95"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        style={{ height: "1.3em", width: "auto" }}
-      >
-        <path
-          d="M22.0001 0C22.0001 0 36.9311 26.6865 41.6366 46C42.7187 50.4412 43.9928 57.5 43.9928 57.5C43.9928 57.5 44.1278 60.26 43.2076 60.26C41.2437 60.26 22.0001 92 22.0001 92C22.0001 92 4.32685 60.26 0.792611 60.26C-0.127615 60.26 0.00688121 57.5 0.00688121 57.5C0.00688121 57.5 1.2813 50.4412 2.36354 46C7.06975 26.6868 22.0001 0 22.0001 0Z"
-          fill="#D9D9D9"
-        />
-        <circle cx="22" cy="91.5" r="3" fill="#D9D9D9" />
-      </svg>
-    </span>
+    <NavGlyph className={className} viewBox="0 0 30 64" height="1.3em">
+      <path
+        d="M14.8995 0C14.8995 0 25.0115 18.0736 28.1984 31.1537C28.9312 34.1615 29.7941 38.9421 29.7941 38.9421C29.7941 38.9421 29.8855 40.8113 29.2623 40.8113C27.9322 40.8113 14.8995 62.3074 14.8995 62.3074C14.8995 62.3074 2.93035 40.8113 0.536795 40.8113C-0.0864269 40.8113 0.00466029 38.9421 0.00466029 38.9421C0.00466029 38.9421 0.867762 34.1615 1.6007 31.1537C4.78798 18.0737 14.8995 0 14.8995 0Z"
+        fill="#D9D9D9"
+      />
+      <ellipse
+        cx="14.8994"
+        cy="61.9683"
+        rx="2.03175"
+        ry="2.03176"
+        fill="#D9D9D9"
+      />
+    </NavGlyph>
   );
 }

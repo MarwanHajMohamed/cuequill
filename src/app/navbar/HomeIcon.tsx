@@ -1,9 +1,8 @@
-import React from "react";
+import { NavGlyph } from "./NavGlyph";
 
-// The Home nav glyph. The house base has the window already cut out
-// (evenodd), with a separate "window cover" rect filling it. When the item is
-// active, the cover lifts up, shrinks and fades - revealing the open window -
-// then stays hidden. Reverses smoothly when it goes inactive.
+// The Home nav glyph. The house base has the window cut out (evenodd) with a
+// separate cover path filling it; on the active state the cover lifts up,
+// shrinks and fades - revealing the open window - and reverses when inactive.
 export default function HomeIcon({
   className,
   active = false,
@@ -12,50 +11,32 @@ export default function HomeIcon({
   active?: boolean;
 }) {
   return (
-    <span
-      aria-hidden
-      className={className}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <svg
-        viewBox="0 0 76 64"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        style={{ height: "1em", width: "auto", overflow: "visible" }}
-      >
-        {/* House base (with window hole punched out) */}
-        <path
-          fillRule="evenodd"
-          clipRule="evenodd"
-          d="M63.21 36.5557C63.21 33.7942 60.9714 31.5557 58.21 31.5557H17.6421C14.8807 31.5557 12.6421 33.7942 12.6421 36.5557V57.9507C12.6421 61.2644 15.3284 63.9507 18.6421 63.9507H27.0248C28.6817 63.9507 30.0248 62.6076 30.0248 60.9507V54.5495C30.0248 52.8926 31.368 51.5495 33.0248 51.5495H37.926H42.8273C44.4841 51.5495 45.8273 52.8926 45.8273 54.5495V60.9507C45.8273 62.6076 47.1704 63.9507 48.8273 63.9507H57.21C60.5237 63.9507 63.21 61.2644 63.21 57.9507V36.5557ZM20 47C18.8954 47 18 46.1046 18 45V37.5C18 36.3954 18.8954 35.5 20 35.5H26.5248C27.6294 35.5 28.5248 36.3954 28.5248 37.5V45C28.5248 46.1046 27.6294 47 26.5248 47H20Z"
-          fill="#D9D9D9"
-        />
-        {/* Window cover - animates away on active */}
-        <rect
-          x="18"
-          y="35"
-          width="13"
-          height="13"
-          fill="#D9D9D9"
-          style={{
-            transformBox: "fill-box",
-            transformOrigin: "center",
-            transition:
-              "opacity 220ms ease, transform 300ms cubic-bezier(0.34, 1.4, 0.6, 1)",
-            opacity: active ? 0 : 1,
-            transform: active ? "translateY(-9px) scale(0.5)" : "none",
-          }}
-        />
-        {/* Roof */}
-        <path
-          d="M34.0921 3.25774C36.0206 1.43076 39.0411 1.43076 40.9696 3.25774L65.9525 26.9258C69.2338 30.0344 67.0338 35.5556 62.5138 35.5556H12.5479C8.02795 35.5556 5.82792 30.0344 9.1092 26.9258L34.0921 3.25774Z"
-          fill="#D9D9D9"
-        />
-      </svg>
-    </span>
+    <NavGlyph className={className} viewBox="0 0 93 64" height="0.9em">
+      {/* House base (window hole punched out) */}
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M72.1792 36.0438C72.1792 33.491 70.251 31.3428 67.7101 31.0968C52.0995 29.5851 41.7139 29.6597 26.1083 31.115C23.5556 31.353 21.6113 33.5059 21.6113 36.0697V57.9516C21.6113 61.2653 24.2976 63.9516 27.6113 63.9516H35.994C37.6509 63.9516 38.994 62.6085 38.994 60.9516V54.5504C38.994 52.8935 40.3372 51.5504 41.994 51.5504H46.8953H51.7965C53.4534 51.5504 54.7965 52.8935 54.7965 54.5504V60.9516C54.7965 62.6085 56.1397 63.9516 57.7965 63.9516H66.1792C69.4929 63.9516 72.1792 61.2653 72.1792 57.9516V36.0438ZM28.9692 47.0009C27.8647 47.0009 26.9692 46.1055 26.9692 45.0009V37.5009C26.9692 36.3963 27.8647 35.5009 28.9692 35.5009H35.494C36.5986 35.5009 37.494 36.3963 37.494 37.5009V45.0009C37.494 46.1055 36.5986 47.0009 35.494 47.0009H28.9692Z"
+        fill="#D9D9D9"
+      />
+      {/* Window cover - animates away on active */}
+      <path
+        d="M28.9692 35.5009C27.8647 35.5009 26.9692 36.3963 26.9692 37.5009V45.0009C26.9692 46.1055 27.8647 47.0009 28.9692 47.0009H35.494C36.5986 47.0009 37.494 46.1055 37.494 45.0009V37.5009C37.494 36.3963 36.5986 35.5009 35.494 35.5009H28.9692Z"
+        fill="#D9D9D9"
+        style={{
+          transformBox: "fill-box",
+          transformOrigin: "center",
+          transition:
+            "opacity 220ms ease, transform 300ms cubic-bezier(0.34, 1.4, 0.6, 1)",
+          opacity: active ? 0 : 1,
+          transform: active ? "translateY(-9px) scale(0.5)" : "none",
+        }}
+      />
+      {/* Roof */}
+      <path
+        d="M40.3783 4.73941C43.9825 1.94905 49.0175 1.94905 52.6217 4.7394L76.6652 23.3537C79.402 25.4725 76.7571 30.3347 73.4155 29.433C54.2028 24.2482 38.4826 24.4558 18.589 29.9144C15.2781 30.8228 12.7507 26.1285 15.4655 24.0267L40.3783 4.73941Z"
+        fill="#D9D9D9"
+      />
+    </NavGlyph>
   );
 }
