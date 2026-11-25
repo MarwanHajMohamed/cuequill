@@ -38,6 +38,7 @@ import CalendarIcon from "./CalendarIcon";
 import StrategiesIcon from "./StrategiesIcon";
 import ReportsIcon from "./ReportsIcon";
 import BalanceIcon from "./BalanceIcon";
+import StocksIcon from "./StocksIcon";
 
 // Small chevron button that collapses / expands the desktop sidebar.
 function CollapseToggle({
@@ -148,6 +149,7 @@ const CUSTOM_NAV_ICONS: Record<
   strategies: StrategiesIcon,
   reports: ReportsIcon,
   balance: BalanceIcon,
+  stocks: StocksIcon,
   chat: QuillAIIcon,
 };
 
