@@ -1,9 +1,25 @@
 import { NavGlyph } from "./NavGlyph";
 
-// Trades nav glyph: axes + four bars. Bars are kept as separate rects so they
-// can be animated individually later.
+// Trades nav glyph: axes + four bars. On the active state the bars do a
+// staggered bounce - alternating grow-up / shrink-down from the baseline -
+// then settle back. Each bar is its own rect so it can animate independently.
+const BARS: {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  dir: "up" | "down";
+  delay: number;
+}[] = [
+  { x: 13, y: 30, w: 10, h: 21, dir: "up", delay: 0 },
+  { x: 25, y: 21, w: 10, h: 30, dir: "down", delay: 90 },
+  { x: 37, y: 28, w: 10, h: 23, dir: "up", delay: 180 },
+  { x: 49, y: 11, w: 10, h: 40, dir: "down", delay: 270 },
+];
+
 export default function TradesIcon({
   className,
+  active = false,
 }: {
   className?: string;
   active?: boolean;
@@ -20,10 +36,24 @@ export default function TradesIcon({
         d="M3 64C1.34315 64 0 62.6569 0 61L0 54H61C62.6569 54 64 55.3431 64 57V61C64 62.6569 62.6569 64 61 64H3Z"
         fill="#D9D9D9"
       />
-      <rect x="13" y="30" width="10" height="21" rx="2" fill="#D9D9D9" />
-      <rect x="25" y="21" width="10" height="30" rx="2" fill="#D9D9D9" />
-      <rect x="37" y="28" width="10" height="23" rx="2" fill="#D9D9D9" />
-      <rect x="49" y="11" width="10" height="40" rx="2" fill="#D9D9D9" />
+      {BARS.map((b, i) => (
+        <rect
+          key={i}
+          x={b.x}
+          y={b.y}
+          width={b.w}
+          height={b.h}
+          rx="2"
+          fill="#D9D9D9"
+          style={{
+            transformBox: "fill-box",
+            transformOrigin: "bottom",
+            animation: active
+              ? `cq-trade-bar-${b.dir} 640ms cubic-bezier(0.34, 1.4, 0.6, 1) ${b.delay}ms`
+              : "none",
+          }}
+        />
+      ))}
     </NavGlyph>
   );
 }

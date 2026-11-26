@@ -1007,3 +1007,16 @@ body {
     display: none;
   }
 }
+
+/* Trades nav icon: bars bounce (grow up / shrink down) on the active state.
+   transform-origin bottom so each bar scales from the chart baseline. */
+@keyframes cq-trade-bar-up {
+  0% { transform: scaleY(1); }
+  45% { transform: scaleY(1.4); }
+  100% { transform: scaleY(1); }
+}
+@keyframes cq-trade-bar-down {
+  0% { transform: scaleY(1); }
+  45% { transform: scaleY(0.5); }
+  100% { transform: scaleY(1); }
+}
