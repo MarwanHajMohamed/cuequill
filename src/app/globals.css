@@ -1020,3 +1020,12 @@ body {
   45% { transform: scaleY(0.5); }
   100% { transform: scaleY(1); }
 }
+
+/* Balance nav icon: swipe out to the right and back in from the left on the
+   active state (transform-box: fill-box so the % offsets are its own width). */
+@keyframes cq-balance-swipe {
+  0% { transform: translateX(0); opacity: 1; }
+  42% { transform: translateX(170%); opacity: 0; }
+  43% { transform: translateX(-170%); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
+}
