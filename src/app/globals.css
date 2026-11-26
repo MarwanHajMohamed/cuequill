@@ -1039,3 +1039,15 @@ body {
   52% { transform: perspective(140px) rotateX(88deg); opacity: 0; }
   100% { transform: perspective(140px) rotateX(0deg); opacity: 1; }
 }
+
+/* Strategies nav icon: the knight hops off its base (lift + tilt) and lands
+   with a small bounce on the active state. transform-origin bottom so it
+   pivots at its feet; the pedestal stays put. */
+@keyframes cq-strategy-hop {
+  0% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-9px) rotate(-10deg); }
+  50% { transform: translateY(-9px) rotate(5deg); }
+  74% { transform: translateY(0) rotate(0deg); }
+  86% { transform: translateY(-2.5px); }
+  100% { transform: translateY(0); }
+}
