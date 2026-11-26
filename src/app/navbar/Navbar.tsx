@@ -32,6 +32,13 @@ import { isMarketOpenAt } from "@/lib/marketHolidays";
 import { useSidebar } from "./SidebarContext";
 import { hapticTap } from "@/lib/haptics";
 import QuillAIIcon from "./QuillAIIcon";
+import HomeIcon from "./HomeIcon";
+import TradesIcon from "./TradesIcon";
+import CalendarIcon from "./CalendarIcon";
+import StrategiesIcon from "./StrategiesIcon";
+import ReportsIcon from "./ReportsIcon";
+import BalanceIcon from "./BalanceIcon";
+import StocksIcon from "./StocksIcon";
 
 // Small chevron button that collapses / expands the desktop sidebar.
 function CollapseToggle({
@@ -60,26 +67,21 @@ function CollapseToggle({
 
 const CuequillLogo = ({ className = "" }: { className?: string }) => (
   <svg
-    viewBox="16 25 30 52"
+    viewBox="0 0 44 95"
     xmlns="http://www.w3.org/2000/svg"
     className={className}
     fill="none"
     aria-label="Cuequill"
   >
     <path
-      d="M31 27.2C37 39.8 43.5 61.2 40.5 62.6C37.5 64 31 75.2 31 75.2C31 75.2 24.5 64.5 21.5 62.6C18.5 60.7 25 39.8 31 27.2Z"
-      fill="currentColor"
+      d="M22.0003 0C22.0003 0 36.9313 26.6865 41.6369 46C42.7189 50.4412 43.993 57.5 43.993 57.5C43.993 57.5 44.128 60.26 43.2078 60.26C41.2439 60.26 22.0003 92 22.0003 92C22.0003 92 4.32709 60.26 0.792856 60.26C-0.127371 60.26 0.00712535 57.5 0.00712535 57.5C0.00712535 57.5 1.28155 50.4412 2.36378 46C7.06999 26.6868 22.0003 0 22.0003 0Z"
+      fill="#ADADAD"
     />
     <path
-      d="M31 47V75"
-      style={{ stroke: "var(--background)" }}
-      strokeWidth="1.32"
-      strokeLinecap="round"
+      d="M22.2131 0.387227H22.1851L22.0001 92C21.9409 91.8937 4.32261 60.2626 0.793293 60.26C-0.124532 60.2591 0.00623316 57.5114 0.00678282 57.5C0.00678282 57.5 1.28129 50.4412 2.36351 46C7.06109 26.7222 21.9455 0.0976539 22.0001 0C22.0001 0 22.0733 0.133643 22.2131 0.387227ZM22.0636 91.8949C22.0216 91.9641 22.0001 92 22.0001 92L22.0627 91.814C22.063 91.8402 22.0633 91.8672 22.0636 91.8949ZM43.9934 57.5C43.9936 57.5035 44.018 58.0199 43.972 58.6051C43.9271 58.1331 43.8824 57.6542 43.8402 57.2053C43.8462 57.2022 43.8529 57.1994 43.8589 57.1963C43.8829 57.184 43.9059 57.1694 43.9299 57.1568C43.97 57.3753 43.9928 57.4966 43.9934 57.5Z"
+      fill="#D9D9D9"
     />
-    <path
-      d="M31 54.56C31.8616 54.56 32.56 53.8616 32.56 53C32.56 52.1384 31.8616 51.44 31 51.44C30.1384 51.44 29.44 52.1384 29.44 53C29.44 53.8616 30.1384 54.56 31 54.56Z"
-      style={{ fill: "var(--background)" }}
-    />
+    <circle cx="22.0002" cy="91.5" r="3" fill="#D9D9D9" />
   </svg>
 );
 
@@ -131,7 +133,27 @@ const BOTTOM_TAB_IDS = [
   "pricing",
   "settings",
 ];
-// Renders a nav item's glyph: the custom Quill AI SVG for the chat item,
+// Custom SVG glyphs keyed by nav slug. Each takes the sizing classes and the
+// active flag (so it can animate on the active state); everything else falls
+// back to its Font Awesome icon.
+// Custom SVG glyphs keyed by the base of a nav slug (first path segment; "/"
+// -> "home"). Each takes the sizing classes and the active flag; everything
+// else falls back to its Font Awesome icon.
+const CUSTOM_NAV_ICONS: Record<
+  string,
+  React.ComponentType<{ className?: string; active?: boolean }>
+> = {
+  home: HomeIcon,
+  trades: TradesIcon,
+  calendar: CalendarIcon,
+  strategies: StrategiesIcon,
+  reports: ReportsIcon,
+  balance: BalanceIcon,
+  stocks: StocksIcon,
+  chat: QuillAIIcon,
+};
+
+// Renders a nav item's glyph: a custom SVG for slugs in CUSTOM_NAV_ICONS,
 // otherwise the item's Font Awesome icon. `rest` carries the sizing/colour
 // classes (the FA icon class is applied only to the <i> so it can't leak a
 // phantom glyph onto the SVG span).
@@ -139,12 +161,16 @@ function NavIcon({
   slug,
   iconClass,
   rest,
+  active = false,
 }: {
   slug: string;
   iconClass: string;
   rest: string;
+  active?: boolean;
 }) {
-  if (slug === "chat") return <QuillAIIcon className={rest} />;
+  const base = slug.split("/")[0] || "home";
+  const Custom = CUSTOM_NAV_ICONS[base];
+  if (Custom) return <Custom className={rest} active={active} />;
   return <i className={`${iconClass} ${rest}`} />;
 }
 
@@ -1015,6 +1041,7 @@ export default function Navbar() {
                           slug={item.slug}
                           iconClass={item.icon}
                           rest="w-4 text-center text-[13px]"
+                          active={active}
                         />
                         {collapsed && <NavCountBadge count={badge} corner />}
                       </span>
@@ -1334,6 +1361,7 @@ export default function Navbar() {
                   rest={`relative text-[18px] transition-colors ${
                     active ? "text-teal-300" : "text-white/55"
                   }`}
+                  active={active}
                 />
               </Link>
             );
@@ -1440,6 +1468,7 @@ export default function Navbar() {
                         slug={item.slug}
                         iconClass={item.icon}
                         rest={`w-5 text-center text-[15px] ${active ? "text-teal-300" : "text-white/55"}`}
+                        active={active}
                       />
                       <span className="text-[14px] font-medium">
                         {item.label}
