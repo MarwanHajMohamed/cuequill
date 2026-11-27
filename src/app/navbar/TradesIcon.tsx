@@ -29,12 +29,12 @@ export default function TradesIcon({
       {/* Y axis */}
       <path
         d="M0 3C0 1.34315 1.34315 0 3 0H7C8.65685 0 10 1.34315 10 3V64H3C1.34315 64 0 62.6569 0 61V3Z"
-        fill="#D9D9D9"
+        fill="currentColor"
       />
       {/* X axis */}
       <path
         d="M3 64C1.34315 64 0 62.6569 0 61L0 54H61C62.6569 54 64 55.3431 64 57V61C64 62.6569 62.6569 64 61 64H3Z"
-        fill="#D9D9D9"
+        fill="currentColor"
       />
       {BARS.map((b, i) => (
         <rect
@@ -44,7 +44,7 @@ export default function TradesIcon({
           width={b.w}
           height={b.h}
           rx="2"
-          fill="#D9D9D9"
+          fill="currentColor"
           style={{
             transformBox: "fill-box",
             transformOrigin: "bottom",

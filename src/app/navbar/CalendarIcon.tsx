@@ -30,7 +30,7 @@ export default function CalendarIcon({
       {/* Page already behind, revealed while the front flips. Same fill as the
           front so the hand-off as the front fades is seamless (no brightness
           pop). */}
-      <Sheet fill="#D9D9D9" />
+      <Sheet fill="currentColor" />
       {/* Front sheet - flips up over the rings on active */}
       <g
         style={{
@@ -41,16 +41,16 @@ export default function CalendarIcon({
             : "none",
         }}
       >
-        <Sheet fill="#D9D9D9" />
+        <Sheet fill="currentColor" />
       </g>
       {/* Rings / binding - stay put */}
       <path
         d="M10 3C10 1.34315 11.3431 0 13 0H16C17.6569 0 19 1.34315 19 3V8H10V3Z"
-        fill="#D9D9D9"
+        fill="currentColor"
       />
       <path
         d="M44 3C44 1.34315 45.3431 0 47 0H50C51.6569 0 53 1.34315 53 3V8H44V3Z"
-        fill="#D9D9D9"
+        fill="currentColor"
       />
     </NavGlyph>
   );
