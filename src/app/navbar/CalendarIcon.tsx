@@ -27,8 +27,10 @@ export default function CalendarIcon({
 }) {
   return (
     <NavGlyph className={className} viewBox="0 0 64 63" height="1.1em">
-      {/* Page already behind (slightly dimmer), revealed while the front flips */}
-      <Sheet fill="#AEAEAE" />
+      {/* Page already behind, revealed while the front flips. Same fill as the
+          front so the hand-off as the front fades is seamless (no brightness
+          pop). */}
+      <Sheet fill="#D9D9D9" />
       {/* Front sheet - flips up over the rings on active */}
       <g
         style={{

@@ -1037,9 +1037,9 @@ body {
    top edge with perspective for depth. */
 @keyframes cq-cal-flip {
   0% { transform: perspective(150px) rotateX(0deg); opacity: 1; }
-  55% { transform: perspective(150px) rotateX(-95deg); opacity: 1; }
-  72% { transform: perspective(150px) rotateX(-135deg); opacity: 0; }
-  73% { transform: perspective(150px) rotateX(0deg); opacity: 0; }
+  52% { transform: perspective(150px) rotateX(-90deg); opacity: 1; }
+  66% { transform: perspective(150px) rotateX(-112deg); opacity: 0; }
+  67% { transform: perspective(150px) rotateX(0deg); opacity: 0; }
   100% { transform: perspective(150px) rotateX(0deg); opacity: 1; }
 }
 
