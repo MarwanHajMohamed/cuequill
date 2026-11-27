@@ -35,7 +35,7 @@ export default function CalendarIcon({
           transformBox: "fill-box",
           transformOrigin: "top",
           animation: active
-            ? "cq-cal-flip 700ms cubic-bezier(0.45, 0, 0.55, 1)"
+            ? "cq-cal-flip 820ms cubic-bezier(0.5, 0, 0.5, 1)"
             : "none",
         }}
       >

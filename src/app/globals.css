@@ -1030,14 +1030,17 @@ body {
   100% { transform: translateX(0); opacity: 1; }
 }
 
-/* Calendar nav icon: the sheet flips up and over the binding onto the next
-   page on the active state. rotateX around the top edge (the rings), with a
-   little perspective; opacity hides the edge-on midpoint. */
+/* Calendar nav icon: the front sheet flips up and over the binding onto the
+   page behind it. It stays fully opaque while it rotates up past edge-on (so
+   the flip is clearly visible), only fading as it folds away over the top;
+   then it resets behind the page and fades back to rest. rotateX around the
+   top edge with perspective for depth. */
 @keyframes cq-cal-flip {
-  0% { transform: perspective(140px) rotateX(0deg); opacity: 1; }
-  48% { transform: perspective(140px) rotateX(-88deg); opacity: 0; }
-  52% { transform: perspective(140px) rotateX(88deg); opacity: 0; }
-  100% { transform: perspective(140px) rotateX(0deg); opacity: 1; }
+  0% { transform: perspective(150px) rotateX(0deg); opacity: 1; }
+  55% { transform: perspective(150px) rotateX(-95deg); opacity: 1; }
+  72% { transform: perspective(150px) rotateX(-135deg); opacity: 0; }
+  73% { transform: perspective(150px) rotateX(0deg); opacity: 0; }
+  100% { transform: perspective(150px) rotateX(0deg); opacity: 1; }
 }
 
 /* Strategies nav icon: the knight hops off its base (lift + tilt) and lands
