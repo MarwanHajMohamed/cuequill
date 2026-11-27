@@ -1071,10 +1071,11 @@ body {
   100% { transform: perspective(220px) rotateY(360deg); }
 }
 
-/* Stocks nav icon: the front $ coin flips over on the active state. */
+/* Stocks nav icon: the front $ coin flips over vertically (top over bottom)
+   on the active state. */
 @keyframes cq-coin-flip {
-  0% { transform: perspective(120px) rotateY(0deg); }
-  100% { transform: perspective(120px) rotateY(360deg); }
+  0% { transform: perspective(120px) rotateX(0deg); }
+  100% { transform: perspective(120px) rotateX(360deg); }
 }
 
 /* Quill AI nav icon: the quill wags side-to-side from its nib like it's
