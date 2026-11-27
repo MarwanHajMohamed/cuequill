@@ -1063,3 +1063,10 @@ body {
   86% { transform: translateY(-2.5px); }
   100% { transform: translateY(0); }
 }
+
+/* Reports nav icon: the document flips over around its vertical axis (with
+   perspective) on the active state. */
+@keyframes cq-report-flip {
+  0% { transform: perspective(220px) rotateY(0deg); }
+  100% { transform: perspective(220px) rotateY(360deg); }
+}
