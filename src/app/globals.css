@@ -1070,3 +1070,20 @@ body {
   0% { transform: perspective(220px) rotateY(0deg); }
   100% { transform: perspective(220px) rotateY(360deg); }
 }
+
+/* Stocks nav icon: the front $ coin flips over on the active state. */
+@keyframes cq-coin-flip {
+  0% { transform: perspective(120px) rotateY(0deg); }
+  100% { transform: perspective(120px) rotateY(360deg); }
+}
+
+/* Quill AI nav icon: the quill wags side-to-side from its nib like it's
+   writing, then settles, on the active state. */
+@keyframes cq-quill-write {
+  0% { transform: rotate(0deg); }
+  20% { transform: rotate(-13deg); }
+  45% { transform: rotate(9deg); }
+  68% { transform: rotate(-5deg); }
+  85% { transform: rotate(2deg); }
+  100% { transform: rotate(0deg); }
+}
