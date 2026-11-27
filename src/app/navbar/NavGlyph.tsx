@@ -23,6 +23,10 @@ export function NavGlyph({
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
+        // Theme-aware neutral for the glyphs (they fill with currentColor):
+        // light grey on the dark UI, dark grey on light. Overrides the text
+        // colour from `className` so the icons stay a consistent neutral.
+        color: "rgb(var(--fg-rgb) / 0.85)",
       }}
     >
       <svg

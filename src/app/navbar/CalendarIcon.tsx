@@ -27,28 +27,30 @@ export default function CalendarIcon({
 }) {
   return (
     <NavGlyph className={className} viewBox="0 0 64 63" height="1.1em">
-      {/* Page already behind (slightly dimmer), revealed while the front flips */}
-      <Sheet fill="#AEAEAE" />
+      {/* Page already behind, revealed while the front flips. Same fill as the
+          front so the hand-off as the front fades is seamless (no brightness
+          pop). */}
+      <Sheet fill="currentColor" />
       {/* Front sheet - flips up over the rings on active */}
       <g
         style={{
           transformBox: "fill-box",
           transformOrigin: "top",
           animation: active
-            ? "cq-cal-flip 700ms cubic-bezier(0.45, 0, 0.55, 1)"
+            ? "cq-cal-flip 820ms cubic-bezier(0.5, 0, 0.5, 1)"
             : "none",
         }}
       >
-        <Sheet fill="#D9D9D9" />
+        <Sheet fill="currentColor" />
       </g>
       {/* Rings / binding - stay put */}
       <path
         d="M10 3C10 1.34315 11.3431 0 13 0H16C17.6569 0 19 1.34315 19 3V8H10V3Z"
-        fill="#D9D9D9"
+        fill="currentColor"
       />
       <path
         d="M44 3C44 1.34315 45.3431 0 47 0H50C51.6569 0 53 1.34315 53 3V8H44V3Z"
-        fill="#D9D9D9"
+        fill="currentColor"
       />
     </NavGlyph>
   );

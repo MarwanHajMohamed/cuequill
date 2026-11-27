@@ -314,14 +314,23 @@
   --color-emerald-400: #7c3aed;
 }
 
-/* Light-mode aurora boost. The radial-gradient washes are inline on
-   the page hero divs (~13 of them) using the same structural class
-   signature - rather than rewriting each, bump saturation + a touch of
-   brightness only when in light mode so the tints stay visible against
-   the off-white background without forcing every gradient stop to be
-   re-tuned. Keeps the dark-mode look untouched. */
-:root.light [aria-hidden].pointer-events-none.fixed.inset-0.-z-10 {
-  filter: saturate(1.4) brightness(1.03);
+/* Keep the page background a neutral surface regardless of the accent pack.
+   The accent colours (buttons, highlights, P/L) still apply - only the tinted
+   page background is reset to the neutral default. */
+:root[data-accent] {
+  --background: #0e0e10;
+  --bg-rgb: 14 14 16;
+}
+:root.light[data-accent] {
+  --background: #f6f7f9;
+  --bg-rgb: 246 247 249;
+}
+
+/* Remove the decorative teal/indigo radial-gradient background washes that
+   were layered on every page hero (the ~13 `pointer-events-none fixed
+   inset-0 -z-10` divs), so every page keeps a plain neutral background. */
+.pointer-events-none.fixed.inset-0.-z-10 {
+  background: none !important;
 }
 
 /* Modal backdrop scrim. Dark by default; lighter in light mode where a
@@ -1030,14 +1039,17 @@ body {
   100% { transform: translateX(0); opacity: 1; }
 }
 
-/* Calendar nav icon: the sheet flips up and over the binding onto the next
-   page on the active state. rotateX around the top edge (the rings), with a
-   little perspective; opacity hides the edge-on midpoint. */
+/* Calendar nav icon: the front sheet flips up and over the binding onto the
+   page behind it. It stays fully opaque while it rotates up past edge-on (so
+   the flip is clearly visible), only fading as it folds away over the top;
+   then it resets behind the page and fades back to rest. rotateX around the
+   top edge with perspective for depth. */
 @keyframes cq-cal-flip {
-  0% { transform: perspective(140px) rotateX(0deg); opacity: 1; }
-  48% { transform: perspective(140px) rotateX(-88deg); opacity: 0; }
-  52% { transform: perspective(140px) rotateX(88deg); opacity: 0; }
-  100% { transform: perspective(140px) rotateX(0deg); opacity: 1; }
+  0% { transform: perspective(150px) rotateX(0deg); opacity: 1; }
+  52% { transform: perspective(150px) rotateX(-90deg); opacity: 1; }
+  66% { transform: perspective(150px) rotateX(-112deg); opacity: 0; }
+  67% { transform: perspective(150px) rotateX(0deg); opacity: 0; }
+  100% { transform: perspective(150px) rotateX(0deg); opacity: 1; }
 }
 
 /* Strategies nav icon: the knight hops off its base (lift + tilt) and lands
@@ -1050,4 +1062,11 @@ body {
   74% { transform: translateY(0) rotate(0deg); }
   86% { transform: translateY(-2.5px); }
   100% { transform: translateY(0); }
+}
+
+/* Reports nav icon: the document flips over around its vertical axis (with
+   perspective) on the active state. */
+@keyframes cq-report-flip {
+  0% { transform: perspective(220px) rotateY(0deg); }
+  100% { transform: perspective(220px) rotateY(360deg); }
 }
