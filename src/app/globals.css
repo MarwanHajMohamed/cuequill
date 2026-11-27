@@ -314,14 +314,23 @@
   --color-emerald-400: #7c3aed;
 }
 
-/* Light-mode aurora boost. The radial-gradient washes are inline on
-   the page hero divs (~13 of them) using the same structural class
-   signature - rather than rewriting each, bump saturation + a touch of
-   brightness only when in light mode so the tints stay visible against
-   the off-white background without forcing every gradient stop to be
-   re-tuned. Keeps the dark-mode look untouched. */
-:root.light [aria-hidden].pointer-events-none.fixed.inset-0.-z-10 {
-  filter: saturate(1.4) brightness(1.03);
+/* Keep the page background a neutral surface regardless of the accent pack.
+   The accent colours (buttons, highlights, P/L) still apply - only the tinted
+   page background is reset to the neutral default. */
+:root[data-accent] {
+  --background: #0e0e10;
+  --bg-rgb: 14 14 16;
+}
+:root.light[data-accent] {
+  --background: #f6f7f9;
+  --bg-rgb: 246 247 249;
+}
+
+/* Remove the decorative teal/indigo radial-gradient background washes that
+   were layered on every page hero (the ~13 `pointer-events-none fixed
+   inset-0 -z-10` divs), so every page keeps a plain neutral background. */
+.pointer-events-none.fixed.inset-0.-z-10 {
+  background: none !important;
 }
 
 /* Modal backdrop scrim. Dark by default; lighter in light mode where a
