@@ -1088,3 +1088,16 @@ body {
   85% { transform: rotate(2deg); }
   100% { transform: rotate(0deg); }
 }
+
+/* Earnings nav icon: the three "shout" lines grow in width, shoot out to the
+   right, wiggle, then return to their place/size on the active state. Origin
+   at the left (the megaphone mouth) so they grow and wag outward. */
+@keyframes cq-earnings-shout {
+  0% { transform: translateX(0) scaleX(1) rotate(0deg); }
+  22% { transform: translateX(9px) scaleX(1.55) rotate(0deg); }
+  37% { transform: translateX(9px) scaleX(1.55) rotate(-7deg); }
+  52% { transform: translateX(9px) scaleX(1.55) rotate(7deg); }
+  67% { transform: translateX(9px) scaleX(1.55) rotate(-4deg); }
+  80% { transform: translateX(9px) scaleX(1.55) rotate(2deg); }
+  100% { transform: translateX(0) scaleX(1) rotate(0deg); }
+}
