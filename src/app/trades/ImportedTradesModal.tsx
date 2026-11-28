@@ -199,32 +199,13 @@ export default function ImportedTradesModal({
           className="bg-[var(--surface)] border border-white/10 rounded-2xl w-full max-w-lg shadow-[0_24px_80px_var(--shadow)] overflow-hidden flex flex-col max-h-[85vh]"
         >
           {/* Header */}
-          <div className="px-5 py-4 flex items-start justify-between gap-3 shrink-0">
+          <div className="px-5 py-3.5 flex items-center justify-between gap-3 shrink-0 border-b border-white/[0.06]">
             <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <h2 className="text-[16px] font-semibold tracking-tight">
-                  Imported trades
-                </h2>
-                {/* Hover-only tooltip. `group` on the wrapper + `group-hover`
-                    on the popover keeps this stateless - one-liner
-                    explanation, no click target, no accessibility trap. */}
-                <span className="relative group inline-flex">
-                  <i
-                    tabIndex={0}
-                    className="fa-solid fa-circle-info text-[11px] text-white/40 hover:text-white/70 focus:text-white/70 outline-none transition cursor-pointer"
-                    aria-label="What is this?"
-                  />
-                  <span
-                    role="tooltip"
-                    className="pointer-events-none absolute left-1/2 top-full mt-2 -translate-x-1/2 w-56 rounded-lg border border-white/10 bg-[var(--surface)] shadow-[0_12px_40px_var(--shadow)] px-3 py-2 text-[11.5px] leading-snug text-white/75 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition z-10"
-                  >
-                    Trades the last IBKR sync found. Import the ones you want
-                    (new or skipped), then review or delete imported ones.
-                  </span>
-                </span>
-              </div>
+              <h2 className="text-[15px] font-semibold tracking-tight">
+                Imported trades
+              </h2>
               {dupCount > 0 && (
-                <p className="text-[12px] mt-0.5 text-amber-400">
+                <p className="text-[11.5px] mt-0.5 text-amber-400/90">
                   {dupCount} possible duplicate{dupCount === 1 ? "" : "s"}
                 </p>
               )}
@@ -280,14 +261,17 @@ export default function ImportedTradesModal({
                   return (
                   <div
                     key={`grp-${gi}`}
-                    className="rounded-xl border border-teal-500/40 bg-teal-500/[0.05] p-1"
+                    className="rounded-xl border border-teal-500/20 bg-teal-500/[0.03] px-1 py-0.5"
                   >
-                    <div className="flex items-center justify-end gap-2 px-2 pt-1 pb-0.5">
+                    <div className="flex items-center justify-between gap-2 px-2 pt-1 pb-0.5">
+                      <span className="text-[10.5px] text-teal-300/70 font-medium">
+                        Partial fills
+                      </span>
                       <button
                         type="button"
                         onClick={() => handleMergeGroup(group)}
                         disabled={busy}
-                        className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[10px] text-[11px] font-semibold bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                        className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[9px] text-[11px] font-semibold text-teal-300 hover:bg-teal-500/15 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                       >
                         <i
                           className={`fa-solid ${
@@ -380,8 +364,10 @@ function ImportedRow({
   return (
     <div className="group flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/[0.04] transition">
       <span
-        className={`shrink-0 w-11 text-center text-[10px] font-semibold uppercase tracking-wide py-1 rounded-md ${
-          isCall ? "bg-green-500/12 text-green-300" : "bg-red-500/12 text-red-300"
+        className={`shrink-0 inline-flex items-center justify-center w-12 text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full border ${
+          isCall
+            ? "bg-green-500/10 text-green-300 border-green-500/25"
+            : "bg-red-500/10 text-red-300 border-red-500/25"
         }`}
       >
         {trade.option}
