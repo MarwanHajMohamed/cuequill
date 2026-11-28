@@ -1094,10 +1094,10 @@ body {
    at the left (the megaphone mouth) so they grow and wag outward. */
 @keyframes cq-earnings-shout {
   0% { transform: translateX(0) scale(1, 1) rotate(0deg); }
-  22% { transform: translateX(18px) scale(1.8, 1.6) rotate(0deg); }
-  37% { transform: translateX(18px) scale(1.8, 1.6) rotate(-7deg); }
-  52% { transform: translateX(18px) scale(1.8, 1.6) rotate(7deg); }
-  67% { transform: translateX(18px) scale(1.8, 1.6) rotate(-4deg); }
-  80% { transform: translateX(18px) scale(1.8, 1.6) rotate(2deg); }
+  22% { transform: translateX(18px) scale(1.8, 2.2) rotate(0deg); }
+  37% { transform: translateX(18px) scale(1.8, 2.2) rotate(-7deg); }
+  52% { transform: translateX(18px) scale(1.8, 2.2) rotate(7deg); }
+  67% { transform: translateX(18px) scale(1.8, 2.2) rotate(-4deg); }
+  80% { transform: translateX(18px) scale(1.8, 2.2) rotate(2deg); }
   100% { transform: translateX(0) scale(1, 1) rotate(0deg); }
 }
