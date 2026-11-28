@@ -287,6 +287,7 @@ export default function ImportedTradesModal({
                       <ImportedRow
                         key={t._id}
                         trade={t}
+                        nested
                         deleting={!!deleting[t._id]}
                         onDelete={() => handleDelete(t._id)}
                       />
@@ -345,10 +346,12 @@ function ImportedRow({
   trade,
   deleting,
   onDelete,
+  nested = false,
 }: {
   trade: ImportedTrade;
   deleting: boolean;
   onDelete: () => void;
+  nested?: boolean;
 }) {
   const isCall = trade.option === "CALL";
   const isOpen = trade.status === "OPEN";
@@ -362,7 +365,13 @@ function ImportedRow({
       : "-";
 
   return (
-    <div className="group flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/[0.04] transition">
+    <div
+      className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl transition ${
+        nested
+          ? "hover:bg-white/[0.03]"
+          : "border border-white/[0.07] bg-white/[0.02] hover:bg-white/[0.045] hover:border-white/10"
+      }`}
+    >
       <span
         className={`shrink-0 inline-flex items-center justify-center w-12 text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full border ${
           isCall
@@ -397,13 +406,21 @@ function ImportedRow({
         </div>
       </div>
 
-      <div
-        className={`shrink-0 text-[13.5px] font-semibold tabular-nums ${
-          isOpen ? "text-white/40" : net >= 0 ? "text-green-300" : "text-red-300"
-        }`}
-      >
-        {isOpen ? "-" : `${net >= 0 ? "+" : "−"}$${Math.abs(net).toFixed(2)}`}
-      </div>
+      {isOpen ? (
+        <span className="shrink-0 text-[11px] font-medium text-white/40 px-2 py-0.5 rounded-md bg-white/[0.04]">
+          Open
+        </span>
+      ) : (
+        <span
+          className={`shrink-0 text-[12.5px] font-semibold tabular-nums px-2 py-0.5 rounded-md ${
+            net >= 0
+              ? "text-green-300 bg-green-500/10"
+              : "text-red-300 bg-red-500/10"
+          }`}
+        >
+          {`${net >= 0 ? "+" : "−"}$${Math.abs(net).toFixed(2)}`}
+        </span>
+      )}
 
       <button
         type="button"
