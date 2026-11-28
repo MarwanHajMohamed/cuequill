@@ -1,11 +1,8 @@
 import { NavGlyph } from "./NavGlyph";
 
-// Earnings nav glyph: a megaphone with three "shout" lines. On the active
-// state the shout lines grow in width, shoot out to the right, wiggle, then
-// return to their original place and width.
+// Earnings nav glyph: a megaphone with three "shout" lines.
 export default function EarningsIcon({
   className,
-  active = false,
 }: {
   className?: string;
   active?: boolean;
@@ -32,34 +29,24 @@ export default function EarningsIcon({
         d="M58 25H60.12C61.7769 25 63.12 26.3431 63.12 28V34.8001C63.12 36.4569 61.7769 37.8001 60.12 37.8001H58V25Z"
         fill="currentColor"
       />
-      {/* Shout lines - animate out and back on active */}
-      <g
-        style={{
-          transformBox: "fill-box",
-          transformOrigin: "left",
-          animation: active
-            ? "cq-earnings-shout 950ms cubic-bezier(0.4, 0, 0.5, 1)"
-            : "none",
-        }}
-      >
-        <rect
-          x="49"
-          y="23.7236"
-          width="6"
-          height="7"
-          transform="rotate(-35.0348 49 23.7236)"
-          fill="currentColor"
-        />
-        <rect x="50" y="28" width="6" height="7" fill="currentColor" />
-        <rect
-          x="53.0151"
-          y="33"
-          width="6"
-          height="7"
-          transform="rotate(35 53.0151 33)"
-          fill="currentColor"
-        />
-      </g>
+      {/* Shout lines */}
+      <rect
+        x="49"
+        y="23.7236"
+        width="6"
+        height="7"
+        transform="rotate(-35.0348 49 23.7236)"
+        fill="currentColor"
+      />
+      <rect x="50" y="28" width="6" height="7" fill="currentColor" />
+      <rect
+        x="53.0151"
+        y="33"
+        width="6"
+        height="7"
+        transform="rotate(35 53.0151 33)"
+        fill="currentColor"
+      />
     </NavGlyph>
   );
 }
